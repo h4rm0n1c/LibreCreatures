@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    96 ""
+    97 ""
+    98 ""
+    99 ""
+    100 "OLE initialization failed.  Make sure that the OLE libraries are the correct version."
+    101 ""
+    102 ""
+    103 ""
+    104 "Windows sockets initialization failed."
+    105 "便利なヒント"
+    106 ""
+    107 "ヒントを表示します"
+    108 "ヒント集..."
+    109 "知っていましたか..."
+    110 "指定のディレクトリにはヒントファイルがありません"
+    111 "ヒントファイルの読み取りに障害が発生しました"
+END

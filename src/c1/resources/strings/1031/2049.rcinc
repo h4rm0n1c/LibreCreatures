@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    32768 ""
+    32769 ""
+    32770 ""
+    32771 "Sehen Sie nach, über welchen Gegenstand Ihr Tierchen nachdenkt\nBetrachtungsfenster"
+    32772 "Zwischen Sicht-Vergrößerungen umschalten\nGröße umschalten"
+    32773 ""
+    32774 "Bewegungsfreiheit in der Welt geben"
+    32775 ""
+    32776 "Vorlieben festlegen"
+    32777 "Bringen Sie Ihrem Tierchen sofort Wörter bei"
+    32778 ""
+    32779 ""
+    32780 "Diesen Ort der Lieblingsort-Liste hinzufügen"
+    32781 ""
+    32782 ""
+    32783 "Gewähltem Wesen mit Kamera folgen\nNorn verfolgen"
+END

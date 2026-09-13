@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    96 ""
+    97 ""
+    98 ""
+    99 ""
+    100 "OLE initialization failed.  Make sure that the OLE libraries are the correct version."
+    101 ""
+    102 ""
+    103 ""
+    104 "Windows sockets initialization failed."
+    105 "Suggerimenti utili"
+    106 ""
+    107 "Visualizza un suggerimento del giorno."
+    108 "Suggerimento& del giorno..."
+    109 "Sapevi che..."
+    110 "Non ci sono file consigli nella directory indicata"
+    111 "Problema di lettura del file consigli"
+END

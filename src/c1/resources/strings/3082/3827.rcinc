@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    61216 "00000h:00m  "
+    61217 "xx"
+    61218 "El explorador de Internet no ha funcionado"
+    61219 "Guardando..."
+    61220 "Se ha producido un error al guardar los datos del mundo"
+    61221 "Es demasiado peligroso exportar a una norn embarazada."
+    61222 "Vista"
+    61223 "&Cámara"
+    61224 "&Herramientas"
+    61225 "&Norns"
+    61226 "Unregistered"
+    61227 "Sick"
+    61228 "Healthy"
+    61229 "Dead"
+    61230 "Yes"
+    61231 "No"
+END

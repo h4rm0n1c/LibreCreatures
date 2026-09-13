@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    61232 " - "
+    61233 "保育器"
+    61234 "Creatures could not locate its Main Directory from the registry.\nThe registry maybe corrupt. Using current directory instead."
+    61235 "The maximum number of active object scripts has\nbeen reached. This script will be aborted.\n"
+    61236 """The Scriptorium is full,\nno more object scripts can be added.\n"""
+    61237 "An error has occured when cleaning Death Row\nPlease exit and then restart Creatures."
+    61238 "（雌）"
+    61239 "（雄）"
+    61240 "（死亡）"
+    61241 ""
+    61242 ""
+    61243 ""
+    61244 ""
+    61245 ""
+    61246 ""
+    61247 ""
+END

@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    32864 "Recuperar una criatura del disco\nImportar criatura"
+    32865 "Force selected creature to advance to next stage"
+    32866 "Activar desplazamiento suave\nDesplazamiento suave"
+    32867 "Quitar un artículo de la lista de lugares favoritos"
+    32868 ""
+    32869 ""
+    32870 ""
+    32871 ""
+    32872 ""
+    32873 ""
+    32874 ""
+    32875 ""
+    32876 ""
+    32877 ""
+    32878 ""
+    32879 ""
+END

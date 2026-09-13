@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    32768 ""
+    32769 ""
+    32770 ""
+    32771 "Averigua en qué objeto está pensando tu criatura\nVista de la criatura"
+    32772 "Recorre las ampliaciones de las vistas\nRecorrer tamaños"
+    32773 ""
+    32774 "Deja que se mueva libremente por el mundo"
+    32775 ""
+    32776 "Selecciona tus preferencias"
+    32777 "Enseña palabras a tu criatura"
+    32778 ""
+    32779 ""
+    32780 "Incluye este sitio en tu lista de lugares favoritos"
+    32781 ""
+    32782 ""
+    32783 "Sigue a la criatura seleccionada con la cámara\nSeguir al norn"
+END

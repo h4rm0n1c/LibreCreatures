@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    61216 "00000h:00m  "
+    61217 "xx"
+    61218 "Internet-Explorer konnte nicht betrieben werden"
+    61219 "Speichere..."
+    61220 "Bei Weltdaten-Speicherung trat ein Fehler auf"
+    61221 "Das Exportieren eines schwangeren Norns ist zu geführlich."
+    61222 "Ansicht"
+    61223 "&Kamera"
+    61224 "Werk&zeuge"
+    61225 "No&rns"
+    61226 "Nicht eingetragen"
+    61227 "Krank"
+    61228 "Gesund"
+    61229 "Tot"
+    61230 "Ja"
+    61231 "Nein"
+END

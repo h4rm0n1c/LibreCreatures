@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    32864 "Retrieve a creature from the disk drive"
+    32865 "Force selected creature to advance to next stage"
+    32866 "Enable smooth scrolling\nSmooth Scrolling"
+    32867 "Remove an item from the list of Favorite places"
+    32868 ""
+    32869 ""
+    32870 ""
+    32871 ""
+    32872 ""
+    32873 ""
+    32874 ""
+    32875 ""
+    32876 ""
+    32877 ""
+    32878 ""
+    32879 ""
+END

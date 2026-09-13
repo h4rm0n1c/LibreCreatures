@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    61216 "00000h:00m  "
+    61217 "xx"
+    61218 "Internet explorer could not run"
+    61219 "Saving..."
+    61220 "An Error has occurred while storing world data"
+    61221 "It is too dangerous to export a pregnant norn!"
+    61222 "View"
+    61223 "&Camera"
+    61224 "&Tools"
+    61225 "&Creatures"
+    61226 "Unregistered"
+    61227 "Sick"
+    61228 "Healthy"
+    61229 "Dead"
+    61230 "Yes"
+    61231 "No"
+END

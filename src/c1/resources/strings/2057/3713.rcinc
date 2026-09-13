@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    59392 "Show or hide the toolbar\nToggle ToolBar"
+    59393 "Show or hide the status bar\nToggle StatusBar"
+    59394 "Click this button to speak the contents of the edit box\nSpeak text"
+    59395 "Type what you want to say, then click the SAY button\nEdit speech"
+    59396 ""
+    59397 ""
+    59398 ""
+    59399 ""
+    59400 ""
+    59401 ""
+    59402 ""
+    59403 ""
+    59404 ""
+    59405 ""
+    59406 ""
+    59407 ""
+END

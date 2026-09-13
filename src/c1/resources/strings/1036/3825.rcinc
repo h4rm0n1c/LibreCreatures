@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    61184 "Modifier la taille de la fenêtre"
+    61185 "Modifier l'emplacement de la fenêtre"
+    61186 "Réduire la fenêtre à la taille d'une icône"
+    61187 "Agrandir la fenêtre jusqu'à sa taille normale"
+    61188 "Passer à la fenêtre suivante"
+    61189 "Revenir à la fenêtre précédente"
+    61190 "Fermer la fenêtre active et les prompts pour sauvegarder les documents"
+    61191 ""
+    61192 ""
+    61193 ""
+    61194 ""
+    61195 ""
+    61196 ""
+    61197 ""
+    61198 ""
+    61199 ""
+END

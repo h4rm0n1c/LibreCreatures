@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    61200 ""
+    61201 ""
+    61202 "Restore the window to normal size"
+    61203 "Activate Task List"
+    61204 "Please put the Creatures CD-ROM into the CD drive."
+    61205 "Export Files (*.exp)|*.exp|All Files (*.*)|*.*||"
+    61206 "Import a creature/object"
+    61207 "Export current creature"
+    61208 "Please enter a filename of no more than 255 characters."
+    61209 "Score: 00000"
+    61210 "Life Force: 100%"
+    61211 "DEATH"
+    61212 "BIRTH"
+    61213 " EGG "
+    61214 "     "
+    61215 "<Un Named>"
+END

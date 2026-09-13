@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    61232 " - "
+    61233 "Der Brutkasten"
+    61234 "Creatures konnte sein Hauptverzeichnis nicht in der Verzeichnisliste finden.\nDie Verzeichnisliste könnte fehlerhaft sein.\nAktuelles Verzeichnis wird stattdessen benutzt."
+    61235 "Die Maximal-Anzahl aktiver Objekt-Befehle wurde erreicht.\nDieser neue Befehl wird abgebrochen."
+    61236 "Die Befehlsliste ist voll, keine weiteren\nObjekt-Befehle können hinzugefügt werden."
+    61237 "An error has occured when cleaning Death Row\nPlease exit and then restart Creatures."
+    61238 "Weibl."
+    61239 "Män."
+    61240 "Verstor."
+    61241 ""
+    61242 ""
+    61243 ""
+    61244 ""
+    61245 ""
+    61246 ""
+    61247 ""
+END

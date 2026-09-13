@@ -1,0 +1,27 @@
+1 VERSIONINFO
+FILEVERSION 1,0,0,1
+PRODUCTVERSION 1,0,0,1
+FILEFLAGSMASK 0x0000003f
+FILEFLAGS 0x00000000
+FILEOS 0x00000004
+FILETYPE 0x00000001
+FILESUBTYPE 0x00000000
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "041103a4"
+        BEGIN
+            VALUE "FileDescription", "SMALL FURRY CREATURES MFC Application"
+            VALUE "FileVersion", "1, 0, 0, 1"
+            VALUE "InternalName", "SMALL FURRY CREATURES"
+            VALUE "LegalCopyright", "Copyright c 1995"
+            VALUE "OriginalFilename", "SMALL FURRY CREATURES.EXE"
+            VALUE "ProductName", "SMALL FURRY CREATURES Application"
+            VALUE "ProductVersion", "1, 0, 0, 1"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0411, 0x03a4
+    END
+END

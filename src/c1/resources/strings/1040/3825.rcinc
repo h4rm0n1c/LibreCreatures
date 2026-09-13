@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    61184 "Cambia la dimensione della finestra."
+    61185 "Cambia la posizione finestra."
+    61186 "Riduci la finestra in un'icona."
+    61187 "Ingrandisci la finestra nelle dimensioni massime."
+    61188 "Accedi alla finestra del documento successiva."
+    61189 "Accedi alla finestra del documento precedente."
+    61190 "Chiudi la finestra attiva e le istruzioni per salvare i documenti."
+    61191 ""
+    61192 ""
+    61193 ""
+    61194 ""
+    61195 ""
+    61196 ""
+    61197 ""
+    61198 ""
+    61199 ""
+END

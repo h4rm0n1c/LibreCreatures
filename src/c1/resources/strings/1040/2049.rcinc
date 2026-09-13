@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    32768 ""
+    32769 ""
+    32770 ""
+    32771 "Visualizza l'oggetto a cui sta pensando il tuo animaletto domestico\nVisuale della creatura"
+    32772 "Scorre gli ingrandimenti della visuale\nDimensioni"
+    32773 ""
+    32774 "Permette la circolazione in tutto il mondo."
+    32775 ""
+    32776 "Seleziona preferenze."
+    32777 "Insegna immediatamete delle parole al tuo animaletto domestico."
+    32778 ""
+    32779 ""
+    32780 "Aggiunge questo luogo alla lista dei luoghi preferiti"
+    32781 ""
+    32782 ""
+    32783 "Segue con la telecamera la creatura selezionata.\nSegui norn"
+END

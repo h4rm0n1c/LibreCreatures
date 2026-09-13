@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    32816 "Stimuli received from objects"
+    32817 "Genes that switch on, etc."
+    32818 "changes in phase of life, death, infection, etc."
+    32819 "changes in weather, time, etc."
+    32820 "User actions"
+    32821 "Applet interactions and other OLE stuff"
+    32822 "Object messages"
+    32823 "Brain activity"
+    32824 ""
+    32825 ""
+    32826 ""
+    32827 ""
+    32828 ""
+    32829 ""
+    32830 ""
+    32831 ""
+END

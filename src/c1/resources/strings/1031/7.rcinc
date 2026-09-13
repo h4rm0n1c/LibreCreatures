@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    96 ""
+    97 ""
+    98 ""
+    99 ""
+    100 "OLE initialization failed.  Make sure that the OLE libraries are the correct version."
+    101 ""
+    102 ""
+    103 ""
+    104 "Windows sockets initialization failed."
+    105 "Nützliche Hinweise"
+    106 ""
+    107 "Zeigt einen Tip des Tages."
+    108 "Ti&p des Tages..."
+    109 "Wußten Sie schon..."
+    110 "Tip-Datei existiert nicht im vorgeschriebenen Verzeichnis"
+    111 "Kann Hinweisdatei nicht lesen"
+END

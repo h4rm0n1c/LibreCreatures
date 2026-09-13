@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    32896 ""
+    32897 ""
+    32898 ""
+    32899 ""
+    32900 ""
+    32901 ""
+    32902 "Fai nascere un nuovo norn\nIncubatrice"
+    32903 ""
+    32904 "Dettagli sul norn\nKit del proprietario"
+    32905 "Monitoraggio iniziale\nKit della salute"
+    32906 "Monitoraggio avanzato\nKit della scienza"
+    32907 "Monitoraggio della gravidanza\nKit dell'allevatore"
+    32908 "Monitor all creatures\nObservation Kit"
+    32909 "Add objects to Albia\nInjector Kit"
+    32910 "Punteggio\nKit del punteggio"
+    32911 "Rendi omaggio\nCimitero delle creature"
+END

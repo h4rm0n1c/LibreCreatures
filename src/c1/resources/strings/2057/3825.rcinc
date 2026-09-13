@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    61184 "Change the window size"
+    61185 "Change the window position"
+    61186 "Reduce the window to an icon"
+    61187 "Enlarge the window to full size"
+    61188 "Switch to the next document window"
+    61189 "Switch to the previous document window"
+    61190 "Close the active window and prompts to save the documents"
+    61191 ""
+    61192 ""
+    61193 ""
+    61194 ""
+    61195 ""
+    61196 ""
+    61197 ""
+    61198 ""
+    61199 ""
+END

@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    57600 "Create a new document\nNew"
+    57601 "Open an existing world\nOpen"
+    57602 "Close the active document\nClose"
+    57603 "Save the active world\nSave"
+    57604 "Save the active world with a new name\nSave As"
+    57605 ""
+    57606 ""
+    57607 ""
+    57608 ""
+    57609 ""
+    57610 ""
+    57611 ""
+    57612 "Send the active document through electronic mail\nSend Mail"
+    57613 ""
+    57614 ""
+    57615 ""
+END

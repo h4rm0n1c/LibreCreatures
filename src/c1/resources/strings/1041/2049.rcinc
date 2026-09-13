@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    32768 ""
+    32769 ""
+    32770 ""
+    32771 "あなたのノームが何を見ているか確かめてみましょう\nビューウィンドウ"
+    32772 "Toggle between view magnifications\nToggle size"
+    32773 ""
+    32774 "Allow uninhibited movement around the world"
+    32775 ""
+    32776 "Select preferences"
+    32777 "Instantly teach your pet words"
+    32778 ""
+    32779 ""
+    32780 "この場所を「お気に入りの場所」に付け加えます"
+    32781 ""
+    32782 ""
+    32783 "選択したノームをカメラで追跡します\nノームの追跡"
+END

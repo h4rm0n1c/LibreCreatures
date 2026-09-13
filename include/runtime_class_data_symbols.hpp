@@ -1,0 +1,47 @@
+#pragma once
+// The DECLARE_DYNCREATE CRuntimeClass static instance each MFC-derived
+// class needs, named after the original binary's own symbol addresses.
+
+extern CRuntimeClass PTR_s_Blackboard_004669ec;
+extern CRuntimeClass PTR_s_BodyPart_0046685c;
+extern CRuntimeClass PTR_s_Body_00466840;
+extern CRuntimeClass PTR_s_Bubble_00466a5c;
+extern CRuntimeClass PTR_s_CBacterium_004660a0;
+extern CRuntimeClass PTR_s_CBiochemistry_00466b24;
+extern CRuntimeClass PTR_s_CBrain_0046677c;
+extern CRuntimeClass PTR_s_CCreatureRegister_00466798;
+extern CRuntimeClass PTR_s_CEventBar_00466894;
+extern CRuntimeClass PTR_s_CFavouritePlace_004668b0;
+extern CRuntimeClass PTR_s_CGallery_00466bb8;
+extern CRuntimeClass PTR_s_CImage_00466b9c;
+extern CRuntimeClass PTR_s_CInstinct_00466808;
+extern CRuntimeClass PTR_s_CMacroHolder_004561c8;
+extern CRuntimeClass PTR_s_CMainFrame_00456f98;
+extern CRuntimeClass PTR_s_COwner_00466b08;
+extern CRuntimeClass PTR_s_CScore_00466b40;
+extern CRuntimeClass PTR_s_CSfcOLE_00458528;
+extern CRuntimeClass PTR_s_CWinBMP_0045c484;
+extern CRuntimeClass PTR_s_CallButton_00466a78;
+extern CRuntimeClass PTR_s_CompoundObject_00466a40;
+extern CRuntimeClass PTR_s_Creature_004667ec;
+extern CRuntimeClass PTR_s_Entity_00466878;
+extern CRuntimeClass PTR_s_Lift_00466a08;
+extern CRuntimeClass PTR_s_Limb_00466824;
+extern CRuntimeClass PTR_s_Macro_00466998;
+extern CRuntimeClass PTR_s_MapData_004669d0;
+extern CRuntimeClass PTR_s_MyToolBar_004669b4;
+extern CRuntimeClass PTR_s_Object_00466ae8;
+extern CRuntimeClass PTR_s_PointerTool_00466a94;
+extern char * PTR_s_SELF__0__00455ee0;
+extern CRuntimeClass PTR_s_SFCApp_0045b1b0;
+extern CRuntimeClass PTR_s_SFCDoc_00459e98;
+extern CRuntimeClass PTR_s_SFCView_0045a978;
+extern CRuntimeClass PTR_s_Scenery_00466acc;
+extern CRuntimeClass PTR_s_SimpleObject_00466ab0;
+extern CRuntimeClass PTR_s_Skeleton_00466b80;
+extern CRuntimeClass PTR_s_Vehicle_00466a24;
+extern CRuntimeClass PTR_s_Voice_00466be0;
+extern DDEServiceItem DDEServiceItem_BrainActivity;
+extern DDEServiceItem DDEServiceItem_BrainWiring;
+extern DDEServiceItem DDEServiceItem_Macro;
+extern DDEServiceItem DDEServiceItem_SysInfo;

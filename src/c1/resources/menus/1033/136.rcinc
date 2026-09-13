@@ -1,0 +1,53 @@
+136 MENU
+BEGIN
+    POPUP "Subjects"
+    BEGIN
+        MENUITEM "0", 40000
+        MENUITEM "1", 40001
+        MENUITEM "2", 40002
+        MENUITEM "3", 40003
+        MENUITEM "4", 40004
+        MENUITEM "5", 40005
+        MENUITEM "6", 40006
+        MENUITEM "7", 40007
+        MENUITEM "8", 40008
+        MENUITEM "9", 40009
+        MENUITEM "10", 40010
+        MENUITEM "11", 40011
+        MENUITEM "12", 40012
+        MENUITEM "13", 40013
+        MENUITEM "14", 40014
+        MENUITEM "15", 40015
+        MENUITEM "16", 40016
+        MENUITEM "17", 40017
+        MENUITEM "18", 40018
+        MENUITEM "19", 40019
+        MENUITEM "20", 40020
+        MENUITEM "21", 40021
+        MENUITEM "22", 40022
+        MENUITEM "23", 40023
+        MENUITEM "24", 40024
+        MENUITEM "25", 40025
+        MENUITEM "26", 40026
+        MENUITEM "27", 40027
+        MENUITEM "28", 40028
+        MENUITEM "29", 40029
+        MENUITEM "30", 40030
+        MENUITEM "Last", 40031
+    END
+    POPUP "Camera"
+    BEGIN
+        MENUITEM "0", 32851
+        MENUITEM "1", 32852
+        MENUITEM "2", 32853
+        MENUITEM "3", 32854
+        MENUITEM "4", 32855
+        MENUITEM "5", 32856
+        MENUITEM "6", 32857
+        MENUITEM "7", 32858
+        MENUITEM "8", 32859
+        MENUITEM "9", 32860
+        MENUITEM "10", 32861
+        MENUITEM "11", 32862
+    END
+END

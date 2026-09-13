@@ -1,0 +1,96 @@
+128 MENU
+BEGIN
+    POPUP "&File"
+    BEGIN
+        MENUITEM "&Web Connect", 32832
+        MENUITEM "", 0
+        MENUITEM "&Export current creature", 32863
+        MENUITEM "&Import creature", 32864
+        MENUITEM "", 0
+        MENUITEM "E&xit", 57665
+    END
+    POPUP "&World"
+    BEGIN
+        MENUITEM "&New\tCtrl+N", 57600
+        MENUITEM "&Open...\tCtrl+O", 57601
+        MENUITEM "&Save the world\tCtrl+S", 57603
+        MENUITEM "Save &As...", 57604
+    END
+    POPUP "Testing"
+    BEGIN
+        MENUITEM "&Infinite scroll", 32774
+        MENUITEM "", 0
+        MENUITEM "Create a male norn", 32804
+        MENUITEM "Create a female norn", 32805
+        MENUITEM "Force Ageing", 32865
+        MENUITEM "", 0
+        MENUITEM "Instant &verb vocabulary", 32777
+        MENUITEM "Creatures burble", 32786
+        MENUITEM "", 0
+        MENUITEM "Infect current norn", 32807
+        MENUITEM "Euthanasia", 32840
+    END
+    POPUP "&Log"
+    BEGIN
+        MENUITEM "Sound", 32808
+        MENUITEM "Macros", 32809
+        MENUITEM "Serialisation", 32810
+        MENUITEM "Graphics", 32811
+        MENUITEM "Chemistry", 32812
+        MENUITEM "Attention", 32813
+        MENUITEM "Actions", 32814
+        MENUITEM "Senses", 32815
+        MENUITEM "Stimuli", 32816
+        MENUITEM "Genetics", 32817
+        MENUITEM "Life changes", 32818
+        MENUITEM "Environment", 32819
+        MENUITEM "User", 32820
+        MENUITEM "OLE events", 32821
+        MENUITEM "Objects", 32822
+        MENUITEM "Brain", 32823
+        MENUITEM "", 0
+        MENUITEM "Log Window", 32869
+        MENUITEM "Verbose log", 32870
+    END
+    POPUP "&View"
+    BEGIN
+        MENUITEM "&Toolbar", 59392
+        MENUITEM "&Status Bar", 59393
+        MENUITEM "", 0
+        MENUITEM "CAOS Console\tCtrl+Shift+C", 32896
+    END
+    POPUP "_IDS_CAMERA_MENU_"
+    BEGIN
+        MENUITEM "&Track Creature", 32783
+        MENUITEM "&Smooth Scrolling", 32866
+        MENUITEM "&Which is my creature?", 113
+        MENUITEM "", 0
+        MENUITEM "Add to Favorite places...", 32839
+        MENUITEM "Remove from Favorite places...", 32867
+        MENUITEM "", 0
+    END
+    POPUP "_IDS_TOOLS_MENU_"
+    BEGIN
+        MENUITEM "Creature's View", 32771
+        MENUITEM "", 0
+    END
+    POPUP "_IDS_NORNS_MENU_"
+    BEGIN
+        MENUITEM "None available", 32803
+    END
+    POPUP "Options"
+    BEGIN
+        MENUITEM "Volume...", 32894
+        MENUITEM "Mute Sounds", 32891
+        MENUITEM "Mute Creature Voices", 32897
+        MENUITEM "", 0
+        MENUITEM "Informative Creatures Menu", 32892
+    END
+    POPUP "&Help"
+    BEGIN
+        MENUITEM "&Help Topics", 57667
+        MENUITEM "Tip of the Day", 107
+        MENUITEM "", 0
+        MENUITEM "&About Creatures...", 57664
+    END
+END

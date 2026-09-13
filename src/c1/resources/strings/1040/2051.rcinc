@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    32800 ""
+    32801 ""
+    32802 "Il menu degli argomenti"
+    32803 "Non ci sono argomenti disponibili\nNessun argomento"
+    32804 "<Nessuno disponibile>"
+    32805 ""
+    32806 ""
+    32807 "infect with a randomly selected species of bacterium"
+    32808 "enable/disable logging of sound manager calls"
+    32809 "Creation/deletion of macros, macro errors, etc."
+    32810 "input/output call nest"
+    32811 "Sprite cache size, etc."
+    32812 "concentrations at intervals"
+    32813 "Attention shifts & associated sensory data"
+    32814 "changes in conscious & involuntary actions"
+    32815 "sensory data, and internal sensory stimuli"
+END

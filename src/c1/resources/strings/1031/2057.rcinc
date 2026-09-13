@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    32896 ""
+    32897 ""
+    32898 ""
+    32899 ""
+    32900 ""
+    32901 ""
+    32902 "Neuen Norn ausbrüten\nDas Nest"
+    32903 ""
+    32904 "Norn-Details\nBesitzer-Set"
+    32905 "Erste Beobachtung\nGesundheits-Set"
+    32906 "Spätere Beobachtung\nForschungs-Set"
+    32907 "Schwangerschaftsbeobachtung\nZüchter-Set"
+    32908 "Alle Norns zeigen\nÜberwachsungs-Set"
+    32909 "Objekt in Albia einfügen\nObjekt-Einfügungsset"
+    32910 "Punkte\nLeistungs-Set"
+    32911 "Erweisen Sie die letzte Ehre\nBegräbnis-Set"
+END

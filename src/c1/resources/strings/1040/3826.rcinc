@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    61200 ""
+    61201 ""
+    61202 "Riporta la finestra alle dimensioni normali."
+    61203 "Activate Task List"
+    61204 "Inserisci il CD-ROM di Creatures nell'unità CD."
+    61205 "Esporta file (*.exp)|*.exp|All Files (*.*)|*.*||"
+    61206 "Importa una creatura/oggetto."
+    61207 "Esporta creatura attuale."
+    61208 "Invia un nome di file inferiore a 255 caratteri."
+    61209 "Punti: 00000"
+    61210 "Forza vitale: 100%"
+    61211 "MORTE"
+    61212 "NASC."
+    61213 " UOVO "
+    61214 "     "
+    61215 "Senza nome"
+END

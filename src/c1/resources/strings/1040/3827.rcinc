@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    61216 "00000h:00m  "
+    61217 "xx"
+    61218 "Internet explorer non ha potuto girare"
+    61219 "Salvataggio in corso..."
+    61220 "Errore nella memorizzazione dei dati del mondo"
+    61221 "Troppo pericoloso esportare una femmina incinta."
+    61222 "Visuale"
+    61223 "&Telecamera"
+    61224 "&Strumenti"
+    61225 "&Norn"
+    61226 "Unregistered"
+    61227 "Sick"
+    61228 "Healthy"
+    61229 "Dead"
+    61230 "Yes"
+    61231 "No"
+END

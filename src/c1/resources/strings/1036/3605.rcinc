@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    57664 "Afficher les renseignements sur le programme, le numéro de la version, et le copyright\nA propos"
+    57665 "Quitter l'application\nQuitter"
+    57666 "Ouvre fichier Aide\nSujets d'aide"
+    57667 "Afficher la liste des sujets d'aide\nSujets d'aide"
+    57668 "Afficher instructions concernant l'utilisation d'aide\nAide"
+    57669 "Afficher aide pour les boutons, les menus et les fenêtres sur lesquels on a cliqué\nAide"
+    57670 "Afficher aide pour la tâche ou la fonction en cours\nAide"
+    57671 ""
+    57672 ""
+    57673 ""
+    57674 ""
+    57675 ""
+    57676 ""
+    57677 ""
+    57678 ""
+    57679 ""
+END

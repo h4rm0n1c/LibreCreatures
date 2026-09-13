@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    32896 ""
+    32897 ""
+    32898 ""
+    32899 ""
+    32900 ""
+    32901 ""
+    32902 "Incuba otro norn\nEl vivero"
+    32903 ""
+    32904 "Detalles sobre los norns\nMaletín del amo"
+    32905 "Observación inicial\nMaletín de salud"
+    32906 "Observación avanzada\nMaletín científico"
+    32907 "Observación durante el embarazo\nMaletín del criador"
+    32908 "Monitor all creatures\nObservation Kit"
+    32909 "Add objects to Albia\nInjector Kit"
+    32910 "Datos sobre las puntuaciones\nMaletín de puntuaciones"
+    32911 "Presenta tus respetos\nCementerio de criaturas"
+END

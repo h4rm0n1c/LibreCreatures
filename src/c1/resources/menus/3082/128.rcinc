@@ -1,0 +1,87 @@
+128 MENU
+BEGIN
+    POPUP "&Archivo"
+    BEGIN
+        MENUITEM "Conexión &Web", 32832
+        MENUITEM "", 0
+        MENUITEM "&Exportar esta criatura", 32863
+        MENUITEM "&Importar criatura", 32864
+        MENUITEM "", 0
+        MENUITEM "&Salir", 57665
+    END
+    POPUP "&Mundo"
+    BEGIN
+        MENUITEM "&Nuevo\tCtrl+N", 57600
+        MENUITEM "A&brir...\tCtrl+B", 57601
+        MENUITEM "&Guardar el mundo\tCtrl+G", 57603
+        MENUITEM "Guardar &como...", 57604
+    END
+    POPUP "Probar"
+    BEGIN
+        MENUITEM "&Desplazamiento infinito", 32774
+        MENUITEM "", 0
+        MENUITEM "Crear norn macho", 32804
+        MENUITEM "Crear norn hembra", 32805
+        MENUITEM "Acelerar envejecimiento", 32865
+        MENUITEM "", 0
+        MENUITEM "Vocabulario instantáneo de &verbos", 32777
+        MENUITEM "Parloteo de criaturas", 32786
+        MENUITEM "", 0
+        MENUITEM "Infecta a este norn", 32807
+        MENUITEM "Eutanasia", 32840
+    END
+    POPUP "&Conectar"
+    BEGIN
+        MENUITEM "Sound", 32808
+        MENUITEM "Macros", 32809
+        MENUITEM "Serialisation", 32810
+        MENUITEM "Graphics", 32811
+        MENUITEM "Chemistry", 32812
+        MENUITEM "Attention", 32813
+        MENUITEM "Actions", 32814
+        MENUITEM "Senses", 32815
+        MENUITEM "Stimuli", 32816
+        MENUITEM "Genetics", 32817
+        MENUITEM "Life changes", 32818
+        MENUITEM "Environment", 32819
+        MENUITEM "User", 32820
+        MENUITEM "OLE events", 32821
+        MENUITEM "Objects", 32822
+        MENUITEM "Brain", 32823
+        MENUITEM "", 0
+        MENUITEM "Log Window", 32869
+    END
+    POPUP "&Ver"
+    BEGIN
+        MENUITEM "&Barra de herramientas", 59392
+        MENUITEM " Barra de &Situación", 59393
+        MENUITEM "", 0
+        MENUITEM "CAOS Console\tCtrl+Shift+C", 32896
+    END
+    POPUP "_IDS_CAMERA_MENU_"
+    BEGIN
+        MENUITEM "&Seguir al norn", 32783
+        MENUITEM "&Desplazamiento suave", 32866
+        MENUITEM "¿&Cuál es mi norn?", 113
+        MENUITEM "", 0
+        MENUITEM "Incluir en la lista de lugares favoritos...", 32839
+        MENUITEM "Quitar de la lista de lugares favoritos...", 32867
+        MENUITEM "", 0
+    END
+    POPUP "_IDS_TOOLS_MENU_"
+    BEGIN
+        MENUITEM "Vista de la criatura", 32771
+        MENUITEM "", 0
+    END
+    POPUP "_IDS_NORNS_MENU_"
+    BEGIN
+        MENUITEM "Ninguno disponible", 32803
+    END
+    POPUP "A&yuda"
+    BEGIN
+        MENUITEM "&Temas de ayuda", 57667
+        MENUITEM "Consejo", 107
+        MENUITEM "", 0
+        MENUITEM "&Información sobre Creatures...", 57664
+    END
+END

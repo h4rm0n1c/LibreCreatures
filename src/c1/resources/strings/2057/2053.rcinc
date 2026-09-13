@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    32832 "Connect to Creatures Wiki Web site\nWeb Connect"
+    32833 ""
+    32834 ""
+    32835 ""
+    32836 ""
+    32837 "Resume Operation\nPlay"
+    32838 "Pause Operation\nPause"
+    32839 "Store current camera position"
+    32840 "kill current norn"
+    32841 ""
+    32842 ""
+    32843 ""
+    32844 ""
+    32845 ""
+    32846 ""
+    32847 ""
+END

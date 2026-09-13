@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    32768 ""
+    32769 ""
+    32770 ""
+    32771 "Voir à quel objet votre norn est en train de penser\nVue de la créature"
+    32772 "Basculer entre agrandissements de la vue\nBasculer taille"
+    32773 ""
+    32774 "Autoriser tous les déplacements autour du monde"
+    32775 ""
+    32776 "Sélectionner les préférences"
+    32777 "Enseigner immédiatement des mots à votre norn"
+    32778 ""
+    32779 ""
+    32780 "Ajouter cet emplacement à votre liste d'endroits préférés"
+    32781 ""
+    32782 ""
+    32783 "Suivre la créature choisie avec la caméra\nSuivre le norn"
+END
