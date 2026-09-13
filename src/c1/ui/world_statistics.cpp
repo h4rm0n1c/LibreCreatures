@@ -75,7 +75,6 @@ int create_world_statistics_frame(WorldStatisticsHost& host) {
         return -1;
     }
 
-    host.apply_statistics_font(kStatisticsFontPointSize);
     const WorldStatisticsRect client = host.client_rect();
     const WorldStatisticsRect display_bounds{
         kDisplayLeftMargin,
@@ -83,7 +82,17 @@ int create_world_statistics_frame(WorldStatisticsHost& host) {
         client.right - kDisplayRightMargin,
         client.bottom - kDisplayBottomMargin,
     };
+    // Native (CWorldStatisticsFrame::OnCreate @ 0x00449c00) creates the
+    // static control first and only sends WM_SETFONT to it afterward --
+    // the font handle is picked (custom Consolas point font, or the stock
+    // DEFAULT_GUI_FONT fallback) and applied to an already-live HWND. This
+    // port's apply_statistics_font folds "create the font" and "send it to
+    // the control" into one call, so create_display must run first or the
+    // SendMessage lands on a not-yet-created window and is silently
+    // dropped -- the control is left with no font applied but, more
+    // importantly, this ordering is what native's own disassembly shows.
     host.create_display("", display_bounds, kDisplayControlId);
+    host.apply_statistics_font(kStatisticsFontPointSize);
     refresh_world_statistics(host);
     host.start_timer(kStatisticsTimerId, kStatisticsTimerIntervalMs);
     return 0;

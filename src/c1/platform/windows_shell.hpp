@@ -1960,6 +1960,16 @@ private:
     ConcreteHost host_{*this};
     CStatic statistics_display_;
     CFont statistics_font_;
+
+public:
+    // This frame has no doc/view relationship of its own -- it is a plain
+    // top-level CFrameWnd, not attached to any document template, so
+    // CFrameWnd::GetActiveDocument() on itself always returns null.  The
+    // view that opened it (create_for's parent) is captured here instead,
+    // the same way open_or_activate_system_information() hands its
+    // document snapshot down rather than expecting the info window to
+    // reach back into the doc/view hierarchy itself.
+    C1WindowsView* owning_view = nullptr;
 };
 
 // The frame published by CMainFrame::CreateObject, mirroring the native
@@ -2198,9 +2208,13 @@ protected:
 
     afx_msg void OnKeyDown(UINT virtual_key, UINT repeat_count, UINT flags);
 
-private:
+public:
+    // C1WorldStatisticsFrame is a separate top-level window with no doc/view
+    // template of its own; it reaches this view's document through here
+    // rather than via CFrameWnd::GetActiveDocument() on itself.
     C1WindowsDocument* document() const;
 
+private:
     creatures1::ui::WorldViewSettings view_settings_{};
     creatures1::ui::SfcViewState view_state_{};
 

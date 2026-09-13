@@ -1211,6 +1211,7 @@ C1WorldStatisticsFrame* active_world_statistics_frame() {
 }
 
 BEGIN_MESSAGE_MAP(C1WorldStatisticsFrame, CFrameWnd)
+    ON_WM_CREATE()
     ON_WM_TIMER()
 END_MESSAGE_MAP()
 
@@ -1220,6 +1221,7 @@ bool C1WorldStatisticsFrame::create_for(CWnd& parent) {
                &parent) == FALSE) {
         return false;
     }
+    owning_view = DYNAMIC_DOWNCAST(C1WindowsView, &parent);
     g_world_statistics_frame = this;
     ShowWindow(SW_SHOW);
     return true;
@@ -1297,9 +1299,13 @@ void C1WorldStatisticsFrame::ConcreteHost::apply_statistics_font(
 creatures1::ui::WorldStatisticsSnapshot
 C1WorldStatisticsFrame::ConcreteHost::read_snapshot() const {
     creatures1::ui::WorldStatisticsSnapshot snapshot{};
-    C1WindowsDocument* document = DYNAMIC_DOWNCAST(
-        C1WindowsDocument,
-        const_cast<C1WorldStatisticsFrame&>(owner_).GetActiveDocument());
+    // This frame is a plain top-level CFrameWnd with no doc/view template
+    // of its own, so CFrameWnd::GetActiveDocument() on itself always
+    // returns null -- the owning view captured at create_for time is used
+    // instead (the same document open_or_activate_world_statistics()'s
+    // own view already has).
+    C1WindowsDocument* document =
+        owner_.owning_view == nullptr ? nullptr : owner_.owning_view->document();
     if (document == nullptr) {
         return snapshot;
     }
