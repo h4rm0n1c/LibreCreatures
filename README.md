@@ -16,13 +16,29 @@ read as an implementation in its own right.
 
 ## What "clean room" means here
 
-The source in `src/` was written from the *recovered behavior* of the CE
-binary -- what each function does, what data it reads and writes, what protocol
-it speaks -- not transcribed from its disassembly or decompiler output. Where a
-type, a struct layout, or a numeric constant could be pinned down from evidence
-(an instruction operand, an on-disk file format, a wire protocol observed live),
-it's implemented to match; where it couldn't, this project says so rather than
-guessing.
+This was not a formal two-team clean-room process where one side never saw the
+original code. The disassembly and decompiled output of the CE binary were
+read and studied extensively -- that reading is how the behavior described
+below was recovered in the first place, and the source and commit history in
+the private research repository this was curated from show that work directly.
+
+What "clean room" means here instead: the C++ in `src/` was not produced by
+copying machine code or pasting decompiler pseudo-C into this tree. It's an
+independent reimplementation, written from the *understanding* that reading
+gained -- what each function does, what data it reads and writes, what
+protocol it speaks -- not a transcription of it. Where a type, a struct
+layout, or a numeric constant could be pinned down from evidence (an
+instruction operand, an on-disk file format, a wire protocol observed live),
+it's implemented to match; where it couldn't, this project says so rather
+than guessing.
+
+This work was carried out in Australia, where analysing a computer program by
+disassembly or decompilation -- including reproducing parts of it in the
+process -- for research, study, or interoperability purposes is lawful under
+the Copyright Act 1968 (Cth). That's a statement of the general legal
+landscape this project relies on, not legal advice about this repository
+specifically; if you're relying on the same basis elsewhere, get your own
+advice for your own jurisdiction.
 
 A handful of small resource images under `src/resources/images/` (an app icon,
 a cursor, and two toolbar strip bitmaps) are shipped as part of the build. No
