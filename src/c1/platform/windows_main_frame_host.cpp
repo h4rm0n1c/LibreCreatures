@@ -402,6 +402,7 @@ BEGIN_MESSAGE_MAP(C1MainFrame, CFrameWnd)
     ON_WM_GETMINMAXINFO()
     ON_WM_INITMENUPOPUP()
     ON_MESSAGE(0x402, OnPipeServerCommand)
+    ON_MESSAGE(0x401, OnShutdownEmbeddedKitTool)
 END_MESSAGE_MAP()
 
 int C1MainFrame::OnCreate(LPCREATESTRUCT create_struct) {
@@ -417,6 +418,16 @@ LRESULT C1MainFrame::OnPipeServerCommand(WPARAM wparam, LPARAM) {
             wparam);
     return creatures1::application::handle_pipe_server_command(
         *this, command_context);
+}
+
+LRESULT C1MainFrame::OnShutdownEmbeddedKitTool(WPARAM tool_index, LPARAM) {
+    // Native: `if (tool_index < 0x14) { ShutdownEmbeddedKitTool(tool_index); }
+    // return 0;` -- 20 embedded-tool slots, same bound as the rest of the
+    // embedded-kit machinery.
+    if (tool_index < 0x14) {
+        shutdown_embedded_kit_tool(static_cast<std::size_t>(tool_index));
+    }
+    return 0;
 }
 
 int C1MainFrame::create_frame_base() {
@@ -712,6 +723,19 @@ void C1MainFrame::invalidate_main_toolbar() {
 }
 
 void C1MainFrame::forward_default_query_new_palette() {
+    // KNOWN DIVERGENCE, not yet fixed: native CMainFrame::OnQueryNewPalette
+    // (0x004218a0) does NOT call CFrameWnd::OnQueryNewPalette() on itself --
+    // the raw disassembly loads g_SFCView into ECX before the call, so it
+    // invokes CWnd::Default() on the SFCView instead, then unconditionally
+    // tail-jumps into CWorldRenderer::RealizePalette() and returns its
+    // result directly (no "was anything realized" branch at all). This
+    // forward-on-self-and-conditionally-invalidate shape is this project's
+    // own approximation, not a match for that unusual cross-window forward.
+    // Left as documented rather than guessed at: the behavior only differs
+    // under legacy 8-bit-palette video modes, which no modern display uses,
+    // and MFC's Default() semantics when called through a different
+    // window's `this` than the one currently dispatching the message are
+    // easy to model wrong without being able to observe it running.
     static_cast<void>(CFrameWnd::OnQueryNewPalette());
 }
 
@@ -733,6 +757,14 @@ void C1MainFrame::forward_default_palette_changed(
     const void* palette_focus_window) {
     const CWnd* focus = static_cast<const CWnd*>(palette_focus_window);
     CFrameWnd::OnPaletteChanged(const_cast<CWnd*>(focus));
+    // KNOWN DIVERGENCE, not yet fixed: same shape as
+    // forward_default_query_new_palette above.  Native
+    // CMainFrame::OnPaletteChanged (0x004218c0) additionally calls
+    // CWnd::Default() on g_SFCView, unconditionally, whenever the focus
+    // window isn't the frame itself -- independent of whether it goes on
+    // to realize the palette.  Not replicated here for the same reason:
+    // 8-bit-palette-only effect, and cross-window Default() semantics
+    // this project can't currently observe running to confirm against.
 }
 
 bool C1MainFrame::palette_focus_is_this_frame(

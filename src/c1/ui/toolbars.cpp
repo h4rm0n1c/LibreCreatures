@@ -45,7 +45,13 @@ void configure_default_buttons(ToolbarPlatform& platform) {
 }
 
 void remove_trailing_empty_buttons(ToolbarPlatform& platform) {
-    std::int32_t last_nonempty = -1;
+    // Native initializes this to 0, not "not found" (-1): if the backward
+    // scan never finds a nonempty button, it leaves button 0 alone rather
+    // than also removing it. Unreachable given configure_default_buttons
+    // always assigns button 0 a nonzero command, but matching it costs
+    // nothing and an all-empty toolbar is exactly the case worth being
+    // exact about.
+    std::int32_t last_nonempty = 0;
     for (std::int32_t index = static_cast<std::int32_t>(kToolbarButtonCount) - 1;
          index >= 0;
          --index) {

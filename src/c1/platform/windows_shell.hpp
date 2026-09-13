@@ -42,6 +42,8 @@
 #include "../ui/caos_console.hpp"
 #include "../ui/classifier_tip.hpp"
 #include "../ui/debug_console.hpp"
+#include "../ui/main_window.hpp"
+#include "../ui/windows.hpp"
 #include "../ui/eye_view.hpp"
 #include "../ui/magic_profiler.hpp"
 #include "../ui/views.hpp"
@@ -311,6 +313,12 @@ protected:
     int OnCreate(LPCREATESTRUCT create_struct);
 
     afx_msg LRESULT OnPipeServerCommand(WPARAM wparam, LPARAM lparam);
+
+    // CMainFrame::OnShutdownEmbeddedKitTool @ 0x00421a10, message 0x401
+    // (WM_USER+1) -- a kit's own shutdown request.  The message-map entry
+    // was never added, so an embedded kit asking to be shut down went to
+    // the default window proc and was silently dropped.
+    afx_msg LRESULT OnShutdownEmbeddedKitTool(WPARAM tool_index, LPARAM);
 
     void OnDestroy();
 
@@ -1629,7 +1637,8 @@ C1CaosConsoleDialog* active_caos_console();
 class C1DebugConsoleDialog final
     : public CDialog,
       public creatures1::ui::DebugConsoleHost,
-      public creatures1::common::DebugLogHost {
+      public creatures1::common::DebugLogHost,
+      public creatures1::ui::WindowPlatform {
 public:
     enum : UINT {
         kLogOutputEdit = 0x3f7,       // 1015
@@ -1709,6 +1718,16 @@ public:
         debug_log_state_ = state;
     }
 
+    // WindowPlatform.  DebugConsoleDialog::OnActivate @ 0x00410bf0 flashes
+    // the window on activation-code 1, then always forwards to the base
+    // class -- previously ported to ui/windows.cpp's on_activate_flash_window
+    // but never wired to a real WM_ACTIVATE handler here.
+    void set_window_always_on_top(bool /*enabled*/) override {}
+    void flash_window() override { FlashWindow(TRUE); }
+    void forward_default_activation(int /*activation_code*/) override {
+        Default();
+    }
+
 protected:
     void DoDataExchange(CDataExchange* exchange) override;
     BOOL OnInitDialog() override;
@@ -1721,6 +1740,8 @@ protected:
     afx_msg void OnCopyThisPage();
     afx_msg void OnToggleMirror();
     afx_msg void OnCloseConsole();
+    afx_msg void OnActivate(UINT activation_state, CWnd* other_window,
+                            BOOL minimized);
     DECLARE_MESSAGE_MAP()
 
 private:
@@ -2201,6 +2222,15 @@ public:
 
     CWnd* owner() const;
 
+    // Stashed by C1TipDialogWindow::OnCtlColor before it calls
+    // dialog_.on_ctl_color(), so forward_default_control_color() can hand
+    // the real WM_CTLCOLOR* parameters to the base class instead of
+    // guessing a brush.  CTipDlg::OnCtlColor @ 0x00443ac0 forwards every
+    // non-tip-text control to CWnd::OnCtlColor and returns *that* brush,
+    // not a fixed one.
+    void set_ctl_color_context(CDC* device_context, CWnd* control,
+                              UINT control_type);
+
 private:
     bool open_key(REGSAM access, HKEY& key) const;
 
@@ -2208,7 +2238,10 @@ private:
     CWnd* owner_ = nullptr;
     C1TipDialogWindow* native_dialog_ = nullptr;
     creatures1::ui::TipDialog* semantic_dialog_ = nullptr;
-    bool tip_brush_requested_ = false;
+    HBRUSH pending_brush_ = nullptr;
+    CDC* ctl_color_dc_ = nullptr;
+    CWnd* ctl_color_control_ = nullptr;
+    UINT ctl_color_type_ = 0;
 };
 
 
@@ -2217,6 +2250,14 @@ public:
     // CWnd::Default is protected; the platform adapter needs it to forward the
     // recovered one-call default-message handlers.
     void forward_default_message() { Default(); }
+
+    // CDialog::OnCtlColor is protected; the platform adapter needs the real
+    // default brush (not a guessed one) for every control CTipDlg::OnCtlColor
+    // doesn't special-case.
+    HBRUSH ForwardDefaultCtlColor(CDC* device_context, CWnd* control,
+                                  UINT control_type) {
+        return CDialog::OnCtlColor(device_context, control, control_type);
+    }
 
     C1TipDialogWindow(C1TipDialogPlatform& platform, creatures1::ui::TipDialog& dialog);
 

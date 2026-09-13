@@ -886,6 +886,12 @@ void WorldRenderer::reset_navigation() {
     smooth_scroll_accumulated_y_ = 0;
     smooth_scroll_step_x_ = 0;
     smooth_scroll_step_y_ = 0;
+    // Native's equivalent reset (CEventBar::OnLButtonDown's
+    // navigation-disable branch, 0x00416da0) also nulls followed_creature
+    // here.  Not replicated: followed_creature_ is currently write-only in
+    // this port (no reader anywhere), so the omission has no observable
+    // effect today.  Set it to nullptr here too if a future reader is
+    // added -- do not assume this field is safe to leave stale then.
 }
 
 void WorldRenderer::set_viewport_origin(int world_x, int world_y) {

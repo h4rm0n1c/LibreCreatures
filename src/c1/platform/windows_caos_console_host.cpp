@@ -67,9 +67,11 @@ void C1MainFrame::show_caos_console() {
 }
 
 void C1CaosConsoleDialog::PostNcDestroy() {
-    if (g_caos_console_dialog == this) {
-        g_caos_console_dialog = nullptr;
-    }
+    // CAOSConsoleDlg::PostNcDestroy @ 0x0040f180 clears the global
+    // unconditionally, then forwards to CWnd::PostNcDestroy before the
+    // deleting destructor -- the base-class forward was missing here.
+    g_caos_console_dialog = nullptr;
+    CDialog::PostNcDestroy();
     delete this;
 }
 

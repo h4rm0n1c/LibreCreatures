@@ -139,20 +139,38 @@ void C1TipDialogPlatform::forward_default_timer() {
 
 
 bool C1TipDialogPlatform::is_tip_control(std::uint32_t control_id) const {
-    return control_id == 1000 || control_id == 1004;
+    // CTipDlg::OnCtlColor @ 0x00443ac0 special-cases only control 0x3ec
+    // (1004, the tip-text static). Control 1000 (the artwork bitmap) and
+    // everything else falls through to the real default handler.
+    return control_id == 1004;
 }
 
 void C1TipDialogPlatform::use_tip_control_brush() {
-    tip_brush_requested_ = true;
+    pending_brush_ = static_cast<HBRUSH>(GetStockObject(WHITE_BRUSH));
 }
 
 void C1TipDialogPlatform::forward_default_control_color() {
-    tip_brush_requested_ = false;
+    // Native: `CWnd::OnCtlColor((CWnd *)this,param_1,param_2,param_3);
+    // return;` -- forwards to the base class and returns *its* brush, not
+    // a fixed one. Every other control (the checkbox, the two buttons,
+    // the artwork bitmap) gets whatever CDialog's own default produces.
+    pending_brush_ =
+        native_dialog_ != nullptr
+            ? native_dialog_->ForwardDefaultCtlColor(
+                  ctl_color_dc_, ctl_color_control_, ctl_color_type_)
+            : nullptr;
 }
 
 HBRUSH C1TipDialogPlatform::requested_brush() const {
-    return tip_brush_requested_ ? static_cast<HBRUSH>(GetStockObject(WHITE_BRUSH))
-                                : static_cast<HBRUSH>(GetStockObject(WHITE_BRUSH));
+    return pending_brush_;
+}
+
+void C1TipDialogPlatform::set_ctl_color_context(CDC* device_context,
+                                                CWnd* control,
+                                                UINT control_type) {
+    ctl_color_dc_ = device_context;
+    ctl_color_control_ = control;
+    ctl_color_type_ = control_type;
 }
 
 void C1TipDialogPlatform::bind(C1TipDialogWindow* dialog, creatures1::ui::TipDialog* semantic_dialog) {
@@ -197,6 +215,7 @@ afx_msg void C1TipDialogWindow::OnPaint() {
 }
 
 afx_msg HBRUSH C1TipDialogWindow::OnCtlColor(CDC* device_context, CWnd* control, UINT control_type) {
+    platform_.set_ctl_color_context(device_context, control, control_type);
     dialog_.on_ctl_color(control == nullptr
                              ? 0
                              : static_cast<std::uint32_t>(

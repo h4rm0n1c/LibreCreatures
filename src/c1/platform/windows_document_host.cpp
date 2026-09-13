@@ -734,14 +734,50 @@ void C1WindowsDocument::rebuild_informative_selection_menu(bool enabled) {
 }
 
 void C1WindowsDocument::update_main_window_title() {
+    // UpdateMainWindowTitleForSelectedCreature @ 0x00422720: title is always
+    // "Creatures", with " - <display name>" appended when a creature is
+    // selected -- never just the bare name.  This previously dropped the
+    // "Creatures" prefix and separator entirely, routing around the
+    // already-correct, already-verified policy in ui/main_window.cpp,
+    // which nothing called.
     C1MainFrame* frame = active_main_frame();
     if (frame == nullptr) {
         return;
     }
-    const creatures1::creatures::Creature* creature =
-        selected_creature();
-    frame->SetWindowTextA(creature == nullptr ? "Creatures"
-                                               : creature->display_name().c_str());
+    class FrameTitleAdapter final : public creatures1::ui::MainWindowApi {
+    public:
+        explicit FrameTitleAdapter(C1MainFrame& frame) : frame_(frame) {}
+        void set_window_title(std::string_view title) override {
+            frame_.SetWindowTextA(std::string(title).c_str());
+        }
+
+    private:
+        C1MainFrame& frame_;
+    } title_adapter(*frame);
+
+    const creatures1::creatures::Creature* creature = selected_creature();
+    class CreatureTitleSource final
+        : public creatures1::ui::SelectedCreatureTitleSource {
+    public:
+        explicit CreatureTitleSource(const creatures1::creatures::Creature& creature)
+            : name_(creature.display_name()) {}
+        std::string_view display_name() const override { return name_; }
+
+    private:
+        // Creature::display_name() returns by value; a string_view can't
+        // safely bind to that temporary, so the name is copied here once
+        // and the view returned refers to this member's storage instead.
+        std::string name_;
+    };
+
+    if (creature == nullptr) {
+        creatures1::ui::update_main_window_title_for_selected_creature(
+            title_adapter, nullptr);
+    } else {
+        CreatureTitleSource title_source(*creature);
+        creatures1::ui::update_main_window_title_for_selected_creature(
+            title_adapter, &title_source);
+    }
 }
 
 bool C1WindowsDocument::eye_view_exists() const {

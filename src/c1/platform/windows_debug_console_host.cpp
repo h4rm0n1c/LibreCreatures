@@ -36,6 +36,7 @@ BEGIN_MESSAGE_MAP(C1DebugConsoleDialog, CDialog)
     ON_BN_CLICKED(C1DebugConsoleDialog::kMirrorButton, OnToggleMirror)
     ON_BN_CLICKED(C1DebugConsoleDialog::kCloseButton, OnCloseConsole)
     ON_EN_CHANGE(C1DebugConsoleDialog::kFilterTextEdit, OnFilterTextChanged)
+    ON_WM_ACTIVATE()
 END_MESSAGE_MAP()
 
 C1DebugConsoleDialog::C1DebugConsoleDialog() : CDialog(144, nullptr) {}
@@ -76,10 +77,19 @@ BOOL C1DebugConsoleDialog::OnInitDialog() {
     return TRUE;
 }
 
+void C1DebugConsoleDialog::OnActivate(UINT activation_state,
+                                      CWnd* /*other_window*/,
+                                      BOOL /*minimized*/) {
+    creatures1::ui::on_activate_flash_window(
+        *this, static_cast<int>(activation_state));
+}
+
 void C1DebugConsoleDialog::PostNcDestroy() {
-    if (g_debug_console_dialog == this) {
-        g_debug_console_dialog = nullptr;
-    }
+    // DebugConsoleDialog::PostNcDestroy @ 0x004106e0 clears the global
+    // unconditionally, invokes the deleting destructor, THEN forwards to
+    // CWnd::PostNcDestroy -- the base-class forward was missing here.
+    g_debug_console_dialog = nullptr;
+    CDialog::PostNcDestroy();
     delete this;
 }
 

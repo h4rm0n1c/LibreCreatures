@@ -1022,11 +1022,9 @@ bool C1SystemInfoWindow::create_for(CWnd& parent) {
 }
 
 void C1SystemInfoWindow::PostNcDestroy() {
-    // ReleaseSystemInfoWindowSingleton @ 00449f10 clears the global first,
-    // then destroys the window.
-    if (g_system_info_window == this) {
-        g_system_info_window = nullptr;
-    }
+    // ReleaseSystemInfoWindowSingleton @ 00449f10 clears the global
+    // unconditionally (not guarded by identity), then destroys the window.
+    g_system_info_window = nullptr;
     delete this;
 }
 

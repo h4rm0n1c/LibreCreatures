@@ -19,7 +19,11 @@ std::int32_t effect_volume_to_slider_position(std::int32_t attenuation) {
     if (attenuation >= kMaximumAttenuation) {
         return kMaximumSliderPosition;
     }
-    if (attenuation < kMinimumAttenuation) {
+    // Native: `if (effect_volume_setting < -4999)`, i.e. <= -5000 goes
+    // straight to 0. A strict `< kMinimumAttenuation` here left exactly
+    // -5000 -- the common clamped floor from normalize_effect_volume --
+    // falling through to the pow() branch and computing 1, not 0.
+    if (attenuation <= kMinimumAttenuation) {
         return kMinimumSliderPosition;
     }
 
