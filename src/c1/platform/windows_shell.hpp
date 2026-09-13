@@ -45,6 +45,7 @@
 #include "../ui/main_window.hpp"
 #include "../ui/windows.hpp"
 #include "../ui/eye_view.hpp"
+#include "../ui/world_statistics.hpp"
 #include "../ui/magic_profiler.hpp"
 #include "../ui/views.hpp"
 #include "../ui/creature_selection.hpp"
@@ -1893,12 +1894,82 @@ private:
     creatures1::scripting::DdeSystemInfoSnapshot info_{};
 };
 
+// CWorldStatisticsFrame @ 0x00449b90-0x00449ef0.  Native's own creation
+// call site could not be found (no menu entry, no OnKeyDown case, no
+// direct or vtable-only xref to its constructor/OnCreate/CloseAndDestroy)
+// despite a real search -- this mirrors the earlier, already-documented
+// OnAgeSelectedCreatureAndSeedWords case: real, working logic with an
+// unconfirmed trigger, possibly an internal QA-only path never wired to
+// a shipped menu or key. The window itself and every value it displays
+// are verified against the decompile; only the "how does a player open
+// it" question is open.  Exposed here via Ctrl+Shift+W, a port-only
+// binding consistent with the existing Ctrl+Shift+M/T/X debug shortcuts,
+// pending a real trigger being found.
+class C1WorldStatisticsFrame final : public CFrameWnd {
+public:
+    bool create_for(CWnd& parent);
+
+    creatures1::ui::WorldStatisticsHost& host() { return host_; }
+
+    // CFrameWnd::OnCreate/Default/PreTranslateMessage are protected; the
+    // nested ConcreteHost below needs to forward through them the same way
+    // C1TipDialogWindow::ForwardDefaultCtlColor does for CDialog::OnCtlColor.
+    int ForwardBaseOnCreate(LPCREATESTRUCT create_struct) {
+        return CFrameWnd::OnCreate(create_struct);
+    }
+    void ForwardDefaultMessage() { Default(); }
+    BOOL ForwardBasePreTranslateMessage(MSG* message) {
+        return CFrameWnd::PreTranslateMessage(message);
+    }
+
+protected:
+    int OnCreate(LPCREATESTRUCT create_struct);
+    afx_msg void OnTimer(UINT_PTR timer_id);
+    BOOL PreTranslateMessage(MSG* message) override;
+    void PostNcDestroy() override;
+    DECLARE_MESSAGE_MAP()
+
+private:
+    class ConcreteHost final : public creatures1::ui::WorldStatisticsHost {
+    public:
+        explicit ConcreteHost(C1WorldStatisticsFrame& owner) : owner_(owner) {}
+
+        int initialise_base_frame() override;
+        creatures1::ui::WorldStatisticsRect client_rect() const override;
+        void create_display(std::string_view initial_text,
+                            const creatures1::ui::WorldStatisticsRect& bounds,
+                            std::uint32_t control_id) override;
+        void apply_statistics_font(int point_size) override;
+        creatures1::ui::WorldStatisticsSnapshot read_snapshot() const override;
+        void set_display_text(std::string_view text) override;
+        void start_timer(std::uint32_t timer_id,
+                         std::uint32_t interval_ms) override;
+        void kill_timer(std::uint32_t timer_id) override;
+        void close_frame() override;
+        void default_window_message() override;
+        bool base_pre_translate(
+            const creatures1::ui::WorldStatisticsKeyMessage& message) override;
+
+        LPCREATESTRUCT pending_create_struct = nullptr;
+        MSG* pending_message = nullptr;
+
+    private:
+        C1WorldStatisticsFrame& owner_;
+    };
+
+    ConcreteHost host_{*this};
+    CStatic statistics_display_;
+    CFont statistics_font_;
+};
+
 // The frame published by CMainFrame::CreateObject, mirroring the native
 // g_CMainFrame.  MFC only assigns m_pMainWnd after OnOpenDocument, so a
 // document loading from the archive must reach the frame this way.
 C1MainFrame* active_main_frame();
 
 C1SystemInfoWindow* active_system_info_window();
+
+C1WorldStatisticsFrame* active_world_statistics_frame();
 
 // Startup diagnostics.  A failure during InitInstance happens before any
 // window exists, so it is written to the debugger and to a log beside the
@@ -2068,6 +2139,9 @@ public:
     void invalidate_main_toolbar() override;
 
     void open_or_activate_system_information() override;
+
+    // Port-only addition; see C1WorldStatisticsFrame's own class comment.
+    void open_or_activate_world_statistics();
 
     void configure_world_update_timer(std::uint32_t) override;
 

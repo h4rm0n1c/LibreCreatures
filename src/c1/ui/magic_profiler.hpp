@@ -21,6 +21,10 @@ struct MagicProfilerSnapshot {
     std::uint32_t object_count = 0;
     std::uint32_t scenery_count = 0;
     std::uint32_t entity_count = 0;
+    // g_script_definition_count: total installed/compiled CAOS script
+    // definitions (native's "Scripts"/"Total Scripts" row -- distinct from
+    // active_script_count, which is the running-macro count).
+    std::uint32_t total_script_count = 0;
     std::uint32_t active_script_count = 0;
     std::uint32_t message_queue_count = 0;
     std::uint32_t delayed_message_count = 0;

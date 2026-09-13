@@ -1,5 +1,10 @@
 #include "windows_shell.hpp"
 
+#include "../scripting/macro.hpp"
+
+#include <map>
+#include <tuple>
+
 namespace creatures1::platform {
 
 void C1WindowsView::toggle_camera_tracking() {
@@ -501,17 +506,112 @@ void C1WindowsView::generate_profiler_report() {
         static_cast<std::uint32_t>(document->scenery_count());
     snapshot.entity_count =
         static_cast<std::uint32_t>(document->entity_count());
+    snapshot.total_script_count =
+        static_cast<std::uint32_t>(creatures1::scripting::g_script_definition_count);
     snapshot.active_script_count =
         static_cast<std::uint32_t>(document->running_macro_count());
     snapshot.stimulus_count =
         static_cast<std::uint32_t>(document->queued_stimulus_count());
+    snapshot.message_queue_count =
+        static_cast<std::uint32_t>(document->immediate_event_count());
+    snapshot.delayed_message_count =
+        static_cast<std::uint32_t>(document->delayed_event_count());
+    // Native: g_world_object_registry's size (CanBeDestroyed/InitializeRuntimeState
+    // both grow it, per its 0x00456f64-adjacent xrefs) -- objects disabled/
+    // orphaned and awaiting cleanup, hence "Death Row".
+    snapshot.death_row_count =
+        static_cast<std::uint32_t>(document->world_object_count());
+    // Native: g_SFCDoc+0x118, i.e. serialized_document_state_words.size() --
+    // confirmed via CEventBar::RemoveObjectFromDisplayList's own 2026-08-22
+    // resolution (the Funeral Kit death-notification queue, 16-slot cap).
+    // "Stuffed Norns" is this project's inherited debug label for that
+    // queue's depth, not a literal word-learning-overflow counter.
+    if (const auto* semantic_document = document->semantic_document();
+        semantic_document != nullptr) {
+        snapshot.stuffed_norn_word_count = static_cast<std::uint32_t>(
+            semantic_document->serialized_document_state_words.size());
+    }
+    // Native: g_active_app_state's smoothed idle-cycle index (the same
+    // value already surfaced via the DDE system-info record).
+    snapshot.smoothed_idle_cycle_time =
+        g_active_app_state == nullptr
+            ? 0.0
+            : static_cast<double>(g_active_app_state->idle_cadence.smoothed_idle_cycle);
     if (g_active_classifier_names != nullptr) {
         snapshot.classifier_names = *g_active_classifier_names;
     }
-    // Held: message/delayed-message queue depths, the death-row and
-    // stuffed-Norn counts, the smoothed idle-cycle time, and the
-    // per-classifier population table have no accessor on the document yet.
-    // They are reported as zero rather than fabricated.
+    // Native (GenerateMagicProfilerReport, 0x00438253-0x004385xx): two
+    // separate tree-aggregation passes, both keyed by (family, genus,
+    // species) decoded from Object::classifier_base the same way the
+    // Eggs count above does.  The first walks the non-scenery object
+    // registry ([0x004704e4]/[0x004704e8], confirmed identical to
+    // document->non_scenery_object_count()/non_scenery_object_at() via
+    // xrefs shared with PointerTool::ProcessPendingInput/SFCDoc::Serialize)
+    // counting population per classifier.  The second walks
+    // g_running_macro_slots ([0x00467dc0], bounded by
+    // g_running_macro_count at [0x00467dac] -- this project's own
+    // g_running_macros) and, for each running macro, reads its owning
+    // object's classifier at owner+4 (native offset+0x98 from the running
+    // slot is the owning Macro*, then +4 is that object's classifier_base
+    // -- here g_running_macros[i]->object_context.script_owner) to count
+    // active scripts per classifier.  The Ghidra DB itself flags the
+    // native tree's construction helper
+    // (MsvcCppEhHandler-adjacent MsvcVector_ConstructFromClassifierProfilerTreeRange,
+    // 0x004395f0) as compiler-generated STL machinery meant to be expressed
+    // with normal standard-library code, so this uses std::map rather than
+    // replicate the red-black tree.
+    {
+        using ClassifierKey = std::tuple<int, int, int>;
+        std::map<ClassifierKey, creatures1::ui::MagicProfilerSnapshot::ClassifierRow>
+            aggregation;
+
+        const auto classifier_key = [](std::uint32_t classifier_base) {
+            const int family = static_cast<int>((classifier_base >> 24) & 0xffu);
+            const int genus = static_cast<int>((classifier_base >> 16) & 0xffu);
+            const int species = static_cast<int>((classifier_base >> 8) & 0xffu);
+            return ClassifierKey{family, genus, species};
+        };
+
+        for (std::size_t index = 0; index < document->non_scenery_object_count();
+             ++index) {
+            const creatures1::objects::Object* object =
+                document->non_scenery_object_at(index);
+            if (object == nullptr) {
+                continue;
+            }
+            const ClassifierKey key = classifier_key(object->classifier_base());
+            creatures1::ui::MagicProfilerSnapshot::ClassifierRow& row =
+                aggregation[key];
+            row.classifier.family = std::get<0>(key);
+            row.classifier.genus = std::get<1>(key);
+            row.classifier.species = std::get<2>(key);
+            ++row.population;
+        }
+
+        for (const creatures1::scripting::Macro* macro :
+             creatures1::scripting::g_running_macros) {
+            if (macro == nullptr) {
+                continue;
+            }
+            const creatures1::objects::Object* owner =
+                macro->object_context.script_owner;
+            if (owner == nullptr) {
+                continue;
+            }
+            const ClassifierKey key = classifier_key(owner->classifier_base());
+            creatures1::ui::MagicProfilerSnapshot::ClassifierRow& row =
+                aggregation[key];
+            row.classifier.family = std::get<0>(key);
+            row.classifier.genus = std::get<1>(key);
+            row.classifier.species = std::get<2>(key);
+            ++row.active_script_count;
+        }
+
+        snapshot.classifier_rows.reserve(aggregation.size());
+        for (auto& [key, row] : aggregation) {
+            snapshot.classifier_rows.push_back(std::move(row));
+        }
+    }
 
     ReportWindow window(*this);
     creatures1::ui::generate_magic_profiler_report(window, snapshot);
@@ -722,6 +822,18 @@ afx_msg void C1WindowsView::OnVScroll(UINT code, UINT position, CScrollBar*) {
 }
 
 afx_msg void C1WindowsView::OnKeyDown(UINT virtual_key, UINT repeat_count, UINT flags) {
+    // NOT a native key binding -- CWorldStatisticsFrame's own real trigger
+    // could not be found (see the class comment on C1WorldStatisticsFrame).
+    // This one case is a port-only addition to make the otherwise-orphaned,
+    // decompile-verified window reachable, kept entirely out of
+    // ui::on_key_down so that function stays an exact match for
+    // SFCView::OnKeyDown and nothing here is mistaken for recovered
+    // native behavior.
+    if (virtual_key == 'W' && (::GetKeyState(VK_CONTROL) & 0x8000) != 0 &&
+        (::GetKeyState(VK_SHIFT) & 0x8000) != 0) {
+        open_or_activate_world_statistics();
+        return;
+    }
     creatures1::ui::on_key_down(view_state_, *this, virtual_key,
                                 repeat_count, flags);
 }
@@ -1080,6 +1192,211 @@ void C1WindowsView::open_or_activate_system_information() {
         g_system_info_window->SetActiveWindow();
     }
     g_system_info_window->set_snapshot(owner->system_info_snapshot());
+}
+
+
+// --- C1WorldStatisticsFrame -------------------------------------------------
+
+namespace {
+C1WorldStatisticsFrame* g_world_statistics_frame = nullptr;
+
+constexpr std::uint32_t kWorldStatisticsDisplayId = 100;
+constexpr int kEggClassifierFamily = 2;
+constexpr int kEggClassifierGenus = 5;
+constexpr int kEggClassifierSpecies = 2;
+} // namespace
+
+C1WorldStatisticsFrame* active_world_statistics_frame() {
+    return g_world_statistics_frame;
+}
+
+BEGIN_MESSAGE_MAP(C1WorldStatisticsFrame, CFrameWnd)
+    ON_WM_TIMER()
+END_MESSAGE_MAP()
+
+bool C1WorldStatisticsFrame::create_for(CWnd& parent) {
+    const RECT rect{0, 0, 320, 260};
+    if (Create(nullptr, "World Statistics", WS_OVERLAPPEDWINDOW, rect,
+               &parent) == FALSE) {
+        return false;
+    }
+    g_world_statistics_frame = this;
+    ShowWindow(SW_SHOW);
+    return true;
+}
+
+int C1WorldStatisticsFrame::OnCreate(LPCREATESTRUCT create_struct) {
+    host_.pending_create_struct = create_struct;
+    const int result = creatures1::ui::create_world_statistics_frame(host_);
+    host_.pending_create_struct = nullptr;
+    return result;
+}
+
+void C1WorldStatisticsFrame::OnTimer(UINT_PTR timer_id) {
+    creatures1::ui::on_world_statistics_timer(
+        host_, static_cast<std::uint32_t>(timer_id));
+}
+
+BOOL C1WorldStatisticsFrame::PreTranslateMessage(MSG* message) {
+    host_.pending_message = message;
+    creatures1::ui::WorldStatisticsKeyMessage key_message{};
+    key_message.message = message->message;
+    key_message.key = static_cast<std::uint32_t>(message->wParam);
+    key_message.control_down = (::GetKeyState(VK_CONTROL) & 0x8000) != 0;
+    const bool handled =
+        creatures1::ui::pretranslate_world_statistics(host_, key_message);
+    host_.pending_message = nullptr;
+    return handled ? TRUE : CFrameWnd::PreTranslateMessage(message);
+}
+
+void C1WorldStatisticsFrame::PostNcDestroy() {
+    if (g_world_statistics_frame == this) {
+        g_world_statistics_frame = nullptr;
+    }
+    delete this;
+}
+
+int C1WorldStatisticsFrame::ConcreteHost::initialise_base_frame() {
+    return owner_.ForwardBaseOnCreate(pending_create_struct);
+}
+
+creatures1::ui::WorldStatisticsRect
+C1WorldStatisticsFrame::ConcreteHost::client_rect() const {
+    RECT rect{};
+    owner_.GetClientRect(&rect);
+    return {rect.left, rect.top, rect.right, rect.bottom};
+}
+
+void C1WorldStatisticsFrame::ConcreteHost::create_display(
+    std::string_view initial_text,
+    const creatures1::ui::WorldStatisticsRect& bounds,
+    std::uint32_t control_id) {
+    const RECT rect{bounds.left, bounds.top, bounds.right, bounds.bottom};
+    owner_.statistics_display_.Create(
+        std::string(initial_text).c_str(), WS_CHILD | WS_VISIBLE | SS_LEFT,
+        rect, &owner_, static_cast<UINT>(control_id));
+}
+
+void C1WorldStatisticsFrame::ConcreteHost::apply_statistics_font(
+    int point_size) {
+    // Native: CFont::CreatePointFont(0x55, "Consolas", nullptr); on failure
+    // (or if the created font's handle is null), fall back to the stock
+    // DEFAULT_GUI_FONT.
+    HFONT font_handle = nullptr;
+    if (owner_.statistics_font_.CreatePointFont(point_size, "Consolas",
+                                                nullptr) &&
+        owner_.statistics_font_.GetSafeHandle() != nullptr) {
+        font_handle = static_cast<HFONT>(owner_.statistics_font_.GetSafeHandle());
+    } else {
+        font_handle = static_cast<HFONT>(::GetStockObject(DEFAULT_GUI_FONT));
+    }
+    owner_.statistics_display_.SendMessage(
+        WM_SETFONT, reinterpret_cast<WPARAM>(font_handle), TRUE);
+}
+
+creatures1::ui::WorldStatisticsSnapshot
+C1WorldStatisticsFrame::ConcreteHost::read_snapshot() const {
+    creatures1::ui::WorldStatisticsSnapshot snapshot{};
+    C1WindowsDocument* document = DYNAMIC_DOWNCAST(
+        C1WindowsDocument,
+        const_cast<C1WorldStatisticsFrame&>(owner_).GetActiveDocument());
+    if (document == nullptr) {
+        return snapshot;
+    }
+
+    snapshot.creature_count =
+        static_cast<int>(document->creature_count());
+    snapshot.object_count = static_cast<int>(document->object_count());
+    snapshot.entity_count = static_cast<int>(document->entity_count());
+    snapshot.total_script_count =
+        static_cast<int>(creatures1::scripting::g_script_definition_count);
+    snapshot.active_script_count =
+        static_cast<int>(document->running_macro_count());
+    snapshot.death_row_count =
+        static_cast<int>(document->world_object_count());
+    if (const auto* semantic_document = document->semantic_document();
+        semantic_document != nullptr) {
+        snapshot.stuffed_norn_count = static_cast<int>(
+            semantic_document->serialized_document_state_words.size());
+    }
+    snapshot.message_count = static_cast<int>(document->immediate_event_count());
+    snapshot.delayed_message_count =
+        static_cast<int>(document->delayed_event_count());
+    snapshot.stimulus_count =
+        static_cast<int>(document->queued_stimulus_count());
+    snapshot.idle_time =
+        g_active_app_state == nullptr
+            ? 0
+            : g_active_app_state->idle_cadence.smoothed_idle_cycle;
+
+    // Native's live loop (RefreshStatistics @ 0x00449d40): non-scenery
+    // objects whose classifier is family 2 / genus 5 / species 2 (egg),
+    // with the byte at object offset 0x4c set.  Object's own recovered
+    // layout puts offset 0x4c (76) exactly on tick_enabled -- so this is
+    // simply "how many egg objects are still ticking" (a hatched or
+    // otherwise-removed egg stops ticking and drops out of the count),
+    // not a separate unhatched flag.
+    std::uint32_t egg_count = 0;
+    for (std::size_t index = 0; index < document->non_scenery_object_count();
+         ++index) {
+        const creatures1::objects::Object* object =
+            document->non_scenery_object_at(index);
+        if (object == nullptr) {
+            continue;
+        }
+        const std::uint32_t classifier = object->classifier_base() & 0xffffff00u;
+        constexpr std::uint32_t kEggClassifier =
+            (static_cast<std::uint32_t>(kEggClassifierFamily) << 24) |
+            (static_cast<std::uint32_t>(kEggClassifierGenus) << 16) |
+            (static_cast<std::uint32_t>(kEggClassifierSpecies) << 8);
+        if (classifier == kEggClassifier && object->tick_enabled()) {
+            ++egg_count;
+        }
+    }
+    snapshot.egg_count = static_cast<int>(egg_count);
+
+    return snapshot;
+}
+
+void C1WorldStatisticsFrame::ConcreteHost::set_display_text(
+    std::string_view text) {
+    owner_.statistics_display_.SetWindowTextA(std::string(text).c_str());
+}
+
+void C1WorldStatisticsFrame::ConcreteHost::start_timer(
+    std::uint32_t timer_id, std::uint32_t interval_ms) {
+    owner_.SetTimer(static_cast<UINT_PTR>(timer_id), interval_ms, nullptr);
+}
+
+void C1WorldStatisticsFrame::ConcreteHost::kill_timer(
+    std::uint32_t timer_id) {
+    owner_.KillTimer(static_cast<UINT_PTR>(timer_id));
+}
+
+void C1WorldStatisticsFrame::ConcreteHost::close_frame() {
+    owner_.DestroyWindow();
+}
+
+void C1WorldStatisticsFrame::ConcreteHost::default_window_message() {
+    owner_.ForwardDefaultMessage();
+}
+
+bool C1WorldStatisticsFrame::ConcreteHost::base_pre_translate(
+    const creatures1::ui::WorldStatisticsKeyMessage& /*message*/) {
+    return pending_message != nullptr &&
+           owner_.ForwardBasePreTranslateMessage(pending_message) != FALSE;
+}
+
+void C1WindowsView::open_or_activate_world_statistics() {
+    if (g_world_statistics_frame == nullptr) {
+        auto* window = new C1WorldStatisticsFrame();
+        if (!window->create_for(*this)) {
+            delete window;
+            return;
+        }
+    } else {
+        g_world_statistics_frame->SetActiveWindow();
+    }
 }
 
 
