@@ -27,4 +27,4 @@ static_assert(sizeof(C1GoalDirectionActionCandidateScoreTable) == 86,
 
 extern unsigned int g_goal_direction_drive_scale_factors[16];
 extern C1GoalDirectionActionCandidateScoreTable
-    C1GoalDirectionActionCandidateScoreTable_0045424c;
+    g_goal_direction_action_candidate_scores;

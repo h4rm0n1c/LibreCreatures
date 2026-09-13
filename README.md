@@ -83,9 +83,10 @@ src/c1/
   sound/          The sound-cache/mixer policy layer
   ui/             Views, toolbars, dialogs
   world/          Map, room, and world-tick runtime
-include/          Small build-support headers the source depends on (scalar
-                  type aliases matching the recovered naming convention,
-                  cross-cutting declarations)
+include/          A small number of cross-cutting declarations more than one
+                  subsystem depends on (a couple of shared data tables, and
+                  the module-global variables genuinely referenced from more
+                  than one translation unit)
 
 The `c1/` nesting under `src/` is deliberate, not an accident of how this repo
 was assembled: it leaves room for a `src/c2/` or `src/c3/` clean-room lane

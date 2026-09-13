@@ -58,7 +58,7 @@ C1InteractionPosePair g_interaction_pose_pairs_ascii_0_to_5[22] = {
 };
 
 C1GoalDirectionActionCandidateScoreTable
-    C1GoalDirectionActionCandidateScoreTable_0045424c = {
+    g_goal_direction_action_candidate_scores = {
         {27, 27, 2, 2, -1, -1},
         {0, 0},
         {1, 2, 1, 4, 10, 11},

@@ -71,11 +71,6 @@ target_include_directories(Creatures PRIVATE
     ${SOURCE_ROOT}
 )
 
-# The recovered source spells its own scalar types the way Ghidra's
-# decompiler does (byte/word/dword/undefined4/...) via include/ghidra_prelude.hpp,
-# included from every header that needs them. That is a real, load-bearing
-# naming convention this project inherited from the RE process, not leftover
-# tool output -- see include/ghidra_prelude.hpp's own header comment.
 
 target_link_libraries(Creatures PRIVATE
     # MFC, ANSI/MBCS (not the "u" Unicode variant) -- the original is an

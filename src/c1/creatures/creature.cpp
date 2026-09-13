@@ -1847,7 +1847,7 @@ void Creature::update_goal_direction(const CreatureGoalDirectionHost& world) {
     const world::WorldRect movement_bounds = skeleton_.movement_bounds();
     const bool goal_above = selected.world_y < movement_bounds.min_y;
     const bool goal_below = movement_bounds.max_y < selected.world_y;
-    const auto& table = C1GoalDirectionActionCandidateScoreTable_0045424c;
+    const auto& table = g_goal_direction_action_candidate_scores;
     const auto* horizontal_scores =
         &table.goal_horizontal_relation_score_by_candidate[0][0];
     const auto* selected_goal_scores =
