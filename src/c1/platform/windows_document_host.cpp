@@ -1313,6 +1313,18 @@ void C1WindowsDocument::tick_non_scenery_object(std::size_t index) {
         throw std::out_of_range("C1 non-scenery object registry index");
     }
 
+    // Creature is not itself an Object subtype in this port (it holds its
+    // Skeleton -- which IS an Object -- as a member, per Skeleton's own
+    // class comment); the registry stores &creature.skeleton(), so the
+    // reverse lookup below is how a ticked Skeleton is recognized as
+    // belonging to a live Creature.  See WindowsCreatureUpdateHost's class
+    // comment for why this case was missing entirely.
+    if (auto* creature = mutable_creature_for_object(*object)) {
+        WindowsCreatureUpdateHost host(*this);
+        creature->update(host, *this);
+        return;
+    }
+
     if (auto* lift = dynamic_cast<creatures1::objects::Lift*>(object)) {
         WindowsCallButtonRuntimeHost host(*this);
         lift->tick(host);

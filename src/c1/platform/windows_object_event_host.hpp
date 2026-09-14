@@ -390,6 +390,53 @@ private:
     WindowsCreatureScriptEventHost events_;
 };
 
+// The per-tick Creature update (Object vtable slot 41, native's real
+// CCreature::Tick body) -- SFCDoc::UpdateWorld's generic non-scenery Tick
+// walk (tick_non_scenery_object below) had no case for a Creature at all,
+// so this was never called: gait/pose animation, eye-blink randomization,
+// motion-link tracking, age-tick advancement, unbounded-position handling,
+// and the sleep-indicator bubble's positioning/events all silently never
+// ran, for every creature, every tick.  Also drives Object::update_sound
+// (Creature::update's first line), so this is the same reason creature
+// sound never played.
+class WindowsCreatureUpdateHost final
+    : public creatures1::creatures::CreatureUpdateHost {
+public:
+    explicit WindowsCreatureUpdateHost(C1WindowsDocument& document)
+        : document_(document) {}
+
+    // CreatureUnboundedWorldPositionHost.
+    bool read_view_input_and_clear_pending_flag(
+        creatures1::creatures::UnboundedWorldPositionInput& out) override;
+    creatures1::objects::Object& object_for_creature(
+        creatures1::creatures::Creature& creature) const override;
+    void move_to_and_redraw(creatures1::objects::Object& object, int world_x,
+                            int world_y) override;
+    void update_pointer_tool_unbounded_position_and_redraw() override;
+
+    // ObjectImmediateEventQueueHost.
+    void queue_immediate_event(creatures1::objects::Object& source,
+                               creatures1::objects::Object& target,
+                               creatures1::objects::ObjectEventId event_id,
+                               std::uint32_t argument) override;
+
+    // CreaturePoseAnimationHost.
+    int render_plane(const creatures1::objects::Object& object) const override;
+    void queue_dirty_world_rect(
+        const creatures1::world::WorldRect& bounds) override;
+
+    // CreatureUpdateHost's own.
+    void dispatch_sleep_indicator_event(
+        creatures1::objects::Object& indicator,
+        creatures1::objects::ObjectEventId event_id,
+        creatures1::objects::Object* source, std::uint32_t argument) override;
+    void initialize_sleep_indicator(
+        creatures1::objects::Object& indicator) override;
+
+private:
+    C1WindowsDocument& document_;
+};
+
 // CreatureHeardWordsHost and CreatureWordLearningHost serve queued events 6
 // and 7.  Both only have to resolve the source object's word storage; the
 // tokenizer, learned-word update and speech policy are Creature-owned.

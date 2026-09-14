@@ -15,7 +15,31 @@ constexpr std::uint32_t kWorldUpdateControlState = 9;
 constexpr std::uint32_t kMaxWorldUpdateIntervalMs = 300;
 constexpr std::size_t kSoundChannelCount = 0x20;
 constexpr std::uint32_t kFavouritePlaceMenuIdBase = 0x8053;
-constexpr std::uint32_t kMinimumWorldUpdateIntervalMs = 1;
+// Native (SFCDoc::On{Open,New}Document, confirmed via raw disassembly)
+// floors an unset interval to literally 1ms here -- but that 1ms request
+// is not what a real player ever experienced.  A minidump-driven live
+// comparison against the genuine, unmodified reference Creatures.exe
+// (same machine, same Wine setup, same save) measured native's actual
+// pace at ~90.2ms/tick even though its own code requests 1ms: native's
+// own per-tick cost (period-appropriate rendering/GDI/MFC overhead) is
+// itself the real bottleneck, not the timer request. This project's own
+// tick body is measurably ~7x lighter, so the identical "request 1ms"
+// logic instead bottlenecks on Windows' own SetTimer granularity floor
+// (~12ms observed) -- ~7x the intended pace, confirmed by an exploding
+// creature population (age/incubation/conception are all tick-gated).
+// This is a real behavioral difference from native, not a native
+// characteristic merely exposed by faster hardware: the reference exe
+// does not exhibit it on the same hardware. 90ms happens to already
+// exist as this project's own "select_slow_mode" constant
+// (world/update_timer.cpp's kSlowModeIntervalMs) -- given how closely it
+// matches the measured native pace, "slow mode" was almost certainly
+// mislabeled and is actually native's real, only-ever-reached default.
+// This default is used only when nothing has explicitly set an interval
+// (a fresh session, no speed command issued yet); the explicit
+// user-facing decrement-to-1ms floor in world/update_timer.cpp is left
+// untouched, since that really is a deliberate native ludicrous-speed
+// feature reachable only by repeatedly requesting it.
+constexpr std::uint32_t kDefaultWorldUpdateIntervalMs = 90;
 constexpr std::uint32_t kMaximumWorldUpdateIntervalMs = 300;
 constexpr std::uint32_t kDefaultMaxNorns = 10;
 constexpr std::uint32_t kWorldTickPhaseCount = 16;
@@ -208,7 +232,7 @@ bool Document::open_document(DocumentOpenHost& host, std::string_view path) {
 
     std::uint32_t interval_ms = host.world_update_timer_interval_ms();
     if (interval_ms == 0) {
-        interval_ms = kMinimumWorldUpdateIntervalMs;
+        interval_ms = kDefaultWorldUpdateIntervalMs;
     } else if (interval_ms > kMaximumWorldUpdateIntervalMs) {
         interval_ms = kMaximumWorldUpdateIntervalMs;
     }
@@ -253,7 +277,7 @@ bool Document::on_new_document(DocumentNewWorldHost& host) {
 
     std::uint32_t interval_ms = host.world_update_timer_interval_ms();
     if (interval_ms == 0) {
-        interval_ms = kMinimumWorldUpdateIntervalMs;
+        interval_ms = kDefaultWorldUpdateIntervalMs;
     } else if (interval_ms > kMaximumWorldUpdateIntervalMs) {
         interval_ms = kMaximumWorldUpdateIntervalMs;
     }

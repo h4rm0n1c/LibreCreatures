@@ -655,6 +655,74 @@ void WindowsCreaturePickupDropHost::dispatch_script_event(
     events_.dispatch_script_event(creature, source, event_id, argument);
 }
 
+// --- WindowsCreatureUpdateHost ----------------------------------------------
+
+bool WindowsCreatureUpdateHost::read_view_input_and_clear_pending_flag(
+    creatures1::creatures::UnboundedWorldPositionInput& out) {
+    C1MainFrame* frame = active_main_frame();
+    C1WindowsView* view = frame == nullptr ? nullptr : active_c1_view(*frame);
+    if (view == nullptr) {
+        return false;
+    }
+    creatures1::ui::SfcViewState& state = view->view_state();
+    out.mouse_client_x = state.mouse_client_x;
+    out.mouse_client_y = state.mouse_client_y;
+    out.viewport_left = document_.viewport_left();
+    out.viewport_top = document_.renderer_viewport_top();
+    const bool had_pending = state.pending_input_flags != 0;
+    state.pending_input_flags = 0;
+    return had_pending;
+}
+
+creatures1::objects::Object& WindowsCreatureUpdateHost::object_for_creature(
+    creatures1::creatures::Creature& creature) const {
+    return document_.object_for_creature(creature);
+}
+
+void WindowsCreatureUpdateHost::move_to_and_redraw(
+    creatures1::objects::Object& object, int world_x, int world_y) {
+    document_.move_to_and_redraw(object, world_x, world_y);
+}
+
+void WindowsCreatureUpdateHost::
+    update_pointer_tool_unbounded_position_and_redraw() {
+    C1MainFrame* frame = active_main_frame();
+    C1WindowsView* view = frame == nullptr ? nullptr : active_c1_view(*frame);
+    if (view != nullptr) {
+        view->update_pointer_tool_unbounded_position_and_redraw();
+    }
+}
+
+void WindowsCreatureUpdateHost::queue_immediate_event(
+    creatures1::objects::Object& source, creatures1::objects::Object& target,
+    creatures1::objects::ObjectEventId event_id, std::uint32_t argument) {
+    document_.queue_immediate_object_event(source, target, event_id, argument);
+}
+
+int WindowsCreatureUpdateHost::render_plane(
+    const creatures1::objects::Object& object) const {
+    return const_cast<creatures1::objects::Object&>(object).render_plane();
+}
+
+void WindowsCreatureUpdateHost::queue_dirty_world_rect(
+    const creatures1::world::WorldRect& bounds) {
+    document_.queue_renderer_dirty_world_rect(bounds);
+}
+
+void WindowsCreatureUpdateHost::dispatch_sleep_indicator_event(
+    creatures1::objects::Object& indicator,
+    creatures1::objects::ObjectEventId event_id,
+    creatures1::objects::Object* source, std::uint32_t argument) {
+    document_.queue_immediate_object_event(
+        indicator, source == nullptr ? indicator : *source, event_id,
+        argument);
+}
+
+void WindowsCreatureUpdateHost::initialize_sleep_indicator(
+    creatures1::objects::Object& indicator) {
+    indicator.initialize_runtime_state(document_);
+}
+
 // --- WindowsCreatureWordsHost ----------------------------------------------
 
 char* WindowsCreatureWordsHost::mutable_words_for_event(
