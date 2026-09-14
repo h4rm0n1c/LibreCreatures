@@ -78,7 +78,8 @@ void Entity::serialize(EntityArchive& archive) {
 }
 
 void Entity::get_current_image_bounds(world::WorldRect& out_bounds) const {
-    if (current_image_index_ > gallery_->image_count) {
+    if (gallery_ == nullptr || gallery_->images == nullptr ||
+        current_image_index_ >= gallery_->image_count) {
         out_bounds = {};
         return;
     }

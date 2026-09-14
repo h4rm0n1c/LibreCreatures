@@ -123,11 +123,20 @@ public:
     void set_image_index(std::uint8_t index) { current_image_index_ = index; }
     void set_image_index_base(std::uint8_t index) { image_index_base_ = index; }
 
+    bool has_current_image() const {
+        return gallery_ != nullptr && gallery_->images != nullptr &&
+               current_image_index_ < gallery_->image_count;
+    }
+
     const display::Image& current_image() const {
         return gallery_->images[current_image_index_];
     }
-    int current_image_width() const { return current_image().width(); }
-    int current_image_height() const { return current_image().height(); }
+    int current_image_width() const {
+        return has_current_image() ? current_image().width() : 0;
+    }
+    int current_image_height() const {
+        return has_current_image() ? current_image().height() : 0;
+    }
 
     char* parse_image_sequence(char* sequence_text) {
         char* read_cursor = sequence_text + 1;
@@ -183,7 +192,11 @@ public:
         while (*read_cursor != ']') {
             const int image_index =
                 static_cast<int>(*read_cursor) + image_index_base_ - '0';
-            preload_host.preload_image(gallery_->images[image_index]);
+            if (gallery_ != nullptr && gallery_->images != nullptr &&
+                image_index >= 0 &&
+                static_cast<std::uint32_t>(image_index) < gallery_->image_count) {
+                preload_host.preload_image(gallery_->images[image_index]);
+            }
             ++read_cursor;
         }
         return read_cursor + 2;

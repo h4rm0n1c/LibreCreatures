@@ -15,6 +15,14 @@ namespace creatures1::objects {
 namespace {
 constexpr int kWorldWidth = 0x20a0;
 
+char* skip_image_sequence_text(char* sequence_text) {
+    char* read_cursor = sequence_text + 1;
+    while (*read_cursor != ']') {
+        ++read_cursor;
+    }
+    return read_cursor + 2;
+}
+
 // Recovered from Creatures.exe .rdata at 0x004579a4.  Each row is the exact
 // three-byte selector record consumed by BHVR's index*3 addressing.
 constexpr std::array<std::array<std::int8_t, 3>, 5>
@@ -543,19 +551,19 @@ void SimpleObject::handle_queued_event_2(
 }
 
 int SimpleObject::sound_source_x() const {
-    return entity_->world_x();
+    return entity_ == nullptr ? 0 : entity_->world_x();
 }
 
 int SimpleObject::sound_source_y() const {
-    return entity_->world_y();
+    return entity_ == nullptr ? 0 : entity_->world_y();
 }
 
 int SimpleObject::current_visual_width() const {
-    return entity_->current_image_width();
+    return entity_ == nullptr ? 0 : entity_->current_image_width();
 }
 
 int SimpleObject::current_visual_height() const {
-    return entity_->current_image_height();
+    return entity_ == nullptr ? 0 : entity_->current_image_height();
 }
 
 int SimpleObject::wrap_world_x_once(int x) {
@@ -569,11 +577,17 @@ int SimpleObject::wrap_world_x_once(int x) {
 }
 
 void SimpleObject::move_to(int world_x, int world_y) {
+    if (entity_ == nullptr) {
+        return;
+    }
     entity_->set_world_x(wrap_world_x_once(world_x));
     entity_->set_world_y(world_y);
 }
 
 void SimpleObject::move_by(int delta_x, int delta_y) {
+    if (entity_ == nullptr) {
+        return;
+    }
     entity_->set_world_x(
         wrap_world_x_once(entity_->world_x() + delta_x));
     entity_->set_world_y(entity_->world_y() + delta_y);
@@ -600,9 +614,11 @@ void SimpleObject::move_by_and_redraw(
 }
 
 bool SimpleObject::get_bounds(world::WorldRect* out_bounds) const {
+    if (out_bounds == nullptr) {
+        return false;
+    }
     const Entity* object_entity = entity_.get();
-    const display::Gallery* gallery = object_entity->gallery();
-    if (object_entity->current_image_index() > gallery->image_count) {
+    if (object_entity == nullptr || !object_entity->has_current_image()) {
         *out_bounds = {};
         return true;
     }
@@ -615,7 +631,7 @@ bool SimpleObject::get_bounds(world::WorldRect* out_bounds) const {
 }
 
 int SimpleObject::render_plane() const {
-    return entity_->render_plane();
+    return entity_ == nullptr ? 0 : entity_->render_plane();
 }
 
 ObjectEventId SimpleObject::click_event_id_at_world_position(
@@ -624,6 +640,9 @@ ObjectEventId SimpleObject::click_event_id_at_world_position(
     (void)world_y;
     const std::size_t state = static_cast<std::size_t>(
         current_interaction_event_id());
+    if (state >= click_event_for_interaction_state.size()) {
+        return ObjectEventId::event_0;
+    }
     return static_cast<ObjectEventId>(
         static_cast<std::int32_t>(click_event_for_interaction_state[state]));
 }
@@ -631,6 +650,9 @@ ObjectEventId SimpleObject::click_event_id_at_world_position(
 void SimpleObject::get_part_center(int* out_x, int* out_y,
                                    std::int32_t part_index) const {
     (void)part_index;
+    if (out_x == nullptr || out_y == nullptr || entity_ == nullptr) {
+        return;
+    }
     const int half_width = entity_->current_image_width() / 2;
     const int half_height = entity_->current_image_height() / 2;
     *out_x = wrap_world_x_once(entity_->world_x() + half_width);
@@ -640,32 +662,40 @@ void SimpleObject::get_part_center(int* out_x, int* out_y,
 char* SimpleObject::parse_image_sequence(char* sequence_text,
                                           int part_index) {
     (void)part_index;
-    return entity_->parse_image_sequence(sequence_text);
+    return entity_ == nullptr
+               ? Object::parse_image_sequence(sequence_text, part_index)
+               : entity_->parse_image_sequence(sequence_text);
 }
 
 bool SimpleObject::image_sequence_is_empty(int part_index) const {
     (void)part_index;
-    return entity_->image_sequence_is_empty();
+    return entity_ == nullptr || entity_->image_sequence_is_empty();
 }
 
 int SimpleObject::relative_image_index(int part_index) const {
     (void)part_index;
-    return entity_->relative_image_index();
+    return entity_ == nullptr ? 0 : entity_->relative_image_index();
 }
 
 char* SimpleObject::preload_image_sequence(
     char* sequence_text, int part_index,
     ImagePreloadHost& preload_host) const {
     (void)part_index;
-    return entity_->preload_image_sequence(sequence_text, preload_host);
+    return entity_ == nullptr
+               ? skip_image_sequence_text(sequence_text)
+               : entity_->preload_image_sequence(sequence_text, preload_host);
 }
 
 bool SimpleObject::set_relative_image_index(
     CaosValue relative_index, int part_index,
     EntityImageSequenceRenderHost& redraw_host) {
     (void)part_index;
+    if (entity_ == nullptr || entity_->gallery() == nullptr) {
+        return false;
+    }
     const display::Gallery* object_gallery = entity_->gallery();
-    if (relative_index >= object_gallery->image_count) {
+    if (object_gallery->images == nullptr ||
+        relative_index >= object_gallery->image_count) {
         return false;
     }
 
@@ -676,7 +706,9 @@ bool SimpleObject::set_relative_image_index(
 
 void SimpleObject::set_image_index(
     std::uint8_t image_index, EntityImageSequenceRenderHost& redraw_host) {
-    entity_->set_image_index_and_redraw(image_index, redraw_host);
+    if (entity_ != nullptr) {
+        entity_->set_image_index_and_redraw(image_index, redraw_host);
+    }
 }
 
 } // namespace creatures1::objects

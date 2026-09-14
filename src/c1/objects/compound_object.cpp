@@ -5,6 +5,16 @@
 
 namespace creatures1::objects {
 
+namespace {
+char* skip_image_sequence_text(char* sequence_text) {
+    char* read_cursor = sequence_text + 1;
+    while (*read_cursor != ']') {
+        ++read_cursor;
+    }
+    return read_cursor + 2;
+}
+} // namespace
+
 CompoundObject::CompoundObject(CompoundObjectLifetimeHost* lifetime_host)
     : lifetime_host_(lifetime_host) {
     initialize_part_storage();
@@ -78,19 +88,23 @@ void CompoundObject::initialize_part_storage() {
 }
 
 int CompoundObject::sound_source_x() const {
-    return parts_[0].entity->world_x();
+    return parts_[0].entity == nullptr ? 0 : parts_[0].entity->world_x();
 }
 
 int CompoundObject::sound_source_y() const {
-    return parts_[0].entity->world_y();
+    return parts_[0].entity == nullptr ? 0 : parts_[0].entity->world_y();
 }
 
 int CompoundObject::current_visual_width() const {
-    return parts_[0].entity->current_image_width();
+    return parts_[0].entity == nullptr
+               ? 0
+               : parts_[0].entity->current_image_width();
 }
 
 int CompoundObject::current_visual_height() const {
-    return parts_[0].entity->current_image_height();
+    return parts_[0].entity == nullptr
+               ? 0
+               : parts_[0].entity->current_image_height();
 }
 
 int CompoundObject::wrap_world_x_once(int x) {
@@ -186,6 +200,9 @@ void CompoundObject::queue_primary_part_dirty_rect(
 }
 
 bool CompoundObject::get_bounds(world::WorldRect* out_bounds) const {
+    if (out_bounds == nullptr) {
+        return false;
+    }
     if (parts_[0].entity == nullptr) {
         *out_bounds = {};
         return true;
@@ -195,7 +212,7 @@ bool CompoundObject::get_bounds(world::WorldRect* out_bounds) const {
 }
 
 int CompoundObject::render_plane() const {
-    return parts_[0].entity->render_plane();
+    return parts_[0].entity == nullptr ? 0 : parts_[0].entity->render_plane();
 }
 
 void CompoundObject::set_part_bounds(
@@ -215,12 +232,19 @@ void CompoundObject::serialize(ObjectArchive& archive) {
     Object::serialize(archive);
 
     if (archive.is_loading()) {
-        part_count_ = archive.read_int32();
-        for (int index = 0; index < part_count_; ++index) {
-            parts_[index].entity.reset(static_cast<Entity*>(
-                archive.read_object_reference("Entity")));
-            parts_[index].local_x_offset = archive.read_int32();
-            parts_[index].local_y_offset = archive.read_int32();
+        const int serialized_part_count = archive.read_int32();
+        part_count_ = std::clamp(serialized_part_count, 0,
+                                 static_cast<int>(kPartCapacity));
+        for (int index = 0; index < serialized_part_count; ++index) {
+            Entity* entity = static_cast<Entity*>(
+                archive.read_object_reference("Entity"));
+            const int local_x_offset = archive.read_int32();
+            const int local_y_offset = archive.read_int32();
+            if (index < part_count_) {
+                parts_[index].entity.reset(entity);
+                parts_[index].local_x_offset = local_x_offset;
+                parts_[index].local_y_offset = local_y_offset;
+            }
         }
         for (world::WorldRect& bounds : part_bounds_) {
             archive.read_bytes(&bounds, sizeof(bounds));
@@ -301,6 +325,9 @@ void CompoundObject::handle_queued_event_2(
 
 ObjectEventId CompoundObject::click_event_id_at_world_position(
     int world_x, int world_y) const {
+    if (parts_[0].entity == nullptr) {
+        return static_cast<ObjectEventId>(~std::uint32_t{0});
+    }
     const Entity& primary_entity = *parts_[0].entity;
     int relative_world_x = world_x - primary_entity.world_x();
     if (relative_world_x < 0) {
@@ -314,6 +341,10 @@ ObjectEventId CompoundObject::click_event_id_at_world_position(
          ++index) {
         const int bounds_index = click_event_bounds_index.part_bounds_index[index];
         if (bounds_index == -1) {
+            continue;
+        }
+        if (bounds_index < 0 ||
+            static_cast<std::size_t>(bounds_index) >= part_bounds_.size()) {
             continue;
         }
         const world::WorldRect& bounds = part_bounds_[bounds_index];
@@ -335,13 +366,20 @@ ObjectEventId CompoundObject::click_event_id_at_world_position(
 void CompoundObject::get_part_center(
     int* out_world_x, int* out_world_y,
     std::int32_t creature_event_index) const {
+    if (out_world_x == nullptr || out_world_y == nullptr ||
+        parts_[0].entity == nullptr || creature_event_index < 0 ||
+        static_cast<std::size_t>(creature_event_index) >=
+            creature_event_config.event_config_value.size()) {
+        return;
+    }
     const int configured_bounds_index = creature_event_config.event_config_value[
         static_cast<std::size_t>(creature_event_index)];
     int min_x = 0;
     int min_y = 0;
     int max_x = parts_[0].entity->current_image_width();
     int max_y = parts_[0].entity->current_image_height();
-    if (configured_bounds_index != -1) {
+    if (configured_bounds_index >= 0 &&
+        static_cast<std::size_t>(configured_bounds_index) < part_bounds_.size()) {
         const world::WorldRect& bounds = part_bounds_[configured_bounds_index];
         min_x = bounds.min_x;
         min_y = bounds.min_y;
@@ -359,6 +397,10 @@ void CompoundObject::get_part_center(
 bool CompoundObject::set_relative_image_index(
     CaosValue relative_index, int part_index,
     EntityImageSequenceRenderHost& redraw_host) {
+    if (part_index < 0 ||
+        static_cast<std::size_t>(part_index) >= parts_.size()) {
+        return false;
+    }
     Entity* entity = parts_[part_index].entity.get();
     if (entity == nullptr) {
         return false;
@@ -371,6 +413,10 @@ bool CompoundObject::set_relative_image_index(
 void CompoundObject::set_image_index(
     std::uint8_t image_index, int part_index,
     EntityImageSequenceRenderHost& redraw_host) {
+    if (part_index < 0 ||
+        static_cast<std::size_t>(part_index) >= parts_.size()) {
+        return;
+    }
     Entity* entity = parts_[part_index].entity.get();
     if (entity != nullptr) {
         entity->set_image_index_and_redraw(image_index, redraw_host);
@@ -379,19 +425,39 @@ void CompoundObject::set_image_index(
 
 char* CompoundObject::parse_image_sequence(char* sequence_text,
                                             int part_index) {
+    if (part_index < 0 ||
+        static_cast<std::size_t>(part_index) >= parts_.size() ||
+        parts_[part_index].entity == nullptr) {
+        return Object::parse_image_sequence(sequence_text, part_index);
+    }
     return parts_[part_index].entity->parse_image_sequence(sequence_text);
 }
 
 bool CompoundObject::image_sequence_is_empty(int part_index) const {
+    if (part_index < 0 ||
+        static_cast<std::size_t>(part_index) >= parts_.size() ||
+        parts_[part_index].entity == nullptr) {
+        return true;
+    }
     return parts_[part_index].entity->image_sequence_is_empty();
 }
 
 int CompoundObject::relative_image_index(int part_index) const {
+    if (part_index < 0 ||
+        static_cast<std::size_t>(part_index) >= parts_.size() ||
+        parts_[part_index].entity == nullptr) {
+        return 0;
+    }
     return parts_[part_index].entity->relative_image_index();
 }
 
 char* CompoundObject::preload_image_sequence(
     char* sequence_text, int part_index, ImagePreloadHost& preload_host) const {
+    if (part_index < 0 ||
+        static_cast<std::size_t>(part_index) >= parts_.size() ||
+        parts_[part_index].entity == nullptr) {
+        return skip_image_sequence_text(sequence_text);
+    }
     return parts_[part_index].entity->preload_image_sequence(sequence_text,
                                                               preload_host);
 }

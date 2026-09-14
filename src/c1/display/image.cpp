@@ -3,7 +3,9 @@
 #include "blit.hpp"
 #include "../world/geometry.hpp"
 
+#include <algorithm>
 #include <cstring>
+#include <iterator>
 #include <new>
 
 namespace creatures1::display {
@@ -37,6 +39,9 @@ void Image::configure(Gallery* gallery,
                       int height,
                       std::uint32_t sprite_data_offset,
                       std::uint8_t cache_flags) {
+    if (resident_cache_ != nullptr) {
+        release_pixel_data(*resident_cache_);
+    }
     gallery_ = gallery;
     width_ = width;
     height_ = height;
@@ -46,33 +51,81 @@ void Image::configure(Gallery* gallery,
     cache_prev_ = nullptr;
     cache_next_ = nullptr;
     resident_cache_ = nullptr;
+    lru_position_valid_ = false;
     pixel_data_.reset();
 }
 
 void Image::release_pixel_data(PixelCacheState& cache) {
-    if (!is_pixel_data_resident()) {
+    // An Image can only be unlinked from the cache that loaded it.  In
+    // particular, do not let a mismatched caller corrupt a second cache.
+    if (resident_cache_ != nullptr && resident_cache_ != &cache) {
         return;
     }
 
-    if (cache_prev_ != nullptr) {
-        cache_prev_->cache_next_ = cache_next_;
-    } else {
-        cache.lru_head = cache_next_;
+    auto entry = lru_position_valid_
+                     ? lru_position_
+                     : cache.lru_entries.end();
+    if (entry != cache.lru_entries.end() && *entry != this) {
+        entry = cache.lru_entries.end();
     }
-    if (cache_next_ != nullptr) {
-        cache_next_->cache_prev_ = cache_prev_;
-    } else {
-        cache.lru_tail = cache_prev_;
+    if (entry == cache.lru_entries.end()) {
+        entry = std::find(cache.lru_entries.begin(),
+                          cache.lru_entries.end(), this);
+    }
+    if (entry != cache.lru_entries.end()) {
+        Image* previous = entry == cache.lru_entries.begin()
+                              ? nullptr
+                              : *std::prev(entry);
+        auto next_entry = std::next(entry);
+        Image* next = next_entry == cache.lru_entries.end()
+                          ? nullptr
+                          : *next_entry;
+        if (previous != nullptr) {
+            previous->cache_next_ = next;
+        } else {
+            cache.lru_head = next;
+        }
+        if (next != nullptr) {
+            next->cache_prev_ = previous;
+        } else {
+            cache.lru_tail = previous;
+        }
+        cache.lru_entries.erase(entry);
+    } else if (!is_pixel_data_resident()) {
+        // A failed/partially rolled-back insertion must not leave a stale
+        // canonical entry that makes eviction retry the same non-resident
+        // image forever.  There is no allocation/accounting to release in
+        // this branch; only remove the orphaned list node.
+        return;
+    }
+    if (cache.lru_entries.empty()) {
+        cache.lru_head = nullptr;
+        cache.lru_tail = nullptr;
+    }
+
+    if (!is_pixel_data_resident()) {
+        cache_prev_ = nullptr;
+        cache_next_ = nullptr;
+        lru_position_valid_ = false;
+        return;
     }
 
     clear_flag(ImageCacheFlag::pixel_data_resident);
     cache_prev_ = nullptr;
     cache_next_ = nullptr;
     resident_cache_ = nullptr;
+    lru_position_valid_ = false;
     pixel_data_.reset();
-    cache.bytes_used -= static_cast<std::uint32_t>(
+    const std::uint32_t allocation_size = static_cast<std::uint32_t>(
         resident_allocation_size(width_, height_));
-    --cache.entry_count;
+    if (cache.bytes_used >= allocation_size) {
+        cache.bytes_used -= allocation_size;
+    } else {
+        cache.bytes_used = 0;
+    }
+    if (cache.entry_count != 0) {
+        --cache.entry_count;
+    }
 }
 
 std::uint8_t* Image::get_pixel_data(
@@ -80,32 +133,82 @@ std::uint8_t* Image::get_pixel_data(
     SpriteFileCache& sprite_files,
     const SpriteFileSearchPaths& paths,
     BinaryResourceFileSystem& files) {
-    lru_stamp_ = ++cache.access_stamp;
     if (!has_flag(ImageCacheFlag::owns_pixel_data_directly) &&
         !is_pixel_data_resident()) {
+        lru_stamp_ = ++cache.access_stamp;
         return load_pixel_data(cache, sprite_files, paths, files);
     }
 
-    if (is_pixel_data_resident() && cache.lru_head != this) {
-        if (cache_prev_ != nullptr) {
-            cache_prev_->cache_next_ = cache_next_;
-        } else {
-            cache.lru_head = cache_next_;
-        }
-        if (cache_next_ != nullptr) {
-            cache_next_->cache_prev_ = cache_prev_;
-        } else {
-            cache.lru_tail = cache_prev_;
+    if (is_pixel_data_resident()) {
+        // A resident image belongs to exactly one cache.  Returning its
+        // pixels for a foreign cache is safe; relinking it there is not.
+        if (resident_cache_ != &cache) {
+            return pixel_data_.get();
         }
 
-        cache_prev_ = nullptr;
-        cache_next_ = cache.lru_head;
-        if (cache.lru_head != nullptr) {
-            cache.lru_head->cache_prev_ = this;
-        } else {
-            cache.lru_tail = this;
+        lru_stamp_ = ++cache.access_stamp;
+        auto entry = lru_position_valid_
+                         ? lru_position_
+                         : cache.lru_entries.end();
+        if (entry != cache.lru_entries.end() && *entry != this) {
+            entry = cache.lru_entries.end();
         }
-        cache.lru_head = this;
+        if (entry == cache.lru_entries.end()) {
+            entry = std::find(cache.lru_entries.begin(),
+                              cache.lru_entries.end(), this);
+        }
+        if (entry != cache.lru_entries.end() &&
+            entry != cache.lru_entries.begin()) {
+            auto old_head = cache.lru_entries.begin();
+            Image* previous = *std::prev(entry);
+            Image* next = std::next(entry) == cache.lru_entries.end()
+                              ? nullptr
+                              : *std::next(entry);
+            previous->cache_next_ = next;
+            if (next != nullptr) {
+                next->cache_prev_ = previous;
+            } else {
+                cache.lru_tail = previous;
+            }
+            cache.lru_entries.splice(cache.lru_entries.begin(),
+                                     cache.lru_entries, entry);
+            lru_position_ = cache.lru_entries.begin();
+            lru_position_valid_ = true;
+            cache_prev_ = nullptr;
+            cache_next_ = *old_head;
+            (*old_head)->cache_prev_ = this;
+            cache.lru_head = this;
+        } else if (entry == cache.lru_entries.end()) {
+            // Recover a missing canonical entry without following the stale
+            // Image link fields that caused the observed crash.
+            lru_position_ = cache.lru_entries.insert(
+                cache.lru_entries.begin(), this);
+            lru_position_valid_ = true;
+            cache_prev_ = nullptr;
+            cache_next_ = cache.lru_entries.size() > 1
+                              ? *std::next(cache.lru_entries.begin())
+                              : nullptr;
+            if (cache_next_ != nullptr) {
+                cache_next_->cache_prev_ = this;
+            } else {
+                cache.lru_tail = this;
+            }
+            cache.lru_head = this;
+        } else {
+            lru_position_ = entry;
+            lru_position_valid_ = true;
+            cache_prev_ = nullptr;
+            auto next_entry = std::next(entry);
+            cache_next_ = next_entry == cache.lru_entries.end()
+                              ? nullptr
+                              : *next_entry;
+            if (cache_next_ != nullptr) {
+                cache_next_->cache_prev_ = this;
+            } else {
+                cache.lru_tail = this;
+            }
+            cache.lru_head = this;
+        }
     }
     return pixel_data_.get();
 }
@@ -132,6 +235,13 @@ bool Image::remap_palette_indices(
 
 void Image::serialize(ImageArchive& archive) {
     if (archive.is_loading()) {
+        if (resident_cache_ != nullptr) {
+            release_pixel_data(*resident_cache_);
+        }
+        cache_prev_ = nullptr;
+        cache_next_ = nullptr;
+        resident_cache_ = nullptr;
+        lru_position_valid_ = false;
         gallery_ = archive.read_gallery();
         cache_flags_ = archive.read_byte();
         width_ = archive.read_int32();
@@ -283,10 +393,15 @@ std::uint8_t* Image::load_pixel_data(
                 pixel_data_ = std::move(pixel_buffer);
                 cache.bytes_used += static_cast<std::uint32_t>(allocation_size);
                 ++cache.entry_count;
+                lru_position_ = cache.lru_entries.insert(
+                    cache.lru_entries.begin(), this);
+                lru_position_valid_ = true;
                 cache_prev_ = nullptr;
-                cache_next_ = cache.lru_head;
-                if (cache.lru_head != nullptr) {
-                    cache.lru_head->cache_prev_ = this;
+                cache_next_ = cache.lru_entries.size() > 1
+                                  ? *std::next(cache.lru_entries.begin())
+                                  : nullptr;
+                if (cache_next_ != nullptr) {
+                    cache_next_->cache_prev_ = this;
                 } else {
                     cache.lru_tail = this;
                 }
@@ -298,10 +413,22 @@ std::uint8_t* Image::load_pixel_data(
             }
         }
 
-        Image* candidate = cache.lru_tail;
-        while (candidate != nullptr &&
-               candidate->has_flag(ImageCacheFlag::cache_protected)) {
-            candidate = candidate->cache_prev_;
+        // The canonical list is authoritative.  If a previous failed
+        // insertion left this image listed while non-resident, discard that
+        // node before retrying so the next eviction pass can make progress.
+        auto stale_entry = std::find(cache.lru_entries.begin(),
+                                     cache.lru_entries.end(), this);
+        if (stale_entry != cache.lru_entries.end()) {
+            release_pixel_data(cache);
+        }
+
+        Image* candidate = nullptr;
+        for (auto entry = cache.lru_entries.rbegin();
+             entry != cache.lru_entries.rend(); ++entry) {
+            if (!(*entry)->has_flag(ImageCacheFlag::cache_protected)) {
+                candidate = *entry;
+                break;
+            }
         }
         if (candidate == nullptr) {
             return nullptr;

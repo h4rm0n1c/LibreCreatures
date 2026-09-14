@@ -2280,6 +2280,21 @@ std::uint8_t* C1WindowsDocument::current_image_pixels(
     return pixels;
 }
 
+void C1WindowsDocument::preload_image(
+    const creatures1::display::Image& image) {
+    if (resources_ == nullptr) {
+        return;
+    }
+
+    // Entity's preload walk is const because it only selects images.  The
+    // cache operation itself is mutable state owned by the document.
+    const_cast<creatures1::display::Image&>(image).get_pixel_data(
+        pixel_cache_, sprite_files_,
+        {resource_paths_[kImageDirectoryIndex],
+         resource_paths_[kImageDirectoryIndex]},
+        *resources_);
+}
+
 const std::uint8_t* C1WindowsDocument::charset_glyph_rows(
     std::uint8_t character_code) const {
     // 128 glyphs of 12 rows by 6 columns fill the 0x2400-byte raster block.
@@ -4019,10 +4034,25 @@ bool C1WindowsDocument::ArchiveHost::compatible_class(std::string_view actual, s
                actual == "Creature";
     }
     if (requested == "SimpleObject") {
-        return actual == "PointerTool" || actual == "Bubble";
+        // CallButton, PointerTool, and Bubble all carry the SimpleObject
+        // base record.  MFC's IsKindOf accepts any of those leaf records when
+        // a SimpleObject reference is read; rejecting CallButton here loses
+        // the lift/button relationship during archive load.
+        return actual == "CallButton" || actual == "PointerTool" ||
+               actual == "Bubble";
     }
     if (requested == "CompoundObject") {
-        return actual == "Blackboard";
+        // Vehicle and Lift extend CompoundObject, while Blackboard is the
+        // other concrete compound leaf.  The requested class is a base-class
+        // constraint, not an exact runtime-class selector.
+        return actual == "Vehicle" || actual == "Lift" ||
+               actual == "Blackboard";
+    }
+    if (requested == "Vehicle") {
+        // Lift is the only concrete class below Vehicle.  Keep this explicit
+        // because MFC reference validation is used for more than the current
+        // call-button path.
+        return actual == "Lift";
     }
     return false;
 }

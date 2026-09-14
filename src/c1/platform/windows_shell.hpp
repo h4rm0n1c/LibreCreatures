@@ -573,6 +573,7 @@ class C1WindowsDocument final
       public creatures1::scripting::ScriptDefinitionInstallHost,
       public creatures1::application::EyeViewApplicationHost,
       public creatures1::objects::SimpleObjectBubbleHost,
+      public creatures1::objects::ImagePreloadHost,
       public creatures1::objects::EntityRasterHost,
       public creatures1::objects::BubbleConstructionHost,
       public creatures1::objects::SimpleObjectPlacementHost,
@@ -1115,6 +1116,7 @@ public:
     std::uint8_t* current_image_pixels(creatures1::objects::Entity& entity,
                                        int& out_width,
                                        int& out_height) override;
+    void preload_image(const creatures1::display::Image& image) override;
     const std::uint8_t* charset_glyph_rows(
         std::uint8_t character_code) const override;
     int charset_glyph_advance_width(

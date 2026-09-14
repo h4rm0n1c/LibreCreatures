@@ -803,6 +803,16 @@ char* WindowsMacroHost::preload_object_image_sequence(
     std::int32_t part_index) {
     // CAOS `prld` is the native Object virtual at slot 39; the returned
     // pointer is the interpreter's next script cursor.
+    if (auto* compound =
+            dynamic_cast<creatures1::objects::CompoundObject*>(&object)) {
+        return compound->preload_image_sequence(
+            sequence_text, static_cast<int>(part_index), document_);
+    }
+    if (auto* simple =
+            dynamic_cast<creatures1::objects::SimpleObject*>(&object)) {
+        return simple->preload_image_sequence(
+            sequence_text, static_cast<int>(part_index), document_);
+    }
     return object.preload_image_sequence(sequence_text,
                                          static_cast<int>(part_index));
 }

@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <list>
 #include <memory>
 
 namespace creatures1::world {
@@ -33,6 +34,11 @@ struct PixelCacheState {
     std::uint32_t bytes_used = 0;
     Image* lru_head = nullptr;
     Image* lru_tail = nullptr;
+
+    // The link fields on Image are a native-layout-compatible view of this
+    // order.  They are deliberately not the source of truth: a stale link
+    // must never be dereferenced while relinking or evicting an image.
+    std::list<Image*> lru_entries;
 };
 
 // The MFC CArchive object protocol is supplied by the archive adapter.  The
@@ -122,6 +128,8 @@ private:
     Image* cache_prev_ = nullptr;
     Image* cache_next_ = nullptr;
     PixelCacheState* resident_cache_ = nullptr;
+    std::list<Image*>::iterator lru_position_;
+    bool lru_position_valid_ = false;
 };
 
 // A gallery owns the fixed Image array described by the C1 sprite metadata
