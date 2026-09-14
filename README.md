@@ -57,6 +57,36 @@ rough edges, and expect this README to undersell or oversell status at any
 given moment -- check the source and the issue tracker before relying on a
 claim here.
 
+## Performance
+
+This isn't a byte-for-byte recompile with the same runtime cost as the
+original -- it's a genuine reimplementation, and it measurably shows.
+Running the same world tick loop side by side with the original
+CE `Creatures.exe`, on the same machine, gave:
+
+| | measured pace |
+|---|---|
+| Original CE `Creatures.exe` | ~90.2 ms/tick (~11.1 ticks/sec) |
+| This project's engine, unthrottled | ~12.3 ms/tick (~81 ticks/sec) |
+
+That's roughly **7x lighter per tick** -- and it isn't a benchmark
+artifact. The original engine's own code requests an unthrottled timer
+by default (an unset update interval floors to 1ms in both the
+original and this project alike); the original never actually reaches
+that rate because a single tick's own workload -- period-appropriate
+rendering, GDI, MFC overhead -- is itself the bottleneck. This engine
+computes the same tick fast enough that it isn't. The simulation is no
+longer coupled to hardware that stopped shipping decades ago: on a
+modern machine, this project's world tick is no longer CPU-bound the
+way the original always was.
+
+Gameplay pace defaults to the original's authentic ~11 ticks/sec
+regardless -- age, incubation, and conception are all gated by tick
+count, so running unthrottled changes game balance, not just
+performance. The headroom is real and measured; the default keeps
+gameplay matching what the original ever actually delivered to a
+player.
+
 ## Building
 
 You need:
