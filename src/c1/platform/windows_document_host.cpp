@@ -509,6 +509,11 @@ void C1WindowsDocument::remove_from_renderable_set(
     renderables().erase(skeleton);
 }
 
+void C1WindowsDocument::remove_from_renderable_set(
+    creatures1::objects::CompoundObject& object) {
+    renderables().erase(object);
+}
+
 void C1WindowsDocument::unregister_from_object_registry(
     creatures1::creatures::Skeleton& skeleton) {
     if (world_runtime_ == nullptr) {
@@ -522,6 +527,21 @@ void C1WindowsDocument::unregister_from_object_registry(
         }
     }
     world_runtime_->remove_world_object(skeleton);
+}
+
+void C1WindowsDocument::unregister_from_object_registry(
+    creatures1::objects::CompoundObject& object) {
+    if (world_runtime_ == nullptr) {
+        return;
+    }
+    for (std::size_t index = 0; index < world_runtime_->object_count();
+         ++index) {
+        if (world_runtime_->object_at(index) == &object) {
+            world_runtime_->remove_object_at(index);
+            break;
+        }
+    }
+    world_runtime_->remove_world_object(object);
 }
 
 void C1WindowsDocument::release_gallery(
@@ -3251,7 +3271,12 @@ void C1WindowsDocument::update_view_anchored_objects() {
 bool C1WindowsDocument::selected_creature_is_edit_object() const { return false; }
 
 
-bool C1WindowsDocument::selected_creature_is_bounded() const { return false; }
+bool C1WindowsDocument::selected_creature_is_bounded() const {
+    const creatures1::creatures::Creature* creature = selected_creature();
+    return creature != nullptr &&
+           creature->skeleton().bounds_mode() !=
+               creatures1::objects::Object::BoundsMode::unbounded_1;
+}
 
 
 bool C1WindowsDocument::selected_creature_down_foot(int& world_x, int& world_y) const {

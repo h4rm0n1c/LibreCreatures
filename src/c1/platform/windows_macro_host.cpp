@@ -2023,6 +2023,7 @@ creatures1::objects::Object* WindowsNewObjectHost::create_compound_object(
         request.sprite_file_id,
         static_cast<int>(request.header_record_index), request.image_count,
         request.cache_protected, *this);
+    object->set_lifetime_host(&document_);
     return adopt(std::move(object));
 }
 
@@ -2034,6 +2035,7 @@ creatures1::objects::Object* WindowsNewObjectHost::create_vehicle(
         request.sprite_file_id,
         static_cast<int>(request.header_record_index), request.image_count,
         *this);
+    vehicle->set_lifetime_host(&document_);
     return adopt(std::move(vehicle));
 }
 
@@ -2049,6 +2051,7 @@ creatures1::objects::Object* WindowsNewObjectHost::create_blackboard(
         static_cast<std::uint8_t>(request.text_render_config_2),
         static_cast<std::uint8_t>(request.tile_x),
         static_cast<std::uint8_t>(request.tile_y), *this);
+    blackboard->set_lifetime_host(&document_);
     return adopt(std::move(blackboard));
 }
 
@@ -2080,6 +2083,7 @@ creatures1::objects::Object* WindowsNewObjectHost::create_lift(
         static_cast<std::uint32_t>(request.object_file_id),
         static_cast<int>(request.header_record_index), request.image_count,
         *this);
+    lift->set_lifetime_host(&document_);
     creatures1::objects::Lift* raw = lift.get();
     creatures1::objects::Object* adopted = adopt(std::move(lift));
     if (adopted != nullptr) {
