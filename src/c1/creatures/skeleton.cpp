@@ -1064,6 +1064,22 @@ int Skeleton::sprite_bounds_min_y() const {
     return sprite_bounds.min_y;
 }
 
+int Skeleton::sound_source_x() const {
+    return sprite_bounds.min_x;
+}
+
+int Skeleton::sound_source_y() const {
+    return sprite_bounds.min_y;
+}
+
+int Skeleton::current_visual_width() const {
+    return sprite_bounds.max_x - sprite_bounds.min_x;
+}
+
+int Skeleton::current_visual_height() const {
+    return sprite_bounds.max_y - sprite_bounds.min_y;
+}
+
 void Skeleton::translate_by(int delta_x, int delta_y) {
     auto translate_part = [delta_x, delta_y](BodyPart& part) {
         part.set_world_x(wrap_world_x_once(part.world_x() + delta_x));

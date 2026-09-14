@@ -223,6 +223,19 @@ public:
     std::uint32_t classifier_base() const { return Object::classifier_base(); }
     int sprite_bounds_min_x() const;
     int sprite_bounds_min_y() const;
+    // Native Skeleton::vftable slots 30-33 (GetSpriteBoundsMinX/MinY/Width/
+    // Height @ 0x00406d70/0x00406d80/0x00406d20/0x00406d30) override
+    // Object's sound-source/visual-size virtuals directly with
+    // sprite_bounds' own min_x/min_y and max-min width/height -- confirmed
+    // via disassembly of Skeleton's real vftable at 0x0045ac8c. Without
+    // these overrides every Creature falls through to Object's base stubs
+    // (always 0), which explains every creature reporting position (0,0)
+    // and size (0,0) to CAOS (`posl`/`post`, sound panning/attenuation) and
+    // to any other virtual-based caller of these four members.
+    int sound_source_x() const override;
+    int sound_source_y() const override;
+    int current_visual_width() const override;
+    int current_visual_height() const override;
 
     std::unique_ptr<Body> body;
     std::array<LimbPart*, kLimbChainCount> limb_chain_heads{};
