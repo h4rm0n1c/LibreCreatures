@@ -2313,7 +2313,8 @@ public:
 
     void forward_default_control_color() override;
 
-    void paint_tip(std::string_view text) override;
+    void paint_tip(std::string_view text,
+                   void* paint_device_context = nullptr) override;
     int show_modal(creatures1::ui::TipDialog& dialog) override;
 
     void close_dialog() override;

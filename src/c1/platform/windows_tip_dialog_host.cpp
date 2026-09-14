@@ -1,6 +1,12 @@
 #include "windows_shell.hpp"
 
 namespace creatures1::platform {
+namespace {
+
+constexpr UINT kTipArtworkResource = 103;
+constexpr UINT kTipHeaderResource = 109;
+
+}  // namespace
 
 C1NativeTipFile::C1NativeTipFile(std::string path) : path_(std::move(path)) {
     file_ = std::fopen(path_.c_str(), "r");
@@ -211,7 +217,7 @@ afx_msg void C1TipDialogWindow::OnNextTip() {
 
 afx_msg void C1TipDialogWindow::OnPaint() {
     CPaintDC paint_dc(this);
-    dialog_.on_paint();
+    dialog_.on_paint(&paint_dc);
 }
 
 afx_msg HBRUSH C1TipDialogWindow::OnCtlColor(CDC* device_context, CWnd* control, UINT control_type) {
@@ -251,10 +257,67 @@ void C1TipDialogPlatform::update_data(bool save_and_validate) {
     }
 }
 
-void C1TipDialogPlatform::paint_tip(std::string_view text) {
-    if (native_dialog_ != nullptr) {
-        native_dialog_->SetDlgItemTextA(1004, std::string(text).c_str());
+void C1TipDialogPlatform::paint_tip(std::string_view text,
+                                    void* paint_device_context) {
+    if (native_dialog_ == nullptr) {
+        return;
     }
+
+    if (paint_device_context == nullptr) {
+        native_dialog_->SetDlgItemTextA(1004, std::string(text).c_str());
+        return;
+    }
+
+    auto* paint_dc = static_cast<CDC*>(paint_device_context);
+    CWnd* tip_control = native_dialog_->GetDlgItem(1000);
+    if (paint_dc == nullptr || tip_control == nullptr) {
+        return;
+    }
+
+    CRect tip_control_rect;
+    tip_control->GetWindowRect(&tip_control_rect);
+    native_dialog_->ScreenToClient(&tip_control_rect);
+    ::FillRect(paint_dc->GetSafeHdc(), &tip_control_rect,
+               static_cast<HBRUSH>(GetStockObject(WHITE_BRUSH)));
+
+    const LPCSTR bitmap_resource = MAKEINTRESOURCEA(kTipArtworkResource);
+    const HINSTANCE resource_instance =
+        AfxFindResourceHandle(bitmap_resource, RT_BITMAP);
+    const HBITMAP bitmap_handle =
+        ::LoadBitmapA(resource_instance, bitmap_resource);
+    if (bitmap_handle == nullptr) {
+        return;
+    }
+
+    CBitmap bitmap;
+    bitmap.Attach(bitmap_handle);
+    BITMAP bitmap_info{};
+    if (bitmap.GetBitmap(&bitmap_info) == 0) {
+        return;
+    }
+
+    CDC memory_dc;
+    if (!memory_dc.CreateCompatibleDC(paint_dc)) {
+        return;
+    }
+    CBitmap* previous_bitmap = memory_dc.SelectObject(&bitmap);
+    if (previous_bitmap == nullptr) {
+        return;
+    }
+
+    tip_control_rect.bottom = tip_control_rect.top + bitmap_info.bmHeight;
+    paint_dc->BitBlt(tip_control_rect.left, tip_control_rect.top,
+                     tip_control_rect.Width(),
+                     tip_control_rect.Height(), &memory_dc, 0, 0,
+                     SRCCOPY);
+
+    CStringA header;
+    header.LoadStringA(kTipHeaderResource);
+    tip_control_rect.left += bitmap_info.bmWidth;
+    paint_dc->DrawTextA(header.GetString(), header.GetLength(),
+                        &tip_control_rect, DT_SINGLELINE | DT_VCENTER);
+
+    memory_dc.SelectObject(previous_bitmap);
 }
 
 int C1TipDialogPlatform::show_modal(creatures1::ui::TipDialog& dialog) {

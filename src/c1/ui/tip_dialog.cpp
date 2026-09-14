@@ -112,11 +112,11 @@ void TipDialog::on_ok() {
     platform_.write_registry_dword(kTipStartup, show_at_startup_ ? 1 : 0);
 }
 
-void TipDialog::on_paint() {
+void TipDialog::on_paint(void* paint_device_context) {
     // The bitmap, CDC, stock brush, and text drawing are all native GDI/MFC
     // objects.  The platform adapter owns those representations; C1 owns the
     // fact that the current tip is what gets painted.
-    platform_.paint_tip(current_tip_text_);
+    platform_.paint_tip(current_tip_text_, paint_device_context);
 }
 
 void show_startup_tip_dialog(TipDialogPlatform& platform) {

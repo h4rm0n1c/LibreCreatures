@@ -46,7 +46,8 @@ public:
     virtual bool is_tip_control(std::uint32_t control_id) const = 0;
     virtual void use_tip_control_brush() = 0;
     virtual void forward_default_control_color() = 0;
-    virtual void paint_tip(std::string_view text) = 0;
+    virtual void paint_tip(std::string_view text,
+                           void* paint_device_context = nullptr) = 0;
     virtual int show_modal(TipDialog& dialog) = 0;
     virtual void close_dialog() = 0;
 };
@@ -60,7 +61,7 @@ public:
     void on_next_tip();
     void on_ctl_color(std::uint32_t control_id);
     void on_ok();
-    void on_paint();
+    void on_paint(void* paint_device_context = nullptr);
 
     // Reads the next non-comment tip, rewinding at EOF as the original does.
     bool read_next_tip_text();
