@@ -777,6 +777,22 @@ bool WindowsMacroHost::set_object_relative_image_index(
     std::int32_t part_index) {
     // CAOS `pose` is the native Object virtual at slot 37.  A false result
     // rewinds the consumed command so the scheduler retries it next tick.
+    // SimpleObject and CompoundObject carry the render host on their concrete
+    // implementations; calling the base virtual here would accept the pose
+    // without changing the displayed image.
+    WindowsEntityImageSequenceRenderHost redraw_host(document_);
+    if (auto* compound =
+            dynamic_cast<creatures1::objects::CompoundObject*>(&object)) {
+        return compound->set_relative_image_index(
+            static_cast<creatures1::objects::CaosValue>(relative_index),
+            static_cast<int>(part_index), redraw_host);
+    }
+    if (auto* simple =
+            dynamic_cast<creatures1::objects::SimpleObject*>(&object)) {
+        return simple->set_relative_image_index(
+            static_cast<creatures1::objects::CaosValue>(relative_index),
+            static_cast<int>(part_index), redraw_host);
+    }
     return object.set_relative_image_index(
         static_cast<creatures1::objects::CaosValue>(relative_index),
         static_cast<int>(part_index));

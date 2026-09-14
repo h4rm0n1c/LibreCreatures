@@ -82,9 +82,9 @@ struct CompoundObjectCreatureEventConfig {
     //
     // Six, not three.  CompoundObject::Serialize @ 00424b30 runs its config
     // loop until `5 < index` after the increment, which is six iterations in
-    // both the read and write branches, confirmed independently against a
-    // real World.sfc parsed all the way to remaining=0.  An earlier reading
-    // said three and this project inherited that; three under-reads twelve
+    // both the read and write branches, and re_work/tools/parse_sfc.py reads
+    // six here while parsing a real World.sfc to remaining=0.  The Ghidra
+    // plate said three and the port inherited that; three under-reads twelve
     // bytes per CompoundObject and desynchronises the whole document stream.
     std::array<int, 6> event_config_value{{-1, -1, -1, -1, -1, -1}};
 };

@@ -3264,23 +3264,21 @@ MacroControlFlowResult Macro::execute_control_flow_command(
         if (!push_value(*saved_cursor) || !push_value(*count - 1)) {
             return MacroControlFlowResult::execution_terminated;
         }
-        // Native's real REPE (confirmed against the decompiled dump,
-        // src/decompiled/Macro.cpp @ LAB_00420c6f/LAB_0041dd00's bVar30
-        // flag): the loop-continuation path falls through to the SAME
-        // "iteration complete" join as the loop-finished path, both
-        // setting bVar30 = true, which keeps ExecuteInterpreter dispatching
-        // more tokens in the same call -- it does NOT return to the
-        // caller. This was previously reported as cursor_changed, which
-        // this project's own scheduler treats as "yield now" -- spreading
-        // an entire `reps N ... repe` burst across N real world ticks
-        // instead of completing it within the single tick it started on.
-        // For an object script like `reps 8-16, anim [...], mvby 2 0,
-        // repe` (a common "shuffle a few pixels" idiom), this made the
-        // object move roughly 8-16x slower than intended and animate
-        // wrong (parse_image_sequence's real reset-on-every-call behavior,
-        // confirmed separately, only looks right when the whole burst that
-        // re-issues `anim` completes before the next real redraw).
-        return MacroControlFlowResult::iteration_complete;
+        // REVERTED 2026-09-15: a prior pass changed this to
+        // iteration_complete, reasoning from src/decompiled/Macro.cpp's
+        // apparent shared LAB_00420c6f join with the loop-finished branch.
+        // Live-verified this pass to be net negative: it did not even fix
+        // the original "flying bird moves too slowly" report (still
+        // reproduces after the change), and broke animation/movement
+        // pacing for multiple other scripted objects (bees, fish, the
+        // island boat, the blackboard) that previously worked. Reverted to
+        // the known-good cursor_changed (yield once per iteration) pending
+        // a correct root-cause -- see
+        // ground_truth/00-working-notes/repe-fix-reverted-made-things-worse.md.
+        // Do not re-attempt the iteration_complete change without a live
+        // test confirming it first; decompiled-only reasoning was wrong
+        // here despite looking conclusive.
+        return MacroControlFlowResult::cursor_changed;
     }
 
     case MacroCommand::ever:
