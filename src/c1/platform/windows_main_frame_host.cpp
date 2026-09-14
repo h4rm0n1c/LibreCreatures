@@ -532,8 +532,32 @@ bool C1MainFrame::create_main_toolbar() {
     // The clean embedded-kit registry decoder owns record grammar; this
     // adapter owns the native menu and toolbar storage.
     populate_embedded_kit_menu_and_toolbar();
-    for (int button_index = 0x22; button_index >= 0xe; --button_index) {
-        main_toolbar_.GetToolBarCtrl().DeleteButton(button_index);
+
+    // Native (MyToolBar::Create, the code this function is expressed
+    // against) does NOT unconditionally wipe buttons 0xe..0x22 here: it
+    // scans backward from 0x22 for the highest-index button that actually
+    // got a real command id assigned by the kit populate step above, then
+    // deletes only the *unused trailing separator placeholders* above that
+    // point. The previous version of this loop deleted every button from
+    // 0x22 down to 0xe unconditionally, which throws away the kit toolbar
+    // buttons populate_embedded_kit_menu_and_toolbar() just set up one
+    // statement earlier -- kits never had toolbar buttons, matching the
+    // user's report that this isn't just a missing Tools menu, the tray
+    // (toolbar) buttons were missing too.
+    int last_populated_button_index = 0;
+    for (int button_index = 0x22; button_index >= 0; --button_index) {
+        TBBUTTON button_info{};
+        if (main_toolbar_.GetToolBarCtrl().GetButton(button_index, &button_info) &&
+            button_info.idCommand != 0) {
+            last_populated_button_index = button_index;
+            break;
+        }
+    }
+    if (last_populated_button_index <= 0x21) {
+        for (int button_index = 0x22; button_index > last_populated_button_index;
+             --button_index) {
+            main_toolbar_.GetToolBarCtrl().DeleteButton(button_index);
+        }
     }
 
     CRect selector_rect;
