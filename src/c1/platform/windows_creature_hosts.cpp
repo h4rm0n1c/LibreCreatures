@@ -139,13 +139,25 @@ void WindowsSkeletonLifetimeHost::unregister_from_object_registry(
     if (runtime == nullptr) {
         return;
     }
-    const std::size_t count = runtime->world_object_count();
+    // This was searching world_objects_ (world_object_at/world_object_count)
+    // but then deleting by that same index from an entirely unrelated
+    // container (WorldRuntime::remove_at erases from creatures_, not
+    // world_objects_) -- so a Creature's Skeleton was never actually
+    // removed from EITHER the object registry that totl/enum iterate
+    // (objects_) or world_objects_. Every Creature that died left a
+    // permanent dangling Object* in objects_, so totl/enum family=4
+    // (creature) counts read freed memory ever after. Mirror
+    // Object::unregister_from_non_scenery_object_registry's own, already-
+    // correct pattern for objects_, then separately clean up
+    // world_objects_ via its real removal API.
+    const std::size_t count = runtime->object_count();
     for (std::size_t index = 0; index < count; ++index) {
-        if (runtime->world_object_at(index) == &skeleton) {
-            runtime->remove_at(index);
-            return;
+        if (runtime->object_at(index) == &skeleton) {
+            runtime->remove_object_at(index);
+            break;
         }
     }
+    runtime->remove_world_object(skeleton);
 }
 
 void WindowsSkeletonLifetimeHost::release_gallery(

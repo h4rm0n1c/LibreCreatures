@@ -1959,13 +1959,22 @@ void WindowsNewObjectHost::unregister_from_object_registry(
     if (runtime == nullptr) {
         return;
     }
-    const std::size_t count = runtime->world_object_count();
+    // Same bug as WindowsSkeletonLifetimeHost::unregister_from_object_
+    // registry: this searched world_objects_ by index, then deleted that
+    // index from creatures_ (WorldRuntime::remove_at) -- an unrelated
+    // container. Every Vehicle/Lift/Blackboard/CompoundObject destroyed
+    // this way leaked a dangling Object* in objects_ forever, corrupting
+    // every later totl/enum count. Mirror the already-correct
+    // Object::unregister_from_non_scenery_object_registry pattern for
+    // objects_, then clean up world_objects_ via its real removal API.
+    const std::size_t count = runtime->object_count();
     for (std::size_t index = 0; index < count; ++index) {
-        if (runtime->world_object_at(index) == &object) {
-            runtime->remove_at(index);
-            return;
+        if (runtime->object_at(index) == &object) {
+            runtime->remove_object_at(index);
+            break;
         }
     }
+    runtime->remove_world_object(object);
 }
 
 void WindowsNewObjectHost::report_syntax_error(
