@@ -1328,7 +1328,24 @@ void C1WindowsDocument::place_edit_object_at_pointer() {
     move_to_and_redraw(*edit_object_, world_x, mouse_world_y());
 }
 
-bool C1WindowsDocument::pending_right_button() const { return false; }
+bool C1WindowsDocument::pending_right_button() const {
+    // Document::update_world (application/document.cpp) polls this every
+    // tick while an object is being carried (has_edit_object()), to detect
+    // a right-click as the drop signal and release it. This was hardcoded
+    // to false, so a picked-up object -- anything grabbed with shift+left,
+    // e.g. a coffee pot -- could never be dropped again: the flag it
+    // needs to read (SfcViewPendingInputFlag::right_button) already
+    // exists and is set correctly by on_right_button_down; this just never
+    // read it.
+    C1MainFrame* frame = active_main_frame();
+    C1WindowsView* view = frame == nullptr ? nullptr : active_c1_view(*frame);
+    if (view == nullptr) {
+        return false;
+    }
+    constexpr std::uint32_t kRightButton = static_cast<std::uint32_t>(
+        creatures1::ui::SfcViewPendingInputFlag::right_button);
+    return (view->view_state().pending_input_flags & kRightButton) != 0;
+}
 
 
 void C1WindowsDocument::clear_pending_input() {
