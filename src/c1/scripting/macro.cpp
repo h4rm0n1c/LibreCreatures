@@ -3187,6 +3187,23 @@ MacroControlFlowResult Macro::execute_control_flow_command(
         if (!push_value(*saved_cursor)) {
             return MacroControlFlowResult::execution_terminated;
         }
+        // NOTE (2026-09-14): the decompiled dump's LAB_0041f237 ->
+        // LAB_00420c6f path (shared by native EVER and UNTIL-false)
+        // *looks* like it sets the same "iteration complete, don't yield"
+        // flag REPE uses -- tried changing this to iteration_complete to
+        // match, and it hung the live game solid (frozen frame, pipe
+        // commands timing out, world tick stopped advancing) on the very
+        // next test. Reverted. Something about this path's real semantics
+        // is NOT the same as REPE's despite the apparent shared label --
+        // do not retry this change without figuring out what actually
+        // differs first (possibly bVar30 gets reset or overridden again
+        // somewhere between LAB_00420c6f and the dispatch loop for this
+        // specific opcode, or the two "goto LAB_00420c6f" sites at
+        // 0x0041f237 are not actually the same site the disassembly
+        // seemed to suggest). Left as cursor_changed (yield once per
+        // iteration) -- this is very likely still not native-faithful,
+        // but it is what this project already had before this
+        // investigation and is known not to hang.
         return MacroControlFlowResult::cursor_changed;
     };
 
@@ -3247,7 +3264,23 @@ MacroControlFlowResult Macro::execute_control_flow_command(
         if (!push_value(*saved_cursor) || !push_value(*count - 1)) {
             return MacroControlFlowResult::execution_terminated;
         }
-        return MacroControlFlowResult::cursor_changed;
+        // Native's real REPE (confirmed against the decompiled dump,
+        // src/decompiled/Macro.cpp @ LAB_00420c6f/LAB_0041dd00's bVar30
+        // flag): the loop-continuation path falls through to the SAME
+        // "iteration complete" join as the loop-finished path, both
+        // setting bVar30 = true, which keeps ExecuteInterpreter dispatching
+        // more tokens in the same call -- it does NOT return to the
+        // caller. This was previously reported as cursor_changed, which
+        // this project's own scheduler treats as "yield now" -- spreading
+        // an entire `reps N ... repe` burst across N real world ticks
+        // instead of completing it within the single tick it started on.
+        // For an object script like `reps 8-16, anim [...], mvby 2 0,
+        // repe` (a common "shuffle a few pixels" idiom), this made the
+        // object move roughly 8-16x slower than intended and animate
+        // wrong (parse_image_sequence's real reset-on-every-call behavior,
+        // confirmed separately, only looks right when the whole burst that
+        // re-issues `anim` completes before the next real redraw).
+        return MacroControlFlowResult::iteration_complete;
     }
 
     case MacroCommand::ever:
