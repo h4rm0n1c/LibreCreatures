@@ -40,8 +40,6 @@ public:
     creatures1::objects::Object* create_vehicle(
         creatures1::scripting::Macro& macro,
         const creatures1::scripting::NewVehicleRequest& request) override;
-    std::string parse_rvalue_text(
-        creatures1::scripting::Macro& macro) override;
     creatures1::objects::Object* create_creature(
         creatures1::scripting::Macro& macro,
         const creatures1::scripting::NewCreatureRequest& request) override;

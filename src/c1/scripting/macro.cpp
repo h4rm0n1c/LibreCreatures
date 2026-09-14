@@ -2747,7 +2747,16 @@ void Macro::execute_new_command(MacroNewObjectHost& host,
         return;
     }
     case kNewCreature: {
-        const std::string genome_source_filename = host.parse_rvalue_text(*this);
+        // Native ExecuteNewCommand's real 'crea' case (confirmed via
+        // disassembly @ 0x0041d130): both operands are plain ParseRValue
+        // calls, not a bracketed text read. This was previously
+        // read_bracketed_text_argument()-based, which silently failed
+        // (execution_terminated) and fell back to genome id 0 for the
+        // standard `new: crea <variable> <sex>` form -- the pattern used by
+        // every population-restocking machine (e.g. a Grendel Mother),
+        // since real CAOS never passes a genome name as `[literal]` here.
+        const std::uint32_t genome_source_filename =
+            parse_rvalue(runtime, host);
         const auto construction_sex = static_cast<
             creatures1::creatures::CreatureConstructionSex>(
             parse_rvalue(runtime, host));

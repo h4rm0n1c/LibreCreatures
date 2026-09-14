@@ -932,7 +932,14 @@ struct NewVehicleRequest {
 };
 
 struct NewCreatureRequest {
-    std::string genome_source_filename;
+    // Native ExecuteNewCommand's real 'crea' case (confirmed via
+    // disassembly) reads this with a plain ParseRValue call -- the same
+    // integer-rvalue path as every other `new:` argument -- not a
+    // bracketed text literal. `TOKN <name>` (a literal 4-character id) and
+    // a variable holding a previously-generated genome id (as `new: gene
+    // ... var0` then `new: crea var0 <sex>` -- the standard population-
+    // restocking pattern) both work because both are ordinary rvalues.
+    std::uint32_t genome_source_filename = 0;
     creatures1::creatures::CreatureConstructionSex construction_sex;
 };
 
@@ -994,7 +1001,6 @@ public:
         Macro& macro, const NewSceneryRequest& request) = 0;
     virtual objects::Object* create_vehicle(
         Macro& macro, const NewVehicleRequest& request) = 0;
-    virtual std::string parse_rvalue_text(Macro& macro) = 0;
     virtual objects::Object* create_creature(
         Macro& macro, const NewCreatureRequest& request) = 0;
     virtual objects::Object* create_blackboard(

@@ -2098,16 +2098,11 @@ creatures1::objects::Object* WindowsNewObjectHost::create_creature(
     if (runtime == nullptr) {
         return nullptr;
     }
-    // The genome filename arrives as a CAOS text operand; the recovered
-    // constructor takes the packed four-character id.
-    creatures1::creatures::GenomeFilenameId genome_id = 0;
-    std::memcpy(&genome_id, request.genome_source_filename.data(),
-                std::min<std::size_t>(sizeof(genome_id),
-                                      request.genome_source_filename.size()));
 
     WindowsCreatureConstructionHost construction(document_);
     auto creature = std::make_unique<creatures1::creatures::Creature>(
-        genome_id, request.construction_sex, construction);
+        request.genome_source_filename, request.construction_sex,
+        construction);
     creatures1::creatures::Creature& adopted =
         runtime->adopt_creature(std::move(creature));
     return &adopted.skeleton();
@@ -2123,12 +2118,6 @@ std::uint32_t WindowsNewObjectHost::generate_offspring_genome_file(
     WindowsCreatureInseminationHost insemination(document_);
     return insemination.generate_offspring_genome_file(first_parent,
                                                        second_parent);
-}
-
-std::string WindowsNewObjectHost::parse_rvalue_text(
-    creatures1::scripting::Macro& macro) {
-    // `new: crea` takes its genome name as a bracketed text operand.
-    return macro.read_bracketed_text_argument();
 }
 
 void WindowsNewObjectHost::create_part(
