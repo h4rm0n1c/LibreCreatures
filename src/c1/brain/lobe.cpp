@@ -263,8 +263,10 @@ void Lobe::allocate_runtime_state() {
 void Lobe::update_early_phase(const Brain* brain, std::uint32_t tick) {
     (void)brain;
 
-    // A lobe is updated only after its runtime neuron array has been
-    // allocated; the original path therefore has a non-zero neuron count.
+    // A lobe is *expected* to be updated only after its runtime neuron
+    // array has been allocated, but this is not actually guaranteed --
+    // see the active_fraction guard below, added after a real zero-count
+    // crash.
     const std::uint32_t count = neuron_count;
     std::uint32_t active_count = 0;
     active_neuron_count_ = 0;
@@ -311,8 +313,22 @@ void Lobe::update_early_phase(const Brain* brain, std::uint32_t tick) {
         neuron.activation = current_activation;
     }
 
+    // Native (CLobe::UpdateEarlyPhase @ 0x00405010) divides unconditionally
+    // here too -- CLobe::CLobe default-constructs neuron_count to 0, and a
+    // lobe only ever reaches this update with a real neuron array once it
+    // has genuinely loaded a genome, so native never hits count==0 in
+    // practice. This project's own update_late_phase, right below, already
+    // guards the identical (active_neuron_count << 8) / neuron_count
+    // division for exactly that reason -- this one was just missed.
+    // Confirmed via a real crash dump (STATUS_INTEGER_DIVIDE_BY_ZERO,
+    // 2026-09-14): whatever upstream state produced a zero-neuron lobe
+    // here, native's own code offers no protection against it either, so
+    // clamping to 0 instead of dividing is the only safe translation
+    // regardless of that root cause.
     const int active_fraction_raw =
-        static_cast<int>(active_count << 8) / static_cast<int>(count);
+        count == 0
+            ? 0
+            : static_cast<int>(active_count << 8) / static_cast<int>(count);
     active_fraction = static_cast<std::uint8_t>(active_fraction_raw > 0xff
                                                     ? 0xff
                                                     : active_fraction_raw);
