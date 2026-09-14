@@ -887,8 +887,15 @@ std::int32_t C1WindowsDocument::selected_creature_sound_source_y() const {
 }
 
 std::string C1WindowsDocument::eye_view_title() const {
+    // CApplication::ToggleEyeView / CEyeView::UpdateWindowTitleForSelectedCreature
+    // (0x00432140 / 0x004172f0) both load string id 0xef26 -- confirmed
+    // directly from the reference exe's own STRINGTABLE bundle 3827: it is
+    // literally the word "View" (the same string the View menu uses), not
+    // a distinct "Eye View" string. This was loading id 0x80, which is not
+    // a string resource at all (128 exists only as a BITMAP/ICON), so
+    // LoadStringA failed and the window's title was empty.
     CStringA value;
-    value.LoadStringA(static_cast<UINT>(0x80));
+    value.LoadStringA(static_cast<UINT>(0xef26));
     return value.GetString();
 }
 
@@ -3181,7 +3188,23 @@ void C1WindowsDocument::present_dirty_world_rect( const creatures1::world::World
     present_renderer_rect(world_rect);
 }
 
-void C1WindowsDocument::present_current_view( void* /*owner_window*/, const creatures1::world::WorldRect& viewport_rect) {
+void C1WindowsDocument::present_current_view(
+    void* owner_window, const creatures1::world::WorldRect& viewport_rect) {
+    // The eye view owns a second, separate WorldRenderer (windows_views_
+    // host.cpp), but it too is constructed with this document as its
+    // WorldRendererHost -- the same interface the main view's renderer
+    // uses. Without checking owner_window, every present_current_view
+    // callback (from either renderer) always drew into the MAIN view's
+    // DC via present_renderer_rect()'s hardcoded renderer_/gdi_host_,
+    // regardless of which window's WorldRenderer actually triggered it.
+    // The eye view's own window therefore never received a single real
+    // paint -- it stayed black -- while the main view silently absorbed
+    // extra redraws it didn't ask for.
+    if (eye_view_ != nullptr &&
+        owner_window == static_cast<void*>(eye_view_->GetSafeHwnd())) {
+        eye_view_->present_world_rect(viewport_rect);
+        return;
+    }
     present_renderer_rect(viewport_rect);
 }
 

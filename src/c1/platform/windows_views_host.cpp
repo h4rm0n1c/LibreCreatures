@@ -888,6 +888,7 @@ IMPLEMENT_DYNCREATE(C1WindowsView, CView)
 BEGIN_MESSAGE_MAP(C1EyeViewWindow, CWnd)
     ON_WM_SIZE()
     ON_WM_CLOSE()
+    ON_WM_PAINT()
     ON_WM_PALETTECHANGED()
     ON_WM_QUERYNEWPALETTE()
 END_MESSAGE_MAP()
@@ -934,9 +935,14 @@ bool C1EyeViewWindow::create_native_eye_window(std::string_view title,
 }
 
 std::string C1EyeViewWindow::localized_eye_view_title() const {
-    // Same resource-string convention the selection menu and tip dialog use.
+    // CEyeView::UpdateWindowTitleForSelectedCreature @ 0x004172f0 loads
+    // string id 0xef26 -- confirmed directly from the reference exe's own
+    // STRINGTABLE (bundle 3827): it is literally "View" (the same word the
+    // View menu itself uses), not a distinct "Eye View" string. Id 0x80 is
+    // not a string resource at all (128 exists only as a BITMAP/ICON), so
+    // this always returned an empty title before appending " - <name>".
     CStringA value;
-    value.LoadStringA(static_cast<UINT>(0x80));
+    value.LoadStringA(static_cast<UINT>(0xef26));
     return value.GetString();
 }
 
@@ -1085,6 +1091,39 @@ void C1EyeViewWindow::OnSize(UINT size_type, int client_width,
 
 void C1EyeViewWindow::OnClose() {
     creatures1::ui::persist_eye_view_window_position(*this);
+}
+
+void C1EyeViewWindow::OnPaint() {
+    // This window had no WM_PAINT handler at all -- unlike C1WindowsView
+    // (a CView, which gets WM_PAINT -> OnDraw wired automatically by the
+    // MFC document/view framework), a plain CWnd like this one draws
+    // nothing on its own. Every per-tick viewport update already computes
+    // and publishes a real world rect (ui::update_selected_creature_
+    // follow_viewport); this just repaints that same rect whenever the
+    // window itself needs it (first show, uncover, resize).
+    CPaintDC paint_dc(this);
+    present_world_rect(creatures1::world::WorldRect{
+        follow_center_x_ - 0x40, follow_center_y_ - 0x30,
+        follow_center_x_ + 0x40, follow_center_y_ + 0x30});
+}
+
+void C1EyeViewWindow::present_world_rect(
+    const creatures1::world::WorldRect& rect) {
+    // Mirrors C1WindowsDocument::present_renderer_rect exactly, but against
+    // THIS window's own renderer_/gdi_host_ rather than the document's.
+    // The eye view's WorldRenderer is constructed with the document as its
+    // WorldRendererHost (the same interface the main view's renderer
+    // shares), so without this, its own present_current_view callback
+    // silently drew into the main view's DC instead of here -- this
+    // window's client area never received a single real paint.
+    if (renderer_ == nullptr || gdi_host_ == nullptr) {
+        return;
+    }
+    void* device_context = gdi_host_->acquire_client_context();
+    if (device_context != nullptr) {
+        renderer_->present_world_rect(device_context, rect);
+        gdi_host_->release_client_context(device_context);
+    }
 }
 
 void C1EyeViewWindow::OnPaletteChanged(CWnd* palette_focus_window) {

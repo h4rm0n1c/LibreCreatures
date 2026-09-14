@@ -1832,9 +1832,19 @@ public:
 
     void invalidate_follow_position() { follow_valid_ = false; }
 
+    // Presents into THIS window's own renderer/gdi_host, as opposed to
+    // C1WindowsDocument::present_renderer_rect, which always targets the
+    // main game view. The eye view's WorldRenderer is constructed with
+    // the document as its WorldRendererHost (the same interface the main
+    // view's renderer uses), so its present_current_view callback would
+    // otherwise silently draw into the main view instead of here -- this
+    // is the actual repaint path for this window.
+    void present_world_rect(const creatures1::world::WorldRect& rect);
+
 protected:
     afx_msg void OnSize(UINT size_type, int client_width, int client_height);
     afx_msg void OnClose();
+    afx_msg void OnPaint();
     afx_msg void OnPaletteChanged(CWnd* palette_focus_window);
     afx_msg BOOL OnQueryNewPalette();
     DECLARE_MESSAGE_MAP()
