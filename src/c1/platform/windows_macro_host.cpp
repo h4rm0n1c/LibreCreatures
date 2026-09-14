@@ -1650,8 +1650,7 @@ WindowsCreatureConstructionHost::genome_files() {
 const creatures1::creatures::SkeletonSpriteBuildServices&
 WindowsCreatureConstructionHost::skeleton_services() const {
     if (!skeleton_services_) {
-        skeleton_services_.emplace(document_.skeleton_services(
-            const_cast<WindowsSkeletonLifetimeHost&>(lifetime_)));
+        skeleton_services_.emplace(document_.skeleton_services(document_));
     }
     return *skeleton_services_;
 }

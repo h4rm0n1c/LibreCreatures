@@ -582,6 +582,7 @@ class C1WindowsDocument final
       public creatures1::objects::CompoundObjectMoveRedrawHost,
       public creatures1::creatures::BodySpriteFileHost,
       public creatures1::objects::ObjectLifetimeHost,
+      public creatures1::creatures::SkeletonLifetimeHost,
       public creatures1::display::WorldRendererHost,
       public creatures1::application::DocumentWorldUpdateHost,
       public creatures1::creatures::MultibyteTextApi,
@@ -628,6 +629,14 @@ public:
     std::string body_sprite_path(std::string_view image_directory, std::uint32_t genome_filename) const override;
 
     bool read_sprite_header(std::string_view path, std::uint16_t& image_count, std::uint32_t& first_frame_offset, std::uint16_t& first_frame_width, std::uint16_t& first_frame_height) override;
+
+    void destroy_limb(creatures1::creatures::LimbPart& limb) override;
+    void stop_continuous_sound(int sound_handle) override;
+    void remove_from_renderable_set(
+        creatures1::creatures::Skeleton& skeleton) override;
+    void unregister_from_object_registry(
+        creatures1::creatures::Skeleton& skeleton) override;
+    void release_gallery(creatures1::display::Gallery& gallery) override;
 
     void persist_and_close_eye_view() override;
 

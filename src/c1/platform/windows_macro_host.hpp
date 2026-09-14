@@ -794,7 +794,6 @@ public:
     explicit WindowsCreatureConstructionHost(C1WindowsDocument& document)
         : document_(document),
           render_plane_(document),
-          lifetime_(document),
           environment_(document) {}
 
     // CreatureConstructionHost.
@@ -829,7 +828,6 @@ public:
 private:
     C1WindowsDocument& document_;
     WindowsSkeletonRenderPlaneHost render_plane_;
-    WindowsSkeletonLifetimeHost lifetime_;
     WindowsCreatureEnvironmentHost environment_;
     mutable std::optional<creatures1::creatures::SkeletonSpriteBuildServices>
         skeleton_services_;

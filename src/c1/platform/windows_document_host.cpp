@@ -492,6 +492,45 @@ void C1WindowsDocument::clear_charset_glyph_cache() {
     image_cache_.reset_for_charset_load();
 }
 
+void C1WindowsDocument::destroy_limb(
+    creatures1::creatures::LimbPart& limb) {
+    delete &limb;
+}
+
+void C1WindowsDocument::stop_continuous_sound(int sound_handle) {
+    if (sound_manager_available()) {
+        sound_manager().stop_continuous_sound(
+            static_cast<std::uint32_t>(sound_handle), false);
+    }
+}
+
+void C1WindowsDocument::remove_from_renderable_set(
+    creatures1::creatures::Skeleton& skeleton) {
+    renderables().erase(skeleton);
+}
+
+void C1WindowsDocument::unregister_from_object_registry(
+    creatures1::creatures::Skeleton& skeleton) {
+    if (world_runtime_ == nullptr) {
+        return;
+    }
+    for (std::size_t index = 0; index < world_runtime_->object_count();
+         ++index) {
+        if (world_runtime_->object_at(index) == &skeleton) {
+            world_runtime_->remove_object_at(index);
+            break;
+        }
+    }
+    world_runtime_->remove_world_object(skeleton);
+}
+
+void C1WindowsDocument::release_gallery(
+    creatures1::display::Gallery& gallery) {
+    if (world_runtime_ != nullptr) {
+        world_runtime_->release_gallery(gallery);
+    }
+}
+
 std::size_t C1WindowsDocument::gallery_count() const {
     return world_runtime_ == nullptr ? 0 : world_runtime_->gallery_count();
 }
@@ -4340,14 +4379,15 @@ namespace creatures1::platform {
 
 creatures1::creatures::SkeletonSpriteBuildServices
 C1WindowsDocument::skeleton_services(
-    creatures1::creatures::SkeletonLifetimeHost& lifetime_host) {
+    creatures1::creatures::SkeletonLifetimeHost& /*lifetime_host*/) {
     if (world_runtime_ == nullptr) {
         throw std::logic_error(
             "C1 skeleton sprite build has no active WorldRuntime");
     }
     return creatures1::creatures::SkeletonSpriteBuildServices{
         *resources_,      // body_resources
-        lifetime_host,    // gallery_lifetime_host
+        *this,            // gallery_lifetime_host; document lifetime
+                          // outlives every world-owned Skeleton
         *resources_,      // gallery_host
         // The registry must be the one the lifetime host releases into.  This
         // used to be *resources_, whose C1ResourceHost keeps a second,

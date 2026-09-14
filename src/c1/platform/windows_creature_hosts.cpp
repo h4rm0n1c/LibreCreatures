@@ -202,18 +202,18 @@ void WindowsCreatureEnvironmentHost::initialize_from_genome(
     // Every member of GenomeInitializationHost now has an owner: the document
     // supplies the genome and voice stores, the sound host and the entity
     // registry; the skeleton services aggregate is assembled from the resource
-    // host it already builds; and the lifetime, render-plane and biochemistry
-    // locus hosts are constructed here for the call.
+    // host it already builds; and the render-plane and biochemistry locus
+    // hosts are constructed here for the call.  Skeleton lifetime operations
+    // go through the document, whose lifetime covers the creature.
     class Host final
         : public creatures1::creatures::Creature::GenomeInitializationHost {
     public:
         Host(C1WindowsDocument& document,
              creatures1::biochemistry::Biochemistry& biochemistry)
             : document_(document),
-              lifetime_(document),
               render_plane_(document),
               locus_(biochemistry),
-              services_(document.skeleton_services(lifetime_)) {}
+              services_(document.skeleton_services(document)) {}
 
         creatures1::creatures::GenomeFileStore& genome_files() override {
             return document_.genome_files();
@@ -241,7 +241,6 @@ void WindowsCreatureEnvironmentHost::initialize_from_genome(
 
     private:
         C1WindowsDocument& document_;
-        WindowsSkeletonLifetimeHost lifetime_;
         WindowsSkeletonRenderPlaneHost render_plane_;
         MfcBiochemistryLocusHost locus_;
         creatures1::creatures::SkeletonSpriteBuildServices services_;
