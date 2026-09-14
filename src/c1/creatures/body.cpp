@@ -169,21 +169,17 @@ bool Body::load_attachment_table(std::uint32_t genus,
 
 void Body::serialize(objects::EntityArchive& archive) {
     BodyPart::serialize(archive);
-    for (std::size_t chain = 0; chain < kLimbChainCount; ++chain) {
-        for (std::size_t frame = 0; frame < kAttachmentViewCount; ++frame) {
+    // C1 writes each attachment view as an interleaved X/Y pair.  The in-
+    // memory table is transposed ([chain][view]), but the archive stream is
+    // six rows of ten (X,Y) records, not an X matrix followed by a Y matrix.
+    for (std::size_t view = 0; view < kAttachmentViewCount; ++view) {
+        for (std::size_t chain = 0; chain < kLimbChainCount; ++chain) {
             if (archive.is_loading()) {
-                attachment_table.join_x[chain][frame] = archive.read_byte();
+                attachment_table.join_x[chain][view] = archive.read_byte();
+                attachment_table.join_y[chain][view] = archive.read_byte();
             } else {
-                archive.write_byte(attachment_table.join_x[chain][frame]);
-            }
-        }
-    }
-    for (std::size_t chain = 0; chain < kLimbChainCount; ++chain) {
-        for (std::size_t frame = 0; frame < kAttachmentViewCount; ++frame) {
-            if (archive.is_loading()) {
-                attachment_table.join_y[chain][frame] = archive.read_byte();
-            } else {
-                archive.write_byte(attachment_table.join_y[chain][frame]);
+                archive.write_byte(attachment_table.join_x[chain][view]);
+                archive.write_byte(attachment_table.join_y[chain][view]);
             }
         }
     }
