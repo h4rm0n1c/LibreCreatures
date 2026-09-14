@@ -1766,6 +1766,22 @@ std::int32_t WindowsMacroHost::vehicle_movement_vector_y(
     return vehicle == nullptr ? 0 : vehicle->velocity_y_8_8;
 }
 
+void WindowsMacroHost::set_vehicle_movement_vector_x(
+    creatures1::objects::Object& object, std::int32_t value) {
+    auto* vehicle = dynamic_cast<creatures1::objects::Vehicle*>(&object);
+    if (vehicle != nullptr) {
+        vehicle->velocity_x_8_8 = value;
+    }
+}
+
+void WindowsMacroHost::set_vehicle_movement_vector_y(
+    creatures1::objects::Object& object, std::int32_t value) {
+    auto* vehicle = dynamic_cast<creatures1::objects::Vehicle*>(&object);
+    if (vehicle != nullptr) {
+        vehicle->velocity_y_8_8 = value;
+    }
+}
+
 // --- MacroObjectEventHost / MacroDebugHost / MacroApplicationHost ----------
 
 void WindowsMacroHost::queue_immediate_object_event(

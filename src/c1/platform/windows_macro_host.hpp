@@ -153,6 +153,10 @@ public:
         const creatures1::objects::Object& object) const override;
     std::int32_t vehicle_movement_vector_y(
         const creatures1::objects::Object& object) const override;
+    void set_vehicle_movement_vector_x(creatures1::objects::Object& object,
+                                       std::int32_t value) override;
+    void set_vehicle_movement_vector_y(creatures1::objects::Object& object,
+                                       std::int32_t value) override;
 
     // MacroObjectEventHost: `gpas`/`spas` queue the same immediate event the
     // rest of the runtime does.

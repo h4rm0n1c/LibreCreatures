@@ -1111,13 +1111,26 @@ void Macro::assign_lvalue(MacroRuntimeHost& runtime,
         runtime.set_viewport_value(MacroViewportValue::height, height);
         return;
     } else if (destination_token == kRvalueVehicleMovementVectorX) {
+        // Native AssignLValue @ 0x0041b9f0's real xvec write, confirmed via
+        // raw disassembly: MOV EAX,[ESP+8] (the assigned value); MOV
+        // [target+0x144],EAX -- a plain, unscaled write into the vehicle's
+        // own velocity_x_8_8 field. This previously called
+        // set_classifier_base(value) instead, which native's real xvec
+        // write never touches at all -- every `setv xvec` in the game was
+        // silently corrupting the target's classifier rather than setting
+        // its velocity, and once corrupted the object no longer matches any
+        // enum/totl/next query for its real type. Root cause of a live
+        // submarine that never receives its own stop command.
         if (target != nullptr && classifier_family(*target) == 3u) {
-            target->set_classifier_base(value);
+            runtime.set_vehicle_movement_vector_x(*target, value);
             return;
         }
     } else if (destination_token == kRvalueVehicleMovementVectorY) {
+        // Same fault, same fix: native's real yvec write is MOV
+        // [target+0x148],EAX -- velocity_y_8_8, not the bounds-mode/flags
+        // byte pair set_packed_bounds_state_for_script actually writes.
         if (target != nullptr && classifier_family(*target) == 3u) {
-            target->set_packed_bounds_state_for_script(value);
+            runtime.set_vehicle_movement_vector_y(*target, value);
             return;
         }
     } else if (destination_token == kRvalueSelectedCreature) {

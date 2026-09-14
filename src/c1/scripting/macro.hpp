@@ -355,6 +355,14 @@ public:
         const objects::Object& object) const = 0;
     virtual std::int32_t vehicle_movement_vector_y(
         const objects::Object& object) const = 0;
+    // The write side of the same pseudo-variables: a plain, unscaled store
+    // into the vehicle's own velocity field (native AssignLValue @
+    // 0x0041b9f0, confirmed via disassembly -- MOV [target+0x144/0x148],EAX,
+    // nothing else touched).
+    virtual void set_vehicle_movement_vector_x(
+        objects::Object& object, std::int32_t value) = 0;
+    virtual void set_vehicle_movement_vector_y(
+        objects::Object& object, std::int32_t value) = 0;
     virtual std::uint32_t creature_value(
         const objects::Object& object, MacroCreatureValue value,
         std::uint32_t index) const = 0;
