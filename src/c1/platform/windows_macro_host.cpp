@@ -1217,7 +1217,7 @@ WindowsCreatureAttentionHost::create_sleep_indicator(
         static_cast<std::uint8_t>(2), static_cast<std::uint8_t>(0xff), 0u, 0u,
         static_cast<std::uint8_t>(0), document_);
     auto* raw = indicator.get();
-    sleep_indicators_.push_back(std::move(indicator));
+    document_.adopt_sleep_indicator(std::move(indicator));
     return raw;
 }
 

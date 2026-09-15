@@ -2260,6 +2260,13 @@ void C1WindowsDocument::adopt_speech_bubble(
     }
 }
 
+void C1WindowsDocument::adopt_sleep_indicator(
+    std::unique_ptr<creatures1::objects::SimpleObject> indicator) {
+    if (world_runtime_ != nullptr && indicator != nullptr) {
+        world_runtime_->adopt_non_scenery_object(std::move(indicator));
+    }
+}
+
 bool C1WindowsDocument::burble_is_enabled() const {
     HKEY key = nullptr;
     std::uint32_t value = 0;

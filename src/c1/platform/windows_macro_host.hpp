@@ -658,8 +658,6 @@ public:
 
 private:
     C1WindowsDocument& document_;
-    std::vector<std::unique_ptr<creatures1::objects::SimpleObject>>
-        sleep_indicators_;
 };
 
 // ScriptExecutionHost: the classifier resolver owns the lookup and state

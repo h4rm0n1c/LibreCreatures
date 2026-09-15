@@ -1107,6 +1107,11 @@ public:
 
     void adopt_speech_bubble(
         std::unique_ptr<creatures1::objects::Bubble> bubble);
+    // Sleep indicators are top-level SimpleObjects in the native world. Keep
+    // them in WorldRuntime rather than in the short-lived attention host that
+    // creates them; creatures retain the raw identity between ticks.
+    void adopt_sleep_indicator(
+        std::unique_ptr<creatures1::objects::SimpleObject> indicator);
     bool burble_is_enabled() const;
 
 
