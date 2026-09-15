@@ -138,6 +138,20 @@ void C1WindowsDocument::set_full_redraw_pending(bool pending) {
 }
 
 bool C1WindowsDocument::open_framework_document( creatures1::application::Document& /*document*/, std::string_view path) {
+    // A saved world's generated creature sprites live beside its archive in
+    // <save directory>/Images.  The original secondary resource directory
+    // normally points there, but saves copied from another installation do
+    // not update the process-wide registry path.  Remember the archive-local
+    // fallback before MFC reads the archive; pixel data is intentionally
+    // loaded lazily later by Image::get_pixel_data.
+    save_image_directory_.clear();
+    const std::size_t separator = path.find_last_of("/\\");
+    if (separator != std::string_view::npos) {
+        save_image_directory_.assign(path.substr(0, separator + 1));
+    }
+    if (!save_image_directory_.empty()) {
+        save_image_directory_ += "Images\\";
+    }
     const CStringA native_path(std::string(path).c_str());
     framework_opening_ = true;
     try {
@@ -148,6 +162,11 @@ bool C1WindowsDocument::open_framework_document( creatures1::application::Docume
         framework_opening_ = false;
         throw;
     }
+}
+
+creatures1::display::SpriteFileSearchPaths
+C1WindowsDocument::sprite_file_search_paths() const {
+    return {save_image_directory_, resource_paths_[kImageDirectoryIndex]};
 }
 
 std::size_t C1WindowsDocument::body_sprite_creature_count() const {
@@ -2296,8 +2315,7 @@ std::uint8_t* C1WindowsDocument::current_image_pixels(
         gallery->images[entity.current_image_index()];
     std::uint8_t* pixels = image.get_pixel_data(
         pixel_cache_, sprite_files_,
-        {resource_paths_[kImageDirectoryIndex],
-         resource_paths_[kImageDirectoryIndex]},
+        sprite_file_search_paths(),
         *resources_);
     if (pixels == nullptr) {
         return nullptr;
@@ -2317,8 +2335,7 @@ void C1WindowsDocument::preload_image(
     // cache operation itself is mutable state owned by the document.
     const_cast<creatures1::display::Image&>(image).get_pixel_data(
         pixel_cache_, sprite_files_,
-        {resource_paths_[kImageDirectoryIndex],
-         resource_paths_[kImageDirectoryIndex]},
+        sprite_file_search_paths(),
         *resources_);
 }
 
@@ -3153,8 +3170,7 @@ void C1WindowsDocument::blit_image_to_dib( creatures1::display::Image& image, st
     image.blit_to_dib(
         dib_pixels, world_x, world_y, clip_rect, view_rect, direct_copy,
         pixel_cache_, sprite_files_,
-        {resource_paths_[kImageDirectoryIndex],
-         resource_paths_[kImageDirectoryIndex]},
+        sprite_file_search_paths(),
         *resources_);
 }
 

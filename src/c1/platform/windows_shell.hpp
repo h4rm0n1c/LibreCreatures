@@ -1378,6 +1378,13 @@ private:
 
     void ensure_resource_hosts();
 
+    // World.sfc archives keep creature body pixels in the Images directory
+    // belonging to the save.  Keep that directory as the secondary lazy
+    // sprite source while the configured install Images directory remains
+    // the primary source for ordinary game assets and generated bodies.
+    creatures1::display::SpriteFileSearchPaths sprite_file_search_paths()
+        const;
+
     static constexpr std::size_t kMainDirectoryIndex = 0;
     static constexpr std::size_t kGeneticsDirectoryIndex = 5;
     static constexpr std::size_t kBodyDataDirectoryIndex = 6;
@@ -1388,6 +1395,7 @@ private:
 
     creatures1::application::StandardResourceFileBackend files_;
     std::array<std::string, kResourceDirectoryCount> resource_paths_{};
+    std::string save_image_directory_;
     std::unique_ptr<creatures1::platform::C1CreatureResourceHost>
         creature_resources_;
     std::unique_ptr<creatures1::application::C1ResourceHost> resources_;
