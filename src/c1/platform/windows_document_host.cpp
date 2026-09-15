@@ -7,10 +7,19 @@
 
 #include <limits>
 #include <optional>
+#include <cstdio>
 
 namespace creatures1::platform {
 
 namespace {
+
+void log_world_save_failure(const char* path, const char* reason) {
+    if (FILE* log = std::fopen("Creatures.save.log", "a")) {
+        std::fprintf(log, "C1 save failed: path=%s reason=%s\n",
+                     path == nullptr ? "(null)" : path, reason);
+        std::fclose(log);
+    }
+}
 
 // Skeleton's move helpers report their old and new sprite rectangles through
 // this host; the document forwards both to the renderer's dirty queue.
@@ -55,6 +64,7 @@ BOOL C1WindowsDocument::OnOpenDocument(LPCTSTR path) {
 
 BOOL C1WindowsDocument::OnSaveDocument(LPCTSTR path) {
     if (path == nullptr || semantic_document_ == nullptr) {
+        log_world_save_failure(nullptr, "missing path or document");
         return FALSE;
     }
     const CStringA native_path(path);
@@ -65,7 +75,17 @@ BOOL C1WindowsDocument::OnSaveDocument(LPCTSTR path) {
                                     native_path.GetLength()))
                    ? TRUE
                    : FALSE;
+    } catch (const std::exception& error) {
+        log_world_save_failure(native_path.GetString(), error.what());
+        return FALSE;
+    } catch (CException* error) {
+        char message[512] = {};
+        error->GetErrorMessage(message, sizeof(message));
+        log_world_save_failure(native_path.GetString(), message);
+        error->Delete();
+        return FALSE;
     } catch (...) {
+        log_world_save_failure(native_path.GetString(), "unknown exception");
         return FALSE;
     }
 }

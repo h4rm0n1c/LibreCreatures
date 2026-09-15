@@ -11,6 +11,7 @@
 #include "mfc_creature_archives.hpp"
 #include "../world/runtime.hpp"
 #include "windows_macro_host.hpp"
+#include "windows_object_event_host.hpp"
 #include "windows_shell.hpp"
 
 namespace creatures1::platform {
@@ -920,10 +921,18 @@ void WindowsDriveThresholdObject::update_drive_threshold_state() {
     if (object_ == nullptr) {
         return;
     }
+    // Native Lift vtable 0x0045760c slot 42 is 0x0042c590, immediately
+    // after its Tick slot (0x0042c4f0). Phase 7 services calls as well as
+    // creature drives; omitting this override leaves queued lifts idle.
+    if (auto* lift = dynamic_cast<creatures1::objects::Lift*>(object_)) {
+        WindowsCallButtonRuntimeHost host(document_);
+        lift->select_nearest_call_button_and_start_move(host);
+        return;
+    }
     creatures1::creatures::Creature* creature =
         document_.mutable_creature_for_object(*object_);
     if (creature == nullptr) {
-        // Object's own vtable slot 42 does nothing; only Creature overrides.
+        // Other object types retain the base no-op slot.
         return;
     }
     creature->update_drive_threshold_state(

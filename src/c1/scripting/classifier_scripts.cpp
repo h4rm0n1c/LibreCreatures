@@ -18,14 +18,17 @@ bool classifiers_equal(ScriptClassifier left, ScriptClassifier right) {
            left.genus == right.genus && left.family == right.family;
 }
 
-bool matches_genus_wildcard(ScriptClassifier entry, ScriptClassifier query) {
-    return entry.event == query.event && entry.species == query.species &&
-           entry.family == query.family;
+bool matches_species_wildcard(ScriptClassifier entry, ScriptClassifier query) {
+    // Native compares the entire stored classifier to query & 0xffff00ff.
+    // The cleared byte is species, not genus; only an explicit zero matches.
+    return entry.event == query.event && entry.species == 0 &&
+           entry.genus == query.genus && entry.family == query.family;
 }
 
 bool matches_species_genus_wildcard(ScriptClassifier entry,
                                     ScriptClassifier query) {
-    return entry.event == query.event && entry.family == query.family;
+    return entry.event == query.event && entry.species == 0 &&
+           entry.genus == 0 && entry.family == query.family;
 }
 
 } // namespace
@@ -110,7 +113,7 @@ bool execute_script_for_classifier(objects::Object* script_owner,
             exact_match = index;
             break;
         }
-        if (matches_genus_wildcard(stored, classifier)) {
+        if (matches_species_wildcard(stored, classifier)) {
             genus_wildcard_match = index;
         }
         if (matches_species_genus_wildcard(stored, classifier)) {
