@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <cstdio>
 #include <iterator>
 #include <limits>
 #include <new>
@@ -10,6 +11,31 @@
 namespace creatures1::display {
 
 namespace {
+
+bool valid_sprite_image(const objects::Entity& entity) {
+    if (entity.has_current_image()) {
+        return true;
+    }
+    // Keep diagnostics bounded: an invalid animation can persist across ticks.
+    static unsigned reports = 0;
+    if (reports < 32) {
+        ++reports;
+        const Gallery* gallery = entity.gallery();
+        FILE* log = std::fopen("Creatures.render.log", "a");
+        if (log == nullptr) {
+            return false;
+        }
+        std::fprintf(log,
+                     "C1 invalid render image: entity=%p gallery=%p index=%u count=%u x=%d y=%d\n",
+                     static_cast<const void*>(&entity),
+                     static_cast<const void*>(gallery),
+                     static_cast<unsigned>(entity.current_image_index()),
+                     gallery == nullptr ? 0U : gallery->image_count,
+                     entity.world_x(), entity.world_y());
+        std::fclose(log);
+    }
+    return false;
+}
 
 bool render_plane_precedes(const VisibleSpriteRecord& left,
                            const VisibleSpriteRecord& right) {
@@ -340,17 +366,12 @@ void WorldRenderer::render_world_rect_to_dib(
     for (std::size_t registry_index = 0; registry_index < registry_count;
          ++registry_index) {
         const objects::Entity* entity = host_.entity_at(registry_index);
-        if (entity == nullptr || entity->gallery() == nullptr) {
+        if (entity == nullptr || !valid_sprite_image(*entity)) {
             continue;
         }
         const Gallery* gallery = entity->gallery();
         const std::size_t image_index = entity->current_image_index();
-        // The executable compares the byte index against image_count before
-        // using the image array.  Valid C1 galleries contain the complete
-        // index range, so retain that recovered contract here.
-        if (image_index > gallery->image_count) {
-            continue;
-        }
+        // Gallery allocates exactly image_count entries; equality is invalid.
 
         int relative_x = entity->world_x() - render_rect.min_x;
         if (relative_x < 0x1051) {
@@ -409,6 +430,9 @@ void WorldRenderer::render_world_rect_to_dib(
         if (entity == nullptr || entity->gallery() == nullptr) {
             host_.report_invalid_render_registry_index();
             return;
+        }
+        if (!valid_sprite_image(*entity)) {
+            continue;
         }
         host_.blit_image_to_dib(
             entity->gallery()->images[entity->current_image_index()],
