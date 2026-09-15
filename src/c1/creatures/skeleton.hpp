@@ -76,8 +76,8 @@ struct SkeletonBodyBuildServices {
 // This is the explicit LoadGenome sprite-extraction boundary recovered from
 // the native Skeleton implementation.  Skeleton owns the part order, frame
 // sizing, palette controls, and image-base table; display owns gallery/image
-// metadata and pixel-cache policy; the resource/platform hosts own the two
-// image directories and the native file handles.
+// metadata and pixel-cache policy. This bundle owns its resolved directory
+// strings; the resource/platform hosts own the native file handles.
 struct SkeletonSpriteBuildServices {
     BodyResourceHost& body_resources;
     SkeletonLifetimeHost& gallery_lifetime_host;
@@ -89,8 +89,8 @@ struct SkeletonSpriteBuildServices {
     display::SpriteFileCache& sprite_files;
     const display::PaletteDtaBuffer& palette;
     std::uint32_t& palette_build_count;
-    std::string_view secondary_image_directory;
-    std::string_view primary_image_directory;
+    std::string secondary_image_directory;
+    std::string primary_image_directory;
     objects::EntityRegistryHost* entity_registry = nullptr;
     int normal_render_plane = 100;
 };

@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
@@ -21,8 +22,14 @@ class SpriteFileCache;
 struct SpriteFileSearchPaths;
 
 struct SpriteFileSearchPaths {
-    std::string_view secondary_image_directory;
-    std::string_view primary_image_directory;
+    // Callers may resolve a selected-world directory into a temporary string.
+    // Keep the directory alive for delayed pixel reads and copied path sets.
+    std::string secondary_image_directory;
+    std::string primary_image_directory;
+
+    SpriteFileSearchPaths() = default;
+    SpriteFileSearchPaths(std::string_view secondary, std::string_view primary)
+        : secondary_image_directory(secondary), primary_image_directory(primary) {}
 };
 
 // The eight-byte records in a C1 SPR index are deliberately represented as
