@@ -144,13 +144,14 @@ bool C1WindowsDocument::open_framework_document( creatures1::application::Docume
     // not update the process-wide registry path.  Remember the archive-local
     // fallback before MFC reads the archive; pixel data is intentionally
     // loaded lazily later by Image::get_pixel_data.
+    save_world_directory_.clear();
     save_image_directory_.clear();
     const std::size_t separator = path.find_last_of("/\\");
     if (separator != std::string_view::npos) {
-        save_image_directory_.assign(path.substr(0, separator + 1));
+        save_world_directory_.assign(path.substr(0, separator + 1));
     }
-    if (!save_image_directory_.empty()) {
-        save_image_directory_ += "Images\\";
+    if (!save_world_directory_.empty()) {
+        save_image_directory_ = save_world_directory_ + "Images\\";
     }
     const CStringA native_path(std::string(path).c_str());
     framework_opening_ = true;
@@ -164,9 +165,32 @@ bool C1WindowsDocument::open_framework_document( creatures1::application::Docume
     }
 }
 
+std::string C1WindowsDocument::secondary_resource_directory(
+    std::size_t index) const {
+    if (!save_world_directory_.empty()) {
+        if (index == kMainDirectoryIndex) {
+            return save_world_directory_;
+        }
+        if (index == kImageDirectoryIndex) {
+            return save_image_directory_;
+        }
+        if (index == kGeneticsDirectoryIndex) {
+            return save_world_directory_ + "Genetics\\";
+        }
+    }
+    if (g_active_secondary_directories != nullptr &&
+        index < g_active_secondary_directories->paths.size() &&
+        !g_active_secondary_directories->paths[index].empty()) {
+        return g_active_secondary_directories->paths[index];
+    }
+    return index < resource_paths_.size() ? resource_paths_[index]
+                                          : std::string{};
+}
+
 creatures1::display::SpriteFileSearchPaths
 C1WindowsDocument::sprite_file_search_paths() const {
-    return {save_image_directory_, resource_paths_[kImageDirectoryIndex]};
+    return {secondary_resource_directory(kImageDirectoryIndex),
+            resource_paths_[kImageDirectoryIndex]};
 }
 
 std::size_t C1WindowsDocument::body_sprite_creature_count() const {
@@ -181,13 +205,17 @@ void C1WindowsDocument::validate_creature_body_sprites(std::size_t index) {
         world_runtime_->creature_at(index));
     if (creature != nullptr) {
         creature->skeleton().validate_body_sprites(
-            resource_paths_[kImageDirectoryIndex], *this);
+            secondary_resource_directory(kImageDirectoryIndex), *this);
     }
 }
 
 void C1WindowsDocument::refresh_temporary_world_backup() {
-    if (world_runtime_ == nullptr || resource_paths_[0].empty() ||
-        resource_paths_[kImageDirectoryIndex].empty()) {
+    const std::string secondary_root =
+        secondary_resource_directory(kMainDirectoryIndex);
+    const std::string secondary_images =
+        secondary_resource_directory(kImageDirectoryIndex);
+    if (world_runtime_ == nullptr || secondary_root.empty() ||
+        secondary_images.empty()) {
         return;
     }
     std::vector<creatures1::archive::GenomeFilenameId> genomes;
@@ -201,7 +229,7 @@ void C1WindowsDocument::refresh_temporary_world_backup() {
     }
     creatures1::archive::refresh_temporary_world_backup(
         native_backup_files_,
-        {resource_paths_[0], resource_paths_[kImageDirectoryIndex]},
+        {secondary_root, secondary_images},
         {genomes.data(), genomes.size()});
 }
 
@@ -352,7 +380,7 @@ std::string C1WindowsDocument::generated_image_filename(std::size_t index) const
     if (creature == nullptr) {
         return {};
     }
-    return body_sprite_path(resource_paths_[kImageDirectoryIndex],
+    return body_sprite_path(secondary_resource_directory(kImageDirectoryIndex),
                             creature->skeleton().genome_source_filename);
 }
 
@@ -396,9 +424,11 @@ void C1WindowsDocument::clear_favourite_place_names( creatures1::application::Do
 }
 
 void C1WindowsDocument::promote_temporary_world_backup() {
-    if (!resource_paths_[0].empty()) {
+    const std::string secondary_root =
+        secondary_resource_directory(kMainDirectoryIndex);
+    if (!secondary_root.empty()) {
         creatures1::archive::promote_temporary_world_backup(
-            native_backup_files_, resource_paths_[0]);
+            native_backup_files_, secondary_root);
     }
 }
 
@@ -1614,8 +1644,8 @@ void C1WindowsDocument::execute_running_macro(std::size_t index) {
     // iteration so a macro that removes itself is handled.  Until this was
     // bound, a script only ever got the commands it could reach inside its
     // one start_execution call: the interpreter returns to its caller
-    // whenever a command does not complete an iteration -- which every `doif`
-    // taking its false branch does -- and nothing ever resumed it.
+    // whenever a command yields (for example `wait` or `over`), and
+    // nothing ever resumed it. Conditional branch skips do not yield.
     if (index >= creatures1::scripting::g_running_macros.size()) {
         return;
     }
@@ -2155,7 +2185,7 @@ void C1WindowsDocument::create_legacy_world() {
         creatures1::display::Gallery* background =
             creatures1::display::acquire_gallery(
                 0x6b636142, 0, 0x1d0, false,
-                resource_paths_[kImageDirectoryIndex],
+                secondary_resource_directory(kImageDirectoryIndex),
                 resource_paths_[kImageDirectoryIndex], *resources_,
                 *world_runtime_);
         world_runtime_->map_data().set_background_gallery(background);
@@ -2240,7 +2270,7 @@ creatures1::display::Gallery* C1WindowsDocument::acquire_gallery( std::uint32_t 
     }
     return creatures1::display::acquire_gallery(
         sprite_file_id, header_record_index, image_count, cache_protected,
-        resource_paths_[kImageDirectoryIndex],
+        secondary_resource_directory(kImageDirectoryIndex),
         resource_paths_[kImageDirectoryIndex], *resources_,
         *world_runtime_);
 }
@@ -2806,17 +2836,22 @@ void C1WindowsDocument::find_nearest_room_bounds_at_point( int world_x, int worl
                   map_bounds.bottom};
 }
 
-creatures1::world::WorldRect C1WindowsDocument::vehicle_local_bounds( const creatures1::objects::Object& /*vehicle*/) const {
-    return {0, 0, creatures1::world::kWorldWidth,
-            creatures1::world::kWorldHeight};
+creatures1::world::WorldRect C1WindowsDocument::vehicle_local_bounds( const creatures1::objects::Object& object) const {
+    const auto* vehicle = dynamic_cast<const creatures1::objects::Vehicle*>(&object);
+    return vehicle == nullptr ? creatures1::world::WorldRect{}
+                              : vehicle->creature_event_bounds_local;
 }
 
-int C1WindowsDocument::vehicle_primary_entity_x( const creatures1::objects::Object& /*vehicle*/) const {
-    return 0;
+int C1WindowsDocument::vehicle_primary_entity_x( const creatures1::objects::Object& object) const {
+    const auto* vehicle = dynamic_cast<const creatures1::objects::Vehicle*>(&object);
+    return vehicle == nullptr || vehicle->part_count() == 0 || vehicle->part(0).entity == nullptr
+               ? 0 : vehicle->part(0).entity->world_x();
 }
 
-int C1WindowsDocument::vehicle_primary_entity_y( const creatures1::objects::Object& /*vehicle*/) const {
-    return 0;
+int C1WindowsDocument::vehicle_primary_entity_y( const creatures1::objects::Object& object) const {
+    const auto* vehicle = dynamic_cast<const creatures1::objects::Vehicle*>(&object);
+    return vehicle == nullptr || vehicle->part_count() == 0 || vehicle->part(0).entity == nullptr
+               ? 0 : vehicle->part(0).entity->world_y();
 }
 
 creatures1::objects::Object* C1WindowsDocument::edit_object() const {
@@ -3431,10 +3466,7 @@ void C1WindowsDocument::ensure_resource_hosts() {
     creature_resources_ = std::make_unique<
         creatures1::platform::C1CreatureResourceHost>(
             files_,
-            g_active_secondary_directories == nullptr
-                ? resource_paths_[kGeneticsDirectoryIndex]
-                : g_active_secondary_directories
-                      ->paths[kGeneticsDirectoryIndex],
+            secondary_resource_directory(kGeneticsDirectoryIndex),
             resource_paths_[kGeneticsDirectoryIndex],
             resource_paths_[kMainDirectoryIndex]);
     resources_ = std::make_unique<
@@ -4540,7 +4572,7 @@ C1WindowsDocument::skeleton_services(
         sprite_files_,
         game_palette_.dta_buffers[0],
         palette_build_count_,
-        resource_paths_[kImageDirectoryIndex],
+        secondary_resource_directory(kImageDirectoryIndex),
         resource_paths_[kImageDirectoryIndex],
         &entity_registry(),
         100};

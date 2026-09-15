@@ -1385,6 +1385,13 @@ private:
     creatures1::display::SpriteFileSearchPaths sprite_file_search_paths()
         const;
 
+    // The launcher keeps the selected world and its writable generated
+    // resources in the secondary tree under the user's Documents folder.
+    // When a World.sfc is opened directly, its parent is the authoritative
+    // per-world fallback even if the process registry still names another
+    // world. Primary resources remain install-owned and read-only.
+    std::string secondary_resource_directory(std::size_t index) const;
+
     static constexpr std::size_t kMainDirectoryIndex = 0;
     static constexpr std::size_t kGeneticsDirectoryIndex = 5;
     static constexpr std::size_t kBodyDataDirectoryIndex = 6;
@@ -1395,6 +1402,7 @@ private:
 
     creatures1::application::StandardResourceFileBackend files_;
     std::array<std::string, kResourceDirectoryCount> resource_paths_{};
+    std::string save_world_directory_;
     std::string save_image_directory_;
     std::unique_ptr<creatures1::platform::C1CreatureResourceHost>
         creature_resources_;
