@@ -1025,10 +1025,8 @@ void WindowsMacroHost::set_compound_knob_function(
     if (compound == nullptr) {
         return;
     }
-    auto& mapping = compound->creature_event_config.event_config_value;
-    if (function_index < mapping.size()) {
-        mapping[function_index] = static_cast<int>(hotspot_index);
-    }
+    compound->set_knob_function(function_index,
+                                static_cast<int>(hotspot_index));
 }
 
 void WindowsMacroHost::set_vehicle_creature_event_bounds(

@@ -45,7 +45,9 @@ class C1WindowsDocument;
 //
 // CallButton overrides slots 5 and 6; its slot-6 body is a tail jump back to
 // slot 5, so both queued events run request_lift_call.  PointerTool overrides
-// slots 8 and 9.  Bubble, Vehicle, Lift and Blackboard add no overrides.
+// slots 8 and 9. Lift overrides slots 5 and 6 with its up/down movement
+// requests; its slot 7 is the inherited generic event-3 body. Blackboard
+// keeps CompoundObject's event 0/1/2 handlers.
 // CompoundObjectEventHost.  Four facts: whether the event source is a
 // creature, the classifier script dispatch, and the built-in stimulus copy
 // and queue the compound interaction path shares with the fan-out producers.

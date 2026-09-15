@@ -223,6 +223,19 @@ void CompoundObject::set_part_bounds(
     part_bounds_[index] = bounds;
 }
 
+void CompoundObject::set_knob_function(std::size_t function_index,
+                                       int hotspot_index) {
+    if (function_index >= creature_event_config.event_config_value.size()) {
+        return;
+    }
+
+    creature_event_config.event_config_value[function_index] = hotspot_index;
+    if (function_index >= 3 && function_index < 6) {
+        click_event_bounds_index.part_bounds_index[function_index - 3] =
+            hotspot_index;
+    }
+}
+
 void CompoundObject::serialize(ObjectArchive& archive) {
     // CArchive's ReadObject/WriteObject operation owns the dynamic Entity
     // framing and invokes Entity::Serialize at that boundary. This method
@@ -251,6 +264,12 @@ void CompoundObject::serialize(ObjectArchive& archive) {
         }
         for (int& value : creature_event_config.event_config_value) {
             value = archive.read_int32();
+        }
+        for (std::size_t index = 0;
+             index < click_event_bounds_index.part_bounds_index.size();
+             ++index) {
+            click_event_bounds_index.part_bounds_index[index] =
+                creature_event_config.event_config_value[index + 3];
         }
         return;
     }

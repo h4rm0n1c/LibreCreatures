@@ -170,6 +170,11 @@ public:
     }
     void set_part_bounds(std::size_t index, const world::WorldRect& bounds);
 
+    // Native `knob` stores six words at one contiguous boundary: entries
+    // 0..2 select creature-event bounds and entries 3..5 select the three
+    // clickable hand hotspots. Keep the two typed views synchronized here.
+    void set_knob_function(std::size_t function_index, int hotspot_index);
+
     CompoundObjectCreatureEventConfig creature_event_config{};
     CompoundObjectClickEventBoundsIndex click_event_bounds_index{};
 

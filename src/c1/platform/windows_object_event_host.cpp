@@ -885,6 +885,7 @@ enum class EventTargetKind {
     call_button,
     pointer_tool,
     simple_object,
+    lift,
     compound_object,
     base_object,
 };
@@ -903,6 +904,9 @@ EventTargetKind classify_event_target(
     }
     if (dynamic_cast<creatures1::objects::SimpleObject*>(&target) != nullptr) {
         return EventTargetKind::simple_object;
+    }
+    if (dynamic_cast<creatures1::objects::Lift*>(&target) != nullptr) {
+        return EventTargetKind::lift;
     }
     if (dynamic_cast<creatures1::objects::CompoundObject*>(&target) !=
         nullptr) {
@@ -935,6 +939,12 @@ void WindowsObjectEventRuntime::handle_event_0(
         WindowsObjectScriptDispatchHost scripts(document_);
         static_cast<creatures1::objects::SimpleObject&>(target)
             .handle_queued_event_0(event, fanout, scripts);
+        return;
+    }
+    case EventTargetKind::lift: {
+        WindowsCallButtonRuntimeHost host(document_);
+        static_cast<creatures1::objects::Lift&>(target)
+            .request_move_up(event, host);
         return;
     }
     case EventTargetKind::compound_object: {
@@ -975,6 +985,12 @@ void WindowsObjectEventRuntime::handle_event_1(
             .handle_queued_event_1(event, fanout, scripts);
         return;
     }
+    case EventTargetKind::lift: {
+        WindowsCallButtonRuntimeHost host(document_);
+        static_cast<creatures1::objects::Lift&>(target)
+            .request_move_down(event, host);
+        return;
+    }
     case EventTargetKind::compound_object: {
         WindowsCompoundObjectEventHost host(document_);
         static_cast<creatures1::objects::CompoundObject&>(target)
@@ -1007,6 +1023,11 @@ void WindowsObjectEventRuntime::handle_event_2(
             .handle_queued_event_2(event, fanout, scripts);
         return;
     }
+    case EventTargetKind::lift:
+        // Lift's vtable slot 7 is Object::HandleQueuedEvent3, not
+        // CompoundObject::HandleQueuedEvent2.
+        target.handle_queued_event_3(event, fanout);
+        return;
     case EventTargetKind::compound_object: {
         WindowsCompoundObjectEventHost host(document_);
         static_cast<creatures1::objects::CompoundObject&>(target)
