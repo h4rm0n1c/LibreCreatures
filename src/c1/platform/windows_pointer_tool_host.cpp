@@ -269,6 +269,21 @@ bool WindowsPointerToolRuntimeHost::is_pointer_tool(
 creatures1::world::WorldRect
 WindowsPointerToolRuntimeHost::pointer_tool_bounds(
     const creatures1::objects::Object& pointer_tool) const {
+    // Native FindTopmostOverlappingObject does not use the hand sprite as
+    // its hit rectangle. It uses the one-pixel cursor hotspot, anchored at
+    // the hand entity plus the serialized hotspot offsets. Using the full
+    // sprite here lets the hand select objects that are merely underneath
+    // its artwork, and can also select a vehicle while dropping an item.
+    if (const auto* pointer = dynamic_cast<const creatures1::ui::PointerTool*>(
+            &pointer_tool);
+        pointer != nullptr && pointer->entity() != nullptr) {
+        const int x = pointer->entity()->world_x() +
+                      pointer->cursor_hotspot_offset_x;
+        const int y = pointer->entity()->world_y() +
+                      pointer->cursor_hotspot_offset_y;
+        return {x, y, x + 1, y + 1};
+    }
+
     creatures1::world::WorldRect bounds{};
     pointer_tool.get_bounds(&bounds);
     return bounds;
@@ -277,7 +292,14 @@ WindowsPointerToolRuntimeHost::pointer_tool_bounds(
 creatures1::world::WorldRect
 WindowsPointerToolRuntimeHost::vehicle_interaction_bounds(
     const creatures1::objects::Object& vehicle) const {
-    return document_.vehicle_local_bounds(vehicle);
+    auto bounds = document_.vehicle_local_bounds(vehicle);
+    const int x = document_.vehicle_primary_entity_x(vehicle);
+    const int y = document_.vehicle_primary_entity_y(vehicle);
+    bounds.min_x += x;
+    bounds.max_x += x;
+    bounds.min_y += y;
+    bounds.max_y += y;
+    return bounds;
 }
 
 // --- event queue, script dispatch, redraw ----------------------------------

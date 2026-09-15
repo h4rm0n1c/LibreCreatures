@@ -6,7 +6,9 @@
 #include "events.hpp"
 #include "../creatures/events.hpp"
 #include "../scripting/tables.hpp"
+#include "../world/map.hpp"
 
+#include <algorithm>
 #include <cstddef>
 #include <new>
 
@@ -33,6 +35,41 @@ constexpr std::array<std::array<std::int8_t, 3>, 5>
         {{0, 2, -1}},
         {{0, 1, 2}},
     }};
+
+world::WorldRect union_object_and_pointer_bounds(
+    const world::WorldRect& object_bounds,
+    const world::WorldRect& pointer_bounds) {
+    world::WorldRect best = object_bounds;
+    best.min_y = std::min(object_bounds.min_y, pointer_bounds.min_y);
+    best.max_y = std::max(object_bounds.max_y, pointer_bounds.max_y);
+    int best_width = kWorldWidth + 1;
+
+    // UpdateUnboundedPositionAndRedraw computes this union before handing it
+    // to the renderer.  Try the three equivalent world placements of the
+    // pointer rectangle and retain the shortest contiguous representation.
+    // In particular, [0,100) plus [8300,8350) becomes [8300,8452), not the
+    // almost-world-wide [0,8350) span produced by the generic union helper.
+    for (const int world_shift : {-kWorldWidth, 0, kWorldWidth}) {
+        const int shifted_min_x = pointer_bounds.min_x + world_shift;
+        const int shifted_max_x = pointer_bounds.max_x + world_shift;
+        int candidate_min_x = std::min(object_bounds.min_x, shifted_min_x);
+        int candidate_max_x = std::max(object_bounds.max_x, shifted_max_x);
+        while (candidate_min_x < 0) {
+            candidate_min_x += kWorldWidth;
+            candidate_max_x += kWorldWidth;
+        }
+        while (candidate_min_x >= kWorldWidth) {
+            candidate_min_x -= kWorldWidth;
+            candidate_max_x -= kWorldWidth;
+        }
+        if (candidate_max_x - candidate_min_x < best_width) {
+            best.min_x = candidate_min_x;
+            best.max_x = candidate_max_x;
+            best_width = candidate_max_x - candidate_min_x;
+        }
+    }
+    return best;
+}
 
 creatures1::creatures::Creature* find_creature_source(
     const QueuedObjectEvent& event,
@@ -154,9 +191,8 @@ void SimpleObject::update_unbounded_position_and_redraw(
 
     world::WorldRect old_pointer_bounds{};
     pointer_tool->get_bounds(&old_pointer_bounds);
-    world::WorldRect old_union{};
-    world::union_wrapped_world_rects(
-        old_union, old_object_bounds, old_pointer_bounds);
+    const world::WorldRect old_union = union_object_and_pointer_bounds(
+        old_object_bounds, old_pointer_bounds);
 
     move_to(world_x, world_y);
     pointer_tool->move_to(world_x, world_y - 0x10);
@@ -165,9 +201,8 @@ void SimpleObject::update_unbounded_position_and_redraw(
     world::WorldRect new_pointer_bounds{};
     get_bounds(&new_object_bounds);
     pointer_tool->get_bounds(&new_pointer_bounds);
-    world::WorldRect new_union{};
-    world::union_wrapped_world_rects(
-        new_union, new_object_bounds, new_pointer_bounds);
+    const world::WorldRect new_union = union_object_and_pointer_bounds(
+        new_object_bounds, new_pointer_bounds);
 
     host.present_or_queue_dirty_world_rect(old_union);
     host.present_or_queue_dirty_world_rect(new_union);
@@ -304,17 +339,53 @@ void SimpleObject::handle_queued_event_5(
 void SimpleObject::end_interaction_with_source(
     Object* source_object, SimpleObjectInteractionHost& host) {
     const int old_world_x = entity_->world_x();
+    const int old_world_y = entity_->world_y();
     set_bounds_reference_object(nullptr);
 
     if (!has_bounds_flag(0x20u)) {
         Object* vehicle = find_topmost_overlapping_object(
             kIsVehicle, kIsVehicle, host);
         int target_world_x = old_world_x;
+        int target_world_y = 0;
+        int release_room_bottom = 0;
+        bool use_release_room_bottom = false;
+        bool use_current_position_fallback = false;
         if (vehicle == nullptr) {
             set_bounds_mode(
                 static_cast<std::uint32_t>(BoundsMode::default_world), host);
             entity_->set_render_plane(saved_entity_render_plane);
             update_movement_bounds(host);
+            const bool use_current_map_room =
+                has_bounds_flag(kUseCurrentMapRoom);
+            world::WorldRect release_room_bounds{};
+            if (use_current_map_room) {
+                host.find_nearest_room_bounds_at_point(
+                    old_world_x,
+                    old_world_y + entity_->current_image_height(),
+                    release_room_bounds);
+            }
+            const bool has_release_room =
+                release_room_bounds.max_x > release_room_bounds.min_x &&
+                release_room_bounds.max_y > release_room_bounds.min_y &&
+                release_room_bounds.max_y != world::kNoRoomBottom;
+            if (has_release_room) {
+                // Keep the release room, but defer the image-height
+                // subtraction until after EVENT_5.  Stateful food (notably
+                // carrots) changes pose and therefore sprite height in its
+                // drop script; native MoveToAndRedraw reads the image after
+                // DispatchScriptEvent returns.
+                use_release_room_bottom = true;
+                release_room_bottom = release_room_bounds.max_y;
+            } else if (use_current_map_room &&
+                       movement_bounds().max_y == world::kNoRoomBottom) {
+                // A room-bound object can be released over a gap in the room
+                // table (notably at the edges of a fresh world's initial
+                // layout).  The native sentinel is 9999, which makes the
+                // object appear deleted. Keep the release at its current
+                // visible Y instead of sending it to the world's bottom.
+                set_world_movement_bounds_for_drop();
+                use_current_position_fallback = true;
+            }
         } else {
             set_bounds_mode(
                 static_cast<std::uint32_t>(BoundsMode::vehicle_local), host);
@@ -341,9 +412,23 @@ void SimpleObject::end_interaction_with_source(
 
         dispatch_script_event(ObjectEventId::event_5, source_object, false,
                               host);
+        if (use_release_room_bottom) {
+            target_world_y = release_room_bottom -
+                             entity_->current_image_height();
+        } else if (use_current_position_fallback) {
+            target_world_y = std::clamp(
+                old_world_y, 0,
+                std::max(0, world::kWorldHeight -
+                               entity_->current_image_height()));
+        } else {
+            // This deliberately follows EVENT_5.  The native routine uses
+            // the post-script image height here, which is observable for
+            // stateful objects whose drop script changes pose.
+            target_world_y = movement_bounds().max_y -
+                             entity_->current_image_height();
+        }
         move_to_and_redraw(
-            target_world_x,
-            movement_bounds().max_y - entity_->current_image_height(), host);
+            target_world_x, target_world_y, host);
         return;
     }
 
