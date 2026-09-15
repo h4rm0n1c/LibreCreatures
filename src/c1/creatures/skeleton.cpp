@@ -1228,10 +1228,8 @@ void Skeleton::recompute_body_part_layout() {
         limb_chain_end_y[chain] = next_anchor_y;
     }
 
-    // C1 folds the drive-threshold state into the head sprite frame.  The
-    // original eyes-open branch is an empty compiler-preserved branch, so the
-    // eye state is intentionally represented as state input without changing
-    // the proven frame arithmetic here.
+    // Native 0043b8ca..0043b8d9 selects the expression-only offset when
+    // eyes are open (CMOVNZ); only closed eyes use the additional 13 frames.
     LimbPart* head = limb_chain_heads[chain_index(BodyLimbChain::head)];
     if (head != nullptr) {
         std::uint8_t head_frame_offset = 0;
@@ -1240,7 +1238,9 @@ void Skeleton::recompute_body_part_layout() {
              head->pose_frame_index == 4)) {
             head_frame_offset = static_cast<std::uint8_t>(drive_threshold_state + 1);
         }
-        head_frame_offset = static_cast<std::uint8_t>(head_frame_offset + 13);
+        if (!eyes_open) {
+            head_frame_offset = static_cast<std::uint8_t>(head_frame_offset + 13);
+        }
         head->set_image_index(static_cast<std::uint8_t>(
             head->image_index_base() + head_frame_offset +
             head->attachment_frame_index));

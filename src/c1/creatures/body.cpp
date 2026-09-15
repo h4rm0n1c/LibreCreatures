@@ -169,11 +169,10 @@ bool Body::load_attachment_table(std::uint32_t genus,
 
 void Body::serialize(objects::EntityArchive& archive) {
     BodyPart::serialize(archive);
-    // C1 writes each attachment view as an interleaved X/Y pair.  The in-
-    // memory table is transposed ([chain][view]), but the archive stream is
-    // six rows of ten (X,Y) records, not an X matrix followed by a Y matrix.
-    for (std::size_t view = 0; view < kAttachmentViewCount; ++view) {
-        for (std::size_t chain = 0; chain < kLimbChainCount; ++chain) {
+    // Native Body::Serialize @00416290: six chain rows, each containing
+    // ten interleaved (X,Y) view pairs. Do not transpose chain and view.
+    for (std::size_t chain = 0; chain < kLimbChainCount; ++chain) {
+        for (std::size_t view = 0; view < kAttachmentViewCount; ++view) {
             if (archive.is_loading()) {
                 attachment_table.join_x[chain][view] = archive.read_byte();
                 attachment_table.join_y[chain][view] = archive.read_byte();
