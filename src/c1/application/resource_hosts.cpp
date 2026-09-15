@@ -234,13 +234,25 @@ C1ResourceHost::C1ResourceHost(C1ResourceDirectories directories,
 C1ResourceHost::~C1ResourceHost() = default;
 
 std::string C1ResourceHost::resource_directory(int directory_index) const {
-    if (directory_index < 0 ||
-        static_cast<std::size_t>(directory_index) >=
-            directories_.primary_resource_directories.size()) {
+    if (directory_index < 0) {
         return {};
     }
-    return directories_.primary_resource_directories[
-        static_cast<std::size_t>(directory_index)];
+    const std::size_t index = static_cast<std::size_t>(directory_index);
+    if (index < directories_.primary_resource_directories.size()) {
+        return directories_.primary_resource_directories[index];
+    }
+
+    // ResolveExistingBodyPartFilenameWithFallback uses the native combined
+    // directory namespace: primary slots 0..7, then secondary slots 0..7.
+    // In particular, LoadGenome's first body-image probe is slot 13, the
+    // secondary image directory. Returning an empty string here silently
+    // forced every new creature through the install tree instead.
+    const std::size_t secondary_index =
+        index - directories_.primary_resource_directories.size() - 1U;
+    if (secondary_index >= directories_.secondary_resource_directories.size()) {
+        return {};
+    }
+    return directories_.secondary_resource_directories[secondary_index];
 }
 
 std::string C1ResourceHost::body_data_directory() const {

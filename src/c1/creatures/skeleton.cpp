@@ -580,10 +580,23 @@ bool Skeleton::build_creature_sprite_gallery(
         controls.hue_rotation, controls.colour_swap,
         services.palette_build_count);
 
-    const std::string temporary_path = display::sprite_index_path(
-        services.secondary_image_directory, genome_source_filename);
-    std::unique_ptr<display::SpriteIndexOutputFile> output =
-        services.output_files.open_for_create(temporary_path);
+    // A selected Windows world normally owns its Images directory. A new
+    // document can reach LoadGenome before that secondary directory has been
+    // created, though; do not leave a live creature with no gallery merely
+    // because the preferred output tree was unavailable.
+    std::string output_directory(services.secondary_image_directory);
+    std::unique_ptr<display::SpriteIndexOutputFile> output;
+    if (!output_directory.empty()) {
+        output = services.output_files.open_for_create(
+            display::sprite_index_path(output_directory, genome_source_filename));
+    }
+    if (output == nullptr &&
+        services.primary_image_directory != services.secondary_image_directory &&
+        !services.primary_image_directory.empty()) {
+        output_directory.assign(services.primary_image_directory);
+        output = services.output_files.open_for_create(
+            display::sprite_index_path(output_directory, genome_source_filename));
+    }
     if (output == nullptr) {
         return false;
     }
@@ -645,10 +658,13 @@ bool Skeleton::build_creature_sprite_gallery(
 
     display::Gallery* final_gallery = nullptr;
     try {
+        const std::string_view alternate_output_directory =
+            output_directory == services.primary_image_directory
+                ? services.secondary_image_directory
+                : services.primary_image_directory;
         final_gallery = display::acquire_gallery(
             genome_source_filename, 0, expected_frame_count, false,
-            services.secondary_image_directory,
-            services.primary_image_directory, services.gallery_host,
+            output_directory, alternate_output_directory, services.gallery_host,
             services.gallery_registry);
     } catch (const std::exception&) {
         return false;

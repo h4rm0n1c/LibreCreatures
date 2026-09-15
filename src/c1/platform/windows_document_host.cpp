@@ -91,6 +91,11 @@ BOOL C1WindowsDocument::OnSaveDocument(LPCTSTR path) {
 }
 
 BOOL C1WindowsDocument::OnNewDocument() {
+    // A new world is not backed by the previously opened save directory.
+    // Clear this before MFC drains the old document so the next resource-host
+    // construction cannot retain the old world's Images/Genetics tree.
+    save_world_directory_.clear();
+    save_image_directory_.clear();
     if (!CDocument::OnNewDocument()) {
         return FALSE;
     }
@@ -673,6 +678,16 @@ void C1WindowsDocument::delete_framework_contents( creatures1::application::Docu
         // remaining native runtime owner.
         world_runtime_.reset();
     }
+    // C1ResourceHost owns the galleries and, more importantly, stores the
+    // selected world's directory table by value.  Leaving it alive here
+    // makes a subsequent Open/New document continue reading the old world's
+    // Images and Genetics paths.  The old gallery registry has already been
+    // drained above, so these hosts are now safe to rebuild for the next
+    // document.
+    resources_.reset();
+    creature_resources_.reset();
+    palette_files_.reset();
+    palette_platform_.reset();
     event_scheduler_ = {};
     if (framework_opening_) {
         world_runtime_ = std::make_unique<creatures1::world::WorldRuntime>();
@@ -3461,6 +3476,10 @@ void C1WindowsDocument::ensure_resource_hosts() {
 
     creatures1::application::C1ResourceDirectories directories;
     directories.primary_resource_directories = resource_paths_;
+    for (std::size_t index = 0; index < resource_paths_.size(); ++index) {
+        directories.secondary_resource_directories[index] =
+            secondary_resource_directory(index);
+    }
     directories.body_data_directory =
         resource_paths_[kBodyDataDirectoryIndex];
     creature_resources_ = std::make_unique<

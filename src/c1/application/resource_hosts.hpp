@@ -22,6 +22,11 @@ namespace creatures1::application {
 struct C1ResourceDirectories {
     std::array<std::string, kPrimaryResourceDirectoryCount>
         primary_resource_directories{};
+    // The native body loader addresses the secondary image tree through the
+    // same directory namespace as the primary tree (its image slot is 13,
+    // i.e. secondary slot 4). Keep both trees available at that boundary.
+    std::array<std::string, kPrimaryResourceDirectoryCount>
+        secondary_resource_directories{};
     std::string body_data_directory;
 };
 
