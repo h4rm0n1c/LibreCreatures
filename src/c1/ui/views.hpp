@@ -31,6 +31,10 @@ enum class ViewportNavigationMode : std::uint32_t {
 
 struct SfcViewState {
     std::uint32_t pending_input_flags = 0;
+    // PointerTool::ProcessPendingInput copies pending_input_flags here before
+    // clearing them. Creature::HandlePickupEvent consumes this previous
+    // snapshot, not the now-cleared pending flags.
+    std::uint32_t previous_input_flags = 0;
     bool viewport_navigation_active = false;
     ViewportNavigationMode viewport_navigation_mode =
         ViewportNavigationMode::follow_selected_creature;

@@ -224,11 +224,13 @@ WorldRenderer::WorldRenderer(WorldRendererHost& host,
                              int initial_viewport_height,
                              ::creatures1::creatures::Creature* followed_creature,
                              bool smooth_scrolling_enabled,
-                             int overlay_gallery_identifier)
+                             int overlay_gallery_identifier,
+                             bool apply_world_scroll_side_effects)
     : host_(host),
       owner_window_(owner_window),
       palette_(host.game_palette()),
       smooth_scrolling_enabled_(smooth_scrolling_enabled),
+      apply_world_scroll_side_effects_(apply_world_scroll_side_effects),
       followed_creature_(nullptr),
       viewport_left_(initial_viewport_left),
       viewport_top_(initial_viewport_top),
@@ -568,7 +570,7 @@ void WorldRenderer::flush_deferred_dirty_rectangles() {
     const world::WorldRect viewport_rect{
         viewport_left_, viewport_top_, viewport_right_, viewport_bottom_};
     for (int index = 0; index < queued_dirty_rect_count_; ++index) {
-        host_.present_dirty_world_rect(queued_dirty_rects_[index],
+        host_.present_dirty_world_rect(owner_window_, queued_dirty_rects_[index],
                                        viewport_rect);
     }
     queued_dirty_rect_count_ = 0;
@@ -607,7 +609,8 @@ void WorldRenderer::queue_dirty_world_rect(int world_left,
     // invisible only while a full-viewport repaint was overpainting it.
 
     if (!deferred_dirty_rect_rendering_) {
-        host_.present_dirty_world_rect(clipped_rect, viewport_rect);
+        host_.present_dirty_world_rect(owner_window_, clipped_rect,
+                                       viewport_rect);
         return;
     }
 
@@ -871,8 +874,10 @@ void WorldRenderer::scroll_viewport(int& in_out_delta_x,
         viewport_top_ += in_out_delta_y;
         viewport_right_ += in_out_delta_x;
         viewport_bottom_ += in_out_delta_y;
-        host_.move_renderable_objects(in_out_delta_x, in_out_delta_y);
-        host_.update_view_anchored_objects();
+        if (apply_world_scroll_side_effects_) {
+            host_.move_renderable_objects(in_out_delta_x, in_out_delta_y);
+            host_.update_view_anchored_objects();
+        }
         host_.present_current_view(
             owner_window_,
             {viewport_left_, viewport_top_, viewport_right_, viewport_bottom_});
@@ -927,12 +932,23 @@ void WorldRenderer::set_viewport_origin(int world_x, int world_y) {
     viewport_right_ = viewport_left_ +
         (viewport_right_ - previous_left);
     viewport_bottom_ = viewport_top_ + height;
-    host_.move_renderable_objects(viewport_left_ - previous_left,
-                                  viewport_top_ - previous_top);
-    host_.update_view_anchored_objects();
+    if (apply_world_scroll_side_effects_) {
+        host_.move_renderable_objects(viewport_left_ - previous_left,
+                                      viewport_top_ - previous_top);
+        host_.update_view_anchored_objects();
+    }
     host_.present_current_view(
         owner_window_,
         {viewport_left_, viewport_top_, viewport_right_, viewport_bottom_});
+}
+
+void WorldRenderer::set_viewport_origin_without_world_shift(int world_x,
+                                                             int world_y) {
+    const int height = viewport_bottom_ - viewport_top_;
+    viewport_left_ = wrap_world_x(world_x);
+    viewport_top_ = clamp_vertical_origin(std::max(world_y, 0), height);
+    viewport_right_ = viewport_left_ + viewport_width_;
+    viewport_bottom_ = viewport_top_ + height;
 }
 
 void* WorldRenderer::create_back_buffer_dib(int width, int height) {

@@ -8,6 +8,8 @@
 #include <limits>
 #include <optional>
 #include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 namespace creatures1::platform {
 
@@ -17,6 +19,226 @@ void log_world_save_failure(const char* path, const char* reason) {
     if (FILE* log = std::fopen("Creatures.save.log", "a")) {
         std::fprintf(log, "C1 save failed: path=%s reason=%s\n",
                      path == nullptr ? "(null)" : path, reason);
+        std::fclose(log);
+    }
+}
+
+// Opt-in step probe.  Travel in C1 comes from exactly one comparison in
+// Skeleton::UpdateAnchorAndBounds @0043b950: when the swinging leg's endpoint
+// passes below movement_bounds.max_y the down foot switches to that leg and
+// the body re-anchors there.  If that never holds, the creature cycles poses
+// on the spot.  Log both sides of it, plus the bounds state that produces the
+// floor, so an unreachable pose, a wrong floor and a stalled macro are
+// distinguishable from one run.  Enable with C1_TRACE_CREATURE=<moniker hex>.
+bool creature_trace_disabled() {
+    // Enabled by default.  Setting an environment variable is awkward on
+    // Windows, and a diagnostic nobody can switch on is a diagnostic that
+    // never gets used.  C1_TRACE_CREATURE=0 (or "off") turns it off; a
+    // moniker in hex narrows the motor trace to one creature.
+    static const char* setting = std::getenv("C1_TRACE_CREATURE");
+    return setting != nullptr &&
+           (std::strcmp(setting, "0") == 0 || std::strcmp(setting, "off") == 0);
+}
+
+void log_creature_step_probe(const creatures1::creatures::Creature& creature,
+                             std::uint32_t world_tick) {
+    if (creature_trace_disabled()) {
+        return;
+    }
+    static const char* trace_moniker = std::getenv("C1_TRACE_CREATURE");
+    const auto& motor = creature.skeleton();
+    // Unset or "*" traces every creature.  A shared row budget lets creatures already
+    // in the save consume the whole trace before a newborn ever ticks, which
+    // is exactly why earlier log tails could not establish newborn state, so
+    // budget each moniker separately.
+    const bool trace_all = trace_moniker == nullptr || trace_moniker[0] == '*';
+    if (!trace_all && motor.genome_source_filename !=
+                          std::strtoul(trace_moniker, nullptr, 16)) {
+        return;
+    }
+
+    constexpr std::size_t kTracedCreatureLimit = 16;
+    constexpr std::size_t kRowsPerCreature = 4000;
+    static std::uint32_t traced_monikers[kTracedCreatureLimit]{};
+    static std::size_t traced_rows[kTracedCreatureLimit]{};
+    static std::size_t traced_count = 0;
+
+    std::size_t slot = 0;
+    while (slot < traced_count &&
+           traced_monikers[slot] != motor.genome_source_filename) {
+        ++slot;
+    }
+    if (slot == traced_count) {
+        if (traced_count == kTracedCreatureLimit) {
+            return;
+        }
+        traced_monikers[slot] = motor.genome_source_filename;
+        ++traced_count;
+    }
+    if (traced_rows[slot] >= kRowsPerCreature) {
+        return;
+    }
+    ++traced_rows[slot];
+
+    const auto bounds = motor.movement_bounds();
+    // UpdateAnchorAndBounds indexes the opposite leg as (down_foot == left) + 1.
+    const std::size_t opposite =
+        static_cast<std::size_t>(
+            motor.down_foot == creatures1::creatures::DownFoot::left) + 1;
+    const bool step_predicate = bounds.max_y < motor.limb_chain_end_y[opposite];
+
+    // Brain summary: lobe count, total neurons, how many neurons have any
+    // activation/firing anywhere, and the strongest decision-lobe (lobe 6)
+    // firing.  "No brain activity" and "decision lobe never fires" are then
+    // visible without a kit.
+    unsigned lobe_count = 0, neuron_total = 0, active_neurons = 0,
+             firing_neurons = 0, decision_neurons = 0, decision_best = 0,
+             decision_best_index = 0;
+    if (const auto* brain = creature.brain()) {
+        lobe_count = brain->lobe_count();
+        for (std::uint32_t l = 0; l < lobe_count; ++l) {
+            const auto& lobe = brain->lobe(l);
+            const std::uint32_t n = lobe.neuron_count_value();
+            neuron_total += n;
+            for (std::uint32_t i = 0; i < n; ++i) {
+                const auto& neuron = lobe.neuron(i);
+                active_neurons += neuron.activation != 0 ? 1u : 0u;
+                firing_neurons += neuron.firing_strength != 0 ? 1u : 0u;
+                if (l == 6 && neuron.firing_strength > decision_best) {
+                    decision_best = neuron.firing_strength;
+                    decision_best_index = i;
+                }
+            }
+            if (l == 6) {
+                decision_neurons = n;
+            }
+        }
+    }
+
+    // Per-lobe active/firing counts and the non-zero chemical count, so a
+    // dead input (no drives, no perception) is identifiable by lobe.
+    char per_lobe[360] = {};
+    std::size_t per_lobe_len = 0;
+    unsigned nonzero_chemicals = 0;
+    if (const auto* brain = creature.brain()) {
+        for (std::uint32_t l = 0; l < brain->lobe_count() && l < 12; ++l) {
+            const auto& lobe = brain->lobe(l);
+            unsigned a = 0, f = 0;
+            for (std::uint32_t i = 0; i < lobe.neuron_count_value(); ++i) {
+                a += lobe.neuron(i).activation != 0 ? 1u : 0u;
+                f += lobe.neuron(i).firing_strength != 0 ? 1u : 0u;
+            }
+            // d = dendrites with a live target, w = those with non-zero
+            // current weight.  A fresh genome-built brain and a
+            // save-loaded one should both have wiring here.
+            unsigned d = 0, w = 0, t = 0;
+            for (std::uint32_t i = 0; i < lobe.neuron_count_value(); ++i) {
+                const auto& neuron = lobe.neuron(i);
+                const std::pair<const creatures1::brain::LobeConnection*,
+                                unsigned> groups[2] = {
+                    {neuron.rule0_connections_begin,
+                     neuron.rule0_connection_count},
+                    {neuron.rule1_connections_begin,
+                     neuron.rule1_connection_count}};
+                for (const auto& group : groups) {
+                    for (unsigned c = 0; group.first != nullptr &&
+                                         c < group.second; ++c) {
+                        d += group.first[c].target_neuron != nullptr ? 1u : 0u;
+                        w += group.first[c].baseline_weight;
+                        t += group.first[c].target_weight;
+                    }
+                }
+            }
+            int wrote = std::snprintf(per_lobe + per_lobe_len,
+                                      sizeof(per_lobe) - per_lobe_len,
+                                      "%s%u:%u/%u/d%u/b%u/t%u",
+                                      l == 0 ? "" : ",", l, a, f, d, w, t);
+            if (wrote > 0) {
+                per_lobe_len += static_cast<std::size_t>(wrote);
+            }
+        }
+    }
+    if (const auto* chemistry = creature.biochemistry()) {
+        for (const auto& chemical : chemistry->chemical_states()) {
+            nonzero_chemicals += chemical.concentration != 0 ? 1u : 0u;
+        }
+    }
+
+    // Once per creature: dump each lobe's connection rules so the rule
+    // programs driving dendrite growth/decay can be read directly.
+    if (traced_rows[slot] == 1) {
+        if (const auto* brain = creature.brain()) {
+            if (FILE* rules = std::fopen("Creatures.rules.log", "a")) {
+                for (std::uint32_t l = 0; l < brain->lobe_count(); ++l) {
+                    const auto& lobe = brain->lobe(l);
+                    for (std::size_t r = 0; r < 2; ++r) {
+                        const auto& rule = lobe.connection_rule(r);
+                        auto tokens = [&](const creatures1::brain::LobeRuleExpression& e) {
+                            static char buf[64];
+                            std::size_t n = 0;
+                            for (auto t : e.tokens) {
+                                n += static_cast<std::size_t>(std::snprintf(
+                                    buf + n, sizeof(buf) - n, "%u.", t));
+                            }
+                            return buf;
+                        };
+                        std::fprintf(rules,
+                            "moniker=%08x lobe=%u rule=%zu target=%u mode=%u "
+                            "count=%u-%u base=%u-%u dstate=%u-%u "
+                            "cwdecay=%u twconv=%u bstep=%u grow_int=%u ",
+                            motor.genome_source_filename, l, r,
+                            rule.target_lobe_index,
+                            static_cast<unsigned>(rule.connection_mode),
+                            rule.connection_count_min, rule.connection_count_max,
+                            rule.baseline_weight_min, rule.baseline_weight_max,
+                            rule.dendrite_state_min, rule.dendrite_state_max,
+                            rule.current_weight_decay_selector,
+                            rule.target_weight_convergence_selector,
+                            rule.baseline_weight_step_interval,
+                            rule.dendrite_growth_interval);
+                        std::fprintf(rules, "grow=%s ", tokens(rule.dendrite_growth_expression));
+                        std::fprintf(rules, "decay_int=%u decay=%s ",
+                                     rule.dendrite_decay_interval,
+                                     tokens(rule.dendrite_decay_expression));
+                        std::fprintf(rules, "cw=%s ", tokens(rule.current_weight_expression));
+                        std::fprintf(rules, "tw=%s\n", tokens(rule.target_weight_expression));
+                    }
+                }
+                std::fclose(rules);
+            }
+        }
+    }
+
+    if (FILE* log = std::fopen("Creatures.motor.log", "a")) {
+        std::fprintf(
+            log,
+            "tick=%u moniker=%08x lobe_af=%s chems=%u "
+            "action=%u lobes=%u neurons=%u active=%u "
+            "firing=%u decision=%u best=%u@%u dream=%u instincts=%u "
+            "stage=%u alive=%d mode=%u flags=%02x "
+            "bounds=%d,%d,%d,%d foot=%d,%d down=%d opposite=%zu "
+            "legs=%d,%d;%d,%d step=%d pose=%.15s target=%.15s "
+            "cursor=%zu anim=%.32s link=%p\n",
+            world_tick, motor.genome_source_filename, per_lobe,
+            nonzero_chemicals,
+            creature.selected_action_id(), lobe_count, neuron_total,
+            active_neurons, firing_neurons, decision_neurons, decision_best,
+            decision_best_index,
+            creature.instinct_runtime_state().dream_countdown,
+            static_cast<unsigned>(
+                creature.instinct_runtime_state().instinct_count),
+            static_cast<unsigned>(creature.genome_life_stage()),
+            creature.death_state() == 0 ? 1 : 0,
+            static_cast<unsigned>(motor.bounds_mode()),
+            motor.script_bounds_flags(), bounds.min_x, bounds.min_y,
+            bounds.max_x, bounds.max_y, motor.down_foot_x, motor.down_foot_y,
+            static_cast<int>(motor.down_foot), opposite,
+            motor.limb_chain_end_x[1], motor.limb_chain_end_y[1],
+            motor.limb_chain_end_x[2], motor.limb_chain_end_y[2],
+            step_predicate ? 1 : 0, motor.current_pose.characters.data(),
+            motor.target_pose.characters.data(), motor.animation_cursor,
+            motor.animation_sequence.data(),
+            static_cast<const void*>(motor.motion_link));
         std::fclose(log);
     }
 }
@@ -987,17 +1209,21 @@ void C1WindowsDocument::create_eye_view(
     const creatures1::application::EyeViewCreationParameters& parameters,
     std::int32_t initial_viewport_left, std::int32_t initial_viewport_top,
     std::string_view title) {
-    static_cast<void>(parameters);
     if (eye_view_ != nullptr) {
         return;
     }
     auto view = std::make_unique<C1EyeViewWindow>(*this);
-    if (!view->create(title)) {
+    if (!view->create(title, parameters, initial_viewport_left,
+                      initial_viewport_top)) {
         return;
     }
-    view->set_follow_position(initial_viewport_left, initial_viewport_top,
-                              false);
     eye_view_ = std::move(view);
+    // Native creation starts with the creature's sound-source viewport, then
+    // immediately runs the same follow calculation used on world ticks. Do
+    // that before the first paint so the eye view is centred on the creature
+    // and its overlay is composited into a populated back buffer.
+    creatures1::ui::update_selected_creature_follow_viewport(*eye_view_);
+    eye_view_->redraw_full_view();
 }
 
 void C1WindowsDocument::invalidate_eye_view_follow_position() {
@@ -1487,6 +1713,7 @@ void C1WindowsDocument::tick_non_scenery_object(std::size_t index) {
     // belonging to a live Creature.  See WindowsCreatureUpdateHost's class
     // comment for why this case was missing entirely.
     if (auto* creature = mutable_creature_for_object(*object)) {
+        log_creature_step_probe(*creature, world_tick_count_);
         WindowsCreatureUpdateHost host(*this);
         creature->update(host, *this);
         return;
@@ -1737,9 +1964,9 @@ bool C1WindowsDocument::selected_action_is_in_range(std::size_t index) const {
 }
 
 void C1WindowsDocument::boost_selected_action_activation(std::size_t index) {
-    // The native adds the creature's action-activation boost to the selected
-    // Decision-lobe neuron and saturates the byte at 0xff, which is exactly
-    // what Lobe::add_neuron_activation already does.
+    // Native SFCDoc::UpdateWorld loads the byte boost, doubles it with
+    // `add al, al`, then adds the result to the selected Decision-lobe
+    // neuron. Lobe::add_neuron_activation supplies the final 0xff saturation.
     auto* creature = dynamic_cast<creatures1::creatures::Creature*>(
         creature_at(index));
     if (creature == nullptr || creature->brain() == nullptr) {
@@ -1752,11 +1979,14 @@ void C1WindowsDocument::boost_selected_action_activation(std::size_t index) {
         // write is a native defect, not behaviour worth reproducing.
         return;
     }
+    const std::uint8_t native_boost = static_cast<std::uint8_t>(
+        creature->action_activation_boost() +
+        creature->action_activation_boost());
     creature->brain()
         ->lobe(static_cast<std::uint32_t>(
             creatures1::brain::StandardLobeIndex::decision))
         .add_neuron_activation(static_cast<std::uint32_t>(selected),
-                               creature->action_activation_boost());
+                               native_boost);
 }
 
 void C1WindowsDocument::update_creature_brain(std::size_t index) {
@@ -1765,7 +1995,7 @@ void C1WindowsDocument::update_creature_brain(std::size_t index) {
     if (creature == nullptr || creature->brain() == nullptr) {
         return;
     }
-    creature->brain()->update(world_tick_count_);
+    creature->brain()->update(creature->biochemistry_tick());
 }
 
 void C1WindowsDocument::update_creature_biochemistry(std::size_t index) {
@@ -1774,7 +2004,7 @@ void C1WindowsDocument::update_creature_biochemistry(std::size_t index) {
     if (creature == nullptr || creature->biochemistry() == nullptr) {
         return;
     }
-    creature->biochemistry()->update(world_tick_count_);
+    creature->biochemistry()->update(creature->biochemistry_tick());
 }
 
 void C1WindowsDocument::update_creature_action_selection(std::size_t index) {
@@ -2736,6 +2966,42 @@ void C1WindowsDocument::purge_destroy_when_finished_macros( creatures1::objects:
         &object);
 }
 
+namespace {
+
+// Opt-in placement probe (C1_TRACE_CREATURE).  The hatch script places a
+// newborn with `mvto <egg centre X> <egg posb>` then `slim`, and nothing
+// afterwards snaps the foot down: UpdateAnchorAndBounds only pulls a creature
+// DOWN through a floor, never up onto one.  So the Y handed to mvto has to
+// equal the room floor exactly.  Log every move-to with the object's own
+// movement bounds so the requested Y and the floor can be compared directly.
+void log_placement(const char* kind, const creatures1::objects::Object& object,
+                   int world_x, int world_y) {
+    if (creature_trace_disabled()) {
+        return;
+    }
+    static std::size_t rows = 0;
+    if (rows >= 400) {
+        return;
+    }
+    ++rows;
+    const std::uint32_t classifier = object.classifier_base();
+    const auto bounds = object.movement_bounds();
+    if (FILE* log = std::fopen("Creatures.place.log", "a")) {
+        std::fprintf(log,
+                     "moveto kind=%s family=%u genus=%u species=%u "
+                     "requested=%d,%d bounds=%d,%d,%d,%d floor=%d "
+                     "delta_to_floor=%d\n",
+                     kind, (classifier >> 24) & 0xffu,
+                     (classifier >> 16) & 0xffu, (classifier >> 8) & 0xffu,
+                     world_x, world_y, bounds.min_x, bounds.min_y,
+                     bounds.max_x, bounds.max_y, bounds.max_y,
+                     world_y - bounds.max_y);
+        std::fclose(log);
+    }
+}
+
+}  // namespace
+
 void C1WindowsDocument::move_to_and_redraw(creatures1::objects::Object& object, int world_x, int world_y) {
     // This stands in for vtable slot 23, MoveToAndRedraw, so it has to cover
     // every class that overrides it: SimpleObject @00426f90, CompoundObject's
@@ -2747,6 +3013,7 @@ void C1WindowsDocument::move_to_and_redraw(creatures1::objects::Object& object, 
     if (auto* simple = dynamic_cast<creatures1::objects::SimpleObject*>(
             &object);
         simple != nullptr) {
+        log_placement("simple", object, world_x, world_y);
         simple->move_to_and_redraw(world_x, world_y, *this);
         return;
     }
@@ -2765,6 +3032,8 @@ void C1WindowsDocument::move_to_and_redraw(creatures1::objects::Object& object, 
     if (auto* skeleton = dynamic_cast<creatures1::creatures::Skeleton*>(
             &object);
         skeleton != nullptr) {
+        // A creature's mvto sets the down foot, so world_y IS the foot Y.
+        log_placement("creature-foot", object, world_x, world_y);
         SkeletonMoveRedraw move_host(*this);
         skeleton->set_down_foot_position_and_invalidate_bounds(
             world_x, world_y, move_host, *this);
@@ -3292,7 +3561,18 @@ void C1WindowsDocument::fill_client_background_black(void* device_context) {
     }
 }
 
-void C1WindowsDocument::present_dirty_world_rect( const creatures1::world::WorldRect& world_rect, const creatures1::world::WorldRect& /*viewport_rect*/) {
+void C1WindowsDocument::present_dirty_world_rect(
+    void* owner_window, const creatures1::world::WorldRect& world_rect,
+    const creatures1::world::WorldRect& /*viewport_rect*/) {
+    // A document can own both the main world renderer and the creature eye
+    // renderer.  Dirty rectangles are emitted by WorldRenderer, so retain
+    // that owner identity all the way to presentation; otherwise an eye-view
+    // follow tick repaints the main view with the eye renderer's coordinates.
+    if (eye_view_ != nullptr &&
+        owner_window == static_cast<void*>(eye_view_->GetSafeHwnd())) {
+        eye_view_->present_world_rect(world_rect);
+        return;
+    }
     present_renderer_rect(world_rect);
 }
 

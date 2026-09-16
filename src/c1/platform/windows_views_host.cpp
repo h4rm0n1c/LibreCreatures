@@ -898,7 +898,17 @@ C1EyeViewWindow::~C1EyeViewWindow() {
     gdi_host_.reset();
 }
 
-bool C1EyeViewWindow::create(std::string_view title) {
+bool C1EyeViewWindow::create(
+    std::string_view title,
+    const creatures1::application::EyeViewCreationParameters& parameters,
+    std::int32_t initial_viewport_left,
+    std::int32_t initial_viewport_top) {
+    initial_viewport_left_ = initial_viewport_left;
+    initial_viewport_top_ = initial_viewport_top;
+    viewport_width_ = parameters.viewport_width;
+    viewport_height_ = parameters.viewport_height;
+    smooth_scrolling_enabled_ = parameters.smooth_scrolling;
+    overlay_gallery_identifier_ = parameters.overlay_gallery_identifier;
     return creatures1::ui::create_eye_view_window(*this, title);
 }
 
@@ -928,8 +938,11 @@ bool C1EyeViewWindow::create_native_eye_window(std::string_view title,
     CRect client;
     GetClientRect(&client);
     renderer_ = std::make_unique<creatures1::display::WorldRenderer>(
-        document_, GetSafeHwnd(), 0, 0, (std::max)(1, (int)client.Width()),
-        (std::max)(1, (int)client.Height()), nullptr, false, 0);
+        document_, GetSafeHwnd(), initial_viewport_left_, initial_viewport_top_,
+        viewport_width_ > 0 ? viewport_width_ : (std::max)(1, (int)client.Width()),
+        viewport_height_ > 0 ? viewport_height_ : (std::max)(1, (int)client.Height()),
+        nullptr, smooth_scrolling_enabled_, overlay_gallery_identifier_,
+        false);
     renderer_->realize_palette();
     return true;
 }
@@ -1008,6 +1021,17 @@ C1EyeViewWindow::eye_view_position_limits() const {
 
 void C1EyeViewWindow::move_eye_view_window(int x, int y, int width, int height,
                                            bool repaint) {
+    // The recovered default rectangle is the eye renderer's client extent.
+    // MoveWindow consumes an outer frame extent for this overlapped window;
+    // without adding the non-client metrics the caption and borders reduce
+    // the drawable area below bubb.spr's 128x96 overlay.
+    RECT frame{0, 0, width, height};
+    const DWORD style = static_cast<DWORD>(GetStyle());
+    const DWORD ex_style = static_cast<DWORD>(GetExStyle());
+    if (::AdjustWindowRectEx(&frame, style, FALSE, ex_style) != FALSE) {
+        width = frame.right - frame.left;
+        height = frame.bottom - frame.top;
+    }
     MoveWindow(x, y, width, height, repaint ? TRUE : FALSE);
 }
 
@@ -1016,7 +1040,13 @@ void C1EyeViewWindow::forward_default_window_operation() { Default(); }
 void C1EyeViewWindow::forward_default_size(unsigned size_type,
                                            int client_width,
                                            int client_height) {
-    CWnd::OnSize(static_cast<UINT>(size_type), client_width, client_height);
+    // CEyeView::OnSize calls CWnd::Default(), not CWnd::OnSize().  The latter
+    // bypasses the window procedure's default handling and can leave the
+    // overlapped eye window with stale non-client/update state.
+    static_cast<void>(size_type);
+    static_cast<void>(client_width);
+    static_cast<void>(client_height);
+    Default();
 }
 
 bool C1EyeViewWindow::palette_focus_is_this_window(
@@ -1071,7 +1101,8 @@ void C1EyeViewWindow::set_follow_position(int center_x, int center_y,
 void C1EyeViewWindow::publish_follow_viewport(
     const creatures1::world::ViewportBounds& bounds) {
     if (renderer_ != nullptr) {
-        renderer_->set_viewport_origin(bounds.left, bounds.top);
+        renderer_->set_viewport_origin_without_world_shift(bounds.left,
+                                                            bounds.top);
     }
 }
 
@@ -1094,17 +1125,14 @@ void C1EyeViewWindow::OnClose() {
 }
 
 void C1EyeViewWindow::OnPaint() {
-    // This window had no WM_PAINT handler at all -- unlike C1WindowsView
-    // (a CView, which gets WM_PAINT -> OnDraw wired automatically by the
-    // MFC document/view framework), a plain CWnd like this one draws
-    // nothing on its own. Every per-tick viewport update already computes
-    // and publishes a real world rect (ui::update_selected_creature_
-    // follow_viewport); this just repaints that same rect whenever the
-    // window itself needs it (first show, uncover, resize).
+    // Native RedrawWorldRendererFullViewOnPaint constructs a CPaintDC and
+    // calls WorldRenderer::RedrawFullView.  Use this paint DC directly: a
+    // GetDC-based dirty present here can ignore the invalidated region and
+    // leave the eye buffer partially stale after uncover/resize.
     CPaintDC paint_dc(this);
-    present_world_rect(creatures1::world::WorldRect{
-        follow_center_x_ - 0x40, follow_center_y_ - 0x30,
-        follow_center_x_ + 0x40, follow_center_y_ + 0x30});
+    if (renderer_ != nullptr) {
+        renderer_->redraw_full_view(&paint_dc);
+    }
 }
 
 void C1EyeViewWindow::present_world_rect(
@@ -1121,7 +1149,22 @@ void C1EyeViewWindow::present_world_rect(
     }
     void* device_context = gdi_host_->acquire_client_context();
     if (device_context != nullptr) {
-        renderer_->present_world_rect(device_context, rect);
+        if (!renderer_->full_redraw_pending()) {
+            renderer_->redraw_full_view(device_context);
+        } else {
+            renderer_->present_world_rect(device_context, rect);
+        }
+        gdi_host_->release_client_context(device_context);
+    }
+}
+
+void C1EyeViewWindow::redraw_full_view() {
+    if (renderer_ == nullptr || gdi_host_ == nullptr) {
+        return;
+    }
+    void* device_context = gdi_host_->acquire_client_context();
+    if (device_context != nullptr) {
+        renderer_->redraw_full_view(device_context);
         gdi_host_->release_client_context(device_context);
     }
 }

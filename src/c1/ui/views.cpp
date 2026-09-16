@@ -48,7 +48,7 @@ void initialize_view(SfcViewState& state, WorldViewSettings& settings,
     state.sound_plays_when_unfocused = true;
     state.has_focus = true;
 
-    settings.half_width = 700;
+    settings.half_width = kInfiniteWorldHalfWidth;
     settings.half_height = 0x15e;
     settings.application_privilege_level = application_privilege_level;
     settings.smooth_scrolling_enabled = false;
@@ -219,14 +219,22 @@ void on_horizontal_scroll(SfcViewState& state, WorldViewSettings& settings,
     set_viewport_navigation_mode(state, host, true);
     const int requested = requested_scroll_position(
         scroll_command, current_position, thumb_position, settings.half_width);
-    const int clamped = clamp_scroll_position(requested, settings.half_width);
+    const bool infinite = settings.half_width != kSmallWorldHalfWidth;
+    const int clamped = infinite
+                            ? requested
+                            : clamp_scroll_position(requested, settings.half_width);
     if (clamped == current_position) {
         return;
     }
     int delta_x = clamped - current_position;
     int delta_y = 0;
     host.scroll_viewport(delta_x, delta_y);
-    host.set_scroll_position(0, current_position + delta_x, true);
+    int position = current_position + delta_x;
+    if (infinite) {
+        const int range = settings.half_width * 2;
+        position = ((position % range) + range) % range;
+    }
+    host.set_scroll_position(0, position, true);
 }
 
 void on_vertical_scroll(SfcViewState& state, WorldViewSettings& settings,

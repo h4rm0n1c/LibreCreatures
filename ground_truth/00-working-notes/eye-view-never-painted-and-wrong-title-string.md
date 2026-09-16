@@ -84,27 +84,21 @@ only the C++ code's id constant was wrong.
   `eye_view_->present_world_rect(...)` when they match, falling back to
   the main view's `present_renderer_rect` otherwise.
 
-## NOT fixed here -- a related, more severe bug found in the same investigation
+## Follow-up fixed: isolate eye-view viewport movement
 
-`WorldRenderer::set_viewport_origin`/`scroll_viewport` (the renderer's
-own methods, `display/rendering.cpp`) also call
-`host_.move_renderable_objects(delta_x, delta_y)` and
-`host_.update_view_anchored_objects()` on the same shared
-`WorldRendererHost` (the document) whenever a viewport moves.
-`move_renderable_objects` calls `object->move_by(delta_x, delta_y)` on
-**every renderable object in the world** -- for the main view this is
-confirmed correct/native-faithful (`ScrollViewport @ 0x00412f30`), but
-the eye view's renderer shares the exact same call with no window
-distinction. **Every time the eye view's own follow-camera moves to
-track a creature, every renderable object in the entire world gets
-shifted by that same delta too** -- silent, ongoing world-position
-corruption for as long as the eye view is open and a creature is
-selected and moving. This was not fixed in this pass (needs a similar
-"which window is this for" guard, but touching per-tick world-mutation
-code needs more care than the time available here) -- flagged as a
-high-priority follow-up, and it was already happening before this
-session's paint fix (the paint fix does not make it worse, it was
-already running per-tick regardless of whether anything painted).
+The eye renderer shared the document's `WorldRendererHost` with the main
+renderer. Its follow update therefore used the main renderer's
+`set_viewport_origin` path, which calls `move_renderable_objects` and
+`update_view_anchored_objects`; following a creature could shift every
+world object. The eye path now uses
+`set_viewport_origin_without_world_shift`, preserving the native eye
+viewport update without mutating world coordinates or view-anchored objects.
+
+The eye `WM_PAINT` path was also aligned with native
+`RedrawWorldRendererFullViewOnPaint`: it renders a full view through the
+active `CPaintDC`, rather than acquiring a second DC and presenting only a
+follow rectangle. `WM_SIZE` now forwards through `CWnd::Default()` before
+resizing the renderer, matching `CEyeView::OnSize`.
 
 ## Verification
 
@@ -123,3 +117,5 @@ already running per-tick regardless of whether anything painted).
   table), this was shipped on code-level confidence rather than forcing
   a live repro through a test harness that appears not to reliably
   trigger this specific menu command path.
+- The follow-camera isolation, native paint-DC path, and native default
+  size forwarding compile and link in both private and public source lanes.

@@ -1346,7 +1346,9 @@ public:
 
     void fill_client_background_black(void* device_context) override;
 
-    void present_dirty_world_rect(const creatures1::world::WorldRect& world_rect, const creatures1::world::WorldRect& /*viewport_rect*/) override;
+    void present_dirty_world_rect(
+        void* owner_window, const creatures1::world::WorldRect& world_rect,
+        const creatures1::world::WorldRect& viewport_rect) override;
 
     void present_current_view(void* /*owner_window*/, const creatures1::world::WorldRect& viewport_rect) override;
 
@@ -1813,7 +1815,13 @@ public:
         : document_(document) {}
     ~C1EyeViewWindow() override;
 
-    bool create(std::string_view title);
+    bool create(
+        std::string_view title,
+        const creatures1::application::EyeViewCreationParameters& parameters,
+        std::int32_t initial_viewport_left,
+        std::int32_t initial_viewport_top);
+
+    void redraw_full_view();
 
     // EyeViewHost.
     std::string localized_eye_view_title() const override;
@@ -1877,6 +1885,12 @@ private:
     std::unique_ptr<creatures1::display::WorldRenderer> renderer_;
     std::unique_ptr<creatures1::platform::WindowsWorldRendererGdiHost>
         gdi_host_;
+    std::int32_t initial_viewport_left_ = 0;
+    std::int32_t initial_viewport_top_ = 0;
+    std::int32_t viewport_width_ = 0x80;
+    std::int32_t viewport_height_ = 0x60;
+    bool smooth_scrolling_enabled_ = false;
+    int overlay_gallery_identifier_ = 0x62627562;
     int follow_center_x_ = 0;
     int follow_center_y_ = 0;
     bool follow_valid_ = false;

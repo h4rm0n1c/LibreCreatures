@@ -99,6 +99,7 @@ public:
     // the whole client while the present only repaints the update rect.
     virtual void fill_client_background_black(void* device_context) = 0;
     virtual void present_dirty_world_rect(
+        void* owner_window,
         const world::WorldRect& world_rect,
         const world::WorldRect& viewport_rect) = 0;
     virtual void present_current_view(void* owner_window,
@@ -172,10 +173,12 @@ public:
                   int initial_viewport_height,
                   ::creatures1::creatures::Creature* followed_creature,
                   bool smooth_scrolling_enabled,
-                  int overlay_gallery_identifier);
+                  int overlay_gallery_identifier,
+                  bool apply_world_scroll_side_effects = true);
     ~WorldRenderer();
 
     void redraw_full_view(void* device_context);
+    bool full_redraw_pending() const { return full_redraw_pending_; }
     void set_full_redraw_pending(bool pending) {
         full_redraw_pending_ = pending;
     }
@@ -211,6 +214,10 @@ public:
     bool advance_smooth_scroll();
     void reset_navigation();
     void set_viewport_origin(int world_x, int world_y);
+    // CEyeView writes its viewport directly after following the selected
+    // creature. That secondary view must not shift the document's renderable
+    // objects as the main view does when it scrolls.
+    void set_viewport_origin_without_world_shift(int world_x, int world_y);
     void* create_back_buffer_dib(int width, int height);
     void update_dib_palette();
 
@@ -238,6 +245,11 @@ private:
     std::uint8_t* dib_pixels_ = nullptr;
     void* palette_ = nullptr;
     bool smooth_scrolling_enabled_ = false;
+    // The main renderer owns the document's screen-space renderable set and
+    // therefore applies native ScrollViewport/SetViewportOrigin movement to
+    // it.  CEyeView has a second renderer over the same document and must
+    // never apply those shared-world side effects.
+    bool apply_world_scroll_side_effects_ = true;
     ::creatures1::creatures::Creature* followed_creature_ = nullptr;
     int viewport_left_ = 0;
     int viewport_top_ = 0;

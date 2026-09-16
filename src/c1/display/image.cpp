@@ -316,11 +316,61 @@ void Image::blit_to_dib(
 
     const int unwrapped_destination_x =
         clip_rect.min_x + destination_x_offset - view_rect.min_x;
-    const int destination_y = destination_y_offset - view_rect.min_y +
-                              clip_origin_y;
-    const int destination_x = unwrapped_destination_x >= 0
-                                  ? unwrapped_destination_x
-                                  : unwrapped_destination_x + world::kWorldWidth;
+    int destination_x = unwrapped_destination_x;
+    const int destination_stride = view_rect.max_x - view_rect.min_x;
+    if (destination_stride <= 0) {
+        return;
+    }
+
+    // A wrapped world coordinate and a one-pixel alignment pad can both make
+    // the local destination negative.  Only add/subtract the world width when
+    // that produces a destination that actually overlaps this DIB.  The old
+    // unconditional `+ world width` turned a harmless -1 into 8351 and then
+    // wrote a sprite into the next row/heap object at the viewport edge.
+    const int initial_copy_width = source_right - source_x + 1;
+    const auto destination_overlaps_dib = [&](int candidate) {
+        return candidate < destination_stride &&
+               candidate + initial_copy_width > 0;
+    };
+    if (!destination_overlaps_dib(destination_x)) {
+        if (destination_overlaps_dib(destination_x + world::kWorldWidth)) {
+            destination_x += world::kWorldWidth;
+        } else if (destination_overlaps_dib(destination_x -
+                                             world::kWorldWidth)) {
+            destination_x -= world::kWorldWidth;
+        } else {
+            return;
+        }
+    }
+
+    int destination_y = destination_y_offset - view_rect.min_y +
+                         clip_origin_y;
+    int copy_width = initial_copy_width;
+    int row_count = source_bottom - source_y + 1;
+
+    if (destination_x < 0) {
+        const int clipped_columns = -destination_x;
+        source_x += clipped_columns;
+        copy_width -= clipped_columns;
+        destination_x = 0;
+    }
+    if (destination_x + copy_width > destination_stride) {
+        copy_width = destination_stride - destination_x;
+    }
+    if (destination_y < 0) {
+        const int clipped_rows = -destination_y;
+        source_y += clipped_rows;
+        row_count -= clipped_rows;
+        destination_y = 0;
+    }
+    const int destination_height = view_rect.max_y - view_rect.min_y;
+    if (destination_y + row_count > destination_height) {
+        row_count = destination_height - destination_y;
+    }
+    if (copy_width <= 0 || row_count <= 0 || source_x > source_right ||
+        source_y > source_bottom) {
+        return;
+    }
 
     std::uint8_t* pixels =
         get_pixel_data(cache, sprite_files, paths, files);
@@ -328,16 +378,14 @@ void Image::blit_to_dib(
         return;
     }
 
-    const int row_count = source_bottom - source_y + 1;
     const int source_stride = width_;
-    const int destination_stride = view_rect.max_x - view_rect.min_x;
-    const std::uint32_t copy_width =
-        static_cast<std::uint32_t>(source_right - source_x + 1);
+    const std::uint32_t safe_copy_width =
+        static_cast<std::uint32_t>(copy_width);
     if (!direct_copy) {
         blit_zero_transparent_pixels(
             {pixels, source_stride}, source_x, source_y,
             {dib_pixels, destination_stride}, destination_x, destination_y,
-            copy_width, row_count);
+            safe_copy_width, row_count);
         return;
     }
 
@@ -345,7 +393,7 @@ void Image::blit_to_dib(
     std::uint8_t* destination_row =
         dib_pixels + destination_y * destination_stride + destination_x;
     for (int row = 0; row < row_count; ++row) {
-        std::memcpy(destination_row, source_row, copy_width);
+        std::memcpy(destination_row, source_row, safe_copy_width);
         source_row += source_stride;
         destination_row += destination_stride;
     }
