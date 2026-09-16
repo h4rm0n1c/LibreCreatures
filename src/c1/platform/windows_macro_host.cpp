@@ -1736,7 +1736,14 @@ WindowsGeneratedCreatureHost::create_generated_creature(
     WindowsCreatureConstructionHost host(document_);
     auto creature = std::make_unique<creatures1::creatures::Creature>(
         genome_source_filename, construction_sex, host);
-    return &runtime->adopt_creature(std::move(creature));
+    creatures1::creatures::Creature* const adopted =
+        &runtime->adopt_creature(std::move(creature));
+    // Creature's recovered constructor asks its construction host to rebuild
+    // the menu, but adoption happens immediately after construction in this
+    // port.  Refresh once more after adoption so the new creature is present
+    // in the selection registry before the menu is rebuilt.
+    document_.rebuild_creature_selection_menu();
+    return adopted;
 }
 
 void WindowsGeneratedCreatureHost::set_selected_creature(
@@ -2132,6 +2139,10 @@ creatures1::objects::Object* WindowsNewObjectHost::create_creature(
         construction);
     creatures1::creatures::Creature& adopted =
         runtime->adopt_creature(std::move(creature));
+    // The constructor's native-order menu refresh precedes adopt_creature in
+    // this composition.  Repeat it after adoption so NEW: CREA exposes the
+    // newborn through the normal creature-selection path.
+    document_.rebuild_creature_selection_menu();
     return &adopted.skeleton();
 }
 
