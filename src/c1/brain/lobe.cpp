@@ -477,6 +477,35 @@ void Lobe::update_late_phase(Brain* brain, std::uint32_t tick) {
             for (std::uint8_t connection_index = 0;
                  connection_index < connection_count; ++connection_index) {
                 LobeConnection& connection = connection_array[connection_index];
+
+                // Native UpdateLatePhase @00405450..0040547d loads this
+                // connection's live state into the SVRule register file
+                // (ESP+0x4c) before evaluating any of its rules:
+                //   16 <- source neuron firing_strength   ([target]+2 -> 0x5c)
+                //   18 <- current_weight                  (+6 -> 0x5e)
+                //   19 <- target_weight                   (+7 -> 0x5f)
+                //   20 <- baseline_weight                 (+8 -> 0x60)
+                //   21 <- dendrite_state                  (+9 -> 0x61)
+                // Register 17 is never written.  The decompiler hides these
+                // stores and an earlier note concluded 16..21 read zero; they
+                // do not.  With them zeroed, dendrite decay rules that depend
+                // on the source neuron firing fired every tick, retiring the
+                // concept lobe's dendrites and zeroing their weights.
+                registers[16] = connection.target_neuron == nullptr
+                                    ? 0
+                                    : connection.target_neuron->firing_strength;
+                registers[18] = connection.current_weight;
+                registers[19] = connection.target_weight;
+                registers[20] = connection.baseline_weight;
+                registers[21] = connection.dendrite_state;
+
+                // Native counts every dendrite that is already loose (state 0)
+                // as it reaches it -- LEA EBP,[ECX+1]; TEST AL,AL; CMOVNZ
+                // EBP,ECX -- in addition to any that retire this tick below.
+                if (connection.dendrite_state == 0) {
+                    ++loose_connection_count;
+                }
+
                 std::uint8_t signal = evaluate_rule_expression(
                     rule.current_weight_expression, registers);
                 if (connection.current_weight < signal) {
@@ -585,14 +614,14 @@ void Lobe::update_late_phase(Brain* brain, std::uint32_t tick) {
                 if (loose_count != 0xff) {
                     ++loose_count;
                 }
+                // Native @00405b46: CMP neuron_index, [lobe+0xb8+rule*4]; JGE
+                // skip; MOV [ESP+0x44+rule*4], neuron_index.  Only the LOCAL
+                // candidate is written here, so it ends as the highest neuron
+                // with loose dendrites below the previous candidate; the stored
+                // candidate is updated once, after the neuron loop.
                 if (neuron_index <
                     (rule_index == 0 ? rule0_migration_candidate_neuron_index
                                      : rule1_migration_candidate_neuron_index)) {
-                    if (rule_index == 0) {
-                        rule0_migration_candidate_neuron_index = neuron_index;
-                    } else {
-                        rule1_migration_candidate_neuron_index = neuron_index;
-                    }
                     migration_candidates[rule_index] = neuron_index;
                 }
             }
@@ -645,22 +674,24 @@ void Lobe::update_late_phase(Brain* brain, std::uint32_t tick) {
                     if (count == 0 || connection_array == nullptr) {
                         continue;
                     }
-                    // A dendrite at state 0 is only a CANDIDATE; attaching it
-                    // also costs from this rule's loose-dendrite budget, which
-                    // is replenished only when a dendrite actually retires this
-                    // tick.  Native's failure branch says so in as many words --
-                    // DebugLog("Migrate failed - no loose dens") -- and the
-                    // budget is what "loose dens" counts.
+                    // Native UpdateLatePhase @00405990:
+                    //     CMP byte ptr [EDI + ECX + 1], 0     ; neuron+2
+                    // with EDI = &rule{n}_connection_count (neuron+0xc+n) and
+                    // ECX = -0xb / -0xc, so both rules test neuron+2 --
+                    // firing_strength.  A loose dendrite is re-attached only
+                    // on a neuron that is firing this tick.  Native never
+                    // reads per_rule_loose_dendrite_count before attaching; it
+                    // only decrements it afterwards.  "Migrate failed - no
+                    // loose dens" is the branch where a firing neuron has no
+                    // zero-state dendrite, not an exhausted budget.
                     //
-                    // Without the budget check the port attached one dendrite
-                    // per neuron per tick for as long as any zero-state
-                    // connection remained, steadily filling every historically
-                    // retired dendrite in a loaded world.  dork's decision lobe
-                    // has 67 of its 128 rule-0 dendrites at zero, and the port
-                    // was working through them at ~3 dendrite_state apiece
-                    // while the shipped binary attached none.
-                    if (late_phase_runtime_state
-                            .per_rule_loose_dendrite_count[rule_index] == 0) {
+                    // An earlier revision gated this on that count instead.
+                    // During a newborn's dream the concept lobe's dendrites
+                    // decay to state 0 (zeroing their weights) and were never
+                    // re-attached, so every weight stayed at zero, the concept
+                    // lobe could not fire, and the creature never chose an
+                    // action.
+                    if (neuron.firing_strength == 0) {
                         continue;
                     }
                     LobeConnection* loose = nullptr;
@@ -703,16 +734,34 @@ void Lobe::update_late_phase(Brain* brain, std::uint32_t tick) {
         }
     }
 
+    // Native tail of UpdateLatePhase: for each migrate-mode rule, no
+    // candidate resets the stored index to 99999 so the downward walk wraps;
+    // otherwise migrate that neuron's rule, also migrate its other rule when
+    // that rule is in migrate mode too, and store the candidate.
     for (std::size_t rule_index = 0; rule_index < 2; ++rule_index) {
-        LobeConnectionRule& rule = connection_rules[rule_index];
-        if (rule.connection_mode != ConnectionMode::migrate_connections) {
+        if (connection_rules[rule_index].connection_mode !=
+            ConnectionMode::migrate_connections) {
             continue;
         }
+        std::uint32_t& stored = rule_index == 0
+                                    ? rule0_migration_candidate_neuron_index
+                                    : rule1_migration_candidate_neuron_index;
         const std::uint32_t candidate = migration_candidates[rule_index];
-        if (candidate != 0xffffffffu && candidate < neuron_count) {
+        if (candidate == 0xffffffffu) {
+            stored = 99999;
+            continue;
+        }
+        if (candidate < neuron_count) {
             migrate_rule_connections(neurons[candidate], *brain, *this,
                                      static_cast<int>(rule_index));
+            const std::size_t other_rule = rule_index == 0 ? 1 : 0;
+            if (connection_rules[other_rule].connection_mode ==
+                ConnectionMode::migrate_connections) {
+                migrate_rule_connections(neurons[candidate], *brain, *this,
+                                         static_cast<int>(other_rule));
+            }
         }
+        stored = candidate;
     }
 }
 

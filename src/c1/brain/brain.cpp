@@ -119,9 +119,14 @@ void serialize_connection_rule(BrainArchive& archive,
         rule.current_weight_decay_selector = archive.read_byte();
         rule.target_weight_convergence_selector = archive.read_byte();
         rule.baseline_weight_step_interval = archive.read_byte();
+        // Native CBrain::Serialize archives both intervals before the
+        // expressions: ... growth interval (+16), decay interval (+27), then
+        // growth expr (+17..+26), decay expr (+28..+37), current-weight and
+        // target-weight exprs.  Reading them interleaved shifted every field
+        // after the growth interval by one byte.
         rule.dendrite_growth_interval = archive.read_byte();
-        serialize_expression(archive, rule.dendrite_growth_expression);
         rule.dendrite_decay_interval = archive.read_byte();
+        serialize_expression(archive, rule.dendrite_growth_expression);
         serialize_expression(archive, rule.dendrite_decay_expression);
         serialize_expression(archive, rule.current_weight_expression);
         serialize_expression(archive, rule.target_weight_expression);
@@ -142,8 +147,8 @@ void serialize_connection_rule(BrainArchive& archive,
     archive.write_byte(rule.target_weight_convergence_selector);
     archive.write_byte(rule.baseline_weight_step_interval);
     archive.write_byte(rule.dendrite_growth_interval);
-    serialize_expression(archive, rule.dendrite_growth_expression);
     archive.write_byte(rule.dendrite_decay_interval);
+    serialize_expression(archive, rule.dendrite_growth_expression);
     serialize_expression(archive, rule.dendrite_decay_expression);
     serialize_expression(archive, rule.current_weight_expression);
     serialize_expression(archive, rule.target_weight_expression);

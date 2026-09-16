@@ -5,7 +5,8 @@
 namespace creatures1::brain {
 
 namespace {
-constexpr std::uint8_t kRuleTokenEnd = 30;
+// Genome rule bytes are folded into the 0..29 token domain.
+constexpr std::uint8_t kRuleTokenModulus = 30;
 
 std::uint8_t normalize_range_max(std::uint8_t minimum,
                                  std::uint8_t encoded_maximum) {
@@ -20,8 +21,8 @@ std::uint8_t normalize_range_max(std::uint8_t minimum,
 }
 
 std::uint8_t normalize_rule_token(std::uint8_t raw_token) {
-    return raw_token > (kRuleTokenEnd - 1)
-               ? static_cast<std::uint8_t>(raw_token % kRuleTokenEnd)
+    return raw_token > (kRuleTokenModulus - 1)
+               ? static_cast<std::uint8_t>(raw_token % kRuleTokenModulus)
                : raw_token;
 }
 } // namespace
@@ -30,8 +31,12 @@ void LobeRuleExpression::load_from_genome(Genome& genome) {
     for (std::size_t index = 0; index < 8; ++index) {
         tokens[index] = normalize_rule_token(genome.read_next_gene_byte());
     }
-    tokens[8] = kRuleTokenEnd;
-    tokens[9] = kRuleTokenEnd;
+    // Native CLobeRuleExpression::LoadFromGenome @00402250 pads the 10-byte
+    // runtime expression with two END tokens, and END is token 0 (the
+    // evaluator stops on MOV AL,[ESI]; TEST AL,AL; JNZ at 004053b4).  30 is
+    // only the normalisation modulus, not a terminator.
+    tokens[8] = static_cast<std::uint8_t>(RuleToken::end);
+    tokens[9] = static_cast<std::uint8_t>(RuleToken::end);
 }
 
 void LobeConnectionRule::load_from_genome(Genome& genome) {
