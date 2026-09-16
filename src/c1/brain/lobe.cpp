@@ -40,10 +40,6 @@ std::uint32_t minimum_grid_area(StandardLobeIndex lobe_index) {
     return 0u;
 }
 
-bool applies_full_grid_fallback(StandardLobeIndex lobe_index) {
-    return minimum_grid_area(lobe_index) != 0u;
-}
-
 std::uint8_t sample_connection_count(
     const LobeConnectionRule& rule) {
     const int range = static_cast<int>(rule.connection_count_max) -
@@ -199,8 +195,14 @@ void Lobe::load_genome(Genome& genome, StandardLobeIndex lobe_index) {
         ++grid_width;
     }
 
+    // CLobe::LoadGenome clamps an oversized lobe to the canonical 32x32
+    // area.  It does not expand the ordinary 16/40-cell minimum lobes: the
+    // native signed comparison is `grid_area > 0x400`, not `<`.  The latter
+    // was an inverted translation and made every newly loaded creature's
+    // drive/verb/noun/etc. lobes 1024 neurons wide, which also made its
+    // archive grow by megabytes.
     const std::uint32_t grid_area = grid_width * grid_height;
-    if (applies_full_grid_fallback(lobe_index) && grid_area < 0x400u) {
+    if (grid_area > 0x400u) {
         grid_width = 0x20u;
         grid_height = 0x20u;
     }
