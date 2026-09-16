@@ -42,6 +42,7 @@ void Entity::serialize(EntityArchive& archive) {
         gallery_ = archive.read_gallery();
         current_image_index_ = archive.read_byte();
         image_index_base_ = archive.read_byte();
+        normalize_current_image_index();
         render_plane_ = archive.read_int32();
         world_x_ = archive.read_int32();
         world_y_ = archive.read_int32();
@@ -109,6 +110,7 @@ void Entity::advance_image_sequence(EntityImageSequenceRenderHost& renderer) {
         sequence_byte < 'a' ? mapped_index - '0' : mapped_index - 'W';
     ++image_sequence_cursor_;
     current_image_index_ = static_cast<std::uint8_t>(next_image_index);
+    normalize_current_image_index();
 
     world::WorldRect new_bounds{};
     get_current_image_bounds(new_bounds);
@@ -124,6 +126,7 @@ void Entity::set_image_index_and_redraw(
     // is measured from the newly chosen image.
     image_index_base_ = image_index;
     current_image_index_ = image_index;
+    normalize_current_image_index();
 
     world::WorldRect new_bounds{};
     get_current_image_bounds(new_bounds);
@@ -141,6 +144,7 @@ void Entity::set_relative_image_index_and_redraw(
     image_sequence_cursor_ = 0;
     current_image_index_ = static_cast<std::uint8_t>(
         static_cast<std::int32_t>(image_index_base_) + relative_index);
+    normalize_current_image_index();
 
     world::WorldRect new_bounds{};
     get_current_image_bounds(new_bounds);
@@ -165,6 +169,7 @@ void Entity::advance_image_sequence_for_moving_vehicle() {
         static_cast<int>(image_index_base_) - '0' +
         static_cast<unsigned char>(sequence_byte));
     ++image_sequence_cursor_;
+    normalize_current_image_index();
 }
 
 void Entity::fill_current_image_rect(std::uint8_t palette_index,

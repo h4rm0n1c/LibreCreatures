@@ -1186,13 +1186,17 @@ public:
     // UpdateWorld increments this Creature-owned counter after the
     // biochemistry pass. The mutation is kept here so the application host
     // does not reach into the recovered Creature record.
+    std::uint32_t biochemistry_tick() const { return biochemistry_tick_; }
     void increment_biochemistry_tick() { ++biochemistry_tick_; }
 
     // CreatureSelectionEntry is the narrow application/UI view of the real
     // creature.  These accessors keep menu and selection code on typed game
     // state instead of reaching through an MFC object pointer or a guessed
     // field offset.
-    bool tick_enabled() const override { return tick_enabled_; }
+    // Native UpdateWorld owns one tick gate: the Object subobject embedded in
+    // the Skeleton.  Do not maintain a second Creature-side copy; scheduler,
+    // brain, perception, dreaming, and interaction paths must agree.
+    bool tick_enabled() const override { return skeleton_.tick_enabled(); }
     std::string display_name() const override {
         return register_state_.history().display_name;
     }
@@ -1244,8 +1248,6 @@ private:
     std::uint32_t biochemistry_tick_ = 0;
     bool dead_ = false;
     std::uint8_t death_state_ = 0;
-    bool tick_enabled_ = false;
-    std::uint8_t object_bounds_flags_ = 0;
     AttentionClassifier classifier_{};
     std::uint32_t selected_action_id_ = 0;
     std::uint8_t action_activation_boost_ = 0;

@@ -1947,21 +1947,20 @@ MacroControlFlowResult Macro::execute_pose_command(
 
     // Native `pose` parses one rvalue before checking the target.  The Object
     // virtual owns image selection and redraw; its false result is a retry
-    // signal, so restore the consumed four-byte token plus separator exactly
-    // as the native interpreter does.
+    // signal.  Save the command start before parsing: the port keeps the
+    // script as variable-length text, so subtracting five bytes after a
+    // multi-digit operand would land in the middle of `pose` rather than on
+    // the command itself.
+    const std::size_t command_start =
+        script_cursor_offset >= sizeof(CaosToken) + 1
+            ? script_cursor_offset - (sizeof(CaosToken) + 1)
+            : 0;
     const std::uint32_t relative_index = parse_rvalue(runtime, diagnostics);
     objects::Object* target = object_context.target_object;
     if (target != nullptr &&
         !runtime.set_object_relative_image_index(
             *target, relative_index, selected_part_index)) {
-        constexpr std::size_t kCaosCommandRecordBytes = sizeof(CaosToken) + 1;
-        if (script_cursor_offset >= kCaosCommandRecordBytes) {
-            script_cursor_offset -= kCaosCommandRecordBytes;
-        } else {
-            // A well-formed command cannot reach this path.  Keep malformed
-            // input bounded instead of letting the unsigned cursor underflow.
-            execution_terminated = true;
-        }
+        script_cursor_offset = command_start;
     }
     // Every native arm reaches the LAB_00420c74 join without setting the
     // iteration-completed flag, so `pose` yields to the scheduler.  Retrying a
@@ -3216,13 +3215,18 @@ MacroControlFlowResult Macro::execute_control_flow_command(
         if (*condition) {
             return MacroControlFlowResult::iteration_complete;
         }
+        // Native false-DOIF scan ends at 0041ecd2: JMP 00420c6f,
+        // which sets the continue-dispatch flag. Moving the cursor is not
+        // itself a scheduler yield; boundary-heavy motion scripts depend
+        // on reaching their movement command within the same tick.
         return scan_branch(true)
-                   ? MacroControlFlowResult::cursor_changed
+                   ? MacroControlFlowResult::iteration_complete
                    : MacroControlFlowResult::execution_terminated;
 
     case MacroCommand::else_:
+        // Native ELSE scan likewise joins 00420c6f via 0041eaea.
         return scan_branch(false)
-                   ? MacroControlFlowResult::cursor_changed
+                   ? MacroControlFlowResult::iteration_complete
                    : MacroControlFlowResult::execution_terminated;
 
     case MacroCommand::end_if:
@@ -3739,7 +3743,16 @@ MacroControlFlowResult Macro::dispatch_interpreter_command(
         }
         if (command == MacroCommand::anim) {
             return execute_animation_command(command)
-                       ? MacroControlFlowResult::iteration_complete
+                       // Native ANIM joins the ordinary interpreter
+                       // finalization path without setting the
+                       // "iteration complete" flag. It installs/resets
+                       // the sequence, then yields so the object tick can
+                       // advance and present the next frame before the
+                       // script reaches another ANIM. Continuing here lets
+                       // scripted REPS/REPE loops reset the sequence in the
+                       // same world tick and makes objects appear frozen on
+                       // their first frame.
+                       ? MacroControlFlowResult::cursor_changed
                        : MacroControlFlowResult::execution_terminated;
         }
         if (command == MacroCommand::cabinet) {

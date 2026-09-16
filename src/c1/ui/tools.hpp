@@ -122,7 +122,8 @@ public:
     void execute_click_script_fallback(
         objects::Object* target, objects::ObjectEventId event_id,
         PointerToolRuntimeHost& runtime);
-    void process_pending_input(PointerToolRuntimeHost& runtime);
+    void process_pending_input(objects::SimpleObject& receiver,
+                               PointerToolRuntimeHost& runtime);
 
     std::int32_t cursor_hotspot_offset_x = 2;
     std::int32_t cursor_hotspot_offset_y = 2;

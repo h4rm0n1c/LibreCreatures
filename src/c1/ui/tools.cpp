@@ -269,7 +269,15 @@ void PointerTool::execute_click_script_fallback(
     }
 }
 
-void PointerTool::process_pending_input(PointerToolRuntimeHost& runtime) {
+void PointerTool::process_pending_input(
+    objects::SimpleObject& receiver, PointerToolRuntimeHost& runtime) {
+    // Native SimpleObject::UpdateUnboundedPositionAndRedraw calls the
+    // PointerTool input routine through the current receiver. During a drag
+    // that receiver is the held object, not the pointer tool, and native
+    // queues EVENT_5 to that receiver to finish the drop. Keep the pointer
+    // tool as the implementation object while preserving the native receiver
+    // identity for hit testing and event sources.
+    objects::SimpleObject& input_receiver = receiver;
     const std::uint32_t flags = runtime.pending_input_flags();
     constexpr std::uint32_t left = static_cast<std::uint32_t>(
         SfcViewPendingInputFlag::left_button);
@@ -284,31 +292,43 @@ void PointerTool::process_pending_input(PointerToolRuntimeHost& runtime) {
         if ((flags & (right | shift_right)) == 0) {
             if ((flags & left) != 0) {
                 objects::Object* hit = nullptr;
-                if (classifier_base() == 0x02010100u) {
-                    hit = find_topmost_overlapping_object(4, 4, runtime);
+                if (input_receiver.classifier_base() == 0x02010100u) {
+                    hit = input_receiver.find_topmost_overlapping_object(
+                        4, 4, runtime);
                     if (hit != nullptr) {
+                        // Native dispatch uses Creature's click virtual. The
+                        // port registers its owned Skeleton as the Object, so
+                        // recover the Creature before choosing head/body events.
+                        const auto* creature = runtime.creature_for_object(*hit);
                         const objects::ObjectEventId event_id =
-                            hit->click_event_id_at_world_position(
+                            creature != nullptr
+                                ? creature->click_event_id_at_world_position(
+                                      runtime.pointer_world_x(),
+                                      runtime.pointer_world_y())
+                                : hit->click_event_id_at_world_position(
                                 runtime.pointer_world_x(),
                                 runtime.pointer_world_y());
                         if (event_id != objects::ObjectEventId::no_event) {
                             runtime.queue_immediate_event(
-                                *this, *hit, event_id, 0);
+                                input_receiver, *hit, event_id, 0);
                             execute_click_script_fallback(hit, event_id,
                                                          runtime);
                         }
                     }
                 } else {
-                    hit = find_topmost_overlapping_object(0, 0, runtime);
+                    hit = input_receiver.find_topmost_overlapping_object(
+                        0, 0, runtime);
                     if (hit != nullptr) {
                         runtime.queue_immediate_event(
-                            *this, *hit, objects::ObjectEventId::event_3, 0);
+                            input_receiver, *hit,
+                            objects::ObjectEventId::event_3, 0);
                     }
                 }
             }
-        } else if (this == runtime.pointer_tool()) {
+        } else if (&input_receiver == runtime.pointer_tool()) {
             objects::Object* selected =
-                find_topmost_overlapping_object(0x40, 0x40, runtime);
+                input_receiver.find_topmost_overlapping_object(
+                    0x40, 0x40, runtime);
             if (selected != nullptr) {
                 if (runtime.is_creature_object(*selected)) {
                     if (auto* creature = runtime.creature_for_object(*selected);
@@ -317,20 +337,27 @@ void PointerTool::process_pending_input(PointerToolRuntimeHost& runtime) {
                     }
                 }
                 runtime.queue_immediate_event(
-                    *this, *selected, objects::ObjectEventId::event_4, 0);
+                    input_receiver, *selected,
+                    objects::ObjectEventId::event_4, 0);
             }
         } else {
             runtime.queue_immediate_event(
-                *this, *this, objects::ObjectEventId::event_5, 0);
+                input_receiver, input_receiver,
+                objects::ObjectEventId::event_5, 0);
         }
-    } else if (this == runtime.pointer_tool()) {
+    } else if (&input_receiver == runtime.pointer_tool()) {
+        auto* pointer = dynamic_cast<PointerTool*>(&input_receiver);
+        if (pointer == nullptr) {
+            runtime.finish_pending_input();
+            return;
+        }
         const int world_x = entity() != nullptr
-                                ? entity()->world_x() +
-                                      cursor_hotspot_offset_x
+                                ? pointer->entity()->world_x() +
+                                      pointer->cursor_hotspot_offset_x
                                 : runtime.pointer_world_x();
         const int world_y = entity() != nullptr
-                                ? entity()->world_y() +
-                                      cursor_hotspot_offset_y
+                                ? pointer->entity()->world_y() +
+                                      pointer->cursor_hotspot_offset_y
                                 : runtime.pointer_world_y();
         objects::Object* edit = nullptr;
         for (std::size_t index = 0;
@@ -340,7 +367,7 @@ void PointerTool::process_pending_input(PointerToolRuntimeHost& runtime) {
                 runtime.report_invalid_non_scenery_index();
                 continue;
             }
-            if (candidate == this) {
+            if (candidate == &input_receiver) {
                 continue;
             }
             world::WorldRect bounds{};

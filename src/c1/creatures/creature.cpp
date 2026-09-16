@@ -415,7 +415,7 @@ Creature::Creature(GenomeFilenameId genome_source_filename,
     biochemistry_->update(biochemistry_tick_);
     update_environment_and_life_stage(host.environment());
     instinct_runtime_state_.dream_countdown = 1;
-    tick_enabled_ = true;
+    skeleton_.enable_ticking();
     host.append_to_creature_registry(*this);
     host.rebuild_creature_selection_menu();
 }
@@ -2065,8 +2065,13 @@ void Creature::update(CreatureUpdateHost& world,
                 skeleton_.animation_sequence[skeleton_.animation_cursor];
             const char pose_column = skeleton_.animation_sequence[
                 skeleton_.animation_cursor + 1];
+            // Native Update @00408fe0 indexes
+            // `16 * (10 * (row - 0x33) + column)` from the object base, with
+            // the column keeping its ASCII bias.  That single constant folds
+            // both digits' '0' bias and the pose table's own 0x120 (eighteen
+            // entry) base, so a source-level array wants plain decimal.
             const int pose_table_index =
-                (static_cast<int>(pose_row) - '3') * 10 +
+                (static_cast<int>(pose_row) - '0') * 10 +
                 (static_cast<int>(pose_column) - '0');
             if (pose_table_index >= 0 &&
                 static_cast<std::size_t>(pose_table_index) <
@@ -2275,8 +2280,13 @@ int Creature::dispatch_script_event(
 void Creature::initialize_runtime_state(const InitializationHost& host) {
     // The first writes mirror the native reset order, but use the recovered
     // owners instead of the MFC Object/Register subobjects.
-    object_bounds_flags_ |= 0x01; // allow pointer-tool unbounded placement
-    tick_enabled_ = false;
+    // Native InitializeRuntimeState @00408520 opens with
+    // `OR byte ptr [EDI+0x9], 0x2`: the Object bounds-flag byte the Creature
+    // shares with its Skeleton base, granting pointer-tool pickup.  Bit 0x01
+    // is the unrelated creature explicit-rect permission.
+    skeleton_.merge_bounds_flags(
+        objects::Object::kAllowPointerToolUnboundedPlacement);
+    skeleton_.disable_ticking();
     sleep_indicator_object_ = nullptr;
     skeleton_.set_bounds_reference_object(nullptr);
     caos_object_pointer_ = nullptr;
@@ -3713,7 +3723,7 @@ void Creature::serialize(
 
         CreatureStringArchive register_archive(archive);
         register_state_.serialize(register_archive);
-        tick_enabled_ = true;
+        skeleton_.enable_ticking();
         return;
     }
 

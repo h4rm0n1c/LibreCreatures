@@ -10,6 +10,9 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <new>
 
 namespace creatures1::objects {
@@ -336,6 +339,37 @@ void SimpleObject::handle_queued_event_5(
     }
 }
 
+namespace {
+
+// Resting-Y probe.  Enabled by default: see log_placement in
+// windows_document_host.cpp for the C1_TRACE_CREATURE contract.
+void log_object_resting_y(const Object& object, int old_x, int old_y,
+                          int target_x, int target_y) {
+    static const char* setting = std::getenv("C1_TRACE_CREATURE");
+    if (setting != nullptr &&
+        (std::strcmp(setting, "0") == 0 || std::strcmp(setting, "off") == 0)) {
+        return;
+    }
+    static std::size_t rows = 0;
+    if (rows >= 400) {
+        return;
+    }
+    ++rows;
+    const std::uint32_t classifier = object.classifier_base();
+    const auto bounds = object.movement_bounds();
+    if (FILE* log = std::fopen("Creatures.place.log", "a")) {
+        std::fprintf(log,
+                     "drop family=%u genus=%u species=%u old=%d,%d "
+                     "rest=%d,%d floor=%d bottom_on_floor=%d\n",
+                     (classifier >> 24) & 0xffu, (classifier >> 16) & 0xffu,
+                     (classifier >> 8) & 0xffu, old_x, old_y, target_x,
+                     target_y, bounds.max_y, 1);
+        std::fclose(log);
+    }
+}
+
+}  // namespace
+
 void SimpleObject::end_interaction_with_source(
     Object* source_object, SimpleObjectInteractionHost& host) {
     const int old_world_x = entity_->world_x();
@@ -346,46 +380,11 @@ void SimpleObject::end_interaction_with_source(
         Object* vehicle = find_topmost_overlapping_object(
             kIsVehicle, kIsVehicle, host);
         int target_world_x = old_world_x;
-        int target_world_y = 0;
-        int release_room_bottom = 0;
-        bool use_release_room_bottom = false;
-        bool use_current_position_fallback = false;
         if (vehicle == nullptr) {
             set_bounds_mode(
                 static_cast<std::uint32_t>(BoundsMode::default_world), host);
             entity_->set_render_plane(saved_entity_render_plane);
             update_movement_bounds(host);
-            const bool use_current_map_room =
-                has_bounds_flag(kUseCurrentMapRoom);
-            world::WorldRect release_room_bounds{};
-            if (use_current_map_room) {
-                host.find_nearest_room_bounds_at_point(
-                    old_world_x,
-                    old_world_y + entity_->current_image_height(),
-                    release_room_bounds);
-            }
-            const bool has_release_room =
-                release_room_bounds.max_x > release_room_bounds.min_x &&
-                release_room_bounds.max_y > release_room_bounds.min_y &&
-                release_room_bounds.max_y != world::kNoRoomBottom;
-            if (has_release_room) {
-                // Keep the release room, but defer the image-height
-                // subtraction until after EVENT_5.  Stateful food (notably
-                // carrots) changes pose and therefore sprite height in its
-                // drop script; native MoveToAndRedraw reads the image after
-                // DispatchScriptEvent returns.
-                use_release_room_bottom = true;
-                release_room_bottom = release_room_bounds.max_y;
-            } else if (use_current_map_room &&
-                       movement_bounds().max_y == world::kNoRoomBottom) {
-                // A room-bound object can be released over a gap in the room
-                // table (notably at the edges of a fresh world's initial
-                // layout).  The native sentinel is 9999, which makes the
-                // object appear deleted. Keep the release at its current
-                // visible Y instead of sending it to the world's bottom.
-                set_world_movement_bounds_for_drop();
-                use_current_position_fallback = true;
-            }
         } else {
             set_bounds_mode(
                 static_cast<std::uint32_t>(BoundsMode::vehicle_local), host);
@@ -412,23 +411,24 @@ void SimpleObject::end_interaction_with_source(
 
         dispatch_script_event(ObjectEventId::event_5, source_object, false,
                               host);
-        if (use_release_room_bottom) {
-            target_world_y = release_room_bottom -
-                             entity_->current_image_height();
-        } else if (use_current_position_fallback) {
-            target_world_y = std::clamp(
-                old_world_y, 0,
-                std::max(0, world::kWorldHeight -
-                               entity_->current_image_height()));
-        } else {
-            // This deliberately follows EVENT_5.  The native routine uses
-            // the post-script image height here, which is observable for
-            // stateful objects whose drop script changes pose.
-            target_world_y = movement_bounds().max_y -
-                             entity_->current_image_height();
-        }
-        move_to_and_redraw(
-            target_world_x, target_world_y, host);
+
+        // Native EndInteractionWithSource @00428bb0 has exactly one resting-Y
+        // formula, read AFTER EVENT_5 so a stateful drop script (the carrot
+        // changes pose, and therefore sprite height, in its own drop script)
+        // is reflected:
+        //     movement_bounds.max_y - current_image.height
+        // This places the object's bottom edge exactly on the room floor.
+        // An earlier port revision re-derived a separate "release room" from
+        // the pre-move position and added a no-room fallback; both diverged
+        // from the native contract, and an egg's resting Y is what the hatch
+        // script hands a newborn as its down foot.
+        const int target_world_y =
+            movement_bounds().max_y - entity_->current_image_height();
+
+        log_object_resting_y(*this, old_world_x, old_world_y, target_world_x,
+                             target_world_y);
+
+        move_to_and_redraw(target_world_x, target_world_y, host);
         return;
     }
 

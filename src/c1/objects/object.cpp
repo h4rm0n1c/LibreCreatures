@@ -322,6 +322,10 @@ void Object::set_deletion_movement_bounds() {
     movement_bounds_ = {0, 0, 0x4140, 0x960};
 }
 
+void Object::enable_ticking() {
+    tick_enabled_ = true;
+}
+
 void Object::disable_ticking() {
     tick_enabled_ = false;
 }

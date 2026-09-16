@@ -123,6 +123,20 @@ public:
     void set_image_index(std::uint8_t index) { current_image_index_ = index; }
     void set_image_index_base(std::uint8_t index) { image_index_base_ = index; }
 
+    // Scripted animation can briefly name the frame just beyond a gallery's
+    // last entry. Keep that transient state from reaching the renderer or
+    // turning the object's bounds into an empty rectangle.
+    void normalize_current_image_index() {
+        if (gallery_ == nullptr || gallery_->images == nullptr ||
+            gallery_->image_count == 0 ||
+            current_image_index_ < gallery_->image_count) {
+            return;
+        }
+        current_image_index_ = image_index_base_ < gallery_->image_count
+                                   ? image_index_base_
+                                   : 0;
+    }
+
     bool has_current_image() const {
         return gallery_ != nullptr && gallery_->images != nullptr &&
                current_image_index_ < gallery_->image_count;

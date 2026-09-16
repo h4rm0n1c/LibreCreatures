@@ -4,6 +4,7 @@
 #include <array>
 #include <cstdlib>
 #include <exception>
+#include <string>
 #include <utility>
 
 namespace creatures1::creatures {
@@ -322,6 +323,16 @@ void Skeleton::initialize_pose_and_motion_state() {
     eyes_open = true;
     gallery = nullptr;
     continuous_sound_handle = -1;
+
+    // Native InitializePoseAndMotionState @0043ad5c: `OR byte ptr [ESI+9],
+    // 0x44` -- Wallbound plus Activatable -- immediately before resetting the
+    // animation-sequence cursor.  Creature::initialize_runtime_state then ORs
+    // Mouseable, producing the 0x46 that retail-written saves carry on every
+    // creature record.  Without Wallbound, UpdateMovementBounds hands back the
+    // whole world instead of the room, the floor sits far below the feet, and
+    // the foot-swap comparison in update_anchor_and_bounds can never fire.
+    merge_bounds_flags(static_cast<objects::Object::BoundsFlags>(
+        objects::Object::kUseCurrentMapRoom | objects::Object::kActivatable));
 
     constexpr std::string_view neutral_pose = "242212212011200";
     auto set_pose = [](PoseString& pose, std::string_view text) {
@@ -883,9 +894,44 @@ char* Skeleton::parse_animation_sequence(char* sequence_text) {
     return read_cursor + 2;
 }
 
+char* Skeleton::parse_image_sequence(char* sequence_text, int part_index) {
+    // The native Skeleton override receives the Object part index but does
+    // not use it: a creature ANIM sequence belongs to the whole skeleton.
+    (void)part_index;
+    return parse_animation_sequence(sequence_text);
+}
+
 bool Skeleton::is_animation_sequence_complete() const {
     return animation_cursor >= animation_sequence.size() ||
            animation_sequence[animation_cursor] == '\0';
+}
+
+bool Skeleton::image_sequence_is_empty(int part_index) const {
+    // See parse_image_sequence: this is the creature implementation of the
+    // Object OVER query, not the Entity/part implementation.
+    (void)part_index;
+    return is_animation_sequence_complete();
+}
+
+bool Skeleton::set_relative_image_index(objects::CaosValue relative_index,
+                                        int part_index) {
+    // Native adds 0x12 then multiplies by 16 relative to the OBJECT base.
+    // That is the pose table's byte offset (0x120), not eighteen entries
+    // to skip in this source-level array.
+    (void)part_index;
+    const auto requested_pose = static_cast<std::int32_t>(relative_index);
+    const auto pose_table_index = requested_pose;
+    if (pose_table_index < 0 ||
+        pose_table_index >= static_cast<std::int32_t>(kPoseTableEntryCount)) {
+        return false;
+    }
+
+    animation_sequence[0] = '\0';
+    animation_cursor = 0;
+    return set_target_pose_string(std::string_view(
+        pose_string_table[static_cast<std::size_t>(pose_table_index)]
+            .characters.data(),
+        kPoseStringLength));
 }
 
 void Skeleton::set_target_pose_from_table_index(std::size_t pose_table_index) {

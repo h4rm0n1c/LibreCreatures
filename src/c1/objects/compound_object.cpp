@@ -13,6 +13,23 @@ char* skip_image_sequence_text(char* sequence_text) {
     }
     return read_cursor + 2;
 }
+
+world::WorldRect expand_compound_dirty_bounds(world::WorldRect bounds) {
+    const int unwrapped_min_x = bounds.min_x - 0x20;
+    bounds.min_y = std::max(0, bounds.min_y - 0x20);
+    bounds.max_y = std::min(world::kWorldHeight, bounds.max_y + 0x20);
+    if (unwrapped_min_x < 0) {
+        // Preserve the native wrapped representation: a rectangle crossing
+        // x=0 is represented with its right edge beyond world width so the
+        // renderer can intersect it against either side of the viewport.
+        bounds.min_x = unwrapped_min_x + world::kWorldWidth;
+        bounds.max_x += world::kWorldWidth + 0x20;
+    } else {
+        bounds.min_x = unwrapped_min_x;
+        bounds.max_x += 0x20;
+    }
+    return bounds;
+}
 } // namespace
 
 CompoundObject::CompoundObject(CompoundObjectLifetimeHost* lifetime_host)
@@ -151,7 +168,9 @@ void CompoundObject::move_to_and_redraw(
     if (parts_[0].entity != nullptr) {
         parts_[0].entity->get_current_image_bounds(new_bounds);
     }
-    renderer.redraw_after_compound_object_move(*this, old_bounds, new_bounds);
+    renderer.redraw_after_compound_object_move(
+        *this, expand_compound_dirty_bounds(old_bounds),
+        expand_compound_dirty_bounds(new_bounds));
 }
 
 void CompoundObject::tick(CompoundObjectTickHost& host) {
@@ -187,7 +206,9 @@ void CompoundObject::move_by_and_redraw(
     if (parts_[0].entity != nullptr) {
         parts_[0].entity->get_current_image_bounds(new_bounds);
     }
-    renderer.redraw_after_compound_object_move(*this, old_bounds, new_bounds);
+    renderer.redraw_after_compound_object_move(
+        *this, expand_compound_dirty_bounds(old_bounds),
+        expand_compound_dirty_bounds(new_bounds));
 }
 
 void CompoundObject::queue_primary_part_dirty_rect(

@@ -184,6 +184,16 @@ public:
     bool is_animation_sequence_complete() const;
     void set_target_pose_from_table_index(std::size_t pose_table_index);
 
+    // Skeleton is an Object at the CAOS dispatch boundary.  These overrides
+    // are the creature implementations of the native Object vtable slots
+    // used by ANIM, OVER, and POSE; the helpers above are the Skeleton-side
+    // operations those virtual entry points delegate to.
+    char* parse_image_sequence(char* sequence_text,
+                               int part_index) override;
+    bool image_sequence_is_empty(int part_index) const override;
+    bool set_relative_image_index(objects::CaosValue relative_index,
+                                  int part_index) override;
+
     bool set_target_pose_string(std::string_view target_pose);
     bool is_pose_at_target() const;
     void apply_pose_string(std::string_view pose_text,

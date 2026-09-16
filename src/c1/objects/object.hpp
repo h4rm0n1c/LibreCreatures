@@ -305,7 +305,16 @@ public:
     void serialize(ObjectArchive& archive);
 
     using BoundsFlags = std::uint8_t;
+    // SimpleObject::HandleQueuedEvent4 @00427cc0 tests the low two bits of
+    // the bounds-flag byte at Object+0x9; UpdateMovementBounds @00426470
+    // tests 0x40 there before consulting the map room.
+    static constexpr BoundsFlags kAllowCreatureExplicitRectBounds = 0x01u;
+    static constexpr BoundsFlags kAllowPointerToolUnboundedPlacement = 0x02u;
+    static constexpr BoundsFlags kActivatable = 0x04u;
     static constexpr BoundsFlags kIsVehicle = 0x08u;
+    // "Wallbound" in the CAOS Attributes table: limits movement to the
+    // current room.  UpdateMovementBounds @00426470 tests it before doing
+    // the map-room lookup, so it is what gives a creature a real floor.
     static constexpr BoundsFlags kUseCurrentMapRoom = 0x40u;
 
     bool has_bounds_flag(BoundsFlags mask) const {
@@ -370,6 +379,10 @@ public:
         ObjectScriptDispatchHost& scripts);
     void initialize_runtime_state(ObjectInitializationHost& runtime);
     void set_deletion_movement_bounds();
+    // Creature is represented in the non-scenery registry by its embedded
+    // Skeleton/Object.  Its construction and archive paths need the same
+    // explicit enable transition as the native Object state.
+    void enable_ticking();
     void disable_ticking();
     void compute_sound_attenuation_and_pan(
         const ObjectSoundViewportHost& renderer, int& out_attenuation,
@@ -411,6 +424,13 @@ public:
     }
     const world::WorldRect& movement_bounds() const {
         return movement_bounds_;
+    }
+
+    // Interactive drops must not retain the map lookup's no-room sentinel.
+    // The native object stores the resulting rectangle directly before the
+    // final MoveToAndRedraw call; keep that recovery operation object-owned.
+    void set_world_movement_bounds_for_drop() {
+        movement_bounds_ = {0, 0, world::kWorldWidth, world::kWorldHeight};
     }
 
     std::uint32_t continuous_sound_descriptor() const {
@@ -497,6 +517,12 @@ public:
     void set_bounds_reference_object(Object* reference) {
         bounds_reference_object_ = reference;
     }
+
+    // Native Creature::InitializeRuntimeState @00408520 ORs a bit into this
+    // byte directly, because a Creature *is* its Object there.  The port
+    // composes the Object into Skeleton, so the owner needs a way to reach
+    // the byte without shadowing it on the derived class.
+    void merge_bounds_flags(BoundsFlags mask) { bounds_flags_ |= mask; }
 
     // The native Object record owns these references; the registries and
     // platform handles remain application-owned boundaries.

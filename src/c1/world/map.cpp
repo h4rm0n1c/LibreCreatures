@@ -7,7 +7,6 @@
 namespace creatures1::world {
 
 namespace {
-constexpr std::int32_t kNoRoomBottom = 9999;
 constexpr std::size_t kGroundHeightCount = 0x105;
 constexpr std::size_t kBacteriumCount = 100;
 }

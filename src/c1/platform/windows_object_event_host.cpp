@@ -312,10 +312,14 @@ bool WindowsSimpleObjectInteractionHost::pointer_input_pending() const {
 }
 
 void WindowsSimpleObjectInteractionHost::process_pending_pointer_input(
-    creatures1::objects::SimpleObject& pointer_tool) {
-    auto* tool = dynamic_cast<creatures1::ui::PointerTool*>(&pointer_tool);
+    creatures1::objects::SimpleObject& receiver) {
+    // Native dispatch enters PointerTool::ProcessPendingInput through the
+    // currently ticking SimpleObject. Once an object is held, that receiver
+    // is the held object; the pointer tool still owns the implementation.
+    auto* tool = dynamic_cast<creatures1::ui::PointerTool*>(
+        document_.pointer_tool());
     if (tool != nullptr) {
-        tool->process_pending_input(pointer_);
+        tool->process_pending_input(receiver, pointer_);
     }
 }
 
@@ -579,9 +583,20 @@ void WindowsCreaturePickupDropHost::queue_dirty_world_rect(
 
 bool WindowsCreaturePickupDropHost::pointer_pickup_is_privileged(
     const creatures1::objects::Object& /*source*/) const {
-    // Creature::HandlePickupEvent gates the pointer branch on
-    // `0 < g_SFCApp->privilege_level`.
-    return document_.privilege_level() > 0;
+    // Creature::HandlePickupEvent has two independent native gates: the
+    // application must be privileged, and the pointer tool's immediately
+    // preceding input must have been right-button-with-shift.  The latter is
+    // stored in SFCView::previous_input_flags by PointerTool after it queues
+    // EVENT_4; reading pending_input_flags here would be too late because it
+    // has already been consumed.
+    C1MainFrame* frame = active_main_frame();
+    C1WindowsView* view = frame == nullptr ? nullptr : active_c1_view(*frame);
+    if (view == nullptr || document_.privilege_level() <= 0) {
+        return false;
+    }
+    constexpr std::uint32_t kRightWithShift = static_cast<std::uint32_t>(
+        creatures1::ui::SfcViewPendingInputFlag::right_with_shift);
+    return (view->view_state().previous_input_flags & kRightWithShift) != 0;
 }
 
 int WindowsCreaturePickupDropHost::vehicle_attachment_render_plane(

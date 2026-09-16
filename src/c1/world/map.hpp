@@ -14,6 +14,11 @@ class RectangleHitTestApi;
 
 namespace creatures1::world {
 
+// FindNearestMapRoomBoundsAtPoint leaves the lower edge at this value when
+// no room spans the queried X coordinate.  It is a native sentinel, not a
+// valid drawable world position.
+inline constexpr std::int32_t kNoRoomBottom = 9999;
+
 struct MapRectangle {
     std::int32_t left = 0;
     std::int32_t top = 0;

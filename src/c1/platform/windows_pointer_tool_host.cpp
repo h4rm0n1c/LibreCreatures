@@ -87,7 +87,12 @@ std::uint32_t WindowsPointerToolRuntimeHost::pending_input_flags() const {
 
 void WindowsPointerToolRuntimeHost::finish_pending_input() {
     if (view_ != nullptr) {
-        view_->view_state().pending_input_flags = 0;
+        auto& state = view_->view_state();
+        // Native PointerTool::ProcessPendingInput preserves the gesture in
+        // SFCView::previous_input_flags before consuming the pending flags.
+        // Creature pickup uses that snapshot later in the same world tick.
+        state.previous_input_flags = state.pending_input_flags;
+        state.pending_input_flags = 0;
     }
 }
 
