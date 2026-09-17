@@ -69,6 +69,7 @@ public:
     // Destroys the owned object and removes every borrowed registry view that
     // names it, including a creature's embedded Skeleton identity.
     void destroy_world_object(objects::Object& object);
+    bool owns_non_scenery_object(const objects::Object& object) const;
     void reset_map_data() { map_data_.reset_for_document_delete(); }
 
     bool contains(const objects::Object& object) const override;

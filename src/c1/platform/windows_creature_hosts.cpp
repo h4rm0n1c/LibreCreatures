@@ -7,6 +7,7 @@
 #include <vector>
 #include <cstdlib>
 
+#include "../brain/blackboard.hpp"
 #include "../world/map.hpp"
 #include "mfc_creature_archives.hpp"
 #include "../world/runtime.hpp"
@@ -927,6 +928,14 @@ void WindowsDriveThresholdObject::update_drive_threshold_state() {
     if (auto* lift = dynamic_cast<creatures1::objects::Lift*>(object_)) {
         WindowsCallButtonRuntimeHost host(document_);
         lift->select_nearest_call_button_and_start_move(host);
+        return;
+    }
+    // Native Blackboard vtable 0x00457554 slot 42 is Blackboard::Tick
+    // @ 0x0042cba0 (edit-mode timeout); slot 41 stays CompoundObject::Tick.
+    if (auto* blackboard =
+            dynamic_cast<creatures1::brain::Blackboard*>(object_)) {
+        WindowsBlackboardHost host(document_);
+        blackboard->tick(host, host);
         return;
     }
     creatures1::creatures::Creature* creature =

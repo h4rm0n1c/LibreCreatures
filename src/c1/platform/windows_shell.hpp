@@ -8,6 +8,8 @@
 #include <afxole.h>
 #include <shellapi.h>
 
+#include <optional>
+#include <utility>
 #include <fstream>
 #include <functional>
 
@@ -140,6 +142,14 @@ class C1TipDialogWindow;
 // without constructing it leaves MFC's current-app pointer null and crashes
 // in AfxWinMain before any C1 policy can run.
 
+
+// The main toolbar: CToolBar with the button-face erase the system class
+// provides on Windows.
+class C1MainToolBar final : public CToolBar {
+protected:
+    afx_msg BOOL OnEraseBkgnd(CDC* dc);
+    DECLARE_MESSAGE_MAP()
+};
 
 class C1EventBar final : public CStatusBar,
                          public creatures1::ui::EventBarWindowApi {
@@ -468,7 +478,7 @@ private:
     };
 
     std::unique_ptr<creatures1::application::CMainFrame> frame_policy_;
-    CToolBar main_toolbar_;
+    C1MainToolBar main_toolbar_;
     C1EventBar event_bar_;
     CComboBox creature_selector_;
     CFont selector_font_;
@@ -856,6 +866,9 @@ public:
     void tick_non_scenery_object(std::size_t index) override;
 
     bool pop_text_input_character(char& character) override;
+    // SFCView::OnCharQueueTextInput @ 0x00437270 writes the 16-byte key ring
+    // (0x467d34..0x467d43); a full ring drops the character.
+    bool enqueue_text_input(char character);
 
     std::size_t text_input_length() const override;
 
@@ -878,6 +891,9 @@ public:
                               std::size_t maximum_length,
                               std::uint32_t allowed_characters);
     void reset_text_input_configuration();
+    // g_text_input_buffer[0] = 0; g_text_input_length = 0 -- the global typed
+    // text, not the pending key ring and not the pointer's saved text.
+    void clear_text_input_buffer();
 
     creatures1::world::BacteriumServicePhase& bacterium_service_phase() {
         return bacterium_service_phase_;
@@ -1426,6 +1442,8 @@ private:
     std::unique_ptr<creatures1::platform::WindowsWorldRendererGdiHost>
         gdi_host_;
     std::unique_ptr<creatures1::display::WorldRenderer> renderer_;
+    // Saved camera origin requested by Serialize before the renderer exists.
+    std::optional<std::pair<int, int>> pending_renderer_origin_;
     CWnd* renderer_view_ = nullptr;
     std::unique_ptr<creatures1::application::Document> semantic_document_;
     creatures1::display::SpriteFileCache sprite_files_;
@@ -1457,6 +1475,11 @@ private:
     // native g_Lift global carries.  Borrowed, never owned.
     creatures1::objects::Lift* active_lift_ = nullptr;
     creatures1::objects::Object* text_input_target_ = nullptr;
+    // SFCDoc's global typed-text buffer (0x00467d50, 0x50 bytes) and length
+    // (0x00467d48).  Separate from PointerTool::text_buffer, which only
+    // receives committed speech and is saved with the world.
+    std::array<char, 0x50> text_input_buffer_{};
+    std::size_t text_input_buffer_length_ = 0;
     std::size_t text_input_max_length_ = 0;
     std::uint32_t text_input_allowed_flags_ = 0;
     creatures1::objects::Object* edit_object_ = nullptr;
@@ -2065,7 +2088,8 @@ private:
 
 class C1WindowsView final : public CView,
                             public creatures1::ui::SfcViewHost,
-                            public creatures1::ui::ClassifierTipHost {
+                            public creatures1::ui::ClassifierTipHost,
+                            public creatures1::ui::TextInputQueue {
 public:
     DECLARE_DYNCREATE(C1WindowsView)
 
@@ -2239,6 +2263,9 @@ public:
 
     void clear_coordinate_status() override;
     void forward_default_key_down(std::uint32_t virtual_key, std::uint32_t repeat_count, std::uint32_t key_flags) override;
+    bool control_key_is_down() const override;
+    void forward_default_character_message(std::uint32_t character_code) override;
+    bool try_enqueue(char character) override;
 
 protected:
     BOOL PreCreateWindow(CREATESTRUCT& create_struct) override;
@@ -2268,6 +2295,7 @@ protected:
     afx_msg void OnVScroll(UINT code, UINT position, CScrollBar*);
 
     afx_msg void OnKeyDown(UINT virtual_key, UINT repeat_count, UINT flags);
+    afx_msg void OnChar(UINT character_code, UINT repeat_count, UINT flags);
 
 public:
     // C1WorldStatisticsFrame is a separate top-level window with no doc/view
@@ -2464,6 +2492,11 @@ public:
     void update_document_server_registry() override;
 
     void update_ole_factory_registry() override;
+
+    // Removes the InprocServer32 registration only when it names this
+    // executable, so a Community Edition install's OLEKitProxy registration
+    // survives.
+    void delete_own_sfc_inproc_server_registration();
 
     void write_patch_registry_metadata(const SfcAppPatchMetadata& /*metadata*/) override;
 

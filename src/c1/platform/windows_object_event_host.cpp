@@ -727,10 +727,14 @@ void WindowsCreatureUpdateHost::queue_dirty_world_rect(
 void WindowsCreatureUpdateHost::dispatch_sleep_indicator_event(
     creatures1::objects::Object& indicator,
     creatures1::objects::ObjectEventId event_id,
-    creatures1::objects::Object* source, std::uint32_t argument) {
-    document_.queue_immediate_object_event(
-        indicator, source == nullptr ? indicator : *source, event_id,
-        argument);
+    creatures1::objects::Object* source, std::uint32_t /*argument*/) {
+    // SetSleepIndicator @ 0040da80 calls Object::DispatchScriptEvent (vtable
+    // +0x88) directly, so the indicator's event script (1/2: `sndl zzzz` /
+    // `sndl gsnr`, 0: `fade`) runs before InitializeRuntimeState purges the
+    // object's macros.  Queuing it let the purge win: `fade` never ran and
+    // every sleep left its snore loop playing.
+    WindowsObjectScriptDispatchHost scripts(document_);
+    indicator.dispatch_script_event(event_id, source, false, scripts);
 }
 
 void WindowsCreatureUpdateHost::initialize_sleep_indicator(

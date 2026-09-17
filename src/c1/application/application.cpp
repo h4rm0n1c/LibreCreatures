@@ -47,10 +47,9 @@ void update_eye_view_command(CommandUi& ui,
                              bool selected_creature_is_alive,
                              bool world_is_running,
                              bool eye_view_is_available) {
-    // An already-open eye view must remain closable even if selection changed
-    // to a dead/cleared creature while the window was open.
-    ui.set_enabled((selected_creature_is_alive || eye_view_is_available) &&
-                   world_is_running);
+    // OnUpdateToggleEyeView @ 004322d0: enabled only for a living selected
+    // creature while the world runs; selection/death paths close the view.
+    ui.set_enabled(selected_creature_is_alive && world_is_running);
     ui.set_checked(eye_view_is_available);
 }
 

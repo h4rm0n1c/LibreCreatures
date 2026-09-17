@@ -248,6 +248,7 @@ int C1EventBarObjectAdapter::viewport_height() const {
 }
 
 void C1EventBarObjectAdapter::request_viewport_origin(int x, int y) {
+
     document_.request_event_bar_viewport_origin(x, y);
 }
 

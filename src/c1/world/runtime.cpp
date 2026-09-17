@@ -292,6 +292,13 @@ void WorldRuntime::remove_world_object(objects::Object& object) {
         world_objects_.end());
 }
 
+bool WorldRuntime::owns_non_scenery_object(const objects::Object& object) const {
+    return std::any_of(owned_objects_.begin(), owned_objects_.end(),
+                       [&object](const std::unique_ptr<objects::Object>& candidate) {
+                           return candidate.get() == &object;
+                       });
+}
+
 void WorldRuntime::destroy_world_object(objects::Object& object) {
     const auto object_owner = std::find_if(
         owned_objects_.begin(), owned_objects_.end(),

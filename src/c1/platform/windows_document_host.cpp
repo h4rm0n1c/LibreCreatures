@@ -164,6 +164,45 @@ void log_creature_step_probe(const creatures1::creatures::Creature& creature,
         }
     }
 
+    // Once per creature: dump the leg chains (limb order, sprite image base,
+    // per-view start/end anchors) so left/right geometry can be compared.
+    if (traced_rows[slot] == 1) {
+        if (FILE* limbs = std::fopen("Creatures.limbs.log", "a")) {
+            for (std::size_t chain = 1; chain <= 2; ++chain) {
+                std::size_t depth = 0;
+                for (const auto* limb = motor.limb_chain_heads[chain];
+                     limb != nullptr; limb = limb->next_in_chain, ++depth) {
+                    std::fprintf(limbs,
+                                 "moniker=%08x chain=%zu depth=%zu limb=%p "
+                                 "image_base=%u views(ax,ay,bx,by)=",
+                                 motor.genome_source_filename, chain, depth,
+                                 static_cast<const void*>(limb),
+                                 static_cast<unsigned>(limb->image_index_base()));
+                    const auto& t = limb->attachment_table;
+                    for (std::size_t v = 0; v < 10; ++v) {
+                        std::fprintf(limbs, "%u,%u,%u,%u ", t.anchor_a_x[v],
+                                     t.anchor_a_y[v], t.anchor_b_x[v],
+                                     t.anchor_b_y[v]);
+                    }
+                    std::fprintf(limbs, "\n");
+                }
+            }
+            if (motor.body != nullptr) {
+                const auto& j = motor.body->attachment_table;
+                for (std::size_t chain = 1; chain <= 2; ++chain) {
+                    std::fprintf(limbs, "moniker=%08x body_join chain=%zu (x,y)=",
+                                 motor.genome_source_filename, chain);
+                    for (std::size_t v = 0; v < 10; ++v) {
+                        std::fprintf(limbs, "%u,%u ", j.join_x[chain][v],
+                                     j.join_y[chain][v]);
+                    }
+                    std::fprintf(limbs, "\n");
+                }
+            }
+            std::fclose(limbs);
+        }
+    }
+
     // Once per creature: dump each lobe's connection rules so the rule
     // programs driving dendrite growth/decay can be read directly.
     if (traced_rows[slot] == 1) {
@@ -218,7 +257,7 @@ void log_creature_step_probe(const creatures1::creatures::Creature& creature,
             "stage=%u alive=%d mode=%u flags=%02x "
             "bounds=%d,%d,%d,%d foot=%d,%d down=%d opposite=%zu "
             "legs=%d,%d;%d,%d step=%d pose=%.15s target=%.15s "
-            "cursor=%zu anim=%.32s link=%p\n",
+            "cursor=%zu anim=%.32s link=%p body=%d\n",
             world_tick, motor.genome_source_filename, per_lobe,
             nonzero_chemicals,
             creature.selected_action_id(), lobe_count, neuron_total,
@@ -238,7 +277,8 @@ void log_creature_step_probe(const creatures1::creatures::Creature& creature,
             step_predicate ? 1 : 0, motor.current_pose.characters.data(),
             motor.target_pose.characters.data(), motor.animation_cursor,
             motor.animation_sequence.data(),
-            static_cast<const void*>(motor.motion_link));
+            static_cast<const void*>(motor.motion_link),
+            motor.body == nullptr ? 0 : motor.body->world_x());
         std::fclose(log);
     }
 }
@@ -925,6 +965,8 @@ void C1WindowsDocument::delete_framework_contents( creatures1::application::Docu
     manual_navigation_safe_frame_count_ = 0;
     world_tick_phase_ = 0;
     pending_text_input_.clear();
+    clear_text_input_buffer();
+    reset_text_input_configuration();
     edit_object_ = nullptr;
     viewport_navigation_disabled_ = false;
     CDocument::DeleteContents();
@@ -1729,12 +1771,10 @@ void C1WindowsDocument::tick_non_scenery_object(std::size_t index) {
         vehicle->tick(host);
         return;
     }
-    if (auto* blackboard =
-            dynamic_cast<creatures1::brain::Blackboard*>(object)) {
-        WindowsBlackboardHost host(*this);
-        blackboard->tick(host, host);
-        return;
-    }
+    // Blackboard does not override slot 41: its vtable (0x00457554) keeps
+    // CompoundObject::Tick @ 0x0042b6c0 there, so the board's timer and part
+    // animations advance like any compound object.  Blackboard::Tick is slot
+    // 42, run by the drive-threshold phase (run_creature_drive_threshold_phase).
     if (auto* compound =
             dynamic_cast<creatures1::objects::CompoundObject*>(object)) {
         WindowsCallButtonRuntimeHost host(*this);
@@ -1755,6 +1795,16 @@ void C1WindowsDocument::tick_non_scenery_object(std::size_t index) {
     // A plain Object carries no slot-41 body of its own.
 }
 
+bool C1WindowsDocument::enqueue_text_input(char character) {
+    // Native ring: 16 bytes, one always left empty to tell full from empty.
+    constexpr std::size_t kTextInputRingCapacity = 15;
+    if (pending_text_input_.size() >= kTextInputRingCapacity) {
+        return false;
+    }
+    pending_text_input_.push_back(character);
+    return true;
+}
+
 bool C1WindowsDocument::pop_text_input_character(char& character) {
     if (pending_text_input_.empty()) {
         return false;
@@ -1765,15 +1815,7 @@ bool C1WindowsDocument::pop_text_input_character(char& character) {
 }
 
 std::size_t C1WindowsDocument::text_input_length() const {
-    if (pointer_tool_ == nullptr) {
-        return 0;
-    }
-    std::size_t length = 0;
-    while (length < creatures1::ui::PointerTool::kTextCapacity &&
-           pointer_tool_->text_buffer[length] != '\0') {
-        ++length;
-    }
-    return length;
+    return text_input_buffer_length_;
 }
 
 std::size_t C1WindowsDocument::text_input_max_length() const {
@@ -1808,55 +1850,85 @@ void C1WindowsDocument::reset_text_input_configuration() {
     text_input_allowed_flags_ = 0;
 }
 
+void C1WindowsDocument::clear_text_input_buffer() {
+    text_input_buffer_[0] = '\0';
+    text_input_buffer_length_ = 0;
+}
+
 bool C1WindowsDocument::text_input_character_allowed( char character, std::uint32_t allowed_flags) const {
-    return static_cast<unsigned char>(character) >= 0x20 &&
-           static_cast<unsigned char>(character) <= 0x7a &&
-           (allowed_flags & creatures1::ui::PointerTool::
-                                kTextInputAllowedCharacters) != 0;
+    // SFCDoc::UpdateWorld @ 0x00432850: each flag admits one class, tested
+    // with strchr against the executable's own character sets.
+    const auto in_set = [character](const char* set) {
+        return character != '\0' && std::strchr(set, character) != nullptr;
+    };
+    if ((allowed_flags & 0x01u) != 0 &&
+        in_set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")) {
+        return true;
+    }
+    if ((allowed_flags & 0x02u) != 0 && character == ' ') {
+        return true;
+    }
+    if ((allowed_flags & 0x04u) != 0 && character == '?') {
+        return true;
+    }
+    if ((allowed_flags & 0x08u) != 0 && character == '!') {
+        return true;
+    }
+    if ((allowed_flags & 0x10u) != 0 && in_set("?!.,:/\\\x9c$%&*")) {
+        return true;
+    }
+    return (allowed_flags & 0x20u) != 0 && in_set("0123456789");
 }
 
 void C1WindowsDocument::commit_text_input() {
-    // Slot 43, CommitTextInput, on whatever object currently owns text entry.
-    // configure_text_input only ever installs a Blackboard as that target, and
-    // Blackboard::finalize_text_input is its slot-43 body.
-    if (text_input_target_ == nullptr || pointer_tool_ == nullptr) {
-        return;
+    // SFCDoc::UpdateWorld @ 0x0043262b: Return calls vtable slot 43 on the
+    // text-input target with the typed buffer, then clears the buffer.
+    // PointerTool's slot 43 is SetTextWithToolbarUpdate @ 0x00429860 (say
+    // it); Blackboard's is FinalizeTextInput @ 0x0042cb00.
+    const std::string text(text_input_buffer_.data(), text_input_buffer_length_);
+    if (auto* blackboard =
+            dynamic_cast<creatures1::brain::Blackboard*>(text_input_target_)) {
+        WindowsBlackboardHost host(*this);
+        blackboard->finalize_text_input(text, host, host);
+    } else if (pointer_tool_ != nullptr) {
+        C1MainFrame* frame = active_main_frame();
+        C1WindowsView* view =
+            frame == nullptr ? nullptr : active_c1_view(*frame);
+        WindowsPointerToolRuntimeHost runtime(*this, view);
+        pointer_tool_->set_text_with_toolbar_update(text, runtime);
     }
-    auto* blackboard =
-        dynamic_cast<creatures1::brain::Blackboard*>(text_input_target_);
-    if (blackboard == nullptr) {
-        return;
-    }
-    WindowsBlackboardHost host(*this);
-    blackboard->finalize_text_input(
-        std::string_view(pointer_tool_->text_buffer.data(),
-                         text_input_length()),
-        host, host);
+    clear_text_input_buffer();
 }
 
 void C1WindowsDocument::erase_last_text_input_character() {
-    if (pointer_tool_ != nullptr) {
-        const std::size_t length = text_input_length();
-        if (length != 0) {
-            pointer_tool_->text_buffer[length - 1] = '\0';
-        }
+    if (text_input_buffer_length_ != 0) {
+        --text_input_buffer_length_;
+        text_input_buffer_[text_input_buffer_length_] = '\0';
     }
 }
 
 void C1WindowsDocument::append_text_input_character(char character) {
-    if (pointer_tool_ != nullptr) {
-        const std::size_t length = text_input_length();
-        if (length < creatures1::ui::PointerTool::kTextInputMaximumLength) {
-            pointer_tool_->text_buffer[length] = character;
-            pointer_tool_->text_buffer[length + 1] = '\0';
-        }
+    // Native @ 0x004328d8 bounds the store at 0x50; the caller has already
+    // checked the target's maximum length.
+    if (text_input_buffer_length_ + 1 < text_input_buffer_.size()) {
+        text_input_buffer_[text_input_buffer_length_++] = character;
+        text_input_buffer_[text_input_buffer_length_] = '\0';
     }
 }
 
 void C1WindowsDocument::update_text_input_target() {
-    // The recovered text-entry path republishes the pointer tool's buffer as
-    // its persistent bubble after each edit.  PointerTool owns that policy;
-    // the runtime host supplies the bubble and selector services.
+    // SFCDoc::UpdateWorld @ 0x00432679: after every edit, vtable slot 44 on
+    // the target with the typed buffer.  PointerTool's slot 44 is
+    // SetPersistentBubbleText @ 0x00429960; Blackboard's is
+    // SetCurrentWordText @ 0x0042cb70.
+    const std::string_view text(text_input_buffer_.data(),
+                                text_input_buffer_length_);
+    if (auto* blackboard =
+            dynamic_cast<creatures1::brain::Blackboard*>(text_input_target_)) {
+        WindowsBlackboardHost host(*this);
+        blackboard->set_current_word_text(text, host);
+        return;
+    }
     if (pointer_tool_ == nullptr) {
         return;
     }
@@ -1864,10 +1936,7 @@ void C1WindowsDocument::update_text_input_target() {
     C1WindowsView* view =
         frame == nullptr ? nullptr : active_c1_view(*frame);
     WindowsPointerToolRuntimeHost runtime(*this, view);
-    pointer_tool_->set_persistent_bubble_text(
-        std::string_view(pointer_tool_->text_buffer.data(),
-                         text_input_length()),
-        runtime);
+    pointer_tool_->set_persistent_bubble_text(text, runtime);
 }
 
 
@@ -2638,8 +2707,17 @@ int C1WindowsDocument::charset_glyph_advance_width(
 
 void C1WindowsDocument::invoke_bubble_deleting(
     creatures1::objects::Bubble& bubble, std::uint32_t deletion_flags) {
-    static_cast<void>(bubble);
+    // Bubble::Tick @ 0042a4c0 calls the deleting destructor
+    // (~Bubble_Deleting @ 00429d60, flags 1): the bubble is freed on the spot
+    // and ~Object drops it from the object registries.  Leaving this empty
+    // kept every expired bubble alive, so speech boxes piled up in the world
+    // and were saved with it.  A bubble still under construction is not yet
+    // owned by the runtime and has nothing to release.
     static_cast<void>(deletion_flags);
+    if (world_runtime_ != nullptr &&
+        world_runtime_->owns_non_scenery_object(bubble)) {
+        world_runtime_->destroy_world_object(bubble);
+    }
 }
 
 void C1WindowsDocument::redraw_after_bubble_deleting(
@@ -2798,6 +2876,7 @@ C1WindowsDocument::object_registry() {
 
 void C1WindowsDocument::set_renderer_viewport_origin(int world_x,
                                                      int world_y) {
+
     if (renderer_ != nullptr) {
         renderer_->set_viewport_origin(world_x, world_y);
     }
@@ -3207,7 +3286,15 @@ int C1WindowsDocument::renderer_viewport_height() const {
 void C1WindowsDocument::request_renderer_origin(int world_x, int world_y) {
     if (renderer_ != nullptr) {
         renderer_->request_viewport_origin(world_x, world_y);
+        return;
     }
+    // Native constructs CWorldRenderer in the SFCView constructor (0x00436440),
+    // so SFCDoc::Serialize's RequestViewportOrigin always reaches a live
+    // renderer and the world opens at its saved camera position.  This port
+    // creates the renderer later (initial update / first draw); hold the
+    // request and apply it when the renderer is created instead of dropping it
+    // and opening every world at 0,0.
+    pending_renderer_origin_ = std::make_pair(world_x, world_y);
 }
 
 void C1WindowsDocument::set_renderer_debug_highlight_rect(int left, int top,
@@ -3796,6 +3883,11 @@ void C1WindowsDocument::ensure_renderer(CWnd& view, bool smooth_scrolling_enable
         view.GetSafeHwnd(), (std::max)(1, client_rect.Width()),
         (std::max)(1, client_rect.Height()));
     renderer_->realize_palette();
+    if (pending_renderer_origin_.has_value()) {
+        const auto [origin_x, origin_y] = *pending_renderer_origin_;
+        pending_renderer_origin_.reset();
+        renderer_->request_viewport_origin(origin_x, origin_y);
+    }
 }
 
 void C1WindowsDocument::present_renderer_rect(const creatures1::world::WorldRect& rect) {

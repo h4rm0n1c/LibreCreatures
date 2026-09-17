@@ -1919,7 +1919,8 @@ void Creature::advance_pose_animation(
                             ? '3'
                             : '2';
         } else {
-            in_locomotion_mode = true;
+            // Native 0043bbd7: '!' resolves the side but, unlike '?', leaves
+            // EDI (the locomotion flag) clear.
             pose_head = skeleton_.down_foot_x <= skeleton_.motion_target_x
                             ? '3'
                             : '2';
@@ -1927,6 +1928,9 @@ void Creature::advance_pose_animation(
     }
 
     char transformed_tail = pose_buffer[1];
+    // Native 0043bcbe: a locomotion '4' tail demoted to '5' jumps straight to
+    // the stepping loop, skipping the '?' tail resolution.
+    bool skip_tail_resolution = false;
     if (pose_head != 'X' && pose_head != skeleton_.current_pose.characters[0]) {
         int orientation_offset = 4;
         if (skeleton_.facing_direction == FacingDirection::east) {
@@ -1962,10 +1966,13 @@ void Creature::advance_pose_animation(
             world.render_plane(*skeleton_.motion_link) <
                 world.render_plane(skeleton_)) {
             transformed_tail = '5';
+            skip_tail_resolution = true;
         }
     }
 
-    if (pose_buffer[1] == '?') {
+    // Native writes the table pair back into the pose buffer, so the '?'
+    // test at 0043bbb7 sees the transformed tail, not the requested one.
+    if (!skip_tail_resolution && transformed_tail == '?') {
         if (!has_motion_link) {
             transformed_tail = '1';
         } else {
@@ -2002,8 +2009,14 @@ void Creature::advance_pose_animation(
     pose_buffer[0] = pose_head;
     pose_buffer[1] = transformed_tail;
 
-    // Each of the fourteen tail components advances by one decimal digit
-    // toward its target. X means retain the component already rendered.
+    // Native 0043bd4f: the applied string starts as the "XXXXXXXXXXXXXXX"
+    // template (0x0045a9fc).  Slot 0 takes the resolved head; each of the
+    // fourteen components is written only when it steps one digit toward
+    // its target, so matched and X components stay X (keep current).
+    std::array<char, kPoseStringLength + 1> applied{};
+    applied.fill('X');
+    applied[kPoseStringLength] = '\0';
+    applied[0] = pose_head;
     for (std::size_t component = 0; component < kPoseStringLength - 1;
          ++component) {
         const char current =
@@ -2012,19 +2025,20 @@ void Creature::advance_pose_animation(
         if (target == 'X' || current == target) {
             continue;
         }
-        const char transitioned = current < target ? current + 1 : current - 1;
         ++skeleton_.pose_transition_component_count;
-        pose_buffer[component + 1] = transitioned;
+        applied[component + 1] = current < target ? current + 1 : current - 1;
     }
 
-    char final_tail_reference = pose_buffer[1];
-    if (final_tail_reference < '4' &&
-        current_pose_gait > '3') {
-        final_tail_reference = '1';
+    // Native 0043bd84: slot 1 tests the requested digit.  A target of '4' or
+    // above is taken immediately; below that, leaving a '4'+ state snaps to
+    // '1', otherwise the stepped (or X) value stands.
+    if (transformed_tail >= '4') {
+        applied[1] = transformed_tail;
+    } else if (current_pose_gait >= '4') {
+        applied[1] = '1';
     }
-    pose_buffer[1] = final_tail_reference;
     skeleton_.apply_pose_string(
-        std::string_view(pose_buffer.data(), kPoseStringLength), sound_host);
+        std::string_view(applied.data(), kPoseStringLength), sound_host);
 
     world::WorldRect dirty_bounds{};
     world::union_wrapped_world_rects(dirty_bounds, skeleton_.sprite_bounds,
@@ -2101,9 +2115,11 @@ void Creature::update(CreatureUpdateHost& world,
         }
 
         if (skeleton_.motion_link != nullptr) {
+            // Native Update @00409097 pushes [this+0x7fc] -- the part chosen
+            // by AIM: -- as GetPartCentre's part argument, not 0.
             skeleton_.motion_link->get_part_center(
                 &skeleton_.motion_target_x, &skeleton_.motion_target_y,
-                0);
+                skeleton_.motion_target_part_index);
         }
         register_state_.advance_age_tick();
     }

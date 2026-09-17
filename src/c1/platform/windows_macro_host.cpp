@@ -1,6 +1,6 @@
-#include <cstdio>
 #include <cstring>
 #include "windows_macro_host.hpp"
+#include <cstdlib>
 
 #include "windows_object_event_host.hpp"
 
@@ -46,13 +46,18 @@ creatures1::objects::Object* WindowsMacroHost::initial_auxiliary_object()
 
 creatures1::objects::Object* WindowsMacroHost::resolve_it_object(
     creatures1::objects::Object* script_owner) const {
-    static_cast<void>(script_owner);
-    // Held.  IT is the owning Creature's current attention target.  The port
-    // maps a Creature to its Object (object_for_creature) but has no inverse,
-    // so an Object script owner cannot be resolved back to the Creature whose
-    // attention record holds IT.  Returning null is the recovered result for
-    // a non-creature owner, which is what every caller currently sees.
-    return nullptr;
+    // Macro::ResetExecutionState @ 0041a130: an owner whose family byte is 4
+    // (a Creature) supplies IT from its motion link (+0x7f0), the object it is
+    // attending to; every other owner gets null.  Creature action scripts
+    // address the attended object as `_it_` (`mesg writ _it_ ...`), so a null
+    // IT silently dropped every push/pull/get/eat message.
+    if (script_owner == nullptr ||
+        (script_owner->classifier_base() & 0xff000000U) != 0x04000000U) {
+        return nullptr;
+    }
+    const creatures1::creatures::Creature* creature =
+        document_.creature_for_object(*script_owner);
+    return creature == nullptr ? nullptr : creature->skeleton().motion_link;
 }
 
 // --- MacroInterpreterHost --------------------------------------------------
@@ -330,10 +335,15 @@ std::uint32_t WindowsMacroHost::creature_value(
     case creatures1::scripting::MacroCreatureValue::chemical_concentration:
         return creature->chemical_concentration(index);
     case creatures1::scripting::MacroCreatureValue::gender:
+        // Native ParseRValue `gend` @0041afa6 returns the raw byte at
+        // Creature+0x2cc1: 1 = male, 2 = female (0 for a non-creature owner,
+        // handled by the caller).  Returning 0/1 made the Science Kit's
+        // `dde: putv gend` report males as female, and broke world scripts
+        // that test `gend eq 2`.
         return creature->gender() ==
                        creatures1::creatures::CreatureGender::female
-                   ? 1u
-                   : 0u;
+                   ? 2u
+                   : 1u;
     case creatures1::scripting::MacroCreatureValue::death_state:
         return creature->life_state() ==
                        creatures1::creatures::CreatureLifeState::dead
@@ -511,9 +521,14 @@ std::uint32_t WindowsMacroHost::enabled_object_count_matching(
             continue;
         }
         const std::uint32_t classifier = object->classifier_base();
+        // Macro::ParseRValue `totl` @ 0x0041b131 also requires the byte at
+        // Object+0x4c (tick enabled) to be set.  InitializeRuntimeState
+        // (kill) clears it @ 0x0042cdce, so killed objects -- parked below
+        // the world until the next save -- are not counted.
         if ((family == 0 || ((classifier >> 24) & 0xff) == family) &&
             (genus == 0 || ((classifier >> 16) & 0xff) == genus) &&
-            (species == 0 || ((classifier >> 8) & 0xff) == species)) {
+            (species == 0 || ((classifier >> 8) & 0xff) == species) &&
+            object->tick_enabled()) {
             ++matches;
         }
     }
@@ -640,20 +655,42 @@ void WindowsMacroHost::select_creature_walk_gait(
 
 bool WindowsMacroHost::creature_approach_is_ready(
     const creatures1::objects::Object& object) const {
-    // CAOS `APPR` continuation: ready once the lead foot is within the native
-    // 0x36 horizontal threshold of the motion link.
+    // CAOS `APPR` continuation, native ExecuteInterpreter @0041e1e9:
+    //   MOV EAX,[creature+0x7c]; SUB EAX,[creature+0x7f4]; abs;
+    //   CMP EAX,0x36; JG not_ready
+    // i.e. ready when |down_foot_x - motion_target_x| <= 0x36.  motion_target
+    // is the aimed part's centre, refreshed by Creature::Update; the creature's
+    // gait steers toward it.  Comparing against the link's left edge instead
+    // left wide targets permanently "not arrived", so push/get scripts stalled
+    // on APPR and never reached TOUC.
     const creatures1::creatures::Creature* creature =
         document_.creature_for_object(object);
     if (creature == nullptr) {
         return false;
     }
     const creatures1::creatures::Skeleton& skeleton = creature->skeleton();
-    const creatures1::objects::Object* link = skeleton.motion_link;
-    if (link == nullptr) {
-        return false;
+    const int distance = skeleton.down_foot_x - skeleton.motion_target_x;
+    const bool ready = (distance < 0 ? -distance : distance) <= 0x36;
+    if (ready) {
+        static const char* setting = std::getenv("C1_TRACE_CREATURE");
+        static unsigned rows = 0;
+        const bool disabled = setting != nullptr &&
+            (std::strcmp(setting, "0") == 0 || std::strcmp(setting, "off") == 0);
+        if (!disabled && rows < 400) {
+            ++rows;
+            if (FILE* log = std::fopen("Creatures.place.log", "a")) {
+                std::fprintf(log,
+                             "appr-ready moniker=%08x action=%u foot=%d target=%d "
+                             "part=%d\n",
+                             skeleton.genome_source_filename,
+                             creature->selected_action_id(),
+                             skeleton.down_foot_x, skeleton.motion_target_x,
+                             skeleton.motion_target_part_index);
+                std::fclose(log);
+            }
+        }
     }
-    const int distance = skeleton.down_foot_x - link->sound_source_x();
-    return (distance < 0 ? -distance : distance) < 0x36;
+    return ready;
 }
 
 void WindowsMacroHost::reset_creature_animation_sequence(
@@ -1280,10 +1317,14 @@ WindowsCreatureAttentionHost::classify_object(
 void WindowsCreatureAttentionHost::dispatch_sleep_indicator_event(
     creatures1::objects::Object& indicator,
     creatures1::objects::ObjectEventId event_id,
-    creatures1::objects::Object* target, std::uint32_t argument) {
-    document_.queue_immediate_object_event(
-        indicator, target == nullptr ? indicator : *target, event_id,
-        argument);
+    creatures1::objects::Object* target, std::uint32_t /*argument*/) {
+    // SetSleepIndicator @ 0040da80 calls Object::DispatchScriptEvent (vtable
+    // +0x88) directly, so the indicator's event script (1/2: `sndl zzzz` /
+    // `sndl gsnr`, 0: `fade`) runs before InitializeRuntimeState purges the
+    // object's macros.  Queuing it let the purge win: `fade` never ran and
+    // every sleep left its snore loop playing.
+    WindowsObjectScriptDispatchHost scripts(document_);
+    indicator.dispatch_script_event(event_id, target, false, scripts);
 }
 
 void WindowsCreatureAttentionHost::initialize_sleep_indicator(
@@ -2200,7 +2241,9 @@ creatures1::objects::Object* WindowsBlackboardHost::pointer_tool() const {
 }
 
 void WindowsBlackboardHost::clear_text_input() {
-    document_.clear_pending_input();
+    // g_text_input_buffer[0] = 0, g_text_input_length = 0 (SetEditMode,
+    // FinalizeTextInput, Tick) -- the typed buffer, not the key ring.
+    document_.clear_text_input_buffer();
 }
 
 void WindowsBlackboardHost::configure_text_input(
@@ -2376,6 +2419,7 @@ void WindowsMacroHost::enable_viewport_navigation() {
 }
 
 void WindowsMacroHost::set_viewport_origin(int x, int y) {
+
     document_.set_renderer_viewport_origin(x, y);
 }
 

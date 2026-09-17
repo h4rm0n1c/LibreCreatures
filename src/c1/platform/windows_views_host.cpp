@@ -420,14 +420,13 @@ void C1WindowsView::resize_renderer_for_viewport(int client_width, int client_he
 }
 
 void C1WindowsView::request_renderer_origin_for_selected_creature() {
-    C1WindowsDocument* current_document = document();
-    const creatures1::creatures::Creature* creature =
-        current_document == nullptr ? nullptr
-                                    : current_document->selected_creature();
-    if (current_document != nullptr && creature != nullptr) {
-        current_document->request_renderer_origin(
-            creature->skeleton().down_foot_x,
-            creature->skeleton().down_foot_y);
+    // ReturnViewportNavigationToSelectedCreature @ 0x00437910 delegates to
+    // CWorldRenderer::RequestViewportOriginForSelectedCreature @ 0x004132a0,
+    // which centres the creature horizontally and applies the 5/8 viewport
+    // height offset.  Passing the raw down-foot as the origin instead put the
+    // creature hard against the left edge of the view.
+    if (C1WindowsDocument* current_document = document()) {
+        current_document->request_viewport_origin_for_selected_creature();
     }
 }
 
@@ -821,6 +820,28 @@ afx_msg void C1WindowsView::OnVScroll(UINT code, UINT position, CScrollBar*) {
                                        code, static_cast<int>(position));
 }
 
+afx_msg void C1WindowsView::OnChar(UINT character_code, UINT /*repeat_count*/,
+                                   UINT /*flags*/) {
+    // SFCView::OnCharQueueTextInput @ 0x00437270.  Typed characters feed the
+    // pointer tool's speech text through the document's key ring.
+    creatures1::ui::queue_text_input(*this, character_code);
+}
+
+bool C1WindowsView::control_key_is_down() const {
+    return ::GetKeyState(VK_CONTROL) < 0;
+}
+
+void C1WindowsView::forward_default_character_message(
+    std::uint32_t /*character_code*/) {
+    Default();
+}
+
+bool C1WindowsView::try_enqueue(char character) {
+    C1WindowsDocument* const owning_document = document();
+    return owning_document != nullptr &&
+           owning_document->enqueue_text_input(character);
+}
+
 afx_msg void C1WindowsView::OnKeyDown(UINT virtual_key, UINT repeat_count, UINT flags) {
     // NOT a native key binding -- CWorldStatisticsFrame's own real trigger
     // could not be found (see the class comment on C1WorldStatisticsFrame).
@@ -854,6 +875,7 @@ BEGIN_MESSAGE_MAP(C1WindowsView, CView)
     ON_WM_HSCROLL()
     ON_WM_VSCROLL()
     ON_WM_KEYDOWN()
+    ON_WM_CHAR()
 END_MESSAGE_MAP()
 
 void C1WindowsView::set_coordinate_status(std::string_view text) {
@@ -1016,7 +1038,10 @@ creatures1::ui::EyeViewRect C1EyeViewWindow::default_eye_view_rect() const {
 
 creatures1::ui::EyeViewPosition
 C1EyeViewWindow::eye_view_position_limits() const {
-    return {::GetSystemMetrics(SM_CXSCREEN), ::GetSystemMetrics(SM_CYSCREEN)};
+    // CEyeView::CreateWindow @ 00417440 bounds EyePosn by GetSystemMetrics
+    // 0x10/0x11 (the full-screen client area), not the raw screen size.
+    return {::GetSystemMetrics(SM_CXFULLSCREEN),
+            ::GetSystemMetrics(SM_CYFULLSCREEN)};
 }
 
 void C1EyeViewWindow::move_eye_view_window(int x, int y, int width, int height,
@@ -1082,8 +1107,15 @@ bool C1EyeViewWindow::selected_creature(
     }
     const creatures1::objects::Object& speaker =
         document_.object_for_creature(*creature);
-    target.has_motion_target = false;
-    target.sleep_indicator_active = false;
+    // CEyeView::UpdateSelectedCreatureFollowViewport @ 004176e0: an awake
+    // creature with a motion link (+0x7f0, +0x11f clear) and an aimed point
+    // above y 0x4b0 centres on that point (+0x7f4/+0x7f8), i.e. what it is
+    // looking at; otherwise the view falls back to the creature itself.
+    const creatures1::creatures::Skeleton& skeleton = creature->skeleton();
+    target.has_motion_target = skeleton.motion_link != nullptr;
+    target.sleep_indicator_active = skeleton.sleep_indicator_active;
+    target.motion_target_x = skeleton.motion_target_x;
+    target.motion_target_y = skeleton.motion_target_y;
     target.sound_source_x = speaker.sound_source_x();
     target.sound_source_y = speaker.sound_source_y();
     target.visual_width = speaker.current_visual_width();

@@ -19,7 +19,10 @@ enum class TextInputCharacter : std::uint32_t {
     space = 0x02,
     question_mark = 0x04,
     exclamation_mark = 0x08,
-    digits = 0x10,
+    // SFCDoc::UpdateWorld @ 0x00432850: 0x10 admits "?!.,:/\\£$%&*" and 0x20
+    // admits "0123456789" -- the normal pointer policy (0x1f) has no digits.
+    punctuation = 0x10,
+    digits = 0x20,
 };
 
 constexpr std::uint32_t kNormalTextInputFlags =
@@ -27,7 +30,7 @@ constexpr std::uint32_t kNormalTextInputFlags =
     static_cast<std::uint32_t>(TextInputCharacter::space) |
     static_cast<std::uint32_t>(TextInputCharacter::question_mark) |
     static_cast<std::uint32_t>(TextInputCharacter::exclamation_mark) |
-    static_cast<std::uint32_t>(TextInputCharacter::digits);
+    static_cast<std::uint32_t>(TextInputCharacter::punctuation);
 
 // The application owns the shared editor state and the pointer-tool object.
 // These operations are the semantic equivalent of the native global input
@@ -105,6 +108,9 @@ public:
                              BlackboardDisplayHost& display);
     void set_current_word_text(std::string_view text,
                                BlackboardDisplayHost& display);
+    // Blackboard::Tick @ 0x0042cba0 -- vtable slot 42 (the world update's
+    // drive-threshold phase), not the per-object slot-41 tick, which the
+    // board inherits unchanged from CompoundObject.
     void tick(BlackboardRuntimeHost& runtime, BlackboardDisplayHost& display);
 
     const BlackboardWord& word(std::size_t index) const {

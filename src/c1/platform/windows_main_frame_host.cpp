@@ -507,6 +507,23 @@ void C1MainFrame::show_unsupported_language_warning() {
     ::ExitProcess(static_cast<UINT>(exit_code));
 }
 
+BEGIN_MESSAGE_MAP(C1MainToolBar, CToolBar)
+    ON_WM_ERASEBKGND()
+END_MESSAGE_MAP()
+
+BOOL C1MainToolBar::OnEraseBkgnd(CDC* dc) {
+    // Native's MyToolBar leaves erasing to the system ToolbarWindow32 class,
+    // which on Windows fills COLOR_BTNFACE.  Wine's comctl32 toolbar erases
+    // nothing, so the bar showed black and a button changing state (the eye
+    // view check) kept its old pixels under the new glyph.  Fill explicitly.
+    // CControlBar::EraseNonClient sends this with a window DC clipped to
+    // the border area, so fill whatever the DC exposes, not just the client.
+    CRect exposed;
+    dc->GetClipBox(&exposed);
+    dc->FillSolidRect(&exposed, ::GetSysColor(COLOR_BTNFACE));
+    return TRUE;
+}
+
 bool C1MainFrame::create_main_toolbar() {
     // MyToolBar::Create expressed against the real MFC controls: the
     // semantic policy is now in initialize_main_frame(), while CToolBar
@@ -527,7 +544,7 @@ bool C1MainFrame::create_main_toolbar() {
     main_toolbar_.SetButtonInfo(9, 0x8046, TBBS_BUTTON, 0x15);
     main_toolbar_.SetButtonInfo(0xb, 0x800f, TBBS_BUTTON, 3);
     main_toolbar_.SetButtonInfo(0xc, 0x71, TBBS_BUTTON, 5);
-    main_toolbar_.SetButtonInfo(0xd, 0x8003, TBBS_CHECKGROUP, 4);
+    main_toolbar_.SetButtonInfo(0xd, 0x8003, TBBS_CHECKBOX, 4);
 
     // The clean embedded-kit registry decoder owns record grammar; this
     // adapter owns the native menu and toolbar storage.
