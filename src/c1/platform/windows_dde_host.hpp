@@ -16,7 +16,7 @@ public:
                     std::uint32_t command_filter) override;
     creatures1::scripting::DdeStringHandle create_string_handle(
         creatures1::scripting::DdeInstanceId instance_id,
-        std::string_view text) override;
+        std::string_view bytes) override;
     void publish_service(
         creatures1::scripting::DdeInstanceId instance_id,
         creatures1::scripting::DdeStringHandle service_handle) override;
@@ -65,7 +65,7 @@ public:
         const override;
     creatures1::scripting::DdeDataHandle create_data(
         const creatures1::scripting::DdeServiceItem& item,
-        std::string_view text) override;
+        std::string_view bytes) override;
     creatures1::scripting::DdeDataHandle create_object_owned_item_data(
         const creatures1::scripting::DdeServiceItem& item,
         creatures1::scripting::Macro& macro) override;

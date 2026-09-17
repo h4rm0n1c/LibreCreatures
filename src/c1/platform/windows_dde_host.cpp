@@ -4,6 +4,7 @@
 
 #include <ddeml.h>
 
+#include <algorithm>
 #include <array>
 #include <cstring>
 
@@ -102,19 +103,23 @@ creatures1::scripting::DdeStringHandle WindowsDdeRuntime::create_string_handle(
 void WindowsDdeRuntime::publish_service(
     creatures1::scripting::DdeInstanceId instance_id,
     creatures1::scripting::DdeStringHandle service_handle) {
+    // InitializeDdeService @ 0x00401090 passes 5: DNS_REGISTER with
+    // DNS_FILTERON, so DDEML drops connections to any other service name
+    // before they reach the callback.
     DdeNameService(static_cast<DWORD>(instance_id),
                    reinterpret_cast<HSZ>(
                        static_cast<std::uintptr_t>(service_handle)),
-                   nullptr, DNS_REGISTER);
+                   nullptr, DNS_REGISTER | DNS_FILTERON);
 }
 
 void WindowsDdeRuntime::unpublish_service(
     creatures1::scripting::DdeInstanceId instance_id,
     creatures1::scripting::DdeStringHandle service_handle) {
-    DdeNameService(static_cast<DWORD>(instance_id),
-                   reinterpret_cast<HSZ>(
-                       static_cast<std::uintptr_t>(service_handle)),
-                   nullptr, DNS_UNREGISTER);
+    // ShutdownDdeService @ 0x0044edf0 passes a null name, which unregisters
+    // every service the instance published rather than naming this one.
+    static_cast<void>(service_handle);
+    DdeNameService(static_cast<DWORD>(instance_id), nullptr, nullptr,
+                   DNS_UNREGISTER);
 }
 
 void WindowsDdeRuntime::free_string_handle(
@@ -175,11 +180,15 @@ std::string_view WindowsDdeCallbackHost::access_data(
         g_accessed_data.clear();
         return g_accessed_data;
     }
-    g_accessed_data.assign(reinterpret_cast<const char*>(bytes),
-                           static_cast<std::size_t>(length));
-    while (!g_accessed_data.empty() && g_accessed_data.back() == '\0') {
-        g_accessed_data.pop_back();
+    // The native hands DdeAccessData's pointer straight to
+    // Macro::LoadScriptText as a C string, so the script ends at the first
+    // NUL, not at the end of the data.
+    const char* text = reinterpret_cast<const char*>(bytes);
+    std::size_t text_length = 0;
+    while (text_length < length && text[text_length] != '\0') {
+        ++text_length;
     }
+    g_accessed_data.assign(text, text_length);
     return g_accessed_data;
 }
 
@@ -219,10 +228,18 @@ void WindowsDdeCallbackHost::set_tool_available(std::string_view topic_name,
 
 std::string WindowsDdeCallbackHost::render_macro_output(
     creatures1::scripting::Macro& macro, std::size_t output_capacity) {
-    std::string output(output_capacity, '\0');
-    const std::uint32_t length =
-        WindowsMacroHost::execute_macro_to_output_buffer(macro, output.data());
-    output.resize(length < output_capacity ? length : output_capacity);
+    // Not execute_macro_to_output_buffer: that helper serves the pipe and
+    // caps a reply at its 0x1000 bytes, while CreateMacroData's own buffer is
+    // 0x4000.  The count Macro::execute_to_output_buffer returns includes the
+    // NUL over the final separator, which is exactly what the native sends.
+    creatures1::scripting::MacroSchedulerHostAdapter scheduler(*this, *this);
+    std::string output;
+    const std::size_t written =
+        macro.execute_to_output_buffer(scheduler, output);
+    output.resize((std::min)(written, output_capacity));
+    if (!output.empty()) {
+        output.back() = '\0';
+    }
     return output;
 }
 
@@ -245,24 +262,18 @@ std::string WindowsDdeCallbackHost::render_brain_activity(
 
 creatures1::scripting::DdeSystemInfoSnapshot
 WindowsDdeCallbackHost::read_system_info() const {
-    // The fourteen counters CreateSystemInfoData reports come from live world
-    // registries.  Only the ones the document already exposes are filled;
-    // inventing the rest would report numbers the game does not hold.
-    creatures1::scripting::DdeSystemInfoSnapshot snapshot;
-    snapshot.non_scenery_object_count =
-        static_cast<std::int32_t>(document_ref_.non_scenery_object_count());
-    snapshot.creature_count =
-        static_cast<std::int32_t>(document_ref_.creature_count());
-    return snapshot;
+    // The document owns the fourteen live counters CreateSystemInfoData
+    // reports, in the same snapshot the debug readout uses.
+    return document_ref_.system_info_snapshot();
 }
 
 creatures1::scripting::DdeDataHandle WindowsDdeCallbackHost::create_data(
-    const creatures1::scripting::DdeServiceItem& item, std::string_view text) {
-    const std::string value(text);
+    const creatures1::scripting::DdeServiceItem& item, std::string_view bytes) {
+    std::string value(bytes);
     const HDDEDATA handle = DdeCreateDataHandle(
         static_cast<DWORD>(g_state.instance_id),
-        reinterpret_cast<LPBYTE>(const_cast<char*>(value.c_str())),
-        static_cast<DWORD>(value.size() + 1), 0,
+        reinterpret_cast<LPBYTE>(value.data()),
+        static_cast<DWORD>(value.size()), 0,
         reinterpret_cast<HSZ>(static_cast<std::uintptr_t>(item.handle)),
         CF_TEXT, 0);
     return static_cast<creatures1::scripting::DdeDataHandle>(

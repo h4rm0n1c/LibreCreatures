@@ -90,8 +90,11 @@ public:
     virtual std::string render_brain_activity(
         Macro& macro, std::size_t output_capacity) = 0;
     virtual DdeSystemInfoSnapshot read_system_info() const = 0;
+    // Creates the DDE data handle from exactly these bytes.  Each producer
+    // decides whether a terminator is part of its reply, as the native ones
+    // do by the byte count they hand DdeCreateDataHandle.
     virtual DdeDataHandle create_data(const DdeServiceItem& item,
-                                      std::string_view text) = 0;
+                                      std::string_view bytes) = 0;
 
     // BrainWiring's entry in the item table is 0x00410260,
     // Object::DefaultImageVirtualReturnZero -- the shipped game answers the

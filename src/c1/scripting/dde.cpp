@@ -111,15 +111,19 @@ DdeDataHandle create_dde_item_data(const DdeServiceItem& item,
                                    DdeItemDataHost& host) {
     switch (item.kind) {
     case DdeItemKind::macro_output: {
-        // CreateMacroData uses a native 0x4000-byte output buffer.
+        // CreateMacroData @ 0x00410120 renders into a 0x4000-byte buffer and
+        // passes DdeCreateDataHandle ExecuteToOutputBuffer's count as the
+        // size.  That count already includes the NUL written over the final
+        // '|', so the rendered bytes go out as they are -- and an empty
+        // reply goes out as zero bytes.
         const std::string output = host.render_macro_output(macro, 0x4000u);
         return host.create_data(item, output);
     }
     case DdeItemKind::brain_activity: {
-        // CreateBrainActivityData uses a native 9000-byte report buffer;
-        // Macro work values [0] and [1] are consumed by the host renderer.
-        const std::string output =
-            host.render_brain_activity(macro, 9000u);
+        // CreateBrainActivityData @ 0x004101e0 uses a 9000-byte buffer and
+        // passes FormatActivityReport's count, which includes its NUL.
+        std::string output = host.render_brain_activity(macro, 9000u);
+        output.push_back('\0');
         return host.create_data(item, output);
     }
     case DdeItemKind::system_info: {
@@ -141,6 +145,9 @@ DdeDataHandle create_dde_item_data(const DdeServiceItem& item,
                                  info.selected_action_activation_boost);
         append_system_info_field(output, info.selected_creature_motion_link);
         append_system_info_field(output, info.smoothed_idle_cycle_index);
+        // CreateSystemInfoData @ 0x00410270 passes snprintf's length + 1:
+        // the text and its NUL, with the final '|' kept.
+        output.push_back('\0');
         return host.create_data(item, output);
     }
     case DdeItemKind::brain_wiring:
@@ -164,8 +171,10 @@ DdeDataHandle handle_dde_callback(DdeServiceState& state,
                                    DdeCallbackHost& host) {
     switch (request.transaction) {
     case DdeTransactionKind::connect:
-        // Native CONNECT accepts only the published service topic and keeps
-        // the same hard conversation limit used by the DDE service table.
+        // DdeCallback @ 0x0040fdb0 compares the SERVICE name (the second
+        // string handle) with "Vivarium" and accepts any topic: the topic is
+        // a kit's ProgID, recorded at CONNECT_CONFIRM.  Up to 100
+        // conversations.
         return state.conversation_count <
                        DdeServiceState::kMaximumConversations &&
                        request.service_or_item == state.service_handle
