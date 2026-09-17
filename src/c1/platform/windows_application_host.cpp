@@ -4,6 +4,7 @@
 #include "windows_shell.hpp"
 #include "windows_dde_host.hpp"
 
+#include <cstring>
 #include <fstream>
 
 namespace creatures1::platform {
@@ -321,9 +322,46 @@ void C1StartupHost::update_ole_factory_registry() {
                            static_cast<DWORD>(quoted.size() + 1));
         }
         RegCloseKey(clsid_key);
-        RegDeleteKeyA(HKEY_CLASSES_ROOT,
-                      "CLSID\\{77C733E1-6797-11CF-BBF2-0020AF71E433}"
-                      "\\InprocServer32");
+        delete_own_sfc_inproc_server_registration();
+    }
+}
+
+void C1StartupHost::delete_own_sfc_inproc_server_registration() {
+    // Only the key UpdateRegistryAll just wrote -- this executable -- may be
+    // removed.  On a Community Edition install OLEKitProxy.dll registers
+    // itself here so that a kit launched under Wine gets the in-process proxy
+    // that forwards SFC.OLE to the running game over its pipe; deleting that
+    // registration unconditionally left every kit's CreateDispatch("SFC.OLE")
+    // failing with an empty COleException.
+    static const char* const inproc_key =
+        "CLSID\\{77C733E1-6797-11CF-BBF2-0020AF71E433}\\InprocServer32";
+
+    HKEY key = nullptr;
+    if (RegOpenKeyExA(HKEY_CLASSES_ROOT, inproc_key, 0, KEY_QUERY_VALUE,
+                      &key) != ERROR_SUCCESS) {
+        return;
+    }
+    char registered[MAX_PATH]{};
+    DWORD size = sizeof(registered);
+    DWORD type = 0;
+    const LONG read = RegQueryValueExA(key, nullptr, nullptr, &type,
+                                       reinterpret_cast<BYTE*>(registered),
+                                       &size);
+    RegCloseKey(key);
+    if (read != ERROR_SUCCESS || type != REG_SZ) {
+        return;
+    }
+
+    char module_path[MAX_PATH]{};
+    if (GetModuleFileNameA(nullptr, module_path, MAX_PATH) == 0) {
+        return;
+    }
+    std::string value(registered);
+    if (!value.empty() && value.front() == '"' && value.back() == '"') {
+        value = value.substr(1, value.size() - 2);
+    }
+    if (_stricmp(value.c_str(), module_path) == 0) {
+        RegDeleteKeyA(HKEY_CLASSES_ROOT, inproc_key);
     }
 }
 

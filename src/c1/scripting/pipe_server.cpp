@@ -464,7 +464,19 @@ void PipeServer::serve_client(PipeHandle pipe) {
         }
 
         receive_buffer_[bytes_read] = '\0';
-        const std::string_view command(receive_buffer_.data(), bytes_read);
+        // A message on this pipe is a C string: the server writes its own
+        // replies with the terminator included, and OLEKitProxy -- the shim
+        // every kit talks through under Wine -- writes its requests the same
+        // way.  Counting that terminator as message content made every
+        // numeric argument fail to parse, so a kit's CREATEMACRO was answered
+        // "Type out of range" while the identical request without the
+        // terminator succeeded.
+        std::size_t command_length = bytes_read;
+        while (command_length > 0 &&
+               receive_buffer_[command_length - 1] == '\0') {
+            --command_length;
+        }
+        const std::string_view command(receive_buffer_.data(), command_length);
         log_if_enabled("PipeServer: Received command\n");
         const std::string response = marshal_command_to_main_thread(command);
         log_if_enabled("PipeServer: Sending response\n");
