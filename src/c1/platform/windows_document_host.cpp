@@ -460,10 +460,6 @@ C1WindowsDocument::sprite_file_search_paths() const {
             resource_paths_[kImageDirectoryIndex]};
 }
 
-std::size_t C1WindowsDocument::body_sprite_creature_count() const {
-    return world_runtime_ == nullptr ? 0 : world_runtime_->creature_count();
-}
-
 void C1WindowsDocument::validate_creature_body_sprites(std::size_t index) {
     if (world_runtime_ == nullptr || index >= world_runtime_->creature_count()) {
         return;
@@ -2474,10 +2470,6 @@ bool C1WindowsDocument::save_for_autosave( creatures1::application::Document& do
         std::string_view(native_path.GetString(), native_path.GetLength()));
 }
 
-void C1WindowsDocument::refresh_temporary_world_backup_for_update() {
-    refresh_temporary_world_backup();
-}
-
 void C1WindowsDocument::restore_main_window_title(std::string_view title) {
     CWnd* main_window = AfxGetMainWnd();
     if (main_window != nullptr && main_window->GetSafeHwnd() != nullptr) {
@@ -3320,18 +3312,6 @@ creatures1::objects::Object* C1WindowsDocument::edit_object() const {
     return edit_object_;
 }
 
-void C1WindowsDocument::draw_view(CWnd& view, CDC& device_context) {
-    ensure_renderer(view);
-    resize_view(view);
-    if (renderer_ != nullptr) {
-        renderer_->redraw_full_view(&device_context);
-    } else {
-        CRect client_rect;
-        view.GetClientRect(&client_rect);
-        device_context.FillSolidRect(&client_rect, RGB(0, 0, 0));
-    }
-}
-
 void C1WindowsDocument::bind_renderer_view(CWnd& view) { renderer_view_ = &view; }
 
 
@@ -3582,17 +3562,6 @@ void C1WindowsDocument::write_view_setting(std::string_view name, std::uint32_t 
         write_registry_dword(key, value_name.c_str(), value);
         RegCloseKey(key);
     }
-}
-
-void C1WindowsDocument::resize_view(CWnd& view) {
-    ensure_renderer(view);
-    if (renderer_ == nullptr || gdi_host_ == nullptr) {
-        return;
-    }
-    CRect client_rect;
-    view.GetClientRect(&client_rect);
-    renderer_->resize_back_buffer_for_viewport(
-        view.GetSafeHwnd(), client_rect.Width(), client_rect.Height());
 }
 
 void C1WindowsDocument::resize_renderer_for_view(CWnd& view, int client_width, int client_height) {

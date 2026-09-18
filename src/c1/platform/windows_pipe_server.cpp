@@ -381,13 +381,4 @@ scripting::PipeReadResult WindowsPipeServerRuntime::read_error(DWORD error_code)
             is_disconnected_error(error_code), error_code};
 }
 
-scripting::PipeConnectWaitResult WindowsPipeServerRuntime::pipe_wait_result(
-    DWORD result) {
-    return result == WAIT_OBJECT_0
-               ? scripting::PipeConnectWaitResult::client_connected
-               : result == WAIT_OBJECT_0 + 1
-                     ? scripting::PipeConnectWaitResult::stop_requested
-                     : scripting::PipeConnectWaitResult::failed;
-}
-
 } // namespace creatures1::platform

@@ -146,19 +146,6 @@ void WorldRuntime::destroy_first_non_scenery_object() {
     owned_objects_.erase(owner);
 }
 
-void WorldRuntime::destroy_first_creature() {
-    if (creatures_.empty()) {
-        throw std::out_of_range("C1 creature registry is empty");
-    }
-
-    auto* const target = dynamic_cast<creatures1::creatures::Creature*>(
-        creatures_.front());
-    if (target == nullptr) {
-        throw std::logic_error("C1 creature registry contains non-Creature entry");
-    }
-    destroy_owned_creature(*target);
-}
-
 void WorldRuntime::destroy_first_scenery_object() {
     if (scenery_.empty()) {
         throw std::out_of_range("C1 scenery registry is empty");
@@ -177,30 +164,6 @@ void WorldRuntime::destroy_first_scenery_object() {
     scenery_.erase(scenery_.begin());
     remove_world_object(*target);
     owned_scenery_.erase(owner);
-}
-
-void WorldRuntime::destroy_owned_world_objects() {
-    while (!owned_objects_.empty()) {
-        objects::Object* const target = owned_objects_.back().get();
-        objects_.erase(
-            std::remove(objects_.begin(), objects_.end(), target),
-            objects_.end());
-        remove_world_object(*target);
-        erase(*target);
-        owned_objects_.pop_back();
-    }
-
-    while (!owned_scenery_.empty()) {
-        objects::Scenery* const target = owned_scenery_.back().get();
-        scenery_.erase(
-            std::remove(scenery_.begin(), scenery_.end(), target),
-            scenery_.end());
-        owned_scenery_.pop_back();
-    }
-
-    while (!owned_creatures_.empty()) {
-        destroy_owned_creature(*owned_creatures_.back());
-    }
 }
 
 bool WorldRuntime::contains(const objects::Object& object) const {
@@ -263,13 +226,6 @@ void WorldRuntime::clear_creature_registry() {
             "C1 creature registry cleared before owned creatures");
     }
     creatures_.clear();
-}
-
-void WorldRuntime::clear_borrowed_registries() {
-    clear_entity_registry();
-    clear_object_registry();
-    clear_renderable_registry();
-    clear_creature_registry();
 }
 
 void WorldRuntime::add_world_object(objects::Object& object) {

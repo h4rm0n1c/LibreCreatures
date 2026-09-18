@@ -102,8 +102,6 @@ public:
         const Object& object,
         const creatures1::creatures::Creature* creature = nullptr);
 
-    void clear_due_ticks(ObjectEventQueue& queue);
-
     // Read-only lifetime inspection used by SFCDoc's save/delete policy.
     // The scheduler remains the sole owner of queue storage and mutation.
     std::size_t immediate_event_count() const;

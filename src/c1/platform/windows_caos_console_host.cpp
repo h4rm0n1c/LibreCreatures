@@ -19,8 +19,6 @@ creatures1::ui::CaosRect to_caos_rect(const RECT& rect) {
 
 } // namespace
 
-C1CaosConsoleDialog* active_caos_console() { return g_caos_console_dialog; }
-
 BEGIN_MESSAGE_MAP(C1CaosConsoleDialog, CDialog)
     ON_BN_CLICKED(C1CaosConsoleDialog::kSendButton, OnSend)
     ON_BN_CLICKED(C1CaosConsoleDialog::kClearButton, OnClear)

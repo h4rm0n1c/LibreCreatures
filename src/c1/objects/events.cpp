@@ -242,10 +242,6 @@ void clear_delayed_object_event_queue(ObjectEventQueue& queue) {
     clear_immediate_object_event_queue(queue);
 }
 
-void ObjectEventScheduler::clear_due_ticks(ObjectEventQueue& queue) {
-    clear_delayed_object_event_queue(queue);
-}
-
 std::size_t ObjectEventScheduler::immediate_event_count() const {
     if (immediate_write_ >= immediate_read_) {
         return immediate_write_ - immediate_read_;

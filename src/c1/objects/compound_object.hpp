@@ -112,7 +112,6 @@ public:
     void set_lifetime_host(CompoundObjectLifetimeHost* lifetime_host) {
         lifetime_host_ = lifetime_host;
     }
-    void clear_owned_parts_and_gallery(CompoundObjectLifetimeHost& host);
 
     void initialize_part_storage();
 

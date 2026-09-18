@@ -107,7 +107,6 @@ private:
     static HANDLE native_handle(scripting::PipeHandle handle);
     static scripting::PipeHandle opaque_handle(HANDLE handle);
     static scripting::PipeReadResult read_error(DWORD error_code);
-    static scripting::PipeConnectWaitResult pipe_wait_result(DWORD result);
 
     HWND main_window_ = nullptr;
     MacroHolderFactory macro_holder_factory_;

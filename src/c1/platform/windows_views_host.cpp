@@ -863,8 +863,19 @@ C1WindowsDocument* C1WindowsView::document() const {
     return DYNAMIC_DOWNCAST(C1WindowsDocument, GetDocument());
 }
 
+void C1WindowsView::OnDestroy() {
+    // Native SFCView::~SFCView @00436710 writes the view settings back and
+    // then destroys the renderer; the recovered policy is ui::shutdown_view.
+    // It runs here rather than in the destructor so the view is still
+    // attached to the document that owns the settings store.  The document
+    // destroys the renderer again in its own teardown, which is a no-op.
+    creatures1::ui::shutdown_view(view_state_, view_settings_, *this);
+    CView::OnDestroy();
+}
+
 BEGIN_MESSAGE_MAP(C1WindowsView, CView)
     ON_WM_SIZE()
+    ON_WM_DESTROY()
     ON_WM_SETFOCUS()
     ON_WM_KILLFOCUS()
     ON_WM_MOUSEMOVE()
@@ -1228,10 +1239,6 @@ constexpr const char* kSystemInfoLabels[] = {
 };
 } // namespace
 
-C1SystemInfoWindow* active_system_info_window() {
-    return g_system_info_window;
-}
-
 BEGIN_MESSAGE_MAP(C1SystemInfoWindow, CFrameWnd)
     ON_WM_PAINT()
 END_MESSAGE_MAP()
@@ -1319,10 +1326,6 @@ constexpr int kEggClassifierFamily = 2;
 constexpr int kEggClassifierGenus = 5;
 constexpr int kEggClassifierSpecies = 2;
 } // namespace
-
-C1WorldStatisticsFrame* active_world_statistics_frame() {
-    return g_world_statistics_frame;
-}
 
 BEGIN_MESSAGE_MAP(C1WorldStatisticsFrame, CFrameWnd)
     ON_WM_CREATE()

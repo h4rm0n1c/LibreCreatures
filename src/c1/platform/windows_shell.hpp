@@ -618,8 +618,6 @@ public:
 
     bool open_framework_document(creatures1::application::Document& /*document*/, std::string_view path) override;
 
-    std::size_t body_sprite_creature_count() const;
-
     void validate_creature_body_sprites(std::size_t index) override;
 
     void refresh_temporary_world_backup() override;
@@ -1023,8 +1021,6 @@ public:
 
     bool save_for_autosave(creatures1::application::Document& document) override;
 
-    void refresh_temporary_world_backup_for_update();
-
     void restore_main_window_title(std::string_view title) override;
 
     void kill_world_update_timer() override;
@@ -1268,8 +1264,6 @@ public:
 
     creatures1::objects::Object* edit_object() const override;
 
-    void draw_view(CWnd& view, CDC& device_context);
-
     void bind_renderer_view(CWnd& view);
 
     void bind_world_view(C1WindowsView* view);
@@ -1327,7 +1321,6 @@ public:
 
     void write_view_setting(std::string_view name, std::uint32_t value);
 
-    void resize_view(CWnd& view);
 
     void resize_renderer_for_view(CWnd& view, int client_width, int client_height);
 
@@ -1709,8 +1702,6 @@ private:
     MINMAXINFO* pending_min_max_info_ = nullptr;
 };
 
-C1CaosConsoleDialog* active_caos_console();
-
 
 // DebugConsoleDialog: dialog resource 144 ("Log information"), already
 // compiled into the executable from the recovered PE resource tree.  Created
@@ -2080,10 +2071,6 @@ public:
 // document loading from the archive must reach the frame this way.
 C1MainFrame* active_main_frame();
 
-C1SystemInfoWindow* active_system_info_window();
-
-C1WorldStatisticsFrame* active_world_statistics_frame();
-
 // Startup diagnostics.  A failure during InitInstance happens before any
 // window exists, so it is written to the debugger and to a log beside the
 // executable as well as shown.
@@ -2294,6 +2281,7 @@ protected:
     void OnDraw(CDC* device_context) override;
 
     afx_msg void OnSize(UINT resize_type, int client_width, int client_height);
+    afx_msg void OnDestroy();
 
     afx_msg void OnSetFocus(CWnd* old_focus);
 

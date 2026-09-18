@@ -151,9 +151,4 @@ private:
     std::uint32_t reaction_gene_count_ = 0;
 };
 
-// The original CreateObject entry is an MFC runtime-class factory.  Clean
-// callers use ordinary ownership; the MFC factory itself is represented by
-// framework metadata rather than exported as a decompiler-shaped function.
-std::unique_ptr<Biochemistry> create_biochemistry();
-
 } // namespace creatures1::biochemistry

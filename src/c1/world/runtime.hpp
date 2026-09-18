@@ -59,9 +59,7 @@ public:
     std::size_t scenery_count() const { return scenery_.size(); }
     objects::Scenery* scenery_at(std::size_t index) const;
     void destroy_first_non_scenery_object();
-    void destroy_first_creature();
     void destroy_first_scenery_object();
-    void destroy_owned_world_objects();
     void add_world_object(objects::Object& object);
     std::size_t world_object_count() const { return world_objects_.size(); }
     objects::Object* world_object_at(std::size_t index) const;
@@ -105,7 +103,6 @@ public:
                    : nullptr;
     }
     void clear_creature_registry();
-    void clear_borrowed_registries();
 
     void add_creature(creatures1::creatures::CreatureSelectionEntry& creature);
     std::size_t creature_count() const override { return creatures_.size(); }

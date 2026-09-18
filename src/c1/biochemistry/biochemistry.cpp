@@ -576,8 +576,4 @@ void Biochemistry::load_genome(
     }
 }
 
-std::unique_ptr<Biochemistry> create_biochemistry() {
-    return std::make_unique<Biochemistry>();
-}
-
 } // namespace creatures1::biochemistry

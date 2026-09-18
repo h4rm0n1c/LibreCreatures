@@ -75,18 +75,6 @@ CompoundObject::~CompoundObject() {
     lifetime_host_->unregister_from_object_registry(*this);
 }
 
-void CompoundObject::clear_owned_parts_and_gallery(
-    CompoundObjectLifetimeHost& host) {
-    for (CompoundPart& part : parts_) {
-        part.entity.reset();
-    }
-    if (gallery() != nullptr) {
-        display::Gallery* owned_gallery = gallery();
-        host.release_gallery(*owned_gallery);
-        set_gallery(nullptr);
-    }
-}
-
 std::unique_ptr<CompoundObject> create_compound_object() {
     return std::unique_ptr<CompoundObject>(new (std::nothrow) CompoundObject());
 }
