@@ -64,17 +64,14 @@ void delete_object_and_purge_runtime_references(
     host.move_to_and_redraw(object, 1000, 4000);
     object.disable_ticking();
 
+    // Native clears whatever creature is selected, not only the one being
+    // deleted, then runs the selection-changed refresh sequence.
     if (host.selected_creature_exists()) {
-        host.clear_selected_creature();
-        host.broadcast_embedded_control_state(8);
-        host.update_main_window_title();
-        host.close_invalid_eye_view_or_refresh_title();
-        host.return_viewport_navigation_to_selected_creature();
-        host.refresh_event_bar_display_panes();
-        host.invalidate_main_toolbar();
+        host.clear_selected_creature(true);
     }
 
-    event_scheduler.purge_object_references(object);
+    event_scheduler.purge_object_references(object,
+                                            host.creature_for_object(object));
     scripting::clear_object_references_from_running_macros(&object);
 
     for (std::size_t index = 0; index < non_scenery_registry.object_count();
@@ -108,7 +105,7 @@ void delete_object_and_purge_runtime_references(
             break;
         }
     }
-    host.delete_object(object, true);
+    host.delete_object(object);
 }
 
 } // namespace creatures1::objects

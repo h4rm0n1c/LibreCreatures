@@ -627,6 +627,17 @@ void WindowsMacroHost::update_object_movement_bounds(
 
 void WindowsMacroHost::initialize_object_runtime_state(
     creatures1::objects::Object& object) {
+    // `kill` calls vtable slot 16.  Creature overrides it with the permanent
+    // delete (0040e9f0), and Bubble overrides it with DestroyAndRedraw
+    // (00429f90). Other classes retain Object's parking operation.
+    if (creatures1::creatures::Creature* creature = creature_of(object)) {
+        document_.delete_creature(*creature);
+        return;
+    }
+    if (auto* bubble = dynamic_cast<creatures1::objects::Bubble*>(&object)) {
+        bubble->destroy_and_redraw(document_);
+        return;
+    }
     object.initialize_runtime_state(document_);
 }
 
@@ -2223,9 +2234,9 @@ std::uint32_t WindowsNewObjectHost::generate_offspring_genome_file(
 void WindowsNewObjectHost::create_part(
     creatures1::scripting::Macro& macro,
     const creatures1::scripting::NewPartRequest& request) {
-    // `new: part` attaches one Entity to the current target's part slot.  The
-    // native reads the gallery from the target's existing part 0, so a target
-    // with no parts yet contributes a null gallery, exactly as here.
+    // ExecuteNewCommand @ 0041d130 reads Object::gallery_ptr, creates the
+    // Entity at the origin, stores the requested offsets in CompoundPart,
+    // and extends part_count. Movement applies the offsets later.
     auto* target = dynamic_cast<creatures1::objects::CompoundObject*>(
         macro.object_context.target_object);
     if (target == nullptr ||
@@ -2233,21 +2244,18 @@ void WindowsNewObjectHost::create_part(
         return;
     }
 
-    creatures1::objects::CompoundPart& primary = target->part(0);
-    creatures1::display::Gallery* gallery =
-        primary.entity == nullptr ? nullptr : primary.entity->gallery();
-
     auto entity = std::make_unique<creatures1::objects::Entity>(
         &entity_registry());
     entity->set_render_plane(static_cast<int>(request.render_plane));
-    entity->move_to(static_cast<int>(request.local_x_offset),
-                    static_cast<int>(request.local_y_offset));
-    entity->set_gallery(gallery);
+    entity->move_to(0, 0);
+    entity->set_gallery(target->gallery());
     entity->set_image_index(static_cast<std::uint8_t>(request.image_index));
     entity->set_image_index_base(
         static_cast<std::uint8_t>(request.image_index));
-    target->part(static_cast<std::size_t>(request.part_index)).entity =
-        std::move(entity);
+    target->install_part(static_cast<std::size_t>(request.part_index),
+                         std::move(entity),
+                         static_cast<int>(request.local_x_offset),
+                         static_cast<int>(request.local_y_offset));
 }
 
 // --- WindowsBlackboardHost -------------------------------------------------
@@ -2793,7 +2801,10 @@ std::optional<std::string> WindowsMacroHost::query_getb(
     creatures1::scripting::DdeGetBQuery query) {
     creatures1::creatures::Creature* creature =
         dde_creature_target(macro, document_);
-    if (creature == nullptr) {
+    // Every getb query reads the macro's creature target except `ovvd`, which
+    // native answers from the selection array whatever TARG is.
+    if (creature == nullptr &&
+        query != creatures1::scripting::DdeGetBQuery::selected_creature_status) {
         return std::nullopt;
     }
     switch (query) {

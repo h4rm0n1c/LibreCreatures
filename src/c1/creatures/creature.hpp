@@ -465,17 +465,6 @@ public:
     virtual bool is_selected_creature(const Creature& creature) const = 0;
 };
 
-// World geometry, Skeleton rendering, and event-ring storage stay owned by
-// their subsystems. This is the narrow boundary used by the recovered
-// QueueEvent8AfterBoundsUpdate member.
-class CreatureBoundsEventHost {
-public:
-    virtual ~CreatureBoundsEventHost() = default;
-    virtual void update_movement_bounds(Creature& creature) = 0;
-    virtual void update_anchor_and_bounds(Creature& creature) = 0;
-    virtual void queue_event_8(Creature& creature) = 0;
-};
-
 // Pickup is a Creature-owned event policy with a deliberately narrow runtime
 // seam. Object bounds/renderable state, Vehicle attachment geometry, the
 // pointer-tool input/privilege state, immediate-event storage, script
@@ -1036,7 +1025,13 @@ public:
                      CreatureDeserializationHost& host,
                      common::DebugLogHost* log_host = nullptr);
 
-    void queue_event_8_after_bounds_update(CreatureBoundsEventHost& world);
+    // Vtable slot 13, run on the edit object when a right-click drops it:
+    // the Object bounds update, then the Skeleton re-plants its feet, then
+    // EVENT_8 is queued self-to-self (native 0040da20).
+    void queue_event_8_after_bounds_update(
+        objects::ObjectMovementBoundsHost& world_host,
+        objects::ObjectSoundPlaybackHost& sound_host,
+        objects::ObjectImmediateEventQueueHost& event_queue);
 
     // Applies the native event-8 pickup policy. Vehicle attachment geometry,
     // pointer input/privilege, Object rendering, and application selection

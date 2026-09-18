@@ -45,6 +45,38 @@ private:
     C1WindowsDocument& document_;
 };
 
+// Concrete CreatureRemovalHost for Creature vtable slot 24, RemoveFromWorld
+// (0040e0d0), which Export runs before writing the creature out.  Every step
+// is an existing document or object service.
+class WindowsCreatureRemovalHost final
+    : public creatures1::creatures::CreatureRemovalHost {
+public:
+    explicit WindowsCreatureRemovalHost(C1WindowsDocument& document)
+        : document_(document) {}
+
+    void end_interactions_with_creature(
+        creatures1::creatures::Creature& creature) override;
+    creatures1::creatures::CreatureSelectionRemovalResult
+    remove_from_creature_selection(
+        creatures1::creatures::Creature& creature) override;
+    void refresh_after_selected_creature_removal(
+        creatures1::creatures::Creature& creature,
+        std::size_t remaining_selection_count) override;
+    void clear_bounds_reference_and_set_default(
+        creatures1::creatures::Creature& creature) override;
+    void release_sleep_indicator(
+        creatures1::creatures::Creature& creature) override;
+    void notify_dependents_on_removal(
+        creatures1::creatures::Creature& creature) override;
+    void purge_destroy_when_finished_macros(
+        creatures1::creatures::Creature& creature) override;
+    void decrement_living_norns() override;
+    void notify_creature_removed_to_embedded_kits() override;
+
+private:
+    C1WindowsDocument& document_;
+};
+
 // Concrete SkeletonRenderPlaneHost: the creature registry plus the process
 // random source the native plane selection uses.
 class WindowsSkeletonRenderPlaneHost final

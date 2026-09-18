@@ -1,5 +1,7 @@
 #include "vehicle.hpp"
 
+#include "events.hpp"
+
 #include "../world/geometry.hpp"
 
 namespace creatures1::objects {
@@ -265,6 +267,94 @@ void Vehicle::tick(VehicleTickHost& host) {
     }
 
     move_by_and_redraw(delta_x, delta_y, host);
+}
+
+namespace {
+
+void synchronize_fixed_point_position(Vehicle& vehicle) {
+    vehicle.position_x_8_8 = vehicle.sound_source_x() << 8;
+    vehicle.position_y_8_8 = vehicle.sound_source_y() << 8;
+}
+
+void queue_built_in_creature_stimulus(Vehicle& vehicle, const Object& source,
+                                      CompoundObjectEventHost& host) {
+    QueuedCreatureStimulus stimulus{};
+    if (host.copy_built_in_stimulus(source, vehicle, 0, stimulus)) {
+        host.queue_creature_stimulus(stimulus);
+    }
+}
+
+} // namespace
+
+// The shared body of queued events 0 and 1: a creature re-triggering the
+// running interaction, or asking for one the object has configured as
+// creature-proof, gets the object's creature stimulus instead.
+void Vehicle::start_interaction(const QueuedObjectEvent& event,
+                                ObjectEventId interaction,
+                                std::size_t config_index,
+                                CompoundObjectEventHost& host) {
+    Object* source = event.source;
+    if (source == nullptr) {
+        return;
+    }
+    const bool source_is_creature = host.source_is_creature(*source);
+    if (current_interaction_event_id() ==
+        static_cast<std::uint32_t>(interaction)) {
+        if (!source_is_creature) {
+            return;
+        }
+    } else if (!source_is_creature ||
+               creature_event_config.event_config_value[config_index] != -1) {
+        set_current_interaction_event_id(
+            static_cast<std::uint32_t>(interaction));
+        synchronize_fixed_point_position(*this);
+        host.dispatch_script_event(*this, source, interaction);
+        return;
+    }
+    queue_built_in_creature_stimulus(*this, *source, host);
+}
+
+void Vehicle::handle_queued_event_0(const QueuedObjectEvent& event,
+                                    CompoundObjectEventHost& host) {
+    start_interaction(event, ObjectEventId::event_1, 0, host);
+}
+
+void Vehicle::handle_queued_event_1(const QueuedObjectEvent& event,
+                                    CompoundObjectEventHost& host) {
+    start_interaction(event, ObjectEventId::event_2, 1, host);
+}
+
+void Vehicle::handle_queued_event_2(const QueuedObjectEvent& event,
+                                    CompoundObjectEventHost& host,
+                                    CompoundObjectMoveRedrawHost& renderer) {
+    Object* source = event.source;
+    if (source == nullptr) {
+        return;
+    }
+    const bool source_is_creature = host.source_is_creature(*source);
+    if (current_interaction_event_id() == 0) {
+        if (!source_is_creature) {
+            return;
+        }
+    } else if (!source_is_creature ||
+               creature_event_config.event_config_value[2] != -1) {
+        complete_floor_arrival(host, renderer);
+        return;
+    }
+    queue_built_in_creature_stimulus(*this, *source, host);
+}
+
+void Vehicle::complete_floor_arrival(CompoundObjectEventHost& host,
+                                     CompoundObjectMoveRedrawHost& renderer) {
+    velocity_x_8_8 = 0;
+    velocity_y_8_8 = 0;
+    synchronize_fixed_point_position(*this);
+    if (current_interaction_event_id() == 0) {
+        return;
+    }
+    set_current_interaction_event_id(0);
+    host.dispatch_script_event(*this, this, ObjectEventId::event_0);
+    queue_primary_part_dirty_rect(renderer);
 }
 
 } // namespace creatures1::objects

@@ -95,7 +95,12 @@ public:
 
     // Permanent object deletion removes matching records while preserving
     // the FIFO order of the live ring and the active count of delayed slots.
-    void purge_object_references(const Object& object);
+    // A deleted creature is queued as a stimulus target by its Creature and
+    // as an event source/target by its Skeleton object, so both identities
+    // are purged; non-creatures pass no creature.
+    void purge_object_references(
+        const Object& object,
+        const creatures1::creatures::Creature* creature = nullptr);
 
     void clear_due_ticks(ObjectEventQueue& queue);
 

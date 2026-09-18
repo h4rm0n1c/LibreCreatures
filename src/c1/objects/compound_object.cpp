@@ -104,6 +104,16 @@ void CompoundObject::initialize_part_storage() {
     click_event_bounds_index.part_bounds_index = {{-1, -1, -1}};
 }
 
+void CompoundObject::install_part(std::size_t index,
+                                   std::unique_ptr<Entity> entity,
+                                   int local_x_offset, int local_y_offset) {
+    CompoundPart& part = parts_[index];
+    part.entity = std::move(entity);
+    part.local_x_offset = local_x_offset;
+    part.local_y_offset = local_y_offset;
+    part_count_ = std::max(part_count_, static_cast<int>(index) + 1);
+}
+
 int CompoundObject::sound_source_x() const {
     return parts_[0].entity == nullptr ? 0 : parts_[0].entity->world_x();
 }

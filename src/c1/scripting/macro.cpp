@@ -2964,10 +2964,14 @@ MacroControlFlowResult Macro::execute_kill_command(
                    : MacroControlFlowResult::iteration_complete;
     }
 
+    // Killing the owner purges the owner's destroy-when-finished macros, which
+    // includes this one.  Native reads the owner before the call and, when
+    // the target was the owner, leaves the interpreter without touching the
+    // Macro again.
+    objects::Object* const script_owner = object_context.script_owner;
     runtime.initialize_object_runtime_state(*target);
-    if (target == object_context.script_owner) {
-        execution_terminated = true;
-        return MacroControlFlowResult::scheduler_cleanup_required;
+    if (target == script_owner) {
+        return MacroControlFlowResult::macro_destroyed;
     }
     return MacroControlFlowResult::iteration_complete;
 }
@@ -4335,14 +4339,15 @@ MacroControlFlowResult Macro::execute_interpreter(
             execution_terminated = true;
             result = MacroControlFlowResult::execution_terminated;
         }
+        if (result == MacroControlFlowResult::macro_destroyed) {
+            // The handler already performed the scheduler removal and may have
+            // deleted this Macro; no member access is valid from here, which
+            // includes the trace below.
+            return result;
+        }
         if (bindings.trace != nullptr) {
             bindings.trace->command_result(*this, token, result,
                                            script_cursor_offset);
-        }
-        if (result == MacroControlFlowResult::macro_destroyed) {
-            // The handler already performed the scheduler removal and may have
-            // deleted this Macro; no member access is valid from here.
-            return result;
         }
         if (result == MacroControlFlowResult::interpreter_returned) {
             if (bindings.trace != nullptr) {

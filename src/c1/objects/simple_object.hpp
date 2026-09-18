@@ -261,6 +261,11 @@ public:
     std::uint8_t interaction_event_flags = 0;
     int saved_entity_render_plane = 0;
 
+    // Also run by Creature::RemoveFromWorld on everything the creature is
+    // carrying or riding, which is why it is not private.
+    void end_interaction_with_source(
+        Object* source_object, SimpleObjectInteractionHost& host);
+
 private:
     void handle_queued_event(
         const QueuedObjectEvent& event,
@@ -269,8 +274,6 @@ private:
         creatures1::creatures::CreatureEventFanoutHost& fanout,
         ObjectScriptDispatchHost& scripts);
     static int wrap_world_x_once(int x);
-    void end_interaction_with_source(
-        Object* source_object, SimpleObjectInteractionHost& host);
 
     std::unique_ptr<Entity> entity_;
 };

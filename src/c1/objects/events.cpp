@@ -180,7 +180,8 @@ void ObjectEventScheduler::process_queued_events(
     }
 }
 
-void ObjectEventScheduler::purge_object_references(const Object& object) {
+void ObjectEventScheduler::purge_object_references(
+    const Object& object, const creatures1::creatures::Creature* creature) {
     ObjectEventQueue retained_immediate{};
     std::size_t retained_count = 0;
     for (std::size_t cursor = immediate_read_; cursor != immediate_write_;
@@ -215,8 +216,7 @@ void ObjectEventScheduler::purge_object_references(const Object& object) {
          cursor = (cursor + 1) % kObjectEventQueueCapacity) {
         const QueuedCreatureStimulus& stimulus = creature_stimuli_[cursor];
         const bool targets_deleted_object =
-            static_cast<const void*>(stimulus.target_creature) ==
-            static_cast<const void*>(&object);
+            creature != nullptr && stimulus.target_creature == creature;
         if (stimulus.source_object == &object || targets_deleted_object) {
             continue;
         }

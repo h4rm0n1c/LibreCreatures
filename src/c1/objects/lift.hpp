@@ -46,13 +46,6 @@ public:
 
     void serialize(ObjectArchive& archive);
 
-    void handle_floor_up_event(const QueuedObjectEvent& event,
-                               LiftRuntimeHost& host);
-    void handle_floor_down_event(const QueuedObjectEvent& event,
-                                 LiftRuntimeHost& host);
-    void handle_floor_arrival_event(const QueuedObjectEvent& event,
-                                    LiftRuntimeHost& host);
-    void complete_floor_arrival(LiftRuntimeHost& host);
     void initialize_state(LiftRuntimeHost& host);
     void update_bounds_and_queue_redraw(LiftRuntimeHost& host);
     void tick(LiftRuntimeHost& host);

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <algorithm>
+
 #include <cstddef>
 #include <cstdint>
 #include <string>
@@ -60,6 +62,11 @@ class CreatureSelectionState {
 public:
     void clear() { selected_.clear(); }
     void add(CreatureSelectionEntry* creature) { selected_.push_back(creature); }
+    void remove(CreatureSelectionEntry* creature) {
+        selected_.erase(
+            std::remove(selected_.begin(), selected_.end(), creature),
+            selected_.end());
+    }
 
     std::size_t size() const { return selected_.size(); }
     CreatureSelectionEntry* at(std::size_t index) const { return selected_[index]; }

@@ -2132,10 +2132,13 @@ void Creature::update(CreatureUpdateHost& world,
 }
 
 void Creature::queue_event_8_after_bounds_update(
-    CreatureBoundsEventHost& world) {
-    world.update_movement_bounds(*this);
-    world.update_anchor_and_bounds(*this);
-    world.queue_event_8(*this);
+    objects::ObjectMovementBoundsHost& world_host,
+    objects::ObjectSoundPlaybackHost& sound_host,
+    objects::ObjectImmediateEventQueueHost& event_queue) {
+    skeleton_.update_movement_bounds(world_host);
+    skeleton_.update_anchor_and_bounds(sound_host);
+    event_queue.queue_immediate_event(skeleton_, skeleton_,
+                                      objects::ObjectEventId::event_8, 0);
 }
 
 void Creature::handle_pickup_event(

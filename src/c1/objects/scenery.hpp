@@ -51,6 +51,17 @@ public:
 
     void serialize(ObjectArchive& archive);
 
+    // Native Scenery table 00457a70 shares these Entity-backed bodies with
+    // SimpleObject, despite inheriting directly from Object.
+    void move_by(int delta_x, int delta_y) override;
+    void move_to(int world_x, int world_y);
+    bool get_bounds(world::WorldRect* out_bounds) const override;
+    int render_plane() const override;
+    int sound_source_x() const override;
+    int sound_source_y() const override;
+    int current_visual_width() const override;
+    int current_visual_height() const override;
+
     void move_to_and_redraw(int world_x, int world_y,
                             SceneryMoveRedrawHost& renderer);
 

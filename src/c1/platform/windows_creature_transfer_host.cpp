@@ -14,16 +14,18 @@ public:
         : document_(document),
           file_(std::move(file)),
           archive_(std::move(archive)),
-          host_(document, *archive_) {}
+          host_(document, *archive_),
+          creature_(document.selected_creature()) {}
 
     ~MfcCreatureExportArchive() override {
         archive_->Close();
         file_->Close();
     }
 
+    // Native holds the selected creature from the start of the export:
+    // RemoveFromWorld deselects it before it is written.
     void write_selected_creature() override {
-        creatures1::creatures::Creature* creature =
-            document_.selected_creature();
+        creatures1::creatures::Creature* creature = creature_;
         if (creature == nullptr) {
             return;
         }
@@ -56,6 +58,7 @@ private:
     std::unique_ptr<CFile> file_;
     std::unique_ptr<CArchive> archive_;
     C1WindowsDocument::ArchiveHost host_;
+    creatures1::creatures::Creature* creature_ = nullptr;
 };
 
 } // namespace
@@ -124,13 +127,23 @@ WindowsCreatureExportHost::begin_export_archive(
 }
 
 void WindowsCreatureExportHost::clear_selected_creature_references() {
-    // The recovered export detaches the creature's runtime-only references so
-    // they are not written into the file.
-    document_.clear_edit_object();
+    // OnExportCurrentCreature runs vtable slot 24, Creature::RemoveFromWorld
+    // (0040e0d0), before writing: carried objects are let go, the creature
+    // leaves the selection and the score, so the file holds none of that.
+    exported_ = document_.selected_creature();
+    if (exported_ != nullptr) {
+        WindowsCreatureRemovalHost removal(document_);
+        exported_->remove_from_world(removal);
+    }
 }
 
 void WindowsCreatureExportHost::restore_selected_creature_runtime_state() {
-    document_.rebuild_creature_selection_menu();
+    // After writing, slot 16 deletes the creature: an export moves it out of
+    // the world rather than copying it.
+    if (exported_ != nullptr) {
+        document_.delete_creature(*exported_);
+        exported_ = nullptr;
+    }
 }
 
 void WindowsCreatureExportHost::log_child_genome_export() {

@@ -30,34 +30,6 @@ void queue_built_in_creature_stimulus(
     }
 }
 
-void handle_floor_event(Lift& lift, const QueuedObjectEvent& event,
-                        ObjectEventId active_interaction,
-                        ObjectEventId script_event, std::size_t config_index,
-                        LiftRuntimeHost& host) {
-    Object* source = event.source;
-    if (source == nullptr) {
-        return;
-    }
-
-    const bool source_is_creature = host.source_is_creature(*source);
-    if (lift.interaction_event() ==
-        static_cast<std::uint32_t>(active_interaction)) {
-        if (!source_is_creature) {
-            return;
-        }
-    } else if (!source_is_creature ||
-               lift.creature_event_config.event_config_value[config_index] !=
-                   -1) {
-        lift.set_interaction_event(
-            static_cast<std::uint32_t>(active_interaction));
-        snap_lift_to_sound_source(lift);
-        host.dispatch_script_event(lift, source, script_event);
-        return;
-    }
-
-    queue_built_in_creature_stimulus(lift, *source, host);
-}
-
 void request_move(Lift& lift, const QueuedObjectEvent& event,
                   bool move_up, LiftRuntimeHost& host) {
     const bool available = lift.interaction_event() == 0 &&
@@ -119,49 +91,6 @@ void Lift::serialize(ObjectArchive& archive) {
     }
 }
 
-void Lift::handle_floor_up_event(const QueuedObjectEvent& event,
-                                 LiftRuntimeHost& host) {
-    handle_floor_event(*this, event, ObjectEventId::event_1,
-                       ObjectEventId::event_1, 0, host);
-}
-
-void Lift::handle_floor_down_event(const QueuedObjectEvent& event,
-                                   LiftRuntimeHost& host) {
-    handle_floor_event(*this, event, ObjectEventId::event_2,
-                       ObjectEventId::event_2, 1, host);
-}
-
-void Lift::handle_floor_arrival_event(const QueuedObjectEvent& event,
-                                      LiftRuntimeHost& host) {
-    Object* source = event.source;
-    if (interaction_event() == 0) {
-        if (source == nullptr || !host.source_is_creature(*source)) {
-            return;
-        }
-    } else if (source == nullptr || !host.source_is_creature(*source) ||
-               creature_event_config.event_config_value[2] != -1) {
-        complete_floor_arrival(host);
-        return;
-    }
-
-    queue_built_in_creature_stimulus(*this, *source, host);
-}
-
-void Lift::complete_floor_arrival(LiftRuntimeHost& host) {
-    velocity_x_8_8 = 0;
-    velocity_y_8_8 = 0;
-    snap_lift_to_sound_source(*this);
-
-    const std::uint32_t previous_interaction = interaction_event();
-    if (previous_interaction == 0) {
-        return;
-    }
-
-    set_interaction_event(0);
-    host.dispatch_script_event(*this, this, ObjectEventId::event_0);
-    queue_primary_part_dirty_rect(host);
-}
-
 void Lift::initialize_state(LiftRuntimeHost& host) {
     set_bounds_flags(static_cast<BoundsFlags>(bounds_flags() &
                                                kLiftPreservedBoundsMask));
@@ -207,7 +136,7 @@ void Lift::tick(LiftRuntimeHost& host) {
         if ((cabin_bottom + sound_source_y()) / arrival_divisor ==
             floor_y_by_index[static_cast<std::size_t>(current_floor_index)] /
                 arrival_divisor) {
-            complete_floor_arrival(host);
+            complete_floor_arrival(host, host);
             if (selected_call_button_index != -1) {
                 const std::size_t button_index = static_cast<std::size_t>(
                     selected_call_button_index);

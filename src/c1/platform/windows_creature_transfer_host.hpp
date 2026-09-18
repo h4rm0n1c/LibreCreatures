@@ -31,6 +31,7 @@ public:
 private:
     C1WindowsDocument& document_;
     mutable creatures1::application::CreatureExportState state_{};
+    creatures1::creatures::Creature* exported_ = nullptr;
 };
 
 // CreatureDeserializationHost.  Every service it needs already exists: the

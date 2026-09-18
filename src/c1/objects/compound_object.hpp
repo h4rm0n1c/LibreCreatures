@@ -160,6 +160,10 @@ public:
                                  ImagePreloadHost& preload_host) const;
 
     int part_count() const { return part_count_; }
+    // Macro::ExecuteNewCommand @ 0041d130 installs NEW: PART and extends
+    // the active part range to include its index.
+    void install_part(std::size_t index, std::unique_ptr<Entity> entity,
+                      int local_x_offset, int local_y_offset);
     CompoundPart& part(std::size_t index) { return parts_[index]; }
     const CompoundPart& part(std::size_t index) const { return parts_[index]; }
     world::WorldRect& part_bounds(std::size_t index) {

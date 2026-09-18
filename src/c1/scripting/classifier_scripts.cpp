@@ -142,6 +142,11 @@ bool execute_script_for_classifier(objects::Object* script_owner,
         if (macro == nullptr) {
             return false;
         }
+        // Native constructs every object-script macro with
+        // destroy_when_finished set.  That flag is what lets
+        // PurgeDestroyWhenFinishedMacrosForOwner stop an object's scripts when
+        // the object is killed, dies or is deleted.
+        macro->destroy_when_finished = true;
     }
 
     macro->object_context.script_owner =

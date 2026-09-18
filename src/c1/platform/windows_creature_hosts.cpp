@@ -98,6 +98,81 @@ void WindowsCreatureDeathHost::log_goal_drive_table(
     OutputDebugStringA("Goal drive table\n");
 }
 
+void WindowsCreatureRemovalHost::end_interactions_with_creature(
+    creatures1::creatures::Creature& creature) {
+    // Every object carried by or riding on the creature lets go of it; the
+    // registry size is reread after each release, as the native does.
+    creatures1::objects::Object& removed =
+        document_.object_for_creature(creature);
+    for (std::size_t index = 0; index < document_.non_scenery_object_count();
+         ++index) {
+        auto* object = dynamic_cast<creatures1::objects::SimpleObject*>(
+            document_.non_scenery_object_at(index));
+        if (object != nullptr && object->bounds_reference_object() == &removed) {
+            WindowsSimpleObjectInteractionHost host(document_);
+            object->end_interaction_with_source(&removed, host);
+        }
+    }
+}
+
+creatures1::creatures::CreatureSelectionRemovalResult
+WindowsCreatureRemovalHost::remove_from_creature_selection(
+    creatures1::creatures::Creature& creature) {
+    document_.remove_from_selection(creature);
+    return {document_.selected_creature() == &creature,
+            document_.selection_count()};
+}
+
+void WindowsCreatureRemovalHost::refresh_after_selected_creature_removal(
+    creatures1::creatures::Creature& /*creature*/,
+    std::size_t /*remaining_selection_count*/) {
+    // Selecting nothing runs the native sequence: embedded broadcast, title,
+    // eye view, viewport return, event bar refresh, toolbar.
+    document_.clear_selected_creature(true);
+}
+
+void WindowsCreatureRemovalHost::clear_bounds_reference_and_set_default(
+    creatures1::creatures::Creature& creature) {
+    creatures1::objects::Object& object =
+        document_.object_for_creature(creature);
+    object.set_bounds_reference_object(nullptr);
+    object.set_bounds_mode(
+        static_cast<std::uint32_t>(
+            creatures1::objects::Object::BoundsMode::default_world),
+        document_.renderables());
+}
+
+void WindowsCreatureRemovalHost::release_sleep_indicator(
+    creatures1::creatures::Creature& creature) {
+    WindowsCreatureAttentionHost attention(document_);
+    creature.set_sleep_indicator(false, attention);
+}
+
+void WindowsCreatureRemovalHost::notify_dependents_on_removal(
+    creatures1::creatures::Creature& creature) {
+    WindowsImmediateEventQueueHost immediate_events(document_);
+    WindowsStimulusSourceHost source_host(document_);
+    creature.notify_dependents_on_removal(
+        document_.object_registry(), immediate_events, document_,
+        source_host, nullptr, active_debug_console());
+}
+
+void WindowsCreatureRemovalHost::purge_destroy_when_finished_macros(
+    creatures1::creatures::Creature& creature) {
+    document_.purge_destroy_when_finished_macros(
+        document_.object_for_creature(creature));
+}
+
+void WindowsCreatureRemovalHost::decrement_living_norns() {
+    document_.decrement_living_norn_score();
+}
+
+void WindowsCreatureRemovalHost::notify_creature_removed_to_embedded_kits() {
+    // The same record-8 score notification SFCDoc::UpdateWorld sends; the kit
+    // reads the score itself, so no score is passed.
+    document_.publish_periodic_score_to_embedded_control({});
+}
+
 std::uint32_t WindowsSkeletonRenderPlaneHost::next_random_value() {
     return static_cast<std::uint32_t>(rand());
 }

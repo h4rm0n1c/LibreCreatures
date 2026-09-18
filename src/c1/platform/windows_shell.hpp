@@ -588,7 +588,7 @@ class C1WindowsDocument final
       public creatures1::objects::BubbleConstructionHost,
       public creatures1::objects::SimpleObjectPlacementHost,
       public creatures1::objects::ObjectMovementBoundsHost,
-      public creatures1::objects::ObjectInitializationHost,
+      public creatures1::objects::ObjectDeletionHost,
       public creatures1::objects::SceneryMoveRedrawHost,
       public creatures1::objects::CompoundObjectMoveRedrawHost,
       public creatures1::creatures::BodySpriteFileHost,
@@ -762,7 +762,7 @@ public:
 
     creatures1::creatures::Creature* selected_creature() const override;
 
-    const creatures1::creatures::Creature* creature_for_object(const creatures1::objects::Object& object) const;
+    const creatures1::creatures::Creature* creature_for_object(const creatures1::objects::Object& object) const override;
 
     creatures1::creatures::Creature* mutable_creature_for_object(creatures1::objects::Object& object);
 
@@ -1239,6 +1239,22 @@ public:
     void report_creature_base_function_misuse() override;
 
     void add_to_world_object_registry(creatures1::objects::Object& object) override;
+
+    // ObjectDeletionHost: Creature vtable slot 16 (0040e9f0), the permanent
+    // delete `kill` and Export run on a creature.
+    bool selected_creature_exists() const override;
+    void clear_references_from_other_object(
+        creatures1::objects::Object& object,
+        creatures1::objects::Object& deleted_object) override;
+    void remove_from_creature_selection(
+        creatures1::objects::Object& object) override;
+    bool remove_from_creature_registry(
+        creatures1::objects::Object& object) override;
+    void delete_object(creatures1::objects::Object& object) override;
+    void delete_creature(creatures1::creatures::Creature& creature);
+    // Creature::RemoveFromWorld (0040e0d0) drops one living norn from the score.
+    void decrement_living_norn_score();
+    void remove_from_selection(creatures1::creatures::Creature& creature);
 
     void move_scenery_to_and_redraw(creatures1::objects::Scenery& /*scenery*/, creatures1::objects::Entity& entity, int world_x, int world_y) override;
 

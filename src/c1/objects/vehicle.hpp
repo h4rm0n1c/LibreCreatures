@@ -70,6 +70,22 @@ public:
     void tick(VehicleTickHost& host);
     void serialize(ObjectArchive& archive);
 
+    // Queued events 0, 1 and 2 (vtable slots 5-7, 0042c0b0 / 0042c170 /
+    // 0042c230).  Unlike CompoundObject's, starting an interaction snaps the
+    // fixed-point position to the object first, and a failed script does not
+    // fall back to the creature stimulus.  Lift overrides 0 and 1.
+    void handle_queued_event_0(const QueuedObjectEvent& event,
+                               CompoundObjectEventHost& host);
+    void handle_queued_event_1(const QueuedObjectEvent& event,
+                               CompoundObjectEventHost& host);
+    void handle_queued_event_2(const QueuedObjectEvent& event,
+                               CompoundObjectEventHost& host,
+                               CompoundObjectMoveRedrawHost& renderer);
+    // 0042c2c0: stop, resynchronise, and if an interaction was running end
+    // it with script event 0.  Lift's tick ends each floor stop with it.
+    void complete_floor_arrival(CompoundObjectEventHost& host,
+                                CompoundObjectMoveRedrawHost& renderer);
+
     world::WorldRect creature_event_bounds_local{};
     std::int32_t velocity_x_8_8 = 0;
     std::int32_t velocity_y_8_8 = 0;
@@ -77,6 +93,11 @@ public:
     std::int32_t position_y_8_8 = 0;
     VehicleCollisionSide collision_side_flags =
         VehicleCollisionSide::none;
+
+private:
+    void start_interaction(const QueuedObjectEvent& event,
+                           ObjectEventId interaction, std::size_t config_index,
+                           CompoundObjectEventHost& host);
 };
 
 } // namespace creatures1::objects

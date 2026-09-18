@@ -1712,10 +1712,33 @@ void C1WindowsDocument::clear_pending_input() {
 }
 
 void C1WindowsDocument::finalize_edit_object() {
-    // Vtable slot 13 is FinalizeObjectEditOrQueueEvent8: SimpleObject
-    // overrides it to finish the placement, and everything else takes the
-    // base body, which queues the object's event 8.
+    // Vtable slot 13, called by SFCDoc::UpdateWorld on the edit object when a
+    // right-click drops it.  Native has six bodies, resolved most-derived
+    // first: Lift snaps to the floor of the room it was dropped in (0042c3e0),
+    // Vehicle resyncs its fixed-point position so the next tick does not pull
+    // it back to where it was picked up (0042bb80), CallButton registers its
+    // floor with its Lift (00429a70), SimpleObject and its
+    // Bubble/PointerTool subclasses finish the placement (00426ee0), Creature
+    // re-plants its feet (0040da20), and CompoundObject, Blackboard and
+    // Scenery take the Object body, which updates the movement bounds and
+    // queues event 8 (00425b00).
     if (edit_object_ == nullptr) {
+        return;
+    }
+    WindowsCallButtonRuntimeHost world(*this);
+    if (auto* lift = dynamic_cast<creatures1::objects::Lift*>(edit_object_)) {
+        lift->update_bounds_and_queue_redraw(world);
+        return;
+    }
+    if (auto* vehicle =
+            dynamic_cast<creatures1::objects::Vehicle*>(edit_object_)) {
+        vehicle->synchronize_fixed_point_position_and_queue_redraw(world,
+                                                                    world);
+        return;
+    }
+    if (auto* button =
+            dynamic_cast<creatures1::objects::CallButton*>(edit_object_)) {
+        button->update_lift_state_and_queue_redraw(world);
         return;
     }
     if (auto* simple =
@@ -1724,8 +1747,11 @@ void C1WindowsDocument::finalize_edit_object() {
         simple->finalize_object_edit(host);
         return;
     }
-    WindowsObjectEventDispatchHost dispatcher(*this);
-    edit_object_->dispatch_event_8(dispatcher);
+    if (auto* creature = mutable_creature_for_object(*edit_object_)) {
+        creature->queue_event_8_after_bounds_update(world, *this, world);
+        return;
+    }
+    edit_object_->queue_event_8_after_bounds_update(world, world);
 }
 
 bool C1WindowsDocument::non_scenery_object_tick_enabled(std::size_t index) const {
@@ -1792,7 +1818,9 @@ void C1WindowsDocument::tick_non_scenery_object(std::size_t index) {
         simple->tick(host);
         return;
     }
-    // A plain Object carries no slot-41 body of its own.
+    // Object's slot 41 is UpdateSound @ 00426190.
+    WindowsSimpleObjectInteractionHost host(*this);
+    object->update_sound(host);
 }
 
 bool C1WindowsDocument::enqueue_text_input(char character) {
@@ -3003,6 +3031,15 @@ void C1WindowsDocument::increment_living_norn_score() {
     }
 }
 
+void C1WindowsDocument::decrement_living_norn_score() {
+    // Native decrements unconditionally; the unsigned score is kept from
+    // wrapping to four billion if it is already zero.
+    if (semantic_document_ != nullptr &&
+        semantic_document_->score.living_norns > 0) {
+        --semantic_document_->score.living_norns;
+    }
+}
+
 std::uint32_t C1WindowsDocument::document_score_value(
     std::uint32_t index) const {
     if (semantic_document_ == nullptr) {
@@ -3086,9 +3123,9 @@ void C1WindowsDocument::move_to_and_redraw(creatures1::objects::Object& object, 
     // every class that overrides it: SimpleObject @00426f90, CompoundObject's
     // own, Scenery's, and -- for a creature -- Skeleton's
     // SetDownFootPositionAndInvalidateBounds @0043c2f0, which places a
-    // creature by the foot it stands on.  Only SimpleObject and Scenery were
-    // handled, so moving a creature or a compound object threw; the creature
-    // import path already calls this with a skeleton.
+    // creature by the foot it stands on.  The creature import path also
+    // reaches this adapter with a skeleton, so keep that native foot-based
+    // operation distinct from ordinary object placement.
     if (auto* simple = dynamic_cast<creatures1::objects::SimpleObject*>(
             &object);
         simple != nullptr) {
@@ -3118,15 +3155,18 @@ void C1WindowsDocument::move_to_and_redraw(creatures1::objects::Object& object, 
             world_x, world_y, move_host, *this);
         return;
     }
-    throw std::logic_error(
-        "C1 runtime initialization received an unsupported Object type");
+    // Object's slot-23 body is the same no-op movement stub as its other
+    // base movement slots.  Preserve that behavior for an unrecognised plain
+    // Object instead of converting a valid CAOS target into a host exception.
 }
 
 void C1WindowsDocument::move_by_and_redraw(
     creatures1::objects::Object& object, int delta_x, int delta_y) {
-    // Slot 22, MoveByAndRedraw.  Scenery has no override; a creature's is
-    // Skeleton::UpdateAndInvalidateBounds @0043c380, reached here through the
-    // same dirty-rect host as the absolute move.
+    // Slot 22, MoveByAndRedraw.  Scenery and plain Object retain the native
+    // Object::MoveBy body at this slot (a no-op), even though Scenery does
+    // override slot 20 for direct movement.  Keep that distinction here;
+    // routing scenery through its slot-20 move would move it when native
+    // `mvby` deliberately does nothing.
     if (auto* simple = dynamic_cast<creatures1::objects::SimpleObject*>(
             &object);
         simple != nullptr) {
@@ -3139,6 +3179,9 @@ void C1WindowsDocument::move_by_and_redraw(
         compound->move_by_and_redraw(delta_x, delta_y, *this);
         return;
     }
+    if (dynamic_cast<creatures1::objects::Scenery*>(&object) != nullptr) {
+        return;
+    }
     if (auto* skeleton = dynamic_cast<creatures1::creatures::Skeleton*>(
             &object);
         skeleton != nullptr) {
@@ -3146,8 +3189,9 @@ void C1WindowsDocument::move_by_and_redraw(
         skeleton->update_and_invalidate_bounds(delta_x, delta_y, move_host);
         return;
     }
-    throw std::logic_error(
-        "C1 runtime initialization received an unsupported Object type");
+    // Object's own slot-22 body is also a no-op.  Unknown registry entries
+    // therefore preserve the native result instead of turning a valid CAOS
+    // `mvby` into a host exception.
 }
 
 bool C1WindowsDocument::is_selected_creature( const creatures1::objects::Object& object) const {
@@ -3166,6 +3210,55 @@ void C1WindowsDocument::clear_selected_creature(bool notify) {
 void C1WindowsDocument::report_creature_base_function_misuse() {
     ::OutputDebugStringA(
         "C1 object initialized with a creature base function classifier\n");
+}
+
+bool C1WindowsDocument::selected_creature_exists() const {
+    return selected_creature() != nullptr;
+}
+
+void C1WindowsDocument::clear_references_from_other_object(
+    creatures1::objects::Object& object,
+    creatures1::objects::Object& deleted_object) {
+    object.clear_references_to(&deleted_object);
+}
+
+void C1WindowsDocument::remove_from_selection(
+    creatures1::creatures::Creature& creature) {
+    selection_.remove(&creature);
+}
+
+void C1WindowsDocument::remove_from_creature_selection(
+    creatures1::objects::Object& object) {
+    if (creatures1::creatures::Creature* creature =
+            mutable_creature_for_object(object)) {
+        remove_from_selection(*creature);
+    }
+}
+
+bool C1WindowsDocument::remove_from_creature_registry(
+    creatures1::objects::Object& object) {
+    for (std::size_t index = 0; index < creature_count(); ++index) {
+        auto* creature =
+            dynamic_cast<creatures1::creatures::Creature*>(creature_at(index));
+        if (creature != nullptr && &creature->skeleton() == &object) {
+            return remove_at(index);
+        }
+    }
+    return false;
+}
+
+void C1WindowsDocument::delete_object(creatures1::objects::Object& object) {
+    // The deleting virtual: the world runtime owns the Creature that holds
+    // this Skeleton, and destroying it releases both.
+    if (world_runtime_ != nullptr) {
+        world_runtime_->destroy_world_object(object);
+    }
+}
+
+void C1WindowsDocument::delete_creature(
+    creatures1::creatures::Creature& creature) {
+    creatures1::objects::delete_object_and_purge_runtime_references(
+        creature.skeleton(), *this, event_scheduler_, object_registry());
 }
 
 void C1WindowsDocument::add_to_world_object_registry( creatures1::objects::Object& object) {
@@ -3708,13 +3801,13 @@ void C1WindowsDocument::move_renderable_objects(int delta_x, int delta_y) {
 namespace {
 
 // UpdateViewAnchoredObjects @ 00413950 works through the object's own
-// bounds mode, classifier and move operation.  SimpleObject and
-// CompoundObject both expose move_to directly, so this adapter needs no
-// renderer host - only the concrete object behind each renderable entry.
+// bounds mode, classifier and slot-21 move operation. Creature's Skeleton
+// additionally needs the document's layout hosts to reposition its feet.
 class ObjectViewAnchor final : public creatures1::objects::ViewAnchorObject {
 public:
-    explicit ObjectViewAnchor(creatures1::objects::Object& object)
-        : object_(object) {}
+    ObjectViewAnchor(creatures1::objects::Object& object,
+                     C1WindowsDocument& document)
+        : object_(object), document_(document) {}
 
     bool is_view_unbounded() const override {
         return object_.uses_unbounded_world_position();
@@ -3734,11 +3827,24 @@ public:
         if (auto* simple =
                 dynamic_cast<creatures1::objects::SimpleObject*>(&object_)) {
             simple->move_to(world_x, world_y);
+            return;
+        }
+        if (auto* scenery =
+                dynamic_cast<creatures1::objects::Scenery*>(&object_)) {
+            scenery->move_to(world_x, world_y);
+            return;
+        }
+        if (auto* skeleton =
+                dynamic_cast<creatures1::creatures::Skeleton*>(&object_)) {
+            // Native slot 21 @ 0043c070, including held/edit creatures.
+            skeleton->set_down_foot_position_and_recompute_layout(
+                world_x, world_y, document_, document_);
         }
     }
 
 private:
     creatures1::objects::Object& object_;
+    C1WindowsDocument& document_;
 };
 
 } // namespace
@@ -3764,7 +3870,7 @@ void C1WindowsDocument::update_view_anchored_objects() {
         creatures1::objects::Object* object =
             world_runtime_->renderable_at(index);
         if (object != nullptr) {
-            anchors.emplace_back(*object);
+            anchors.emplace_back(*object, *this);
         }
     }
     for (ObjectViewAnchor& anchor : anchors) {
@@ -3776,10 +3882,10 @@ void C1WindowsDocument::update_view_anchored_objects() {
     std::optional<ObjectViewAnchor> pointer_anchor;
     std::optional<ObjectViewAnchor> edit_anchor;
     if (pointer != nullptr) {
-        pointer_anchor.emplace(*pointer);
+        pointer_anchor.emplace(*pointer, *this);
     }
     if (edit != nullptr) {
-        edit_anchor.emplace(*edit);
+        edit_anchor.emplace(*edit, *this);
     }
     creatures1::objects::update_view_anchored_objects(
         &view, {anchor_pointers.data(), anchor_pointers.size()},
@@ -3788,7 +3894,19 @@ void C1WindowsDocument::update_view_anchored_objects() {
 }
 
 
-bool C1WindowsDocument::selected_creature_is_edit_object() const { return false; }
+bool C1WindowsDocument::selected_creature_is_edit_object() const {
+    const creatures1::creatures::Creature* creature = selected_creature();
+    if (creature == nullptr || edit_object_ == nullptr) {
+        return false;
+    }
+
+    // The application stores a Creature separately from the Object registry;
+    // its Skeleton is the Object identity used by the edit-object state.
+    // Native follow-selection skips viewport tracking while that same
+    // Skeleton is being carried, so compare through the existing ownership
+    // adapter rather than comparing unrelated Creature/Object addresses.
+    return edit_object_ == &creature->skeleton();
+}
 
 
 bool C1WindowsDocument::selected_creature_is_bounded() const {

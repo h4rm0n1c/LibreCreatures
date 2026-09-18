@@ -992,6 +992,7 @@ enum class EventTargetKind {
     pointer_tool,
     simple_object,
     lift,
+    vehicle,
     compound_object,
     base_object,
 };
@@ -1013,6 +1014,9 @@ EventTargetKind classify_event_target(
     }
     if (dynamic_cast<creatures1::objects::Lift*>(&target) != nullptr) {
         return EventTargetKind::lift;
+    }
+    if (dynamic_cast<creatures1::objects::Vehicle*>(&target) != nullptr) {
+        return EventTargetKind::vehicle;
     }
     if (dynamic_cast<creatures1::objects::CompoundObject*>(&target) !=
         nullptr) {
@@ -1051,6 +1055,12 @@ void WindowsObjectEventRuntime::handle_event_0(
         WindowsCallButtonRuntimeHost host(document_);
         static_cast<creatures1::objects::Lift&>(target)
             .request_move_up(event, host);
+        return;
+    }
+    case EventTargetKind::vehicle: {
+        WindowsCompoundObjectEventHost host(document_);
+        static_cast<creatures1::objects::Vehicle&>(target)
+            .handle_queued_event_0(event, host);
         return;
     }
     case EventTargetKind::compound_object: {
@@ -1097,6 +1107,12 @@ void WindowsObjectEventRuntime::handle_event_1(
             .request_move_down(event, host);
         return;
     }
+    case EventTargetKind::vehicle: {
+        WindowsCompoundObjectEventHost host(document_);
+        static_cast<creatures1::objects::Vehicle&>(target)
+            .handle_queued_event_1(event, host);
+        return;
+    }
     case EventTargetKind::compound_object: {
         WindowsCompoundObjectEventHost host(document_);
         static_cast<creatures1::objects::CompoundObject&>(target)
@@ -1134,6 +1150,12 @@ void WindowsObjectEventRuntime::handle_event_2(
         // CompoundObject::HandleQueuedEvent2.
         target.handle_queued_event_3(event, fanout);
         return;
+    case EventTargetKind::vehicle: {
+        WindowsCallButtonRuntimeHost host(document_);
+        static_cast<creatures1::objects::Vehicle&>(target)
+            .handle_queued_event_2(event, host, host);
+        return;
+    }
     case EventTargetKind::compound_object: {
         WindowsCompoundObjectEventHost host(document_);
         static_cast<creatures1::objects::CompoundObject&>(target)
@@ -1184,9 +1206,12 @@ void WindowsObjectEventRuntime::handle_event_4(
             .handle_queued_event_4(event, fanout, host);
         return;
     }
+    case EventTargetKind::lift:
+    case EventTargetKind::vehicle:
     case EventTargetKind::compound_object:
     case EventTargetKind::base_object:
-        // CompoundObject's slot 8 is the inherited creature-event body.
+        // CompoundObject's slot 8 is the inherited creature-event body, and
+        // Vehicle and Lift keep it.
         target.handle_queued_creature_event(event, fanout);
         return;
     }
@@ -1217,9 +1242,11 @@ void WindowsObjectEventRuntime::handle_event_5(
             .handle_queued_event_5(event, host);
         return;
     }
+    case EventTargetKind::lift:
+    case EventTargetKind::vehicle:
     case EventTargetKind::compound_object:
     case EventTargetKind::base_object:
-        // Slot 9 is NoOpVirtualMethod for both.
+        // Slot 9 is NoOpVirtualMethod for all of these.
         return;
     }
 }
@@ -1254,14 +1281,33 @@ void WindowsObjectEventRuntime::handle_event_7(
                                          speech);
 }
 
+// Slots 14 and 15 are Object bodies on every class, but both run their script
+// through slot 34, which Creature overrides to clear a showing sleep
+// indicator first (0040dbc0).  So a creature target takes the same steps with
+// its own dispatch.
 void WindowsObjectEventRuntime::handle_event_8(
     creatures1::objects::Object& target) {
+    if (creatures1::creatures::Creature* creature = as_creature(target)) {
+        target.update_movement_bounds(document_);
+        WindowsCreatureAttentionHost attention(document_);
+        creature->dispatch_script_event(
+            static_cast<std::uint32_t>(creatures1::objects::ObjectEventId::event_7),
+            &target, false, attention, attention);
+        return;
+    }
     WindowsObjectScriptDispatchHost scripts(document_);
     target.dispatch_event_7_after_bounds_update(document_, scripts);
 }
 
 void WindowsObjectEventRuntime::handle_event_9(
     creatures1::objects::Object& target) {
+    if (creatures1::creatures::Creature* creature = as_creature(target)) {
+        WindowsCreatureAttentionHost attention(document_);
+        creature->dispatch_script_event(
+            static_cast<std::uint32_t>(creatures1::objects::ObjectEventId::event_8),
+            &target, false, attention, attention);
+        return;
+    }
     WindowsObjectEventDispatchHost dispatcher(document_);
     target.dispatch_event_8(dispatcher);
 }
