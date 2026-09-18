@@ -598,3 +598,7 @@ which returns name|moniker|sex|age|pregnancy|**life force**|health|room|x|y for
 every creature, on either engine. Run both for an hour on the same world,
 sample every 30s, and compare life-force trajectories and time-of-death. That
 is the differential that matches the symptom; Hunger is not.
+
+See [port-reproduces-c1-behaviour.md](port-reproduces-c1-behaviour.md) for the
+collected differential results, including the brain comparison run after this
+note's correction.
