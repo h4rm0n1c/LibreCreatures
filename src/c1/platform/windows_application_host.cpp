@@ -531,7 +531,8 @@ void C1StartupHost::start_pipe_server_if_needed() {
 void C1StartupHost::show_startup_tip_dialog() {
     C1TipDialogPlatform platform(
         primary_directories_.paths[0], AfxGetMainWnd());
-    creatures1::ui::show_startup_tip_dialog(platform);
+    // Startup honours "Show Tips on StartUp"; Help > Tip of the Day does not.
+    creatures1::ui::show_tip_dialog_if_enabled_at_startup(platform);
 }
 
 void C1StartupHost::destroy_sound_manager_native() {

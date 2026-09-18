@@ -245,15 +245,23 @@ void C1TipDialogPlatform::update_data(bool save_and_validate) {
     if (native_dialog_ == nullptr || semantic_dialog_ == nullptr) {
         return;
     }
-    CButton* startup_checkbox =
-        DYNAMIC_DOWNCAST(CButton, native_dialog_->GetDlgItem(1001));
-    if (startup_checkbox == nullptr) {
+    // CTipDlg's DoDataExchange @004439c0 is DDX_Check(1001, show_at_startup),
+    // which talks to the control through its window handle.  Downcasting
+    // GetDlgItem to CButton could never work here: an unsubclassed control
+    // comes back as a temporary CWnd, so the checkbox was neither set when
+    // the dialog opened nor read when it closed.
+    constexpr int kShowTipsAtStartupCheckbox = 1001;
+    if (native_dialog_->GetDlgItem(kShowTipsAtStartupCheckbox) == nullptr) {
         return;
     }
     if (save_and_validate) {
-        semantic_dialog_->set_show_at_startup(startup_checkbox->GetCheck() != 0);
+        semantic_dialog_->set_show_at_startup(
+            native_dialog_->IsDlgButtonChecked(kShowTipsAtStartupCheckbox) !=
+            BST_UNCHECKED);
     } else {
-        startup_checkbox->SetCheck(semantic_dialog_->show_at_startup() ? 1 : 0);
+        native_dialog_->CheckDlgButton(
+            kShowTipsAtStartupCheckbox,
+            semantic_dialog_->show_at_startup() ? BST_CHECKED : BST_UNCHECKED);
     }
 }
 

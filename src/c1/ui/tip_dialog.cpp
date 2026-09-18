@@ -124,4 +124,14 @@ void show_startup_tip_dialog(TipDialogPlatform& platform) {
     platform.show_modal(dialog);
 }
 
+void show_tip_dialog_if_enabled_at_startup(TipDialogPlatform& platform) {
+    // SFCApp::InitInstance @0043e1d0 builds the dialog -- whose constructor
+    // reads TipStartup -- and runs it only when show_at_startup is set.  The
+    // Help menu's ShowStartupTipDialog @0043f3d0 (above) always shows it.
+    TipDialog dialog(platform);
+    if (dialog.show_at_startup()) {
+        platform.show_modal(dialog);
+    }
+}
+
 }  // namespace creatures1::ui

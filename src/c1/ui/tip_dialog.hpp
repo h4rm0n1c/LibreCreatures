@@ -77,5 +77,6 @@ private:
 };
 
 void show_startup_tip_dialog(TipDialogPlatform& platform);
+void show_tip_dialog_if_enabled_at_startup(TipDialogPlatform& platform);
 
 }  // namespace creatures1::ui
