@@ -390,12 +390,33 @@ void SimpleObject::end_interaction_with_source(
                 static_cast<std::uint32_t>(BoundsMode::vehicle_local), host);
             set_bounds_reference_object(vehicle);
 
-            const int vehicle_world_y =
-                host.vehicle_primary_entity_y(*vehicle);
-            const int plane_offset = movement_bounds().max_y <= vehicle_world_y
-                                         ? -5
-                                         : 5;
-            entity_->set_render_plane(vehicle_world_y + plane_offset);
+            // EndInteractionWithSource @0x00428bb0's vehicle branch:
+            //
+            //   render_plane_offset = 5;
+            //   iVar3 = *(int *)([vehicle + 0x54] + 0xc);       // parts[0].entity->render_plane
+            //   if (*(int *)([vehicle + 0x60] + 0xc) <= iVar3)  // parts[1].entity->render_plane
+            //       render_plane_offset = -5;
+            //   entity->render_plane = render_plane_offset + iVar3;
+            //
+            // Both operands are *render planes* (+0xc on an Entity), not world
+            // coordinates.  This read the vehicle entity's world_y (+0x14)
+            // instead, for the base and for the comparison, so an object
+            // landing in a machine got a plane in the hundreds -- the incubator
+            // sits at y 653, and its doors are at plane 1, so an egg dropped
+            // into it drew far in front of them.  `Creature::HandlePickupEvent`
+            // @0x004098e0 carries the identical expression for a creature
+            // entering a vehicle.
+            const int carrier_plane = vehicle->render_plane();
+            int plane_offset = 5;
+            if (const auto* compound =
+                    dynamic_cast<const CompoundObject*>(vehicle)) {
+                const Entity* facing_part = compound->part(1).entity.get();
+                if (facing_part != nullptr &&
+                    facing_part->render_plane() <= carrier_plane) {
+                    plane_offset = -5;
+                }
+            }
+            entity_->set_render_plane(carrier_plane + plane_offset);
             update_movement_bounds(host);
 
             target_world_x = movement_bounds().min_x;
