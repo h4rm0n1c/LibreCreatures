@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <cstring>
 #include "windows_macro_host.hpp"
 #include <cstdlib>
@@ -297,6 +298,24 @@ void report_unbound_runtime_command(const char* command) {
 creatures1::creatures::Creature* WindowsMacroHost::creature_of(
     creatures1::objects::Object& object) const {
     return document_.mutable_creature_for_object(object);
+}
+
+bool WindowsMacroHost::is_live_object(
+    const creatures1::objects::Object* object) const {
+    if (object == nullptr || document_.is_live_object(object)) {
+        return object != nullptr;
+    }
+    // Loud on purpose.  A rejection here is either a script handing the
+    // interpreter a bogus pointer -- which the original would have followed
+    // into a fault -- or this check disagreeing with the world's registries,
+    // which would be a defect in the check itself.  Either way it must be
+    // visible rather than silently changing what a script does.
+    if (FILE* log = std::fopen("Creatures.object.log", "a")) {
+        std::fprintf(log, "rejected object value %p\n",
+                     static_cast<const void*>(object));
+        std::fclose(log);
+    }
+    return false;
 }
 
 bool WindowsMacroHost::is_creature_object(
@@ -631,8 +650,10 @@ std::uint32_t WindowsMacroHost::select_creature_target_pose_for_motion(
     if (creature == nullptr) {
         return 0;
     }
-    return creature->skeleton().select_target_pose_for_motion_guarded(
-        force_interaction_pose);
+    const std::uint32_t pose_result =
+        creature->skeleton().select_target_pose_for_motion_guarded(
+            force_interaction_pose);
+    return pose_result;
 }
 
 void WindowsMacroHost::clear_creature_selected_decision_neuron(

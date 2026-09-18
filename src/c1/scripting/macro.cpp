@@ -841,10 +841,10 @@ std::uint32_t Macro::parse_rvalue(MacroRuntimeHost& runtime,
         return object_pointer_value(object_context.exec_object);
     }
     if (token == kRvalueTouching) {
-        objects::Object* first = reinterpret_cast<objects::Object*>(
-            static_cast<std::uintptr_t>(parse_rvalue(runtime, diagnostics)));
-        objects::Object* second = reinterpret_cast<objects::Object*>(
-            static_cast<std::uintptr_t>(parse_rvalue(runtime, diagnostics)));
+        objects::Object* first =
+            object_from_value(parse_rvalue(runtime, diagnostics), runtime);
+        objects::Object* second =
+            object_from_value(parse_rvalue(runtime, diagnostics), runtime);
         if (first == nullptr || second == nullptr) {
             return 0;
         }
@@ -1134,15 +1134,12 @@ void Macro::assign_lvalue(MacroRuntimeHost& runtime,
             return;
         }
     } else if (destination_token == kRvalueSelectedCreature) {
-        runtime.set_selected_creature(
-            reinterpret_cast<objects::Object*>(static_cast<std::uintptr_t>(value)),
-            true);
+        runtime.set_selected_creature(object_from_value(value, runtime), true);
         return;
     } else if (destination_token == kRvalueObjectPointer) {
         if (object_context.script_owner != nullptr) {
             object_context.script_owner->set_caos_object_pointer(
-                reinterpret_cast<objects::Object*>(
-                    static_cast<std::uintptr_t>(value)));
+                object_from_value(value, runtime));
             return;
         }
     } else if (destination_token == kRvalueActiveEvent) {
@@ -1316,8 +1313,7 @@ void Macro::execute_stimulus_prefix_command(MacroStimulusHost& host,
     const auto target_value = parse_rvalue(runtime, host);
     const auto stimulus_index = static_cast<std::int32_t>(
         parse_rvalue(runtime, host));
-    auto* target = reinterpret_cast<objects::Object*>(
-        static_cast<std::uintptr_t>(target_value));
+    auto* target = object_from_value(target_value, runtime);
     objects::Object* source = object_context.script_owner;
 
     // The recovered compare is signed and upper-bounded (`JL 0x24`), exactly
@@ -1352,8 +1348,7 @@ void Macro::execute_stimulus_command(MacroStimulusHost& host,
         read_next_token());
     objects::Object* direct_target = nullptr;
     if (subcommand == MacroStimulusSubcommand::write) {
-        direct_target = reinterpret_cast<objects::Object*>(
-            static_cast<std::uintptr_t>(parse_rvalue(runtime, host)));
+        direct_target = object_from_value(parse_rvalue(runtime, host), runtime);
     } else if (subcommand == MacroStimulusSubcommand::from) {
         direct_target = object_context.from_object;
     }
@@ -1440,8 +1435,7 @@ void Macro::execute_message_command(MacroMessageHost& host,
     case MacroMessageSubcommand::write: {
         // Native `mesg writ` parses target first, then event id.  The source
         // is the script owner and the direct queue record carries argument 0.
-        auto* target = reinterpret_cast<objects::Object*>(
-            static_cast<std::uintptr_t>(parse_rvalue(runtime, host)));
+        auto* target = object_from_value(parse_rvalue(runtime, host), runtime);
         const auto event_id = static_cast<objects::ObjectEventId>(
             parse_rvalue(runtime, host));
         objects::Object* source = object_context.script_owner;
@@ -1805,10 +1799,10 @@ bool Macro::execute_vehicle_command(MacroCommand command,
         // to the shared immediate ring.  The bytes show no Vehicle check: the
         // object-event adapter, not Macro or a guessed Vehicle shim, owns the
         // ring/capacity policy.
-        auto* source = reinterpret_cast<objects::Object*>(
-            static_cast<std::uintptr_t>(parse_rvalue(runtime, object_events)));
-        auto* target = reinterpret_cast<objects::Object*>(
-            static_cast<std::uintptr_t>(parse_rvalue(runtime, object_events)));
+        auto* source =
+            object_from_value(parse_rvalue(runtime, object_events), runtime);
+        auto* target =
+            object_from_value(parse_rvalue(runtime, object_events), runtime);
         if (source != nullptr && target != nullptr) {
             object_events.queue_immediate_object_event(
                 *source, *target, objects::ObjectEventId::event_4);
@@ -2175,8 +2169,11 @@ bool Macro::execute_target_command(MacroCommand command,
     // the recovered object-context assignment.
     const auto target_value = parse_rvalue(runtime, diagnostics);
     if (target_value != 0) {
-        object_context.target_object = reinterpret_cast<objects::Object *>(
-            static_cast<std::uintptr_t>(target_value));
+        // The native stores whatever it was handed and faults on first use.
+        // A value the world does not own clears the target instead, so the
+        // commands that follow are no-ops: keeping the previous target would
+        // silently act on the wrong object.
+        object_context.target_object = object_from_value(target_value, runtime);
     }
     return true;
 }
@@ -2229,8 +2226,7 @@ bool Macro::execute_remove_event_command(MacroCommand command,
     // Native `rmev` consumes one Object rvalue and calls the EventBar display
     // list removal routine with its auxiliary-state flag set.  A null object
     // has no display-list match and therefore has no effect.
-    auto* object = reinterpret_cast<objects::Object*>(static_cast<std::uintptr_t>(
-        parse_rvalue(runtime, diagnostics)));
+    auto* object = object_from_value(parse_rvalue(runtime, diagnostics), runtime);
     if (object != nullptr) {
         runtime.remove_object_from_event_bar(*object, true);
     }
@@ -2247,8 +2243,7 @@ bool Macro::execute_event_command(MacroCommand command,
     // Native `evnt` consumes one Object rvalue and passes the raw pointer to
     // AddObjectToEventBarDisplayList.  That routine deliberately accepts the
     // null result as a list entry, so do not add the null guard used by `rmev`.
-    auto* object = reinterpret_cast<objects::Object*>(static_cast<std::uintptr_t>(
-        parse_rvalue(runtime, diagnostics)));
+    auto* object = object_from_value(parse_rvalue(runtime, diagnostics), runtime);
     runtime.add_object_to_event_bar(object);
     return true;
 }
@@ -2338,6 +2333,16 @@ MacroControlFlowResult Macro::execute_pointer_command(
     // As with `pose` and `touc`, every native arm joins at LAB_00420c74 with
     // the iteration-completed flag clear, so `poin` yields.
     return MacroControlFlowResult::cursor_changed;
+}
+
+objects::Object* Macro::object_from_value(
+    std::uint32_t value, const MacroRuntimeHost& runtime) const {
+    auto* const candidate =
+        reinterpret_cast<objects::Object*>(static_cast<std::uintptr_t>(value));
+    if (candidate == nullptr || runtime.is_live_object(candidate)) {
+        return candidate;
+    }
+    return nullptr;
 }
 
 MacroControlFlowResult Macro::execute_approach_command(
@@ -2951,8 +2956,8 @@ MacroControlFlowResult Macro::execute_kill_command(
     // Native `kill` parses an explicit Object rvalue, invokes the target's
     // Object vtable slot +0x40 (InitializeRuntimeState), then immediately
     // leaves the interpreter when that target is this Macro's script owner.
-    objects::Object* target = reinterpret_cast<objects::Object*>(
-        static_cast<std::uintptr_t>(parse_rvalue(runtime, diagnostics)));
+    objects::Object* target =
+        object_from_value(parse_rvalue(runtime, diagnostics), runtime);
     if (target == nullptr) {
         return execution_terminated
                    ? MacroControlFlowResult::execution_terminated
@@ -3616,9 +3621,9 @@ MacroControlFlowResult Macro::dispatch_interpreter_command(
                        : MacroControlFlowResult::execution_terminated;
         }
         if (command == MacroCommand::from_object) {
-            object_context.from_object = reinterpret_cast<objects::Object*>(
-                static_cast<std::uintptr_t>(
-                    parse_rvalue(*bindings.runtime, *bindings.diagnostics)));
+            object_context.from_object = object_from_value(
+                parse_rvalue(*bindings.runtime, *bindings.diagnostics),
+                *bindings.runtime);
             return MacroControlFlowResult::iteration_complete;
         }
         if (bindings.speech == nullptr) {

@@ -1286,6 +1286,9 @@ public:
 
     void fill_view_background_black(void* device_context) const;
 
+    // Object-pointer validation for CAOS values; see MacroRuntimeHost.
+    bool is_live_object(const creatures1::objects::Object* object) const;
+
     std::size_t non_scenery_object_count() const;
 
     creatures1::objects::Object* non_scenery_object_at(std::size_t index) const;

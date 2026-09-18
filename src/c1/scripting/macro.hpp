@@ -345,6 +345,15 @@ class MacroRuntimeHost {
 public:
     virtual ~MacroRuntimeHost() = default;
 
+    // A CAOS value is an untyped 32-bit word, so a script can hand any
+    // integer to a command that expects an object -- `setv var0 12345,targ
+    // var0` is legal CAOS.  The original dereferences whatever it is given
+    // and faults; the port asks the world whether the pointer is one of its
+    // live objects before using it.  The adapter must answer from the real
+    // registries: a false negative would drop a legitimate object and break
+    // the script instead.
+    virtual bool is_live_object(const objects::Object* object) const = 0;
+
     virtual bool is_creature_object(const objects::Object& object) const = 0;
     virtual bool is_simple_object(const objects::Object& object) const = 0;
     virtual bool is_compound_object(const objects::Object& object) const = 0;
@@ -1194,6 +1203,11 @@ public:
                                 MacroCommandHost& diagnostics);
     MacroControlFlowResult execute_pointer_command(MacroCommand command,
                                  MacroRuntimeHost& runtime);
+    // Converts a CAOS value to an object, refusing a pointer the world does
+    // not own.  Every command that takes an object rvalue goes through this.
+    objects::Object* object_from_value(std::uint32_t value,
+                                       const MacroRuntimeHost& runtime) const;
+
     MacroControlFlowResult execute_approach_command(MacroCommand command,
                                    MacroRuntimeHost& runtime);
     bool execute_vehicle_bounds_command(MacroCommand command,

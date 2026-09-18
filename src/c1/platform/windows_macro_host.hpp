@@ -356,6 +356,8 @@ public:
     // MacroRuntimeHost.  Each method either delegates to already-translated
     // policy or is held with the reason it cannot be reached yet; none is a
     // silent no-op.
+    bool is_live_object(
+        const creatures1::objects::Object* object) const override;
     bool is_creature_object(const creatures1::objects::Object& object) const override;
     bool is_simple_object(const creatures1::objects::Object& object) const override;
     bool is_compound_object(const creatures1::objects::Object& object) const override;

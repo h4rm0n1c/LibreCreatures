@@ -3338,6 +3338,11 @@ void C1WindowsDocument::fill_view_background_black(void* device_context) const {
     dc->FillSolidRect(&client_rect, RGB(0, 0, 0));
 }
 
+bool C1WindowsDocument::is_live_object(
+    const creatures1::objects::Object* object) const {
+    return world_runtime_ != nullptr && world_runtime_->is_live_object(object);
+}
+
 std::size_t C1WindowsDocument::non_scenery_object_count() const {
     return world_runtime_ == nullptr ? 0 : world_runtime_->object_count();
 }

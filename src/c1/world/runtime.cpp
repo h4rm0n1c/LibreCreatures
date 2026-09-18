@@ -292,6 +292,20 @@ void WorldRuntime::remove_world_object(objects::Object& object) {
         world_objects_.end());
 }
 
+bool WorldRuntime::is_live_object(const objects::Object* object) const {
+    if (object == nullptr) {
+        return false;
+    }
+    if (std::find(objects_.begin(), objects_.end(), object) != objects_.end()) {
+        return true;
+    }
+    return std::any_of(scenery_.begin(), scenery_.end(),
+                       [object](const objects::Scenery* candidate) {
+                           return static_cast<const objects::Object*>(
+                                      candidate) == object;
+                       });
+}
+
 bool WorldRuntime::owns_non_scenery_object(const objects::Object& object) const {
     return std::any_of(owned_objects_.begin(), owned_objects_.end(),
                        [&object](const std::unique_ptr<objects::Object>& candidate) {
