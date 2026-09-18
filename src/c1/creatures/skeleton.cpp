@@ -879,6 +879,14 @@ void Skeleton::validate_body_sprites(std::string_view image_directory,
 }
 
 bool Skeleton::references_object(objects::Object* object) const {
+    // CanBeDestroyed asks every registered object this before a parked
+    // object is deleted at save.  Without the owner's attention records a
+    // norn still attending eaten food reported "not referenced", the food
+    // was freed, and the attention record was left dangling.
+    if (reference_owner_ != nullptr &&
+        reference_owner_->owner_references_object(object)) {
+        return true;
+    }
     return motion_link == object || bounds_reference_object() == object ||
            caos_object_pointer == object || objects::Object::references_object(object);
 }
@@ -892,6 +900,9 @@ void Skeleton::clear_references_to(objects::Object* object) {
     }
     if (caos_object_pointer == object) {
         caos_object_pointer = nullptr;
+    }
+    if (reference_owner_ != nullptr) {
+        reference_owner_->owner_clear_references_to(object);
     }
     objects::Object::clear_references_to(object);
 }
@@ -1124,6 +1135,26 @@ int Skeleton::sprite_bounds_width() const {
 
 int Skeleton::sprite_bounds_height() const {
     return sprite_bounds.max_y - sprite_bounds.min_y;
+}
+
+void Skeleton::get_part_center(int* out_x, int* out_y,
+                               std::int32_t part_index) const {
+    if (part_index == 1) {
+        // Entity::GetCurrentImageBounds leaves the rectangle empty for a
+        // body with no current image, whose centre is then (0,0).
+        if (body == nullptr || !body->has_current_image()) {
+            *out_x = 0;
+            *out_y = 0;
+            return;
+        }
+        const int width = body->current_image_width();
+        const int height = body->current_image_height();
+        *out_x = width / 2 + body->world_x();
+        *out_y = height / 2 + body->world_y();
+        return;
+    }
+    *out_x = limb_chain_end_x[0];
+    *out_y = limb_chain_end_y[0];
 }
 
 bool Skeleton::get_bounds(world::WorldRect* out_bounds) const {

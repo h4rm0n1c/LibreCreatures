@@ -548,7 +548,8 @@ std::string format_status_for_external_query(
 // This is the recovered language slice of Creature.  The remaining Creature
 // state is intentionally added by its owning batches; this class does not
 // pretend that a partial field map is the complete C1 object layout.
-class Creature : public CreatureSelectionEntry {
+class Creature : public CreatureSelectionEntry,
+                 public SkeletonReferenceOwner {
 public:
     static constexpr std::size_t kLearnedWordRecordCount = 0x50;
     static constexpr std::size_t kBuiltInStimulusContextCount = 36;
@@ -558,7 +559,18 @@ public:
     // The no-argument form is the framework/archive factory path.  The
     // genome constructor below is the native game-creation path recovered at
     // 0040d580 and keeps all non-Creature services behind one explicit host.
-    Creature() = default;
+    Creature() { skeleton_.set_reference_owner(this); }
+    Creature(const Creature&) = delete;
+    Creature& operator=(const Creature&) = delete;
+
+    bool owner_references_object(
+        const objects::Object* candidate) const override {
+        return references_object(candidate);
+    }
+    void owner_clear_references_to(
+        const objects::Object* candidate) override {
+        clear_references_to_object(candidate);
+    }
     Creature(GenomeFilenameId genome_source_filename,
              CreatureConstructionSex construction_sex,
              CreatureConstructionHost& host);

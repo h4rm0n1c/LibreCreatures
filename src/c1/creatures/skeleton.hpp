@@ -132,8 +132,27 @@ public:
 
 CreaturePaletteControls read_creature_palette_controls(Genome& genome);
 
+// Native Creature *is* its Skeleton's Object, and overrides Object's
+// ReferencesObject and ClearReferencesToObject (vtable slots 18 and 19,
+// Creature::ReferencesObject @0x0040e4d0 and ClearReferencesToObject
+// @0x0040edc0) to cover its sleep indicator, its CAOS pointer and all forty
+// attention records.  Here the Creature holds the Skeleton and only the
+// Skeleton is in the object registry, so the Skeleton forwards to its owner
+// for the state it cannot see.
+class SkeletonReferenceOwner {
+public:
+    virtual ~SkeletonReferenceOwner() = default;
+    virtual bool owner_references_object(
+        const objects::Object* candidate) const = 0;
+    virtual void owner_clear_references_to(
+        const objects::Object* candidate) = 0;
+};
+
 class Skeleton : public objects::Object {
 public:
+    void set_reference_owner(SkeletonReferenceOwner* owner) {
+        reference_owner_ = owner;
+    }
     explicit Skeleton(SkeletonLifetimeHost* lifetime_host = nullptr);
     ~Skeleton() override;
 
@@ -238,6 +257,14 @@ public:
     // slot 26 of the Creature vtable, so a creature's bounds are its sprite
     // bounds; the base class returns an always-empty rectangle.
     bool get_bounds(world::WorldRect* out_bounds) const override;
+    // Creature::GetPartCentre @0x004096b0, slot 29.  Part 1 is the body
+    // image's centre; every other part index is the head chain's end.  With
+    // no override the Object no-op ran, so a creature's centre read as
+    // whatever the caller had initialised -- (0,0) in the attention sweep,
+    // which dropped any creature as an attention target every tick, and left
+    // motion_target unset when one creature attended another.
+    void get_part_center(int* out_x, int* out_y,
+                         std::int32_t part_index) const override;
     int render_plane() const override;
     int body_render_plane() const;
     std::uint32_t classifier_base() const { return Object::classifier_base(); }
@@ -299,6 +326,7 @@ public:
     int motion_target_x = 0;
     int motion_target_y = 0;
     objects::Object* caos_object_pointer = nullptr;
+    SkeletonReferenceOwner* reference_owner_ = nullptr;
     bool boundary_correction_pending = false;
     int normal_render_plane = 100;
     int continuous_sound_handle = -1;
