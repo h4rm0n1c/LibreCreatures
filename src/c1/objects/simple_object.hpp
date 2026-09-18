@@ -48,12 +48,25 @@ public:
     virtual void present_or_queue_dirty_world_rect(
         const world::WorldRect& dirty_rect) = 0;
 
-    // Native C1 reads the low byte of CompoundObject::parts[3].entity as an
-    // index into {-1,1,1,-1}. The field is independently proven to be an
-    // EntityPtr, so this is intentionally a named compatibility boundary,
-    // not a fabricated byte field or enum.
+    // A carried object is anchored and planed from three raw offsets on its
+    // bounds reference, which the native reads without regard to the
+    // reference's actual type:
+    //
+    //   [ref + 0xdc]        anchor x
+    //   [ref + 0xf4]        anchor y
+    //   [ref + 0x78] byte   index into {-1, 1, 1, -1} for the plane offset
+    //
+    // On a CompoundObject those are part_bounds[1].min_x, part_bounds[2].max_x
+    // and the low byte of parts[3].entity.  On a Skeleton -- a creature
+    // holding something -- the same offsets are limb_chain_end_x[4],
+    // limb_chain_end_y[4] and facing_direction: the right-arm chain end, i.e.
+    // the hand, and a 0..3 facing that indexes the table exactly.  The host
+    // resolves the reference's real type; this object only consumes the
+    // result.
+    virtual bool carried_object_anchor(const Object& reference, int& out_x,
+                                       int& out_y) const = 0;
     virtual int carried_object_render_plane_offset(
-        const CompoundObject& reference) const = 0;
+        const Object& reference) const = 0;
 };
 
 // The native byte is a bit mask.  The event numbers are intentionally not

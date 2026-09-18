@@ -340,47 +340,67 @@ void WindowsSimpleObjectInteractionHost::present_or_queue_dirty_world_rect(
     document_.queue_renderer_dirty_world_rect(dirty_rect);
 }
 
+bool WindowsSimpleObjectInteractionHost::carried_object_anchor(
+    const creatures1::objects::Object& reference, int& out_x,
+    int& out_y) const {
+    // UpdateEntityForExplicitRectBoundsAndRedraw @0x00428d30 reads the anchor
+    // from two raw offsets on the bounds reference, whatever its real type:
+    //
+    //   MOV EAX, [ECX + 0xf4]   -> anchor y
+    //   MOV EDI, [ECX + 0xdc]   -> anchor x
+    //
+    // CompoundObject: parts is CompoundPart[10] at +0x54 and part_bounds is
+    // WorldRect[6] at +0xcc, so 0xdc is part_bounds[1].min_x and 0xf4 is
+    // part_bounds[2].max_x -- the machine's holding slot.
+    //
+    // Skeleton: object_base is 0x50 and render_pose_state follows, so 0xdc is
+    // render_pose_state+140 = limb_chain_end_x[4] and 0xf4 is
+    // render_pose_state+164 = limb_chain_end_y[4].  Chain 4 is the right arm,
+    // so a creature holds the object at its hand.
+    if (const auto* compound =
+            dynamic_cast<const creatures1::objects::CompoundObject*>(
+                &reference)) {
+        out_x = compound->part_bounds(1).min_x;
+        out_y = compound->part_bounds(2).max_x;
+        return true;
+    }
+    if (const creatures1::creatures::Creature* creature =
+            document_.creature_for_object(reference)) {
+        const creatures1::creatures::Skeleton& skeleton = creature->skeleton();
+        out_x = skeleton.limb_chain_end_x[4];
+        out_y = skeleton.limb_chain_end_y[4];
+        return true;
+    }
+    return false;
+}
+
 int WindowsSimpleObjectInteractionHost::carried_object_render_plane_offset(
-    const creatures1::objects::CompoundObject& reference) const {
-    // UpdateEntityForExplicitRectBoundsAndRedraw @0x00428d30 computes a
-    // carried object's plane as the carrier's plane plus an offset taken from
-    // a four-entry table at 0x0045abb8, {-1, 1, 1, -1}:
+    const creatures1::objects::Object& reference) const {
+    // The same function indexes a four-entry table at 0x0045abb8,
+    // {-1, 1, 1, -1}, with a byte read at +0x78:
     //
-    //   MOVZX EAX, byte ptr [ECX + 0x78]          ; low byte of parts[3].entity
-    //   MOV   ESI, dword ptr [EAX*0x4 + 0x45abb8] ; table[that byte]
+    //   MOVZX EAX, byte ptr [ECX + 0x78]
+    //   MOV   ESI, dword ptr [EAX*0x4 + 0x45abb8]
     //
-    // +0x78 is `parts[3].entity`, a pointer, and the index is its low byte --
-    // so the native read is only in bounds when that pointer is null, and is
-    // otherwise an out-of-bounds load keyed on a heap address.  Past the four
-    // entries lies unrelated pose-string data, so the offsets it produces
-    // there are arbitrary.
+    // On a Skeleton, +0x78 is render_pose_state+40 = facing_direction, a 0..3
+    // value that indexes the table exactly -- which is what the table is for.
+    // A creature holds the object behind itself facing north or west and in
+    // front of itself facing south or east.
     //
-    // This is not reproducible: a port's heap addresses differ from the
-    // original's, and the original is not self-consistent between runs either.
-    // Exactly one object in a shipped world takes this path with a non-null
-    // parts[3] -- the incubator (classifier 3.4.1, part_count 4, parts[3] an
-    // Entity at 1929,680) -- and an egg placed in it is the visible case.
-    //
-    // The incubator's own part planes decide what is correct here.  From its
-    // record in a shipped World.sfc:
-    //
-    //   part[0] plane    0   body, and what GetRenderPlane returns
-    //   part[1] plane    1   the door, animated by its event 1/2 scripts
-    //   part[2] plane 4000   the front cover
-    //   part[3] plane    2   the dial
-    //
-    // so a carried object's plane is 0 + offset.  The table's two values give
-    // -1, which puts it *behind the body* -- out of sight entirely, and the
-    // reason cheese dropped into the incubator vanished behind it -- or +1,
-    // which puts it in front of the body and far behind the front cover,
-    // which is where an egg belongs.
-    //
-    // +1 it is: a real entry in the native table, deterministic, and the only
-    // one of the two that leaves the carried object visible.  An earlier
-    // revision of this returned -1 on the grounds that index 0 is the table's
-    // only in-bounds entry; that reasoning ignored what the planes actually
-    // are and regressed every carried object into the carrier's body.
-    static_cast<void>(reference);
+    // On a CompoundObject the same offset is the low byte of parts[3].entity,
+    // a pointer, so the native read is in bounds only when that pointer is
+    // null.  Every carrier in a shipped world has three parts or fewer except
+    // the incubator (3.4.1), whose parts are body 0, door 1, front cover 4000
+    // and dial 2, and whose GetRenderPlane returns the body's 0.  +1 leaves a
+    // carried object in front of the body and behind the cover, which is
+    // where an egg belongs; -1 would bury it in the body.
+    static constexpr int kRenderPlaneOffsets[4] = {-1, 1, 1, -1};
+    if (const creatures1::creatures::Creature* creature =
+            document_.creature_for_object(reference)) {
+        const auto facing = static_cast<std::size_t>(
+            creature->skeleton().facing_direction);
+        return kRenderPlaneOffsets[facing & 3u];
+    }
     return 1;
 }
 

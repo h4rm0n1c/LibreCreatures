@@ -220,22 +220,32 @@ void SimpleObject::update_entity_for_explicit_rect_bounds_and_redraw(
         entity_->advance_image_sequence_for_moving_vehicle();
     }
 
-    // The native function has already established this relationship as a
-    // CompoundObject before reaching this path. Keep the cast explicit and
-    // confine the unresolved low-byte compatibility operation to the host.
-    const CompoundObject* reference = static_cast<const CompoundObject*>(
-        bounds_reference_object());
-    const int center_x = reference->part_bounds(1).min_x -
-                         entity_->current_image_width() / 2;
-    const int center_y = reference->part_bounds(2).max_x -
-                         entity_->current_image_height() / 2;
+    // The reference is whatever picked this object up: a machine
+    // (CompoundObject) or a creature (Skeleton).  The native reads the anchor
+    // from raw offsets that mean different fields on each; the host resolves
+    // that.  This used to static_cast the reference to CompoundObject
+    // unconditionally, which is undefined when a creature is carrying the
+    // object -- it read a Skeleton's pose state as part_bounds and teleported
+    // the object to a garbage position, so anything a creature picked up
+    // silently vanished.
+    const Object* reference = bounds_reference_object();
+    if (reference == nullptr) {
+        return;
+    }
+    int anchor_x = 0;
+    int anchor_y = 0;
+    if (!host.carried_object_anchor(*reference, anchor_x, anchor_y)) {
+        return;
+    }
+    const int center_x = anchor_x - entity_->current_image_width() / 2;
+    const int center_y = anchor_y - entity_->current_image_height() / 2;
 
     int wrapped_x = wrap_world_x_once(center_x);
     wrapped_x = wrap_world_x_once(wrapped_x);
     entity_->set_world_x(wrapped_x);
     entity_->set_world_y(center_y);
     entity_->set_render_plane(
-        reference->render_plane() +
+        const_cast<Object*>(reference)->render_plane() +
         host.carried_object_render_plane_offset(*reference));
 
     world::WorldRect new_bounds{};

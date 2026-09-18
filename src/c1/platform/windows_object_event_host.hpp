@@ -297,8 +297,10 @@ public:
     int pointer_mouse_world_y() const override;
     void present_or_queue_dirty_world_rect(
         const creatures1::world::WorldRect& dirty_rect) override;
+    bool carried_object_anchor(const creatures1::objects::Object& reference,
+                               int& out_x, int& out_y) const override;
     int carried_object_render_plane_offset(
-        const creatures1::objects::CompoundObject& reference) const override;
+        const creatures1::objects::Object& reference) const override;
 
     // SimpleObjectEditHost adds only this to the four bases already here.
     int privilege_level() const override;
