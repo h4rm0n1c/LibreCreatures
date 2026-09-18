@@ -4051,6 +4051,9 @@ C1WindowsDocument::ArchiveHost::ArchiveHost(C1WindowsDocument& document, CArchiv
         [](std::string_view actual, std::string_view requested) {
             return compatible_class(actual, requested);
         });
+    // Objects reading their own scripts install them into the document's
+    // script table, as native Object::Serialize does on load.
+    objects_->set_script_install_host(&document_);
     document_.active_archive_stream_ = &stream_;
     document_.active_object_table_ = objects_.get();
 }

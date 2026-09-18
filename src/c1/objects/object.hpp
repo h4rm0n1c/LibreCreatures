@@ -57,6 +57,15 @@ public:
     virtual std::int32_t read_script_count() = 0;
     virtual std::uint32_t read_script_classifier() = 0;
     virtual std::string read_script_text() = 0;
+
+    // Native Object::Serialize @00423ed0 loads an object's scripts through
+    // DeserializeScriptsForClassifier @0041a8e0, which installs each one in
+    // the script table.  An archive that can reach that table supplies both
+    // of these; one that cannot leaves them null and the records are skipped.
+    virtual scripting::ScriptArchiveReader* script_reader() { return nullptr; }
+    virtual scripting::ScriptDefinitionInstallHost* script_install_host() {
+        return nullptr;
+    }
 };
 
 class ObjectRegistryHost {

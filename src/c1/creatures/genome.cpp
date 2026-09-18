@@ -299,25 +299,37 @@ void Genome::copy_gene_with_mutation(Genome& source,
         return;
     }
     const std::size_t end = gene_end(source.payload_, start);
-    payload_.insert(payload_.end(), source.payload_.begin() + start,
-                    source.payload_.begin() + end);
-    source.cursor_ = end;
-
     const std::uint8_t flags = source.payload_[start + 9];
-    if ((flags & kGeneMutationEnabled) != 0 &&
-        random.next() % 0x641u == 0 && end > start + kGeneHeaderSize) {
-        const std::size_t payload_offset = payload_.size() - (end - start) +
-                                           kGeneHeaderSize;
-        const std::uint8_t old_value = payload_[payload_offset];
+    const bool mutation_allowed = (flags & kGeneMutationEnabled) != 0;
+
+    // CopyGenomeGeneWithMutation @00418c70 copies header bytes 0..7 verbatim,
+    // gives byte 8 a single 1-in-0x641 roll, copies the flags byte 9 verbatim,
+    // and then runs every remaining byte of the gene through
+    // CopyGenomeByteWithMutation @00418e00, which rolls again for each one.
+    // Bulk-copying the gene and rolling once left all but one byte of every
+    // gene unmutatable.
+    payload_.insert(payload_.end(), source.payload_.begin() + start,
+                    source.payload_.begin() + start + 8);
+
+    std::uint8_t header_byte_8 = source.payload_[start + 8];
+    if (mutation_allowed && random.next() % 0x641u == 0) {
+        const std::uint8_t old_value = header_byte_8;
         std::uint8_t bit_distance = 0;
-        payload_[payload_offset] = static_cast<std::uint8_t>(
+        header_byte_8 = static_cast<std::uint8_t>(
             old_value ^ random_mutation_mask(random, bit_distance));
         if (random.debug_logging_enabled()) {
-            random.log_mutation(old_value, payload_[payload_offset],
-                                bit_distance);
+            random.log_mutation(old_value, header_byte_8, bit_distance);
         }
         ++mutation_count_;
     }
+    payload_.push_back(header_byte_8);
+    payload_.push_back(flags);
+
+    source.cursor_ = start + kGeneHeaderSize;
+    while (source.cursor_ < end) {
+        copy_byte_with_mutation(source, mutation_allowed, random);
+    }
+    source.cursor_ = end;
 }
 
 GenomeGeneCount Genome::count_matching_genes(std::uint8_t family,

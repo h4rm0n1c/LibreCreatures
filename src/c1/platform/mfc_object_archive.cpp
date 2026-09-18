@@ -192,7 +192,7 @@ void MfcEntityArchive::write_object_reference(
 }
 
 MfcObjectArchive MfcDynamicObjectTable::make_nested_archive() {
-    return MfcObjectArchive(
+    MfcObjectArchive archive(
         stream_,
         [this](std::string_view runtime_class_name) {
             return read_object_reference(runtime_class_name);
@@ -200,6 +200,8 @@ MfcObjectArchive MfcDynamicObjectTable::make_nested_archive() {
         [this](const void* object, std::string_view runtime_class_name) {
             write_object_reference(object, runtime_class_name);
         });
+    archive.set_script_install_host(script_install_host_);
+    return archive;
 }
 
 std::size_t MfcDynamicObjectTable::append_class(

@@ -86,6 +86,14 @@ void Object::serialize(ObjectArchive& archive) {
         caos_object_variable_1_ = archive.read_uint32();
         caos_object_variable_2_ = archive.read_uint32();
 
+        scripting::ScriptArchiveReader* script_reader = archive.script_reader();
+        scripting::ScriptDefinitionInstallHost* script_install =
+            archive.script_install_host();
+        if (script_reader != nullptr && script_install != nullptr) {
+            scripting::deserialize_scripts_for_classifier(*script_reader,
+                                                          *script_install);
+            return;
+        }
         const std::int32_t script_count = archive.read_script_count();
         for (std::int32_t index = 0; index < script_count; ++index) {
             (void)archive.read_script_classifier();

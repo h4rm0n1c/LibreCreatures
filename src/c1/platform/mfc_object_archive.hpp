@@ -51,6 +51,16 @@ public:
     std::uint32_t read_script_classifier() override;
     std::string read_script_text() override;
 
+    scripting::ScriptArchiveReader* script_reader() override {
+        return script_install_host_ == nullptr ? nullptr : this;
+    }
+    scripting::ScriptDefinitionInstallHost* script_install_host() override {
+        return script_install_host_;
+    }
+    void set_script_install_host(scripting::ScriptDefinitionInstallHost* host) {
+        script_install_host_ = host;
+    }
+
 private:
     void* read_reference(std::string_view runtime_class_name) const;
     void write_reference(const void* object,
@@ -59,6 +69,7 @@ private:
     MfcArchiveStream& stream_;
     ObjectReferenceReader read_object_reference_;
     ObjectReferenceWriter write_object_reference_;
+    scripting::ScriptDefinitionInstallHost* script_install_host_ = nullptr;
 };
 
 // Entity serialization has the same MFC reference boundary but a smaller
@@ -142,6 +153,11 @@ public:
     void write_object_reference(const void* object,
                                 std::string_view requested_class_name);
 
+    // The script table objects' own scripts are installed into on load.
+    void set_script_install_host(scripting::ScriptDefinitionInstallHost* host) {
+        script_install_host_ = host;
+    }
+
 private:
     enum class EntryKind { runtime_class, object };
 
@@ -179,6 +195,7 @@ private:
     std::vector<Entry> entries_{{}}; // MFC reserves index zero for NULL.
     std::unordered_map<std::string, std::size_t> class_indices_;
     std::unordered_map<const void*, std::size_t> object_indices_;
+    scripting::ScriptDefinitionInstallHost* script_install_host_ = nullptr;
 };
 
 } // namespace creatures1::platform

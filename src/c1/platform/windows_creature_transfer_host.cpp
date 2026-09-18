@@ -361,6 +361,8 @@ public:
             [this](const void* object, std::string_view name) {
                 host_.dynamic_objects().write_object_reference(object, name);
             });
+        // An imported creature's scripts are installed like a loaded world's.
+        objects.set_script_install_host(&document_);
         creatures1::platform::MfcCreatureArchive creature_archive(objects);
         WindowsCreatureDeserializationHost deserialization(document_);
         creature.deserialize(creature_archive, deserialization);
