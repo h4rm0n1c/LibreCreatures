@@ -1,0 +1,727 @@
+{
+  "schema": "c1-composition-liveness-audit-v1",
+  "program": "Creatures.exe",
+  "counts": {
+    "classes_parsed": 650,
+    "abstract_interfaces": 271,
+    "concrete_hosts": 116,
+    "hosts_with_unheld_empty_overrides": 0,
+    "unheld_empty_override_methods": 0,
+    "never_constructed_hosts": 0,
+    "structured_holds": 1
+  },
+  "all_empty_overrides": [
+    {
+      "class_name": "C1MainFrame",
+      "file": "platform/windows_shell.hpp",
+      "line": 205,
+      "methods": [
+        "destroy_frame_controls"
+      ]
+    }
+  ],
+  "all_hosts": [
+    {
+      "class_name": "AddFavouritePlaceHost",
+      "file": "platform/windows_document_host.cpp",
+      "line": 2248,
+      "is_constructed": true
+    },
+    {
+      "class_name": "ArchiveHost",
+      "file": "platform/windows_shell.hpp",
+      "line": 2305,
+      "is_constructed": true
+    },
+    {
+      "class_name": "BinaryReadAdapter",
+      "file": "application/resource_hosts.cpp",
+      "line": 82,
+      "is_constructed": true
+    },
+    {
+      "class_name": "C1CaosConsoleDialog",
+      "file": "platform/windows_shell.hpp",
+      "line": 1486,
+      "is_constructed": true
+    },
+    {
+      "class_name": "C1CreatureResourceHost",
+      "file": "platform/creature_resource_hosts.hpp",
+      "line": 12,
+      "is_constructed": true
+    },
+    {
+      "class_name": "C1DebugConsoleDialog",
+      "file": "platform/windows_shell.hpp",
+      "line": 1578,
+      "is_constructed": true
+    },
+    {
+      "class_name": "C1EventBar",
+      "file": "platform/windows_shell.hpp",
+      "line": 141,
+      "is_constructed": true
+    },
+    {
+      "class_name": "C1EventBarObjectAdapter",
+      "file": "platform/windows_shell.hpp",
+      "line": 1424,
+      "is_constructed": true
+    },
+    {
+      "class_name": "C1EventBarStatusAdapter",
+      "file": "platform/windows_shell.hpp",
+      "line": 1388,
+      "is_constructed": true
+    },
+    {
+      "class_name": "C1EyeViewWindow",
+      "file": "platform/windows_shell.hpp",
+      "line": 1698,
+      "is_constructed": true
+    },
+    {
+      "class_name": "C1MainFrame",
+      "file": "platform/windows_shell.hpp",
+      "line": 205,
+      "is_constructed": true
+    },
+    {
+      "class_name": "C1NativeBackupFileSystem",
+      "file": "platform/windows_filesystem_host.hpp",
+      "line": 14,
+      "is_constructed": true
+    },
+    {
+      "class_name": "C1NativeCreatureSelectionMenuPlatform",
+      "file": "platform/windows_shell.hpp",
+      "line": 513,
+      "is_constructed": true
+    },
+    {
+      "class_name": "C1NativeEmbeddedKitMenuPlatform",
+      "file": "platform/windows_shell.hpp",
+      "line": 488,
+      "is_constructed": true
+    },
+    {
+      "class_name": "C1NativeMuteControl",
+      "file": "platform/windows_shell.hpp",
+      "line": 2071,
+      "is_constructed": true
+    },
+    {
+      "class_name": "C1NativeTipFile",
+      "file": "platform/windows_shell.hpp",
+      "line": 2089,
+      "is_constructed": true
+    },
+    {
+      "class_name": "C1NativeVersionDialog",
+      "file": "platform/windows_version_dialog_host.hpp",
+      "line": 11,
+      "is_constructed": true
+    },
+    {
+      "class_name": "C1NativeVolumeDialog",
+      "file": "platform/windows_volume_dialog_host.hpp",
+      "line": 14,
+      "is_constructed": true
+    },
+    {
+      "class_name": "C1NativeVolumeDialogHost",
+      "file": "platform/windows_shell.hpp",
+      "line": 184,
+      "is_constructed": true
+    },
+    {
+      "class_name": "C1NativeWebpageShortcut",
+      "file": "platform/windows_application_host.hpp",
+      "line": 108,
+      "is_constructed": true
+    },
+    {
+      "class_name": "C1PaletteDtaHost",
+      "file": "application/resource_hosts.hpp",
+      "line": 133,
+      "is_constructed": true
+    },
+    {
+      "class_name": "C1ResourceHost",
+      "file": "application/resource_hosts.hpp",
+      "line": 81,
+      "is_constructed": true
+    },
+    {
+      "class_name": "C1SettingsHost",
+      "file": "platform/windows_application_host.hpp",
+      "line": 19,
+      "is_constructed": true
+    },
+    {
+      "class_name": "C1ShutdownHost",
+      "file": "platform/windows_shell.hpp",
+      "line": 2280,
+      "is_constructed": true
+    },
+    {
+      "class_name": "C1StartupHost",
+      "file": "platform/windows_shell.hpp",
+      "line": 2192,
+      "is_constructed": true
+    },
+    {
+      "class_name": "C1TipDialogPlatform",
+      "file": "platform/windows_shell.hpp",
+      "line": 2113,
+      "is_constructed": true
+    },
+    {
+      "class_name": "C1WindowsDocument",
+      "file": "platform/windows_shell.hpp",
+      "line": 550,
+      "is_constructed": true
+    },
+    {
+      "class_name": "C1WindowsView",
+      "file": "platform/windows_shell.hpp",
+      "line": 1852,
+      "is_constructed": true
+    },
+    {
+      "class_name": "Creature",
+      "file": "creatures/creature.hpp",
+      "line": 551,
+      "is_constructed": true
+    },
+    {
+      "class_name": "CreatureArchiveGenomeAdapter",
+      "file": "platform/windows_creature_transfer_host.cpp",
+      "line": 152,
+      "is_constructed": true
+    },
+    {
+      "class_name": "CreatureStringArchive",
+      "file": "creatures/creature.cpp",
+      "line": 3240,
+      "is_constructed": true
+    },
+    {
+      "class_name": "CreatureVoiceArchive",
+      "file": "creatures/creature.cpp",
+      "line": 3225,
+      "is_constructed": true
+    },
+    {
+      "class_name": "DocumentScoreNotification",
+      "file": "platform/windows_macro_host.cpp",
+      "line": 2580,
+      "is_constructed": true
+    },
+    {
+      "class_name": "FrameCommandUi",
+      "file": "platform/windows_main_frame_host.cpp",
+      "line": 1050,
+      "is_constructed": true
+    },
+    {
+      "class_name": "FrameKitControl",
+      "file": "platform/windows_document_host.cpp",
+      "line": 1378,
+      "is_constructed": true
+    },
+    {
+      "class_name": "Host",
+      "file": "platform/windows_creature_hosts.cpp",
+      "line": 195,
+      "is_constructed": true
+    },
+    {
+      "class_name": "KitProcessAdapter",
+      "file": "platform/windows_shell.hpp",
+      "line": 441,
+      "is_constructed": true
+    },
+    {
+      "class_name": "MacroSchedulerHostAdapter",
+      "file": "scripting/macro.hpp",
+      "line": 1014,
+      "is_constructed": true
+    },
+    {
+      "class_name": "MapData",
+      "file": "world/map.hpp",
+      "line": 142,
+      "is_constructed": true
+    },
+    {
+      "class_name": "MfcBiochemistryArchive",
+      "file": "platform/mfc_creature_archives.hpp",
+      "line": 45,
+      "is_constructed": true
+    },
+    {
+      "class_name": "MfcBiochemistryLocusHost",
+      "file": "platform/mfc_creature_archives.hpp",
+      "line": 80,
+      "is_constructed": true
+    },
+    {
+      "class_name": "MfcBrainArchive",
+      "file": "platform/mfc_creature_archives.hpp",
+      "line": 18,
+      "is_constructed": true
+    },
+    {
+      "class_name": "MfcCreatureArchive",
+      "file": "platform/mfc_creature_archives.hpp",
+      "line": 112,
+      "is_constructed": true
+    },
+    {
+      "class_name": "MfcCreatureExportArchive",
+      "file": "platform/windows_creature_transfer_host.cpp",
+      "line": 8,
+      "is_constructed": true
+    },
+    {
+      "class_name": "MfcCreatureImportArchive",
+      "file": "platform/windows_creature_transfer_host.cpp",
+      "line": 305,
+      "is_constructed": true
+    },
+    {
+      "class_name": "MfcEntityArchive",
+      "file": "platform/mfc_object_archive.hpp",
+      "line": 67,
+      "is_constructed": true
+    },
+    {
+      "class_name": "MfcEventBarArchive",
+      "file": "platform/mfc_document_archives.hpp",
+      "line": 61,
+      "is_constructed": true
+    },
+    {
+      "class_name": "MfcFavouritePlaceArchive",
+      "file": "platform/mfc_document_archives.hpp",
+      "line": 19,
+      "is_constructed": true
+    },
+    {
+      "class_name": "MfcInstinctArchive",
+      "file": "platform/mfc_creature_archives.hpp",
+      "line": 32,
+      "is_constructed": true
+    },
+    {
+      "class_name": "MfcMacroArchive",
+      "file": "platform/mfc_document_archives.hpp",
+      "line": 79,
+      "is_constructed": true
+    },
+    {
+      "class_name": "MfcMapDataArchive",
+      "file": "platform/mfc_map_archive.hpp",
+      "line": 16,
+      "is_constructed": true
+    },
+    {
+      "class_name": "MfcObjectArchive",
+      "file": "platform/mfc_object_archive.hpp",
+      "line": 19,
+      "is_constructed": true
+    },
+    {
+      "class_name": "MfcScoreArchive",
+      "file": "platform/mfc_document_archives.hpp",
+      "line": 49,
+      "is_constructed": true
+    },
+    {
+      "class_name": "MfcStringArchive",
+      "file": "platform/mfc_creature_archives.hpp",
+      "line": 97,
+      "is_constructed": true
+    },
+    {
+      "class_name": "MfcToolbarArchive",
+      "file": "platform/mfc_document_archives.hpp",
+      "line": 35,
+      "is_constructed": true
+    },
+    {
+      "class_name": "ObjectViewAnchor",
+      "file": "platform/windows_document_host.cpp",
+      "line": 2555,
+      "is_constructed": true
+    },
+    {
+      "class_name": "PaletteReadAdapter",
+      "file": "application/resource_hosts.cpp",
+      "line": 102,
+      "is_constructed": true
+    },
+    {
+      "class_name": "PointerToolArchive",
+      "file": "platform/windows_document_host.cpp",
+      "line": 3637,
+      "is_constructed": true
+    },
+    {
+      "class_name": "Probe",
+      "file": "platform/windows_embedded_kit_host.cpp",
+      "line": 16,
+      "is_constructed": true
+    },
+    {
+      "class_name": "RegistryBurbleStore",
+      "file": "platform/windows_main_frame_host.cpp",
+      "line": 1026,
+      "is_constructed": true
+    },
+    {
+      "class_name": "ReportWindow",
+      "file": "platform/windows_views_host.cpp",
+      "line": 475,
+      "is_constructed": true
+    },
+    {
+      "class_name": "Scheduler",
+      "file": "platform/windows_views_host.cpp",
+      "line": 435,
+      "is_constructed": true
+    },
+    {
+      "class_name": "Selector",
+      "file": "platform/windows_main_frame_host.cpp",
+      "line": 659,
+      "is_constructed": true
+    },
+    {
+      "class_name": "SkeletonMoveHost",
+      "file": "platform/windows_macro_host.cpp",
+      "line": 787,
+      "is_constructed": true
+    },
+    {
+      "class_name": "SkeletonMoveRedraw",
+      "file": "platform/windows_document_host.cpp",
+      "line": 14,
+      "is_constructed": true
+    },
+    {
+      "class_name": "SpriteIndexWriteAdapter",
+      "file": "application/resource_hosts.cpp",
+      "line": 131,
+      "is_constructed": true
+    },
+    {
+      "class_name": "StandardReadFile",
+      "file": "application/resource_hosts.cpp",
+      "line": 15,
+      "is_constructed": true
+    },
+    {
+      "class_name": "StandardResourceFileBackend",
+      "file": "application/resource_hosts.hpp",
+      "line": 64,
+      "is_constructed": true
+    },
+    {
+      "class_name": "StandardWriteFile",
+      "file": "application/resource_hosts.cpp",
+      "line": 48,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsAgeCommandPlatform",
+      "file": "platform/windows_creature_hosts.hpp",
+      "line": 126,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsBacteriumRandomSource",
+      "file": "platform/windows_creature_hosts.hpp",
+      "line": 147,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsBacteriumServiceHost",
+      "file": "platform/windows_creature_hosts.hpp",
+      "line": 329,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsBlackboardHost",
+      "file": "platform/windows_macro_host.hpp",
+      "line": 756,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsCallButtonRuntimeHost",
+      "file": "platform/windows_object_event_host.hpp",
+      "line": 98,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsComLocalServer",
+      "file": "platform/windows_com_host.hpp",
+      "line": 15,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsCompoundObjectEventHost",
+      "file": "platform/windows_object_event_host.hpp",
+      "line": 52,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsCreatureAttentionHost",
+      "file": "platform/windows_macro_host.hpp",
+      "line": 595,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsCreatureBacteriumEnvironmentHost",
+      "file": "platform/windows_macro_host.hpp",
+      "line": 548,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsCreatureConstructionHost",
+      "file": "platform/windows_macro_host.hpp",
+      "line": 787,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsCreatureDeathHost",
+      "file": "platform/windows_creature_hosts.hpp",
+      "line": 20,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsCreatureDeserializationHost",
+      "file": "platform/windows_creature_transfer_host.hpp",
+      "line": 41,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsCreatureEnvironmentHost",
+      "file": "platform/windows_creature_hosts.hpp",
+      "line": 87,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsCreatureExportHost",
+      "file": "platform/windows_creature_transfer_host.hpp",
+      "line": 14,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsCreatureFanoutHost",
+      "file": "platform/windows_creature_hosts.hpp",
+      "line": 222,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsCreatureImportHost",
+      "file": "platform/windows_creature_transfer_host.hpp",
+      "line": 78,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsCreatureInseminationHost",
+      "file": "platform/windows_macro_host.hpp",
+      "line": 691,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsCreaturePickupDropHost",
+      "file": "platform/windows_object_event_host.hpp",
+      "line": 285,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsCreatureScriptEventHost",
+      "file": "platform/windows_object_event_host.hpp",
+      "line": 77,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsCreatureSpeechHost",
+      "file": "platform/windows_creature_hosts.hpp",
+      "line": 112,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsCreatureSpeechPhraseHost",
+      "file": "platform/windows_creature_hosts.hpp",
+      "line": 302,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsCreatureWordsHost",
+      "file": "platform/windows_object_event_host.hpp",
+      "line": 343,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsCreatureWorldUpdateHost",
+      "file": "platform/windows_creature_hosts.hpp",
+      "line": 362,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsDriveThresholdObject",
+      "file": "platform/windows_creature_hosts.hpp",
+      "line": 428,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsEmbeddedKitHost",
+      "file": "platform/windows_embedded_kit_host.hpp",
+      "line": 18,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsEntityImageSequenceRenderHost",
+      "file": "platform/windows_macro_host.hpp",
+      "line": 517,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsEuthanasiaHost",
+      "file": "platform/windows_creature_hosts.hpp",
+      "line": 193,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsForceAgeHost",
+      "file": "platform/windows_creature_hosts.hpp",
+      "line": 176,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsGeneratedCreatureHost",
+      "file": "platform/windows_macro_host.hpp",
+      "line": 840,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsImmediateEventQueueHost",
+      "file": "platform/windows_macro_host.hpp",
+      "line": 577,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsInfectCreatureHost",
+      "file": "platform/windows_creature_hosts.hpp",
+      "line": 157,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsMacroHost",
+      "file": "platform/windows_macro_host.hpp",
+      "line": 108,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsNewObjectHost",
+      "file": "platform/windows_macro_host.hpp",
+      "line": 21,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsObjectEventDispatchHost",
+      "file": "platform/windows_object_event_host.hpp",
+      "line": 198,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsObjectEventRuntime",
+      "file": "platform/windows_object_event_host.hpp",
+      "line": 391,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsObjectScriptDispatchHost",
+      "file": "platform/windows_macro_host.hpp",
+      "line": 738,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsPalettePlatform",
+      "file": "platform/windows_palette_host.hpp",
+      "line": 13,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsPipeServerRuntime",
+      "file": "platform/windows_pipe_server.hpp",
+      "line": 23,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsPointerToolRuntimeHost",
+      "file": "platform/windows_pointer_tool_host.hpp",
+      "line": 16,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsScriptExecutionHost",
+      "file": "platform/windows_macro_host.hpp",
+      "line": 665,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsSimpleObjectInteractionHost",
+      "file": "platform/windows_object_event_host.hpp",
+      "line": 213,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsSkeletonLifetimeHost",
+      "file": "platform/windows_creature_hosts.hpp",
+      "line": 67,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsSkeletonRenderPlaneHost",
+      "file": "platform/windows_creature_hosts.hpp",
+      "line": 50,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsSoundSystemHost",
+      "file": "platform/windows_sound_host.hpp",
+      "line": 14,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsStimulusSourceHost",
+      "file": "platform/windows_macro_host.hpp",
+      "line": 495,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WindowsVehicleEventHost",
+      "file": "platform/windows_macro_host.hpp",
+      "line": 526,
+      "is_constructed": true
+    },
+    {
+      "class_name": "WorldRuntime",
+      "file": "world/runtime.hpp",
+      "line": 22,
+      "is_constructed": true
+    }
+  ],
+  "never_constructed": [],
+  "unheld_empty_overrides": [],
+  "checks": {
+    "failures": [],
+    "status": "pass"
+  }
+}

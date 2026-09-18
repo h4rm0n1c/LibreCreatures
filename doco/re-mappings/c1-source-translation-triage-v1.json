@@ -1,0 +1,44 @@
+{
+  "batch_policy": {
+    "grouping": "module/source_file/work_kind/risk_for_semantic_rows",
+    "max_cost": 80.0,
+    "max_items": 16,
+    "semantic_order": "topological_batch_order_outside_dependency_knots"
+  },
+  "batches": [],
+  "counts": {
+    "assigned_rows": 0,
+    "batch_count": 0,
+    "boundary_edges_from_pending": 0,
+    "duplicate_assignments": 0,
+    "graph_covered": 0,
+    "graph_missing": 0,
+    "internal_pending_edges": 0,
+    "pending_rows": 0,
+    "queue_work_items": 923,
+    "semantic_batch_dependency_edges": 0,
+    "semantic_cross_batch_cycle_batches": 0,
+    "semantic_cycle_edges": 0,
+    "semantic_orderable_batch_edges": 0,
+    "unassigned_rows": 0
+  },
+  "dependency_knots": [],
+  "graph_gap_details": [],
+  "graph_gaps": [],
+  "high_risk_frontier": [],
+  "inputs": {
+    "byte_match/c1-clean-source-admission-audit-v1.json": "1c8c3496fb019097061cebcb378c5d40abc65436b27480113b729de7bd401a88",
+    "byte_match/c1-source-translation-queue-v1.json": "332ae9270fad50812c64df95895dbb2e9ffa48ccb8ed2a7d07777e1895d94383",
+    "byte_match/clean-source-emission-manifest-v1.json": "23c7c440247d7b26531e16b43dca06d7ff152be29671e19662018f45a19f7f59",
+    "re_work/creatures1_decompiled/graphify-out/graph.json": "add71a5d68fdddc554b8268b230e8d7e606c03324276f60412192ccca6127e71"
+  },
+  "module_summary": {},
+  "profiles": [],
+  "profiles_by_form": {},
+  "profiles_by_kind": {},
+  "profiles_by_module": {},
+  "profiles_by_risk": {},
+  "program": "Creatures.exe",
+  "schema": "c1-source-translation-triage-v1",
+  "snapshot_sha256": "ce33b958a77ecae12ddf5b29f1156a5e02138ec6036a8639b5f5b74bffee70ae"
+}

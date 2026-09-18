@@ -1,0 +1,710 @@
+{
+  "schema": "c1-ui-surface-audit-v1",
+  "status": "audit_only",
+  "menu_resource": "src/c1/resources/menus/2057/128.rcinc",
+  "native_entry": "src/c1/platform/windows_shell.hpp",
+  "menu_command_count": 51,
+  "concrete_message_map_ids": [
+    107,
+    113,
+    32771,
+    32774,
+    32777,
+    32783,
+    32786,
+    32804,
+    32805,
+    32807,
+    32808,
+    32809,
+    32810,
+    32811,
+    32812,
+    32813,
+    32814,
+    32815,
+    32816,
+    32817,
+    32818,
+    32819,
+    32820,
+    32821,
+    32822,
+    32823,
+    32832,
+    32839,
+    32840,
+    32851,
+    32852,
+    32853,
+    32854,
+    32855,
+    32856,
+    32857,
+    32858,
+    32859,
+    32860,
+    32861,
+    32862,
+    32863,
+    32864,
+    32865,
+    32866,
+    32867,
+    32869,
+    32870,
+    32891,
+    32892,
+    32894,
+    32896,
+    32897,
+    40000,
+    40001,
+    40002,
+    40003,
+    40004,
+    40005,
+    40006,
+    40007,
+    40008,
+    40009,
+    40010,
+    40011,
+    40012,
+    40013,
+    40014,
+    40015,
+    40016,
+    40017,
+    40018,
+    40019,
+    40020,
+    40021,
+    40022,
+    40023,
+    40024,
+    40025,
+    40026,
+    40027,
+    40028,
+    40029,
+    40030,
+    40031,
+    40032,
+    40033,
+    40034,
+    40035,
+    40036,
+    40037,
+    40038,
+    40039,
+    40040,
+    40041,
+    40042,
+    40043,
+    40044,
+    40045,
+    40046,
+    40047,
+    40048,
+    40049,
+    40050,
+    40051,
+    40052,
+    40053,
+    40054,
+    40055,
+    40056,
+    40057,
+    40058,
+    40059,
+    40060,
+    40061,
+    40062,
+    40063,
+    40064,
+    40065,
+    40066,
+    40067,
+    40068,
+    40069,
+    40070,
+    40071,
+    40072,
+    40073,
+    40074,
+    40075,
+    40076,
+    40077,
+    40078,
+    40079,
+    40080,
+    40081,
+    40082,
+    40083,
+    40084,
+    40085,
+    40086,
+    40087,
+    40088,
+    40089,
+    40090,
+    40091,
+    40092,
+    40093,
+    40094,
+    40095,
+    40096,
+    40097,
+    40098,
+    40099,
+    57664,
+    59392,
+    59393
+  ],
+  "status_counts": {
+    "concrete_document": 1,
+    "concrete_frame": 44,
+    "framework_default": 2,
+    "framework_shell_only": 3,
+    "placeholder": 1
+  },
+  "document_lifecycle": {
+    "new": "wired to C1WindowsDocument::OnNewDocument",
+    "open": "wired",
+    "serialize": "wired",
+    "save": "wired",
+    "delete_contents": "wired",
+    "close": "wired"
+  },
+  "toolbar": {
+    "native_control_and_layout": "wired",
+    "selector_control": "wired CComboBox",
+    "selector_population_and_selection_owner": "wired",
+    "semantic_toolbar_serialization_adapter": "missing"
+  },
+  "dynamic_menus": {
+    "creature_selection_menu": "wired plumbing; native registry population still pending",
+    "favourite_places": "wired",
+    "embedded_kits": "registry-backed menu/toolbar population wired; command execution/update boundary missing"
+  },
+  "status_bar": {
+    "indicator_count": 14,
+    "object_pane_range": "1..10",
+    "life_force_pane": 11,
+    "score_pane": 12,
+    "world_time_pane": 13,
+    "native_control_and_layout": "wired",
+    "dynamic_status_update": "periodic native refresh route wired; values advance when world-update host is bound",
+    "status_adapter": "C1EventBarStatusAdapter wired for score/world-time",
+    "selection_owner": "wired to C1WindowsDocument selected Creature",
+    "object_pane_formatter": "concrete localized-caption route (matches recovered CEventBar)",
+    "object_display_list_owner": "missing live EventBar object-list owner/refresh route",
+    "object_display_list_click_route": "missing native EventBar left-click route",
+    "life_force_glycogen_owner": "wired to Creature biochemistry chemical 0x3b",
+    "document_world_update_host": "missing from maintained document"
+  },
+  "frame_boundary": {
+    "wm_timer_route": "wired to C1MainFrame",
+    "pipe_command_route": "missing",
+    "embedded_kit_command_execution": "missing",
+    "document_file_routes": {
+      "open": "wired",
+      "save": "wired",
+      "serialize": "wired",
+      "delete_contents": "wired",
+      "close": "wired"
+    },
+    "selector_population": "wired",
+    "menu_popup_policy": "native override delegates then rebuilds creature menu",
+    "creature_command_range": [
+      [
+        32808,
+        32823
+      ],
+      [
+        40000,
+        40099
+      ],
+      [
+        32851,
+        32862
+      ]
+    ]
+  },
+  "view": {
+    "recovered_hook_count": 12,
+    "hook_rows": [
+      {
+        "method": "PreCreateWindow",
+        "recovered_route": "virtual override",
+        "native_wiring": "wired"
+      },
+      {
+        "method": "OnInitialUpdate",
+        "recovered_route": "virtual override",
+        "native_wiring": "wired"
+      },
+      {
+        "method": "OnDraw",
+        "recovered_route": "virtual override",
+        "native_wiring": "wired"
+      },
+      {
+        "method": "OnSize",
+        "recovered_route": "ON_WM_SIZE",
+        "native_wiring": "wired"
+      },
+      {
+        "method": "OnMouseButtonRelease",
+        "recovered_route": "button-release route",
+        "native_wiring": "wired"
+      },
+      {
+        "method": "OnMouseMove",
+        "recovered_route": "ON_WM_MOUSEMOVE",
+        "native_wiring": "wired"
+      },
+      {
+        "method": "OnLButtonDown",
+        "recovered_route": "ON_WM_LBUTTONDOWN",
+        "native_wiring": "wired"
+      },
+      {
+        "method": "OnRButtonDown",
+        "recovered_route": "ON_WM_RBUTTONDOWN",
+        "native_wiring": "wired"
+      },
+      {
+        "method": "OnHScroll",
+        "recovered_route": "ON_WM_HSCROLL",
+        "native_wiring": "wired"
+      },
+      {
+        "method": "OnVScroll",
+        "recovered_route": "ON_WM_VSCROLL",
+        "native_wiring": "wired"
+      },
+      {
+        "method": "OnKillFocus",
+        "recovered_route": "ON_WM_KILLFOCUS",
+        "native_wiring": "wired"
+      },
+      {
+        "method": "OnKeyDown",
+        "recovered_route": "ON_WM_KEYDOWN",
+        "native_wiring": "wired"
+      }
+    ]
+  },
+  "commands": [
+    {
+      "line": 5,
+      "popup": "&File",
+      "caption": "&Web Connect",
+      "command_id": 32832,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 7,
+      "popup": "&File",
+      "caption": "&Export current creature",
+      "command_id": 32863,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 8,
+      "popup": "&File",
+      "caption": "&Import creature",
+      "command_id": 32864,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 10,
+      "popup": "&File",
+      "caption": "E&xit",
+      "command_id": 57665,
+      "status": "framework_default",
+      "evidence": "ID_APP_EXIT"
+    },
+    {
+      "line": 14,
+      "popup": "&World",
+      "caption": "&New\\tCtrl+N",
+      "command_id": 57600,
+      "status": "concrete_document",
+      "evidence": "ID_FILE_NEW -> C1WindowsDocument::OnNewDocument"
+    },
+    {
+      "line": 15,
+      "popup": "&World",
+      "caption": "&Open...\\tCtrl+O",
+      "command_id": 57601,
+      "status": "framework_shell_only",
+      "evidence": "ID_FILE_OPEN -> CDocument default; C1 open override absent"
+    },
+    {
+      "line": 16,
+      "popup": "&World",
+      "caption": "&Save the world\\tCtrl+S",
+      "command_id": 57603,
+      "status": "framework_shell_only",
+      "evidence": "ID_FILE_SAVE -> CDocument default; C1 serialize/save override absent"
+    },
+    {
+      "line": 17,
+      "popup": "&World",
+      "caption": "Save &As...",
+      "command_id": 57604,
+      "status": "framework_shell_only",
+      "evidence": "ID_FILE_SAVE_AS -> CDocument default; C1 serialize/save override absent"
+    },
+    {
+      "line": 21,
+      "popup": "Testing",
+      "caption": "&Infinite scroll",
+      "command_id": 32774,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 23,
+      "popup": "Testing",
+      "caption": "Create a male norn",
+      "command_id": 32804,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 24,
+      "popup": "Testing",
+      "caption": "Create a female norn",
+      "command_id": 32805,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 25,
+      "popup": "Testing",
+      "caption": "Force Ageing",
+      "command_id": 32865,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 27,
+      "popup": "Testing",
+      "caption": "Instant &verb vocabulary",
+      "command_id": 32777,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 28,
+      "popup": "Testing",
+      "caption": "Creatures burble",
+      "command_id": 32786,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 30,
+      "popup": "Testing",
+      "caption": "Infect current norn",
+      "command_id": 32807,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 31,
+      "popup": "Testing",
+      "caption": "Euthanasia",
+      "command_id": 32840,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 35,
+      "popup": "&Log",
+      "caption": "Sound",
+      "command_id": 32808,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 36,
+      "popup": "&Log",
+      "caption": "Macros",
+      "command_id": 32809,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 37,
+      "popup": "&Log",
+      "caption": "Serialisation",
+      "command_id": 32810,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 38,
+      "popup": "&Log",
+      "caption": "Graphics",
+      "command_id": 32811,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 39,
+      "popup": "&Log",
+      "caption": "Chemistry",
+      "command_id": 32812,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 40,
+      "popup": "&Log",
+      "caption": "Attention",
+      "command_id": 32813,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 41,
+      "popup": "&Log",
+      "caption": "Actions",
+      "command_id": 32814,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 42,
+      "popup": "&Log",
+      "caption": "Senses",
+      "command_id": 32815,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 43,
+      "popup": "&Log",
+      "caption": "Stimuli",
+      "command_id": 32816,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 44,
+      "popup": "&Log",
+      "caption": "Genetics",
+      "command_id": 32817,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 45,
+      "popup": "&Log",
+      "caption": "Life changes",
+      "command_id": 32818,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 46,
+      "popup": "&Log",
+      "caption": "Environment",
+      "command_id": 32819,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 47,
+      "popup": "&Log",
+      "caption": "User",
+      "command_id": 32820,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 48,
+      "popup": "&Log",
+      "caption": "OLE events",
+      "command_id": 32821,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 49,
+      "popup": "&Log",
+      "caption": "Objects",
+      "command_id": 32822,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 50,
+      "popup": "&Log",
+      "caption": "Brain",
+      "command_id": 32823,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 52,
+      "popup": "&Log",
+      "caption": "Log Window",
+      "command_id": 32869,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 53,
+      "popup": "&Log",
+      "caption": "Verbose log",
+      "command_id": 32870,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 57,
+      "popup": "&View",
+      "caption": "&Toolbar",
+      "command_id": 59392,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 58,
+      "popup": "&View",
+      "caption": "&Status Bar",
+      "command_id": 59393,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 60,
+      "popup": "&View",
+      "caption": "CAOS Console\\tCtrl+Shift+C",
+      "command_id": 32896,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 64,
+      "popup": "_IDS_CAMERA_MENU_",
+      "caption": "&Track Creature",
+      "command_id": 32783,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 65,
+      "popup": "_IDS_CAMERA_MENU_",
+      "caption": "&Smooth Scrolling",
+      "command_id": 32866,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 66,
+      "popup": "_IDS_CAMERA_MENU_",
+      "caption": "&Which is my creature?",
+      "command_id": 113,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 68,
+      "popup": "_IDS_CAMERA_MENU_",
+      "caption": "Add to favourite places...",
+      "command_id": 32839,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 69,
+      "popup": "_IDS_CAMERA_MENU_",
+      "caption": "Remove from favourite places...",
+      "command_id": 32867,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 74,
+      "popup": "_IDS_TOOLS_MENU_",
+      "caption": "Creature's View",
+      "command_id": 32771,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 79,
+      "popup": "_IDS_NORNS_MENU_",
+      "caption": "None available",
+      "command_id": 32803,
+      "status": "placeholder",
+      "evidence": "creature-selection empty placeholder"
+    },
+    {
+      "line": 83,
+      "popup": "Options",
+      "caption": "Volume...",
+      "command_id": 32894,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 84,
+      "popup": "Options",
+      "caption": "Mute Sounds",
+      "command_id": 32891,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 85,
+      "popup": "Options",
+      "caption": "Mute Creature Voices",
+      "command_id": 32897,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 87,
+      "popup": "Options",
+      "caption": "Informative Creatures Menu",
+      "command_id": 32892,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 91,
+      "popup": "&Help",
+      "caption": "&Help Topics",
+      "command_id": 57667,
+      "status": "framework_default",
+      "evidence": "ID_HELP_FINDER"
+    },
+    {
+      "line": 92,
+      "popup": "&Help",
+      "caption": "Tip of the Day",
+      "command_id": 107,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    },
+    {
+      "line": 94,
+      "popup": "&Help",
+      "caption": "&About Creatures...",
+      "command_id": 57664,
+      "status": "concrete_frame",
+      "evidence": "maintained C1MainFrame message map"
+    }
+  ]
+}

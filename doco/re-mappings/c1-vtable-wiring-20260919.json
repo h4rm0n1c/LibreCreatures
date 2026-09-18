@@ -1,0 +1,3534 @@
+{
+  "program": "Creatures.exe",
+  "source": "ghidra-mcp-2",
+  "date": "2026-09-19",
+  "tables": {
+    "Object": {
+      "address": "00457b28",
+      "slots": [
+        {
+          "index": 0,
+          "address": "00457b28",
+          "pointer_hex": "0x00423970",
+          "is_null": false,
+          "symbol": "GetRuntimeClass"
+        },
+        {
+          "index": 1,
+          "address": "00457b2c",
+          "pointer_hex": "0x004259a0",
+          "is_null": false,
+          "symbol": "~Object_Deleting"
+        },
+        {
+          "index": 2,
+          "address": "00457b30",
+          "pointer_hex": "0x00423ed0",
+          "is_null": false,
+          "symbol": "Serialize"
+        },
+        {
+          "index": 3,
+          "address": "00457b34",
+          "pointer_hex": "0x004019d0",
+          "is_null": false,
+          "symbol": "guard_check_icall"
+        },
+        {
+          "index": 4,
+          "address": "00457b38",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 5,
+          "address": "00457b3c",
+          "pointer_hex": "0x00425ba0",
+          "is_null": false,
+          "symbol": "HandleQueuedCreatureEvent"
+        },
+        {
+          "index": 6,
+          "address": "00457b40",
+          "pointer_hex": "0x00425ba0",
+          "is_null": false,
+          "symbol": "HandleQueuedCreatureEvent"
+        },
+        {
+          "index": 7,
+          "address": "00457b44",
+          "pointer_hex": "0x00425ba0",
+          "is_null": false,
+          "symbol": "HandleQueuedCreatureEvent"
+        },
+        {
+          "index": 8,
+          "address": "00457b48",
+          "pointer_hex": "0x00425ba0",
+          "is_null": false,
+          "symbol": "HandleQueuedCreatureEvent"
+        },
+        {
+          "index": 9,
+          "address": "00457b4c",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 10,
+          "address": "00457b50",
+          "pointer_hex": "0x00425ba0",
+          "is_null": false,
+          "symbol": "HandleQueuedCreatureEvent"
+        },
+        {
+          "index": 11,
+          "address": "00457b54",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 12,
+          "address": "00457b58",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 13,
+          "address": "00457b5c",
+          "pointer_hex": "0x00425b00",
+          "is_null": false,
+          "symbol": "QueueEvent8AfterBoundsUpdate"
+        },
+        {
+          "index": 14,
+          "address": "00457b60",
+          "pointer_hex": "0x00425c00",
+          "is_null": false,
+          "symbol": "DispatchEvent7AfterBoundsUpdate"
+        },
+        {
+          "index": 15,
+          "address": "00457b64",
+          "pointer_hex": "0x00425c20",
+          "is_null": false,
+          "symbol": "DispatchEvent8"
+        },
+        {
+          "index": 16,
+          "address": "00457b68",
+          "pointer_hex": "0x0042cd70",
+          "is_null": false,
+          "symbol": "InitializeRuntimeState"
+        },
+        {
+          "index": 17,
+          "address": "00457b6c",
+          "pointer_hex": "0x0042cc00",
+          "is_null": false,
+          "symbol": "CanBeDestroyed"
+        },
+        {
+          "index": 18,
+          "address": "00457b70",
+          "pointer_hex": "0x0042cd50",
+          "is_null": false,
+          "symbol": "ReferencesObject"
+        },
+        {
+          "index": 19,
+          "address": "00457b74",
+          "pointer_hex": "0x00423820",
+          "is_null": false,
+          "symbol": "ClearReferencesToObject"
+        },
+        {
+          "index": 20,
+          "address": "00457b78",
+          "pointer_hex": "0x00423780",
+          "is_null": false,
+          "symbol": "MoveBy"
+        },
+        {
+          "index": 21,
+          "address": "00457b7c",
+          "pointer_hex": "0x00423780",
+          "is_null": false,
+          "symbol": "MoveBy"
+        },
+        {
+          "index": 22,
+          "address": "00457b80",
+          "pointer_hex": "0x00423780",
+          "is_null": false,
+          "symbol": "MoveBy"
+        },
+        {
+          "index": 23,
+          "address": "00457b84",
+          "pointer_hex": "0x00423780",
+          "is_null": false,
+          "symbol": "MoveBy"
+        },
+        {
+          "index": 24,
+          "address": "00457b88",
+          "pointer_hex": "0x0042d0b0",
+          "is_null": false,
+          "symbol": "ClearReferenceAndSetDefaultBounds"
+        },
+        {
+          "index": 25,
+          "address": "00457b8c",
+          "pointer_hex": "0x00425e20",
+          "is_null": false,
+          "symbol": "IsSoundSourceBelowWorldY"
+        },
+        {
+          "index": 26,
+          "address": "00457b90",
+          "pointer_hex": "0x00423790",
+          "is_null": false,
+          "symbol": "GetBounds"
+        },
+        {
+          "index": 27,
+          "address": "00457b94",
+          "pointer_hex": "0x004237a0",
+          "is_null": false,
+          "symbol": "DefaultVirtualReturnZero"
+        },
+        {
+          "index": 28,
+          "address": "00457b98",
+          "pointer_hex": "0x00426420",
+          "is_null": false,
+          "symbol": "GetClickEventIdAtWorldPosition"
+        },
+        {
+          "index": 29,
+          "address": "00457b9c",
+          "pointer_hex": "0x004237b0",
+          "is_null": false,
+          "symbol": "DefaultVirtualNoOp"
+        },
+        {
+          "index": 30,
+          "address": "00457ba0",
+          "pointer_hex": "0x004237a0",
+          "is_null": false,
+          "symbol": "DefaultVirtualReturnZero"
+        },
+        {
+          "index": 31,
+          "address": "00457ba4",
+          "pointer_hex": "0x004237a0",
+          "is_null": false,
+          "symbol": "DefaultVirtualReturnZero"
+        },
+        {
+          "index": 32,
+          "address": "00457ba8",
+          "pointer_hex": "0x004237a0",
+          "is_null": false,
+          "symbol": "DefaultVirtualReturnZero"
+        },
+        {
+          "index": 33,
+          "address": "00457bac",
+          "pointer_hex": "0x004237a0",
+          "is_null": false,
+          "symbol": "DefaultVirtualReturnZero"
+        },
+        {
+          "index": 34,
+          "address": "00457bb0",
+          "pointer_hex": "0x00426640",
+          "is_null": false,
+          "symbol": "DispatchScriptEvent"
+        },
+        {
+          "index": 35,
+          "address": "00457bb4",
+          "pointer_hex": "0x00426660",
+          "is_null": false,
+          "symbol": "ParseImageSequence"
+        },
+        {
+          "index": 36,
+          "address": "00457bb8",
+          "pointer_hex": "0x00419440",
+          "is_null": false,
+          "symbol": "IsImageSequenceEmpty"
+        },
+        {
+          "index": 37,
+          "address": "00457bbc",
+          "pointer_hex": "0x00426670",
+          "is_null": false,
+          "symbol": "SetRelativeImageIndex"
+        },
+        {
+          "index": 38,
+          "address": "00457bc0",
+          "pointer_hex": "0x00410260",
+          "is_null": false,
+          "symbol": "DefaultImageVirtualReturnZero"
+        },
+        {
+          "index": 39,
+          "address": "00457bc4",
+          "pointer_hex": "0x00426680",
+          "is_null": false,
+          "symbol": "PreloadImageSequence"
+        },
+        {
+          "index": 40,
+          "address": "00457bc8",
+          "pointer_hex": "0x00423780",
+          "is_null": false,
+          "symbol": "MoveBy"
+        },
+        {
+          "index": 41,
+          "address": "00457bcc",
+          "pointer_hex": "0x00426190",
+          "is_null": false,
+          "symbol": "UpdateSound"
+        },
+        {
+          "index": 42,
+          "address": "00457bd0",
+          "pointer_hex": "0x004019d0",
+          "is_null": false,
+          "symbol": "guard_check_icall"
+        },
+        {
+          "index": 43,
+          "address": "00457bd4",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 44,
+          "address": "00457bd8",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        }
+      ]
+    },
+    "SimpleObject": {
+      "address": "004579b8",
+      "slots": [
+        {
+          "index": 0,
+          "address": "004579b8",
+          "pointer_hex": "0x00423ad0",
+          "is_null": false,
+          "symbol": "GetRuntimeClass"
+        },
+        {
+          "index": 1,
+          "address": "004579bc",
+          "pointer_hex": "0x00426cb0",
+          "is_null": false,
+          "symbol": "~SimpleObject_Deleting"
+        },
+        {
+          "index": 2,
+          "address": "004579c0",
+          "pointer_hex": "0x004243e0",
+          "is_null": false,
+          "symbol": "Serialize"
+        },
+        {
+          "index": 3,
+          "address": "004579c4",
+          "pointer_hex": "0x004019d0",
+          "is_null": false,
+          "symbol": "guard_check_icall"
+        },
+        {
+          "index": 4,
+          "address": "004579c8",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 5,
+          "address": "004579cc",
+          "pointer_hex": "0x00427ae0",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent0"
+        },
+        {
+          "index": 6,
+          "address": "004579d0",
+          "pointer_hex": "0x00427b60",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent1"
+        },
+        {
+          "index": 7,
+          "address": "004579d4",
+          "pointer_hex": "0x00427be0",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent2"
+        },
+        {
+          "index": 8,
+          "address": "004579d8",
+          "pointer_hex": "0x00427cc0",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent4"
+        },
+        {
+          "index": 9,
+          "address": "004579dc",
+          "pointer_hex": "0x00427f40",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent5"
+        },
+        {
+          "index": 10,
+          "address": "004579e0",
+          "pointer_hex": "0x00427c60",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent3"
+        },
+        {
+          "index": 11,
+          "address": "004579e4",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 12,
+          "address": "004579e8",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 13,
+          "address": "004579ec",
+          "pointer_hex": "0x00426ee0",
+          "is_null": false,
+          "symbol": "FinalizeObjectEdit"
+        },
+        {
+          "index": 14,
+          "address": "004579f0",
+          "pointer_hex": "0x00425c00",
+          "is_null": false,
+          "symbol": "DispatchEvent7AfterBoundsUpdate"
+        },
+        {
+          "index": 15,
+          "address": "004579f4",
+          "pointer_hex": "0x00425c20",
+          "is_null": false,
+          "symbol": "DispatchEvent8"
+        },
+        {
+          "index": 16,
+          "address": "004579f8",
+          "pointer_hex": "0x0042cd70",
+          "is_null": false,
+          "symbol": "InitializeRuntimeState"
+        },
+        {
+          "index": 17,
+          "address": "004579fc",
+          "pointer_hex": "0x0042cc00",
+          "is_null": false,
+          "symbol": "CanBeDestroyed"
+        },
+        {
+          "index": 18,
+          "address": "00457a00",
+          "pointer_hex": "0x0042cd50",
+          "is_null": false,
+          "symbol": "ReferencesObject"
+        },
+        {
+          "index": 19,
+          "address": "00457a04",
+          "pointer_hex": "0x00423820",
+          "is_null": false,
+          "symbol": "ClearReferencesToObject"
+        },
+        {
+          "index": 20,
+          "address": "00457a08",
+          "pointer_hex": "0x00426800",
+          "is_null": false,
+          "symbol": "MoveBy"
+        },
+        {
+          "index": 21,
+          "address": "00457a0c",
+          "pointer_hex": "0x004267c0",
+          "is_null": false,
+          "symbol": "MoveTo"
+        },
+        {
+          "index": 22,
+          "address": "00457a10",
+          "pointer_hex": "0x00427500",
+          "is_null": false,
+          "symbol": "MoveByAndRedraw"
+        },
+        {
+          "index": 23,
+          "address": "00457a14",
+          "pointer_hex": "0x00426f90",
+          "is_null": false,
+          "symbol": "MoveToAndRedraw"
+        },
+        {
+          "index": 24,
+          "address": "00457a18",
+          "pointer_hex": "0x0042d0b0",
+          "is_null": false,
+          "symbol": "ClearReferenceAndSetDefaultBounds"
+        },
+        {
+          "index": 25,
+          "address": "00457a1c",
+          "pointer_hex": "0x00425e20",
+          "is_null": false,
+          "symbol": "IsSoundSourceBelowWorldY"
+        },
+        {
+          "index": 26,
+          "address": "00457a20",
+          "pointer_hex": "0x00426ba0",
+          "is_null": false,
+          "symbol": "GetBounds"
+        },
+        {
+          "index": 27,
+          "address": "00457a24",
+          "pointer_hex": "0x00426c00",
+          "is_null": false,
+          "symbol": "GetRenderPlane"
+        },
+        {
+          "index": 28,
+          "address": "00457a28",
+          "pointer_hex": "0x00427fc0",
+          "is_null": false,
+          "symbol": "GetClickEventIdAtWorldPosition"
+        },
+        {
+          "index": 29,
+          "address": "00457a2c",
+          "pointer_hex": "0x00428cc0",
+          "is_null": false,
+          "symbol": "GetCentre"
+        },
+        {
+          "index": 30,
+          "address": "00457a30",
+          "pointer_hex": "0x004237c0",
+          "is_null": false,
+          "symbol": "GetSoundSourceX"
+        },
+        {
+          "index": 31,
+          "address": "00457a34",
+          "pointer_hex": "0x004237d0",
+          "is_null": false,
+          "symbol": "GetSoundSourceY"
+        },
+        {
+          "index": 32,
+          "address": "00457a38",
+          "pointer_hex": "0x004237e0",
+          "is_null": false,
+          "symbol": "GetCurrentVisualWidth"
+        },
+        {
+          "index": 33,
+          "address": "00457a3c",
+          "pointer_hex": "0x00423800",
+          "is_null": false,
+          "symbol": "GetCurrentVisualHeight"
+        },
+        {
+          "index": 34,
+          "address": "00457a40",
+          "pointer_hex": "0x00426640",
+          "is_null": false,
+          "symbol": "DispatchScriptEvent"
+        },
+        {
+          "index": 35,
+          "address": "00457a44",
+          "pointer_hex": "0x00429420",
+          "is_null": false,
+          "symbol": "ParseImageSequence"
+        },
+        {
+          "index": 36,
+          "address": "00457a48",
+          "pointer_hex": "0x00429470",
+          "is_null": false,
+          "symbol": "IsImageSequenceEmpty"
+        },
+        {
+          "index": 37,
+          "address": "00457a4c",
+          "pointer_hex": "0x00429490",
+          "is_null": false,
+          "symbol": "SetRelativeImageIndex"
+        },
+        {
+          "index": 38,
+          "address": "00457a50",
+          "pointer_hex": "0x004294c0",
+          "is_null": false,
+          "symbol": "GetRelativeImageIndex"
+        },
+        {
+          "index": 39,
+          "address": "00457a54",
+          "pointer_hex": "0x004294d0",
+          "is_null": false,
+          "symbol": "PreloadImageSequence"
+        },
+        {
+          "index": 40,
+          "address": "00457a58",
+          "pointer_hex": "0x00429510",
+          "is_null": false,
+          "symbol": "SetImageIndex"
+        },
+        {
+          "index": 41,
+          "address": "00457a5c",
+          "pointer_hex": "0x00427a70",
+          "is_null": false,
+          "symbol": "Tick"
+        },
+        {
+          "index": 42,
+          "address": "00457a60",
+          "pointer_hex": "0x004019d0",
+          "is_null": false,
+          "symbol": "guard_check_icall"
+        },
+        {
+          "index": 43,
+          "address": "00457a64",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 44,
+          "address": "00457a68",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        }
+      ]
+    },
+    "CompoundObject": {
+      "address": "0045777c",
+      "slots": [
+        {
+          "index": 0,
+          "address": "0045777c",
+          "pointer_hex": "0x00423d20",
+          "is_null": false,
+          "symbol": "GetRuntimeClass"
+        },
+        {
+          "index": 1,
+          "address": "00457780",
+          "pointer_hex": "0x0042a7c0",
+          "is_null": false,
+          "symbol": "~CompoundObject_Deleting"
+        },
+        {
+          "index": 2,
+          "address": "00457784",
+          "pointer_hex": "0x00424b30",
+          "is_null": false,
+          "symbol": "Serialize"
+        },
+        {
+          "index": 3,
+          "address": "00457788",
+          "pointer_hex": "0x004019d0",
+          "is_null": false,
+          "symbol": "guard_check_icall"
+        },
+        {
+          "index": 4,
+          "address": "0045778c",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 5,
+          "address": "00457790",
+          "pointer_hex": "0x0042b4c0",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent0"
+        },
+        {
+          "index": 6,
+          "address": "00457794",
+          "pointer_hex": "0x0042b570",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent1"
+        },
+        {
+          "index": 7,
+          "address": "00457798",
+          "pointer_hex": "0x0042b620",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent2"
+        },
+        {
+          "index": 8,
+          "address": "0045779c",
+          "pointer_hex": "0x00425ba0",
+          "is_null": false,
+          "symbol": "HandleQueuedCreatureEvent"
+        },
+        {
+          "index": 9,
+          "address": "004577a0",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 10,
+          "address": "004577a4",
+          "pointer_hex": "0x00427c60",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent3"
+        },
+        {
+          "index": 11,
+          "address": "004577a8",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 12,
+          "address": "004577ac",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 13,
+          "address": "004577b0",
+          "pointer_hex": "0x00425b00",
+          "is_null": false,
+          "symbol": "QueueEvent8AfterBoundsUpdate"
+        },
+        {
+          "index": 14,
+          "address": "004577b4",
+          "pointer_hex": "0x00425c00",
+          "is_null": false,
+          "symbol": "DispatchEvent7AfterBoundsUpdate"
+        },
+        {
+          "index": 15,
+          "address": "004577b8",
+          "pointer_hex": "0x00425c20",
+          "is_null": false,
+          "symbol": "DispatchEvent8"
+        },
+        {
+          "index": 16,
+          "address": "004577bc",
+          "pointer_hex": "0x0042cd70",
+          "is_null": false,
+          "symbol": "InitializeRuntimeState"
+        },
+        {
+          "index": 17,
+          "address": "004577c0",
+          "pointer_hex": "0x0042cc00",
+          "is_null": false,
+          "symbol": "CanBeDestroyed"
+        },
+        {
+          "index": 18,
+          "address": "004577c4",
+          "pointer_hex": "0x0042cd50",
+          "is_null": false,
+          "symbol": "ReferencesObject"
+        },
+        {
+          "index": 19,
+          "address": "004577c8",
+          "pointer_hex": "0x00423820",
+          "is_null": false,
+          "symbol": "ClearReferencesToObject"
+        },
+        {
+          "index": 20,
+          "address": "004577cc",
+          "pointer_hex": "0x0042aa10",
+          "is_null": false,
+          "symbol": "MoveBy"
+        },
+        {
+          "index": 21,
+          "address": "004577d0",
+          "pointer_hex": "0x0042aa70",
+          "is_null": false,
+          "symbol": "MoveTo"
+        },
+        {
+          "index": 22,
+          "address": "004577d4",
+          "pointer_hex": "0x0042aad0",
+          "is_null": false,
+          "symbol": "MoveByAndRedraw"
+        },
+        {
+          "index": 23,
+          "address": "004577d8",
+          "pointer_hex": "0x0042ae40",
+          "is_null": false,
+          "symbol": "MoveToAndRedraw"
+        },
+        {
+          "index": 24,
+          "address": "004577dc",
+          "pointer_hex": "0x0042d0b0",
+          "is_null": false,
+          "symbol": "ClearReferenceAndSetDefaultBounds"
+        },
+        {
+          "index": 25,
+          "address": "004577e0",
+          "pointer_hex": "0x00425e20",
+          "is_null": false,
+          "symbol": "IsSoundSourceBelowWorldY"
+        },
+        {
+          "index": 26,
+          "address": "004577e4",
+          "pointer_hex": "0x0042b720",
+          "is_null": false,
+          "symbol": "GetBounds"
+        },
+        {
+          "index": 27,
+          "address": "004577e8",
+          "pointer_hex": "0x0042b740",
+          "is_null": false,
+          "symbol": "GetRenderPlane"
+        },
+        {
+          "index": 28,
+          "address": "004577ec",
+          "pointer_hex": "0x0042b750",
+          "is_null": false,
+          "symbol": "GetClickEventIdAtWorldPosition"
+        },
+        {
+          "index": 29,
+          "address": "004577f0",
+          "pointer_hex": "0x0042b800",
+          "is_null": false,
+          "symbol": "GetPartCentre"
+        },
+        {
+          "index": 30,
+          "address": "004577f4",
+          "pointer_hex": "0x00423880",
+          "is_null": false,
+          "symbol": "GetSoundSourceX"
+        },
+        {
+          "index": 31,
+          "address": "004577f8",
+          "pointer_hex": "0x00423890",
+          "is_null": false,
+          "symbol": "GetSoundSourceY"
+        },
+        {
+          "index": 32,
+          "address": "004577fc",
+          "pointer_hex": "0x004238a0",
+          "is_null": false,
+          "symbol": "GetCurrentVisualWidth"
+        },
+        {
+          "index": 33,
+          "address": "00457800",
+          "pointer_hex": "0x004238c0",
+          "is_null": false,
+          "symbol": "GetCurrentVisualHeight"
+        },
+        {
+          "index": 34,
+          "address": "00457804",
+          "pointer_hex": "0x00426640",
+          "is_null": false,
+          "symbol": "DispatchScriptEvent"
+        },
+        {
+          "index": 35,
+          "address": "00457808",
+          "pointer_hex": "0x0042b8b0",
+          "is_null": false,
+          "symbol": "ParseImageSequence"
+        },
+        {
+          "index": 36,
+          "address": "0045780c",
+          "pointer_hex": "0x0042b910",
+          "is_null": false,
+          "symbol": "IsImageSequenceEmpty"
+        },
+        {
+          "index": 37,
+          "address": "00457810",
+          "pointer_hex": "0x0042b940",
+          "is_null": false,
+          "symbol": "SetRelativeImageIndex"
+        },
+        {
+          "index": 38,
+          "address": "00457814",
+          "pointer_hex": "0x0042b960",
+          "is_null": false,
+          "symbol": "GetRelativeImageIndex"
+        },
+        {
+          "index": 39,
+          "address": "00457818",
+          "pointer_hex": "0x0042b980",
+          "is_null": false,
+          "symbol": "PreloadImageSequence"
+        },
+        {
+          "index": 40,
+          "address": "0045781c",
+          "pointer_hex": "0x0042b9d0",
+          "is_null": false,
+          "symbol": "SetImageIndex"
+        },
+        {
+          "index": 41,
+          "address": "00457820",
+          "pointer_hex": "0x0042b6c0",
+          "is_null": false,
+          "symbol": "Tick"
+        },
+        {
+          "index": 42,
+          "address": "00457824",
+          "pointer_hex": "0x004019d0",
+          "is_null": false,
+          "symbol": "guard_check_icall"
+        },
+        {
+          "index": 43,
+          "address": "00457828",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 44,
+          "address": "0045782c",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        }
+      ]
+    },
+    "Vehicle": {
+      "address": "004576c4",
+      "slots": [
+        {
+          "index": 0,
+          "address": "004576c4",
+          "pointer_hex": "0x00423da0",
+          "is_null": false,
+          "symbol": "GetRuntimeClass"
+        },
+        {
+          "index": 1,
+          "address": "004576c8",
+          "pointer_hex": "0x0042ba90",
+          "is_null": false,
+          "symbol": "~Vehicle_Deleting"
+        },
+        {
+          "index": 2,
+          "address": "004576cc",
+          "pointer_hex": "0x00424dd0",
+          "is_null": false,
+          "symbol": "Serialize"
+        },
+        {
+          "index": 3,
+          "address": "004576d0",
+          "pointer_hex": "0x004019d0",
+          "is_null": false,
+          "symbol": "guard_check_icall"
+        },
+        {
+          "index": 4,
+          "address": "004576d4",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 5,
+          "address": "004576d8",
+          "pointer_hex": "0x0042c0b0",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent0"
+        },
+        {
+          "index": 6,
+          "address": "004576dc",
+          "pointer_hex": "0x0042c170",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent1"
+        },
+        {
+          "index": 7,
+          "address": "004576e0",
+          "pointer_hex": "0x0042c230",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent2"
+        },
+        {
+          "index": 8,
+          "address": "004576e4",
+          "pointer_hex": "0x00425ba0",
+          "is_null": false,
+          "symbol": "HandleQueuedCreatureEvent"
+        },
+        {
+          "index": 9,
+          "address": "004576e8",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 10,
+          "address": "004576ec",
+          "pointer_hex": "0x00427c60",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent3"
+        },
+        {
+          "index": 11,
+          "address": "004576f0",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 12,
+          "address": "004576f4",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 13,
+          "address": "004576f8",
+          "pointer_hex": "0x0042bb80",
+          "is_null": false,
+          "symbol": "SynchronizeFixedPointPositionAndQueueRedraw"
+        },
+        {
+          "index": 14,
+          "address": "004576fc",
+          "pointer_hex": "0x00425c00",
+          "is_null": false,
+          "symbol": "DispatchEvent7AfterBoundsUpdate"
+        },
+        {
+          "index": 15,
+          "address": "00457700",
+          "pointer_hex": "0x00425c20",
+          "is_null": false,
+          "symbol": "DispatchEvent8"
+        },
+        {
+          "index": 16,
+          "address": "00457704",
+          "pointer_hex": "0x0042cd70",
+          "is_null": false,
+          "symbol": "InitializeRuntimeState"
+        },
+        {
+          "index": 17,
+          "address": "00457708",
+          "pointer_hex": "0x0042cc00",
+          "is_null": false,
+          "symbol": "CanBeDestroyed"
+        },
+        {
+          "index": 18,
+          "address": "0045770c",
+          "pointer_hex": "0x0042cd50",
+          "is_null": false,
+          "symbol": "ReferencesObject"
+        },
+        {
+          "index": 19,
+          "address": "00457710",
+          "pointer_hex": "0x00423820",
+          "is_null": false,
+          "symbol": "ClearReferencesToObject"
+        },
+        {
+          "index": 20,
+          "address": "00457714",
+          "pointer_hex": "0x0042aa10",
+          "is_null": false,
+          "symbol": "MoveBy"
+        },
+        {
+          "index": 21,
+          "address": "00457718",
+          "pointer_hex": "0x0042aa70",
+          "is_null": false,
+          "symbol": "MoveTo"
+        },
+        {
+          "index": 22,
+          "address": "0045771c",
+          "pointer_hex": "0x0042aad0",
+          "is_null": false,
+          "symbol": "MoveByAndRedraw"
+        },
+        {
+          "index": 23,
+          "address": "00457720",
+          "pointer_hex": "0x0042ae40",
+          "is_null": false,
+          "symbol": "MoveToAndRedraw"
+        },
+        {
+          "index": 24,
+          "address": "00457724",
+          "pointer_hex": "0x0042d0b0",
+          "is_null": false,
+          "symbol": "ClearReferenceAndSetDefaultBounds"
+        },
+        {
+          "index": 25,
+          "address": "00457728",
+          "pointer_hex": "0x00425e20",
+          "is_null": false,
+          "symbol": "IsSoundSourceBelowWorldY"
+        },
+        {
+          "index": 26,
+          "address": "0045772c",
+          "pointer_hex": "0x0042b720",
+          "is_null": false,
+          "symbol": "GetBounds"
+        },
+        {
+          "index": 27,
+          "address": "00457730",
+          "pointer_hex": "0x0042b740",
+          "is_null": false,
+          "symbol": "GetRenderPlane"
+        },
+        {
+          "index": 28,
+          "address": "00457734",
+          "pointer_hex": "0x0042b750",
+          "is_null": false,
+          "symbol": "GetClickEventIdAtWorldPosition"
+        },
+        {
+          "index": 29,
+          "address": "00457738",
+          "pointer_hex": "0x0042b800",
+          "is_null": false,
+          "symbol": "GetPartCentre"
+        },
+        {
+          "index": 30,
+          "address": "0045773c",
+          "pointer_hex": "0x00423880",
+          "is_null": false,
+          "symbol": "GetSoundSourceX"
+        },
+        {
+          "index": 31,
+          "address": "00457740",
+          "pointer_hex": "0x00423890",
+          "is_null": false,
+          "symbol": "GetSoundSourceY"
+        },
+        {
+          "index": 32,
+          "address": "00457744",
+          "pointer_hex": "0x004238a0",
+          "is_null": false,
+          "symbol": "GetCurrentVisualWidth"
+        },
+        {
+          "index": 33,
+          "address": "00457748",
+          "pointer_hex": "0x004238c0",
+          "is_null": false,
+          "symbol": "GetCurrentVisualHeight"
+        },
+        {
+          "index": 34,
+          "address": "0045774c",
+          "pointer_hex": "0x00426640",
+          "is_null": false,
+          "symbol": "DispatchScriptEvent"
+        },
+        {
+          "index": 35,
+          "address": "00457750",
+          "pointer_hex": "0x0042b8b0",
+          "is_null": false,
+          "symbol": "ParseImageSequence"
+        },
+        {
+          "index": 36,
+          "address": "00457754",
+          "pointer_hex": "0x0042b910",
+          "is_null": false,
+          "symbol": "IsImageSequenceEmpty"
+        },
+        {
+          "index": 37,
+          "address": "00457758",
+          "pointer_hex": "0x0042b940",
+          "is_null": false,
+          "symbol": "SetRelativeImageIndex"
+        },
+        {
+          "index": 38,
+          "address": "0045775c",
+          "pointer_hex": "0x0042b960",
+          "is_null": false,
+          "symbol": "GetRelativeImageIndex"
+        },
+        {
+          "index": 39,
+          "address": "00457760",
+          "pointer_hex": "0x0042b980",
+          "is_null": false,
+          "symbol": "PreloadImageSequence"
+        },
+        {
+          "index": 40,
+          "address": "00457764",
+          "pointer_hex": "0x0042b9d0",
+          "is_null": false,
+          "symbol": "SetImageIndex"
+        },
+        {
+          "index": 41,
+          "address": "00457768",
+          "pointer_hex": "0x0042bd90",
+          "is_null": false,
+          "symbol": "Tick"
+        },
+        {
+          "index": 42,
+          "address": "0045776c",
+          "pointer_hex": "0x004019d0",
+          "is_null": false,
+          "symbol": "guard_check_icall"
+        },
+        {
+          "index": 43,
+          "address": "00457770",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 44,
+          "address": "00457774",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        }
+      ]
+    },
+    "Lift": {
+      "address": "0045760c",
+      "slots": [
+        {
+          "index": 0,
+          "address": "0045760c",
+          "pointer_hex": "0x00423e30",
+          "is_null": false,
+          "symbol": "GetRuntimeClass"
+        },
+        {
+          "index": 1,
+          "address": "00457610",
+          "pointer_hex": "0x0042c3a0",
+          "is_null": false,
+          "symbol": "~Lift_Deleting"
+        },
+        {
+          "index": 2,
+          "address": "00457614",
+          "pointer_hex": "0x004250a0",
+          "is_null": false,
+          "symbol": "Serialize"
+        },
+        {
+          "index": 3,
+          "address": "00457618",
+          "pointer_hex": "0x004019d0",
+          "is_null": false,
+          "symbol": "guard_check_icall"
+        },
+        {
+          "index": 4,
+          "address": "0045761c",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 5,
+          "address": "00457620",
+          "pointer_hex": "0x0042c5c0",
+          "is_null": false,
+          "symbol": "RequestMoveUp"
+        },
+        {
+          "index": 6,
+          "address": "00457624",
+          "pointer_hex": "0x0042c680",
+          "is_null": false,
+          "symbol": "RequestMoveDown"
+        },
+        {
+          "index": 7,
+          "address": "00457628",
+          "pointer_hex": "0x00427c60",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent3"
+        },
+        {
+          "index": 8,
+          "address": "0045762c",
+          "pointer_hex": "0x00425ba0",
+          "is_null": false,
+          "symbol": "HandleQueuedCreatureEvent"
+        },
+        {
+          "index": 9,
+          "address": "00457630",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 10,
+          "address": "00457634",
+          "pointer_hex": "0x00427c60",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent3"
+        },
+        {
+          "index": 11,
+          "address": "00457638",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 12,
+          "address": "0045763c",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 13,
+          "address": "00457640",
+          "pointer_hex": "0x0042c3e0",
+          "is_null": false,
+          "symbol": "UpdateBoundsAndQueueRedraw"
+        },
+        {
+          "index": 14,
+          "address": "00457644",
+          "pointer_hex": "0x00425c00",
+          "is_null": false,
+          "symbol": "DispatchEvent7AfterBoundsUpdate"
+        },
+        {
+          "index": 15,
+          "address": "00457648",
+          "pointer_hex": "0x00425c20",
+          "is_null": false,
+          "symbol": "DispatchEvent8"
+        },
+        {
+          "index": 16,
+          "address": "0045764c",
+          "pointer_hex": "0x0042cd70",
+          "is_null": false,
+          "symbol": "InitializeRuntimeState"
+        },
+        {
+          "index": 17,
+          "address": "00457650",
+          "pointer_hex": "0x0042cc00",
+          "is_null": false,
+          "symbol": "CanBeDestroyed"
+        },
+        {
+          "index": 18,
+          "address": "00457654",
+          "pointer_hex": "0x0042cd50",
+          "is_null": false,
+          "symbol": "ReferencesObject"
+        },
+        {
+          "index": 19,
+          "address": "00457658",
+          "pointer_hex": "0x00423820",
+          "is_null": false,
+          "symbol": "ClearReferencesToObject"
+        },
+        {
+          "index": 20,
+          "address": "0045765c",
+          "pointer_hex": "0x0042aa10",
+          "is_null": false,
+          "symbol": "MoveBy"
+        },
+        {
+          "index": 21,
+          "address": "00457660",
+          "pointer_hex": "0x0042aa70",
+          "is_null": false,
+          "symbol": "MoveTo"
+        },
+        {
+          "index": 22,
+          "address": "00457664",
+          "pointer_hex": "0x0042aad0",
+          "is_null": false,
+          "symbol": "MoveByAndRedraw"
+        },
+        {
+          "index": 23,
+          "address": "00457668",
+          "pointer_hex": "0x0042ae40",
+          "is_null": false,
+          "symbol": "MoveToAndRedraw"
+        },
+        {
+          "index": 24,
+          "address": "0045766c",
+          "pointer_hex": "0x0042d0b0",
+          "is_null": false,
+          "symbol": "ClearReferenceAndSetDefaultBounds"
+        },
+        {
+          "index": 25,
+          "address": "00457670",
+          "pointer_hex": "0x00425e20",
+          "is_null": false,
+          "symbol": "IsSoundSourceBelowWorldY"
+        },
+        {
+          "index": 26,
+          "address": "00457674",
+          "pointer_hex": "0x0042b720",
+          "is_null": false,
+          "symbol": "GetBounds"
+        },
+        {
+          "index": 27,
+          "address": "00457678",
+          "pointer_hex": "0x0042b740",
+          "is_null": false,
+          "symbol": "GetRenderPlane"
+        },
+        {
+          "index": 28,
+          "address": "0045767c",
+          "pointer_hex": "0x0042b750",
+          "is_null": false,
+          "symbol": "GetClickEventIdAtWorldPosition"
+        },
+        {
+          "index": 29,
+          "address": "00457680",
+          "pointer_hex": "0x0042b800",
+          "is_null": false,
+          "symbol": "GetPartCentre"
+        },
+        {
+          "index": 30,
+          "address": "00457684",
+          "pointer_hex": "0x00423880",
+          "is_null": false,
+          "symbol": "GetSoundSourceX"
+        },
+        {
+          "index": 31,
+          "address": "00457688",
+          "pointer_hex": "0x00423890",
+          "is_null": false,
+          "symbol": "GetSoundSourceY"
+        },
+        {
+          "index": 32,
+          "address": "0045768c",
+          "pointer_hex": "0x004238a0",
+          "is_null": false,
+          "symbol": "GetCurrentVisualWidth"
+        },
+        {
+          "index": 33,
+          "address": "00457690",
+          "pointer_hex": "0x004238c0",
+          "is_null": false,
+          "symbol": "GetCurrentVisualHeight"
+        },
+        {
+          "index": 34,
+          "address": "00457694",
+          "pointer_hex": "0x00426640",
+          "is_null": false,
+          "symbol": "DispatchScriptEvent"
+        },
+        {
+          "index": 35,
+          "address": "00457698",
+          "pointer_hex": "0x0042b8b0",
+          "is_null": false,
+          "symbol": "ParseImageSequence"
+        },
+        {
+          "index": 36,
+          "address": "0045769c",
+          "pointer_hex": "0x0042b910",
+          "is_null": false,
+          "symbol": "IsImageSequenceEmpty"
+        },
+        {
+          "index": 37,
+          "address": "004576a0",
+          "pointer_hex": "0x0042b940",
+          "is_null": false,
+          "symbol": "SetRelativeImageIndex"
+        },
+        {
+          "index": 38,
+          "address": "004576a4",
+          "pointer_hex": "0x0042b960",
+          "is_null": false,
+          "symbol": "GetRelativeImageIndex"
+        },
+        {
+          "index": 39,
+          "address": "004576a8",
+          "pointer_hex": "0x0042b980",
+          "is_null": false,
+          "symbol": "PreloadImageSequence"
+        },
+        {
+          "index": 40,
+          "address": "004576ac",
+          "pointer_hex": "0x0042b9d0",
+          "is_null": false,
+          "symbol": "SetImageIndex"
+        },
+        {
+          "index": 41,
+          "address": "004576b0",
+          "pointer_hex": "0x0042c4f0",
+          "is_null": false,
+          "symbol": "Tick"
+        },
+        {
+          "index": 42,
+          "address": "004576b4",
+          "pointer_hex": "0x0042c590",
+          "is_null": false,
+          "symbol": "SelectNearestCallButtonAndStartMove"
+        },
+        {
+          "index": 43,
+          "address": "004576b8",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 44,
+          "address": "004576bc",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        }
+      ]
+    },
+    "Scenery": {
+      "address": "00457a70",
+      "slots": [
+        {
+          "index": 0,
+          "address": "00457a70",
+          "pointer_hex": "0x00423a50",
+          "is_null": false,
+          "symbol": "GetRuntimeClass"
+        },
+        {
+          "index": 1,
+          "address": "00457a74",
+          "pointer_hex": "0x00426690",
+          "is_null": false,
+          "symbol": "~Scenery_Deleting"
+        },
+        {
+          "index": 2,
+          "address": "00457a78",
+          "pointer_hex": "0x00424380",
+          "is_null": false,
+          "symbol": "Serialize"
+        },
+        {
+          "index": 3,
+          "address": "00457a7c",
+          "pointer_hex": "0x004019d0",
+          "is_null": false,
+          "symbol": "guard_check_icall"
+        },
+        {
+          "index": 4,
+          "address": "00457a80",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 5,
+          "address": "00457a84",
+          "pointer_hex": "0x00425ba0",
+          "is_null": false,
+          "symbol": "HandleQueuedCreatureEvent"
+        },
+        {
+          "index": 6,
+          "address": "00457a88",
+          "pointer_hex": "0x00425ba0",
+          "is_null": false,
+          "symbol": "HandleQueuedCreatureEvent"
+        },
+        {
+          "index": 7,
+          "address": "00457a8c",
+          "pointer_hex": "0x00425ba0",
+          "is_null": false,
+          "symbol": "HandleQueuedCreatureEvent"
+        },
+        {
+          "index": 8,
+          "address": "00457a90",
+          "pointer_hex": "0x00425ba0",
+          "is_null": false,
+          "symbol": "HandleQueuedCreatureEvent"
+        },
+        {
+          "index": 9,
+          "address": "00457a94",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 10,
+          "address": "00457a98",
+          "pointer_hex": "0x00425ba0",
+          "is_null": false,
+          "symbol": "HandleQueuedCreatureEvent"
+        },
+        {
+          "index": 11,
+          "address": "00457a9c",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 12,
+          "address": "00457aa0",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 13,
+          "address": "00457aa4",
+          "pointer_hex": "0x00425b00",
+          "is_null": false,
+          "symbol": "QueueEvent8AfterBoundsUpdate"
+        },
+        {
+          "index": 14,
+          "address": "00457aa8",
+          "pointer_hex": "0x00425c00",
+          "is_null": false,
+          "symbol": "DispatchEvent7AfterBoundsUpdate"
+        },
+        {
+          "index": 15,
+          "address": "00457aac",
+          "pointer_hex": "0x00425c20",
+          "is_null": false,
+          "symbol": "DispatchEvent8"
+        },
+        {
+          "index": 16,
+          "address": "00457ab0",
+          "pointer_hex": "0x0042cd70",
+          "is_null": false,
+          "symbol": "InitializeRuntimeState"
+        },
+        {
+          "index": 17,
+          "address": "00457ab4",
+          "pointer_hex": "0x0042cc00",
+          "is_null": false,
+          "symbol": "CanBeDestroyed"
+        },
+        {
+          "index": 18,
+          "address": "00457ab8",
+          "pointer_hex": "0x0042cd50",
+          "is_null": false,
+          "symbol": "ReferencesObject"
+        },
+        {
+          "index": 19,
+          "address": "00457abc",
+          "pointer_hex": "0x00423820",
+          "is_null": false,
+          "symbol": "ClearReferencesToObject"
+        },
+        {
+          "index": 20,
+          "address": "00457ac0",
+          "pointer_hex": "0x00426800",
+          "is_null": false,
+          "symbol": "MoveBy"
+        },
+        {
+          "index": 21,
+          "address": "00457ac4",
+          "pointer_hex": "0x004267c0",
+          "is_null": false,
+          "symbol": "MoveTo"
+        },
+        {
+          "index": 22,
+          "address": "00457ac8",
+          "pointer_hex": "0x00423780",
+          "is_null": false,
+          "symbol": "MoveBy"
+        },
+        {
+          "index": 23,
+          "address": "00457acc",
+          "pointer_hex": "0x00426840",
+          "is_null": false,
+          "symbol": "MoveToAndRedraw"
+        },
+        {
+          "index": 24,
+          "address": "00457ad0",
+          "pointer_hex": "0x0042d0b0",
+          "is_null": false,
+          "symbol": "ClearReferenceAndSetDefaultBounds"
+        },
+        {
+          "index": 25,
+          "address": "00457ad4",
+          "pointer_hex": "0x00425e20",
+          "is_null": false,
+          "symbol": "IsSoundSourceBelowWorldY"
+        },
+        {
+          "index": 26,
+          "address": "00457ad8",
+          "pointer_hex": "0x00426ba0",
+          "is_null": false,
+          "symbol": "GetBounds"
+        },
+        {
+          "index": 27,
+          "address": "00457adc",
+          "pointer_hex": "0x00426c00",
+          "is_null": false,
+          "symbol": "GetRenderPlane"
+        },
+        {
+          "index": 28,
+          "address": "00457ae0",
+          "pointer_hex": "0x00426420",
+          "is_null": false,
+          "symbol": "GetClickEventIdAtWorldPosition"
+        },
+        {
+          "index": 29,
+          "address": "00457ae4",
+          "pointer_hex": "0x004237b0",
+          "is_null": false,
+          "symbol": "DefaultVirtualNoOp"
+        },
+        {
+          "index": 30,
+          "address": "00457ae8",
+          "pointer_hex": "0x004237c0",
+          "is_null": false,
+          "symbol": "GetSoundSourceX"
+        },
+        {
+          "index": 31,
+          "address": "00457aec",
+          "pointer_hex": "0x004237d0",
+          "is_null": false,
+          "symbol": "GetSoundSourceY"
+        },
+        {
+          "index": 32,
+          "address": "00457af0",
+          "pointer_hex": "0x004237e0",
+          "is_null": false,
+          "symbol": "GetCurrentVisualWidth"
+        },
+        {
+          "index": 33,
+          "address": "00457af4",
+          "pointer_hex": "0x00423800",
+          "is_null": false,
+          "symbol": "GetCurrentVisualHeight"
+        },
+        {
+          "index": 34,
+          "address": "00457af8",
+          "pointer_hex": "0x00426640",
+          "is_null": false,
+          "symbol": "DispatchScriptEvent"
+        },
+        {
+          "index": 35,
+          "address": "00457afc",
+          "pointer_hex": "0x00426660",
+          "is_null": false,
+          "symbol": "ParseImageSequence"
+        },
+        {
+          "index": 36,
+          "address": "00457b00",
+          "pointer_hex": "0x00419440",
+          "is_null": false,
+          "symbol": "IsImageSequenceEmpty"
+        },
+        {
+          "index": 37,
+          "address": "00457b04",
+          "pointer_hex": "0x00426670",
+          "is_null": false,
+          "symbol": "SetRelativeImageIndex"
+        },
+        {
+          "index": 38,
+          "address": "00457b08",
+          "pointer_hex": "0x00410260",
+          "is_null": false,
+          "symbol": "DefaultImageVirtualReturnZero"
+        },
+        {
+          "index": 39,
+          "address": "00457b0c",
+          "pointer_hex": "0x00426680",
+          "is_null": false,
+          "symbol": "PreloadImageSequence"
+        },
+        {
+          "index": 40,
+          "address": "00457b10",
+          "pointer_hex": "0x00423780",
+          "is_null": false,
+          "symbol": "MoveBy"
+        },
+        {
+          "index": 41,
+          "address": "00457b14",
+          "pointer_hex": "0x00426190",
+          "is_null": false,
+          "symbol": "UpdateSound"
+        },
+        {
+          "index": 42,
+          "address": "00457b18",
+          "pointer_hex": "0x004019d0",
+          "is_null": false,
+          "symbol": "guard_check_icall"
+        },
+        {
+          "index": 43,
+          "address": "00457b1c",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 44,
+          "address": "00457b20",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        }
+      ]
+    },
+    "Bubble": {
+      "address": "00457834",
+      "slots": [
+        {
+          "index": 0,
+          "address": "00457834",
+          "pointer_hex": "0x00423ca0",
+          "is_null": false,
+          "symbol": "GetRuntimeClass"
+        },
+        {
+          "index": 1,
+          "address": "00457838",
+          "pointer_hex": "0x00429d60",
+          "is_null": false,
+          "symbol": "~Bubble_Deleting"
+        },
+        {
+          "index": 2,
+          "address": "0045783c",
+          "pointer_hex": "0x004249e0",
+          "is_null": false,
+          "symbol": "Serialize"
+        },
+        {
+          "index": 3,
+          "address": "00457840",
+          "pointer_hex": "0x004019d0",
+          "is_null": false,
+          "symbol": "guard_check_icall"
+        },
+        {
+          "index": 4,
+          "address": "00457844",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 5,
+          "address": "00457848",
+          "pointer_hex": "0x00427ae0",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent0"
+        },
+        {
+          "index": 6,
+          "address": "0045784c",
+          "pointer_hex": "0x00427b60",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent1"
+        },
+        {
+          "index": 7,
+          "address": "00457850",
+          "pointer_hex": "0x00427be0",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent2"
+        },
+        {
+          "index": 8,
+          "address": "00457854",
+          "pointer_hex": "0x00427cc0",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent4"
+        },
+        {
+          "index": 9,
+          "address": "00457858",
+          "pointer_hex": "0x00427f40",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent5"
+        },
+        {
+          "index": 10,
+          "address": "0045785c",
+          "pointer_hex": "0x00427c60",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent3"
+        },
+        {
+          "index": 11,
+          "address": "00457860",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 12,
+          "address": "00457864",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 13,
+          "address": "00457868",
+          "pointer_hex": "0x00426ee0",
+          "is_null": false,
+          "symbol": "FinalizeObjectEdit"
+        },
+        {
+          "index": 14,
+          "address": "0045786c",
+          "pointer_hex": "0x00425c00",
+          "is_null": false,
+          "symbol": "DispatchEvent7AfterBoundsUpdate"
+        },
+        {
+          "index": 15,
+          "address": "00457870",
+          "pointer_hex": "0x00425c20",
+          "is_null": false,
+          "symbol": "DispatchEvent8"
+        },
+        {
+          "index": 16,
+          "address": "00457874",
+          "pointer_hex": "0x00429f90",
+          "is_null": false,
+          "symbol": "DestroyAndRedraw"
+        },
+        {
+          "index": 17,
+          "address": "00457878",
+          "pointer_hex": "0x0042cc00",
+          "is_null": false,
+          "symbol": "CanBeDestroyed"
+        },
+        {
+          "index": 18,
+          "address": "0045787c",
+          "pointer_hex": "0x00429f80",
+          "is_null": false,
+          "symbol": "ReferencesObject"
+        },
+        {
+          "index": 19,
+          "address": "00457880",
+          "pointer_hex": "0x0042a580",
+          "is_null": false,
+          "symbol": "ClearReferencesToObject"
+        },
+        {
+          "index": 20,
+          "address": "00457884",
+          "pointer_hex": "0x00426800",
+          "is_null": false,
+          "symbol": "MoveBy"
+        },
+        {
+          "index": 21,
+          "address": "00457888",
+          "pointer_hex": "0x004267c0",
+          "is_null": false,
+          "symbol": "MoveTo"
+        },
+        {
+          "index": 22,
+          "address": "0045788c",
+          "pointer_hex": "0x00427500",
+          "is_null": false,
+          "symbol": "MoveByAndRedraw"
+        },
+        {
+          "index": 23,
+          "address": "00457890",
+          "pointer_hex": "0x00426f90",
+          "is_null": false,
+          "symbol": "MoveToAndRedraw"
+        },
+        {
+          "index": 24,
+          "address": "00457894",
+          "pointer_hex": "0x0042d0b0",
+          "is_null": false,
+          "symbol": "ClearReferenceAndSetDefaultBounds"
+        },
+        {
+          "index": 25,
+          "address": "00457898",
+          "pointer_hex": "0x00425e20",
+          "is_null": false,
+          "symbol": "IsSoundSourceBelowWorldY"
+        },
+        {
+          "index": 26,
+          "address": "0045789c",
+          "pointer_hex": "0x00426ba0",
+          "is_null": false,
+          "symbol": "GetBounds"
+        },
+        {
+          "index": 27,
+          "address": "004578a0",
+          "pointer_hex": "0x00426c00",
+          "is_null": false,
+          "symbol": "GetRenderPlane"
+        },
+        {
+          "index": 28,
+          "address": "004578a4",
+          "pointer_hex": "0x00427fc0",
+          "is_null": false,
+          "symbol": "GetClickEventIdAtWorldPosition"
+        },
+        {
+          "index": 29,
+          "address": "004578a8",
+          "pointer_hex": "0x00428cc0",
+          "is_null": false,
+          "symbol": "GetCentre"
+        },
+        {
+          "index": 30,
+          "address": "004578ac",
+          "pointer_hex": "0x004237c0",
+          "is_null": false,
+          "symbol": "GetSoundSourceX"
+        },
+        {
+          "index": 31,
+          "address": "004578b0",
+          "pointer_hex": "0x004237d0",
+          "is_null": false,
+          "symbol": "GetSoundSourceY"
+        },
+        {
+          "index": 32,
+          "address": "004578b4",
+          "pointer_hex": "0x004237e0",
+          "is_null": false,
+          "symbol": "GetCurrentVisualWidth"
+        },
+        {
+          "index": 33,
+          "address": "004578b8",
+          "pointer_hex": "0x00423800",
+          "is_null": false,
+          "symbol": "GetCurrentVisualHeight"
+        },
+        {
+          "index": 34,
+          "address": "004578bc",
+          "pointer_hex": "0x00426640",
+          "is_null": false,
+          "symbol": "DispatchScriptEvent"
+        },
+        {
+          "index": 35,
+          "address": "004578c0",
+          "pointer_hex": "0x00429420",
+          "is_null": false,
+          "symbol": "ParseImageSequence"
+        },
+        {
+          "index": 36,
+          "address": "004578c4",
+          "pointer_hex": "0x00429470",
+          "is_null": false,
+          "symbol": "IsImageSequenceEmpty"
+        },
+        {
+          "index": 37,
+          "address": "004578c8",
+          "pointer_hex": "0x00429490",
+          "is_null": false,
+          "symbol": "SetRelativeImageIndex"
+        },
+        {
+          "index": 38,
+          "address": "004578cc",
+          "pointer_hex": "0x004294c0",
+          "is_null": false,
+          "symbol": "GetRelativeImageIndex"
+        },
+        {
+          "index": 39,
+          "address": "004578d0",
+          "pointer_hex": "0x004294d0",
+          "is_null": false,
+          "symbol": "PreloadImageSequence"
+        },
+        {
+          "index": 40,
+          "address": "004578d4",
+          "pointer_hex": "0x00429510",
+          "is_null": false,
+          "symbol": "SetImageIndex"
+        },
+        {
+          "index": 41,
+          "address": "004578d8",
+          "pointer_hex": "0x0042a4c0",
+          "is_null": false,
+          "symbol": "Tick"
+        },
+        {
+          "index": 42,
+          "address": "004578dc",
+          "pointer_hex": "0x004019d0",
+          "is_null": false,
+          "symbol": "guard_check_icall"
+        },
+        {
+          "index": 43,
+          "address": "004578e0",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 44,
+          "address": "004578e4",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        }
+      ]
+    },
+    "CallButton": {
+      "address": "00457be0",
+      "slots": [
+        {
+          "index": 0,
+          "address": "00457be0",
+          "pointer_hex": "0x00423c00",
+          "is_null": false,
+          "symbol": "GetRuntimeClass"
+        },
+        {
+          "index": 1,
+          "address": "00457be4",
+          "pointer_hex": "0x00423840",
+          "is_null": false,
+          "symbol": "~CallButton_Deleting"
+        },
+        {
+          "index": 2,
+          "address": "00457be8",
+          "pointer_hex": "0x00424900",
+          "is_null": false,
+          "symbol": "Serialize"
+        },
+        {
+          "index": 3,
+          "address": "00457bec",
+          "pointer_hex": "0x004019d0",
+          "is_null": false,
+          "symbol": "guard_check_icall"
+        },
+        {
+          "index": 4,
+          "address": "00457bf0",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 5,
+          "address": "00457bf4",
+          "pointer_hex": "0x00429c10",
+          "is_null": false,
+          "symbol": "RequestLiftCall"
+        },
+        {
+          "index": 6,
+          "address": "00457bf8",
+          "pointer_hex": "0x00429d50",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent1"
+        },
+        {
+          "index": 7,
+          "address": "00457bfc",
+          "pointer_hex": "0x00427be0",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent2"
+        },
+        {
+          "index": 8,
+          "address": "00457c00",
+          "pointer_hex": "0x00427cc0",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent4"
+        },
+        {
+          "index": 9,
+          "address": "00457c04",
+          "pointer_hex": "0x00427f40",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent5"
+        },
+        {
+          "index": 10,
+          "address": "00457c08",
+          "pointer_hex": "0x00427c60",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent3"
+        },
+        {
+          "index": 11,
+          "address": "00457c0c",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 12,
+          "address": "00457c10",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 13,
+          "address": "00457c14",
+          "pointer_hex": "0x00429a70",
+          "is_null": false,
+          "symbol": "UpdateLiftStateAndQueueRedraw"
+        },
+        {
+          "index": 14,
+          "address": "00457c18",
+          "pointer_hex": "0x00425c00",
+          "is_null": false,
+          "symbol": "DispatchEvent7AfterBoundsUpdate"
+        },
+        {
+          "index": 15,
+          "address": "00457c1c",
+          "pointer_hex": "0x00425c20",
+          "is_null": false,
+          "symbol": "DispatchEvent8"
+        },
+        {
+          "index": 16,
+          "address": "00457c20",
+          "pointer_hex": "0x0042cd70",
+          "is_null": false,
+          "symbol": "InitializeRuntimeState"
+        },
+        {
+          "index": 17,
+          "address": "00457c24",
+          "pointer_hex": "0x0042cc00",
+          "is_null": false,
+          "symbol": "CanBeDestroyed"
+        },
+        {
+          "index": 18,
+          "address": "00457c28",
+          "pointer_hex": "0x0042cd50",
+          "is_null": false,
+          "symbol": "ReferencesObject"
+        },
+        {
+          "index": 19,
+          "address": "00457c2c",
+          "pointer_hex": "0x00423820",
+          "is_null": false,
+          "symbol": "ClearReferencesToObject"
+        },
+        {
+          "index": 20,
+          "address": "00457c30",
+          "pointer_hex": "0x00426800",
+          "is_null": false,
+          "symbol": "MoveBy"
+        },
+        {
+          "index": 21,
+          "address": "00457c34",
+          "pointer_hex": "0x004267c0",
+          "is_null": false,
+          "symbol": "MoveTo"
+        },
+        {
+          "index": 22,
+          "address": "00457c38",
+          "pointer_hex": "0x00427500",
+          "is_null": false,
+          "symbol": "MoveByAndRedraw"
+        },
+        {
+          "index": 23,
+          "address": "00457c3c",
+          "pointer_hex": "0x00426f90",
+          "is_null": false,
+          "symbol": "MoveToAndRedraw"
+        },
+        {
+          "index": 24,
+          "address": "00457c40",
+          "pointer_hex": "0x0042d0b0",
+          "is_null": false,
+          "symbol": "ClearReferenceAndSetDefaultBounds"
+        },
+        {
+          "index": 25,
+          "address": "00457c44",
+          "pointer_hex": "0x00425e20",
+          "is_null": false,
+          "symbol": "IsSoundSourceBelowWorldY"
+        },
+        {
+          "index": 26,
+          "address": "00457c48",
+          "pointer_hex": "0x00426ba0",
+          "is_null": false,
+          "symbol": "GetBounds"
+        },
+        {
+          "index": 27,
+          "address": "00457c4c",
+          "pointer_hex": "0x00426c00",
+          "is_null": false,
+          "symbol": "GetRenderPlane"
+        },
+        {
+          "index": 28,
+          "address": "00457c50",
+          "pointer_hex": "0x00427fc0",
+          "is_null": false,
+          "symbol": "GetClickEventIdAtWorldPosition"
+        },
+        {
+          "index": 29,
+          "address": "00457c54",
+          "pointer_hex": "0x00428cc0",
+          "is_null": false,
+          "symbol": "GetCentre"
+        },
+        {
+          "index": 30,
+          "address": "00457c58",
+          "pointer_hex": "0x004237c0",
+          "is_null": false,
+          "symbol": "GetSoundSourceX"
+        },
+        {
+          "index": 31,
+          "address": "00457c5c",
+          "pointer_hex": "0x004237d0",
+          "is_null": false,
+          "symbol": "GetSoundSourceY"
+        },
+        {
+          "index": 32,
+          "address": "00457c60",
+          "pointer_hex": "0x004237e0",
+          "is_null": false,
+          "symbol": "GetCurrentVisualWidth"
+        },
+        {
+          "index": 33,
+          "address": "00457c64",
+          "pointer_hex": "0x00423800",
+          "is_null": false,
+          "symbol": "GetCurrentVisualHeight"
+        },
+        {
+          "index": 34,
+          "address": "00457c68",
+          "pointer_hex": "0x00426640",
+          "is_null": false,
+          "symbol": "DispatchScriptEvent"
+        },
+        {
+          "index": 35,
+          "address": "00457c6c",
+          "pointer_hex": "0x00429420",
+          "is_null": false,
+          "symbol": "ParseImageSequence"
+        },
+        {
+          "index": 36,
+          "address": "00457c70",
+          "pointer_hex": "0x00429470",
+          "is_null": false,
+          "symbol": "IsImageSequenceEmpty"
+        },
+        {
+          "index": 37,
+          "address": "00457c74",
+          "pointer_hex": "0x00429490",
+          "is_null": false,
+          "symbol": "SetRelativeImageIndex"
+        },
+        {
+          "index": 38,
+          "address": "00457c78",
+          "pointer_hex": "0x004294c0",
+          "is_null": false,
+          "symbol": "GetRelativeImageIndex"
+        },
+        {
+          "index": 39,
+          "address": "00457c7c",
+          "pointer_hex": "0x004294d0",
+          "is_null": false,
+          "symbol": "PreloadImageSequence"
+        },
+        {
+          "index": 40,
+          "address": "00457c80",
+          "pointer_hex": "0x00429510",
+          "is_null": false,
+          "symbol": "SetImageIndex"
+        },
+        {
+          "index": 41,
+          "address": "00457c84",
+          "pointer_hex": "0x00427a70",
+          "is_null": false,
+          "symbol": "Tick"
+        },
+        {
+          "index": 42,
+          "address": "00457c88",
+          "pointer_hex": "0x004019d0",
+          "is_null": false,
+          "symbol": "guard_check_icall"
+        },
+        {
+          "index": 43,
+          "address": "00457c8c",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 44,
+          "address": "00457c90",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        }
+      ]
+    },
+    "PointerTool": {
+      "address": "004578ec",
+      "slots": [
+        {
+          "index": 0,
+          "address": "004578ec",
+          "pointer_hex": "0x00423b70",
+          "is_null": false,
+          "symbol": "GetRuntimeClass"
+        },
+        {
+          "index": 1,
+          "address": "004578f0",
+          "pointer_hex": "0x00429520",
+          "is_null": false,
+          "symbol": "~PointerTool_Deleting"
+        },
+        {
+          "index": 2,
+          "address": "004578f4",
+          "pointer_hex": "0x004246c0",
+          "is_null": false,
+          "symbol": "Serialize"
+        },
+        {
+          "index": 3,
+          "address": "004578f8",
+          "pointer_hex": "0x004019d0",
+          "is_null": false,
+          "symbol": "guard_check_icall"
+        },
+        {
+          "index": 4,
+          "address": "004578fc",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 5,
+          "address": "00457900",
+          "pointer_hex": "0x00427ae0",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent0"
+        },
+        {
+          "index": 6,
+          "address": "00457904",
+          "pointer_hex": "0x00427b60",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent1"
+        },
+        {
+          "index": 7,
+          "address": "00457908",
+          "pointer_hex": "0x00427be0",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent2"
+        },
+        {
+          "index": 8,
+          "address": "0045790c",
+          "pointer_hex": "0x00429620",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent4"
+        },
+        {
+          "index": 9,
+          "address": "00457910",
+          "pointer_hex": "0x00429720",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent5"
+        },
+        {
+          "index": 10,
+          "address": "00457914",
+          "pointer_hex": "0x00427c60",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent3"
+        },
+        {
+          "index": 11,
+          "address": "00457918",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 12,
+          "address": "0045791c",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 13,
+          "address": "00457920",
+          "pointer_hex": "0x00426ee0",
+          "is_null": false,
+          "symbol": "FinalizeObjectEdit"
+        },
+        {
+          "index": 14,
+          "address": "00457924",
+          "pointer_hex": "0x00425c00",
+          "is_null": false,
+          "symbol": "DispatchEvent7AfterBoundsUpdate"
+        },
+        {
+          "index": 15,
+          "address": "00457928",
+          "pointer_hex": "0x00425c20",
+          "is_null": false,
+          "symbol": "DispatchEvent8"
+        },
+        {
+          "index": 16,
+          "address": "0045792c",
+          "pointer_hex": "0x0042cd70",
+          "is_null": false,
+          "symbol": "InitializeRuntimeState"
+        },
+        {
+          "index": 17,
+          "address": "00457930",
+          "pointer_hex": "0x0042cc00",
+          "is_null": false,
+          "symbol": "CanBeDestroyed"
+        },
+        {
+          "index": 18,
+          "address": "00457934",
+          "pointer_hex": "0x0042cd50",
+          "is_null": false,
+          "symbol": "ReferencesObject"
+        },
+        {
+          "index": 19,
+          "address": "00457938",
+          "pointer_hex": "0x00423820",
+          "is_null": false,
+          "symbol": "ClearReferencesToObject"
+        },
+        {
+          "index": 20,
+          "address": "0045793c",
+          "pointer_hex": "0x00426800",
+          "is_null": false,
+          "symbol": "MoveBy"
+        },
+        {
+          "index": 21,
+          "address": "00457940",
+          "pointer_hex": "0x004267c0",
+          "is_null": false,
+          "symbol": "MoveTo"
+        },
+        {
+          "index": 22,
+          "address": "00457944",
+          "pointer_hex": "0x00427500",
+          "is_null": false,
+          "symbol": "MoveByAndRedraw"
+        },
+        {
+          "index": 23,
+          "address": "00457948",
+          "pointer_hex": "0x00426f90",
+          "is_null": false,
+          "symbol": "MoveToAndRedraw"
+        },
+        {
+          "index": 24,
+          "address": "0045794c",
+          "pointer_hex": "0x0042d0b0",
+          "is_null": false,
+          "symbol": "ClearReferenceAndSetDefaultBounds"
+        },
+        {
+          "index": 25,
+          "address": "00457950",
+          "pointer_hex": "0x00425e20",
+          "is_null": false,
+          "symbol": "IsSoundSourceBelowWorldY"
+        },
+        {
+          "index": 26,
+          "address": "00457954",
+          "pointer_hex": "0x00426ba0",
+          "is_null": false,
+          "symbol": "GetBounds"
+        },
+        {
+          "index": 27,
+          "address": "00457958",
+          "pointer_hex": "0x00426c00",
+          "is_null": false,
+          "symbol": "GetRenderPlane"
+        },
+        {
+          "index": 28,
+          "address": "0045795c",
+          "pointer_hex": "0x00427fc0",
+          "is_null": false,
+          "symbol": "GetClickEventIdAtWorldPosition"
+        },
+        {
+          "index": 29,
+          "address": "00457960",
+          "pointer_hex": "0x00428cc0",
+          "is_null": false,
+          "symbol": "GetCentre"
+        },
+        {
+          "index": 30,
+          "address": "00457964",
+          "pointer_hex": "0x004237c0",
+          "is_null": false,
+          "symbol": "GetSoundSourceX"
+        },
+        {
+          "index": 31,
+          "address": "00457968",
+          "pointer_hex": "0x004237d0",
+          "is_null": false,
+          "symbol": "GetSoundSourceY"
+        },
+        {
+          "index": 32,
+          "address": "0045796c",
+          "pointer_hex": "0x004237e0",
+          "is_null": false,
+          "symbol": "GetCurrentVisualWidth"
+        },
+        {
+          "index": 33,
+          "address": "00457970",
+          "pointer_hex": "0x00423800",
+          "is_null": false,
+          "symbol": "GetCurrentVisualHeight"
+        },
+        {
+          "index": 34,
+          "address": "00457974",
+          "pointer_hex": "0x00426640",
+          "is_null": false,
+          "symbol": "DispatchScriptEvent"
+        },
+        {
+          "index": 35,
+          "address": "00457978",
+          "pointer_hex": "0x00429420",
+          "is_null": false,
+          "symbol": "ParseImageSequence"
+        },
+        {
+          "index": 36,
+          "address": "0045797c",
+          "pointer_hex": "0x00429470",
+          "is_null": false,
+          "symbol": "IsImageSequenceEmpty"
+        },
+        {
+          "index": 37,
+          "address": "00457980",
+          "pointer_hex": "0x00429490",
+          "is_null": false,
+          "symbol": "SetRelativeImageIndex"
+        },
+        {
+          "index": 38,
+          "address": "00457984",
+          "pointer_hex": "0x004294c0",
+          "is_null": false,
+          "symbol": "GetRelativeImageIndex"
+        },
+        {
+          "index": 39,
+          "address": "00457988",
+          "pointer_hex": "0x004294d0",
+          "is_null": false,
+          "symbol": "PreloadImageSequence"
+        },
+        {
+          "index": 40,
+          "address": "0045798c",
+          "pointer_hex": "0x00429510",
+          "is_null": false,
+          "symbol": "SetImageIndex"
+        },
+        {
+          "index": 41,
+          "address": "00457990",
+          "pointer_hex": "0x00427a70",
+          "is_null": false,
+          "symbol": "Tick"
+        },
+        {
+          "index": 42,
+          "address": "00457994",
+          "pointer_hex": "0x004019d0",
+          "is_null": false,
+          "symbol": "guard_check_icall"
+        },
+        {
+          "index": 43,
+          "address": "00457998",
+          "pointer_hex": "0x00429860",
+          "is_null": false,
+          "symbol": "SetTextWithToolbarUpdate"
+        },
+        {
+          "index": 44,
+          "address": "0045799c",
+          "pointer_hex": "0x00429960",
+          "is_null": false,
+          "symbol": "SetPersistentBubbleText"
+        },
+        {
+          "index": 45,
+          "address": "004579a0",
+          "pointer_hex": "0x004299b0",
+          "is_null": false,
+          "symbol": "SetTransientBubbleText"
+        }
+      ]
+    },
+    "Blackboard": {
+      "address": "00457554",
+      "slots": [
+        {
+          "index": 0,
+          "address": "00457554",
+          "pointer_hex": "0x00423ec0",
+          "is_null": false,
+          "symbol": "GetRuntimeClass"
+        },
+        {
+          "index": 1,
+          "address": "00457558",
+          "pointer_hex": "0x0042c960",
+          "is_null": false,
+          "symbol": "~Blackboard_Deleting"
+        },
+        {
+          "index": 2,
+          "address": "0045755c",
+          "pointer_hex": "0x00425360",
+          "is_null": false,
+          "symbol": "Serialize"
+        },
+        {
+          "index": 3,
+          "address": "00457560",
+          "pointer_hex": "0x004019d0",
+          "is_null": false,
+          "symbol": "guard_check_icall"
+        },
+        {
+          "index": 4,
+          "address": "00457564",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 5,
+          "address": "00457568",
+          "pointer_hex": "0x0042b4c0",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent0"
+        },
+        {
+          "index": 6,
+          "address": "0045756c",
+          "pointer_hex": "0x0042b570",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent1"
+        },
+        {
+          "index": 7,
+          "address": "00457570",
+          "pointer_hex": "0x0042b620",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent2"
+        },
+        {
+          "index": 8,
+          "address": "00457574",
+          "pointer_hex": "0x00425ba0",
+          "is_null": false,
+          "symbol": "HandleQueuedCreatureEvent"
+        },
+        {
+          "index": 9,
+          "address": "00457578",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 10,
+          "address": "0045757c",
+          "pointer_hex": "0x00427c60",
+          "is_null": false,
+          "symbol": "HandleQueuedEvent3"
+        },
+        {
+          "index": 11,
+          "address": "00457580",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 12,
+          "address": "00457584",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 13,
+          "address": "00457588",
+          "pointer_hex": "0x00425b00",
+          "is_null": false,
+          "symbol": "QueueEvent8AfterBoundsUpdate"
+        },
+        {
+          "index": 14,
+          "address": "0045758c",
+          "pointer_hex": "0x00425c00",
+          "is_null": false,
+          "symbol": "DispatchEvent7AfterBoundsUpdate"
+        },
+        {
+          "index": 15,
+          "address": "00457590",
+          "pointer_hex": "0x00425c20",
+          "is_null": false,
+          "symbol": "DispatchEvent8"
+        },
+        {
+          "index": 16,
+          "address": "00457594",
+          "pointer_hex": "0x0042cd70",
+          "is_null": false,
+          "symbol": "InitializeRuntimeState"
+        },
+        {
+          "index": 17,
+          "address": "00457598",
+          "pointer_hex": "0x0042cc00",
+          "is_null": false,
+          "symbol": "CanBeDestroyed"
+        },
+        {
+          "index": 18,
+          "address": "0045759c",
+          "pointer_hex": "0x0042cd50",
+          "is_null": false,
+          "symbol": "ReferencesObject"
+        },
+        {
+          "index": 19,
+          "address": "004575a0",
+          "pointer_hex": "0x00423820",
+          "is_null": false,
+          "symbol": "ClearReferencesToObject"
+        },
+        {
+          "index": 20,
+          "address": "004575a4",
+          "pointer_hex": "0x0042aa10",
+          "is_null": false,
+          "symbol": "MoveBy"
+        },
+        {
+          "index": 21,
+          "address": "004575a8",
+          "pointer_hex": "0x0042aa70",
+          "is_null": false,
+          "symbol": "MoveTo"
+        },
+        {
+          "index": 22,
+          "address": "004575ac",
+          "pointer_hex": "0x0042aad0",
+          "is_null": false,
+          "symbol": "MoveByAndRedraw"
+        },
+        {
+          "index": 23,
+          "address": "004575b0",
+          "pointer_hex": "0x0042ae40",
+          "is_null": false,
+          "symbol": "MoveToAndRedraw"
+        },
+        {
+          "index": 24,
+          "address": "004575b4",
+          "pointer_hex": "0x0042d0b0",
+          "is_null": false,
+          "symbol": "ClearReferenceAndSetDefaultBounds"
+        },
+        {
+          "index": 25,
+          "address": "004575b8",
+          "pointer_hex": "0x00425e20",
+          "is_null": false,
+          "symbol": "IsSoundSourceBelowWorldY"
+        },
+        {
+          "index": 26,
+          "address": "004575bc",
+          "pointer_hex": "0x0042b720",
+          "is_null": false,
+          "symbol": "GetBounds"
+        },
+        {
+          "index": 27,
+          "address": "004575c0",
+          "pointer_hex": "0x0042b740",
+          "is_null": false,
+          "symbol": "GetRenderPlane"
+        },
+        {
+          "index": 28,
+          "address": "004575c4",
+          "pointer_hex": "0x0042b750",
+          "is_null": false,
+          "symbol": "GetClickEventIdAtWorldPosition"
+        },
+        {
+          "index": 29,
+          "address": "004575c8",
+          "pointer_hex": "0x0042b800",
+          "is_null": false,
+          "symbol": "GetPartCentre"
+        },
+        {
+          "index": 30,
+          "address": "004575cc",
+          "pointer_hex": "0x00423880",
+          "is_null": false,
+          "symbol": "GetSoundSourceX"
+        },
+        {
+          "index": 31,
+          "address": "004575d0",
+          "pointer_hex": "0x00423890",
+          "is_null": false,
+          "symbol": "GetSoundSourceY"
+        },
+        {
+          "index": 32,
+          "address": "004575d4",
+          "pointer_hex": "0x004238a0",
+          "is_null": false,
+          "symbol": "GetCurrentVisualWidth"
+        },
+        {
+          "index": 33,
+          "address": "004575d8",
+          "pointer_hex": "0x004238c0",
+          "is_null": false,
+          "symbol": "GetCurrentVisualHeight"
+        },
+        {
+          "index": 34,
+          "address": "004575dc",
+          "pointer_hex": "0x00426640",
+          "is_null": false,
+          "symbol": "DispatchScriptEvent"
+        },
+        {
+          "index": 35,
+          "address": "004575e0",
+          "pointer_hex": "0x0042b8b0",
+          "is_null": false,
+          "symbol": "ParseImageSequence"
+        },
+        {
+          "index": 36,
+          "address": "004575e4",
+          "pointer_hex": "0x0042b910",
+          "is_null": false,
+          "symbol": "IsImageSequenceEmpty"
+        },
+        {
+          "index": 37,
+          "address": "004575e8",
+          "pointer_hex": "0x0042b940",
+          "is_null": false,
+          "symbol": "SetRelativeImageIndex"
+        },
+        {
+          "index": 38,
+          "address": "004575ec",
+          "pointer_hex": "0x0042b960",
+          "is_null": false,
+          "symbol": "GetRelativeImageIndex"
+        },
+        {
+          "index": 39,
+          "address": "004575f0",
+          "pointer_hex": "0x0042b980",
+          "is_null": false,
+          "symbol": "PreloadImageSequence"
+        },
+        {
+          "index": 40,
+          "address": "004575f4",
+          "pointer_hex": "0x0042b9d0",
+          "is_null": false,
+          "symbol": "SetImageIndex"
+        },
+        {
+          "index": 41,
+          "address": "004575f8",
+          "pointer_hex": "0x0042b6c0",
+          "is_null": false,
+          "symbol": "Tick"
+        },
+        {
+          "index": 42,
+          "address": "004575fc",
+          "pointer_hex": "0x0042cba0",
+          "is_null": false,
+          "symbol": "Tick"
+        },
+        {
+          "index": 43,
+          "address": "00457600",
+          "pointer_hex": "0x0042cb00",
+          "is_null": false,
+          "symbol": "FinalizeTextInput"
+        },
+        {
+          "index": 44,
+          "address": "00457604",
+          "pointer_hex": "0x0042cb70",
+          "is_null": false,
+          "symbol": "SetCurrentWordText"
+        }
+      ]
+    },
+    "Creature": {
+      "address": "004547fc",
+      "slots": [
+        {
+          "index": 0,
+          "address": "004547fc",
+          "pointer_hex": "0x00407060",
+          "is_null": false,
+          "symbol": "GetRuntimeClass"
+        },
+        {
+          "index": 1,
+          "address": "00454800",
+          "pointer_hex": "0x004087d0",
+          "is_null": false,
+          "symbol": "~Creature"
+        },
+        {
+          "index": 2,
+          "address": "00454804",
+          "pointer_hex": "0x00407440",
+          "is_null": false,
+          "symbol": "Serialize"
+        },
+        {
+          "index": 3,
+          "address": "00454808",
+          "pointer_hex": "0x004019d0",
+          "is_null": false,
+          "symbol": "guard_check_icall"
+        },
+        {
+          "index": 4,
+          "address": "0045480c",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 5,
+          "address": "00454810",
+          "pointer_hex": "0x00409880",
+          "is_null": false,
+          "symbol": "HandleQueuedEventSlot5"
+        },
+        {
+          "index": 6,
+          "address": "00454814",
+          "pointer_hex": "0x004098a0",
+          "is_null": false,
+          "symbol": "HandleQueuedEventSlot6"
+        },
+        {
+          "index": 7,
+          "address": "00454818",
+          "pointer_hex": "0x004098c0",
+          "is_null": false,
+          "symbol": "HandleQueuedEventSlot7"
+        },
+        {
+          "index": 8,
+          "address": "0045481c",
+          "pointer_hex": "0x004098e0",
+          "is_null": false,
+          "symbol": "HandlePickupEvent"
+        },
+        {
+          "index": 9,
+          "address": "00454820",
+          "pointer_hex": "0x00409ae0",
+          "is_null": false,
+          "symbol": "HandleDropEvent"
+        },
+        {
+          "index": 10,
+          "address": "00454824",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 11,
+          "address": "00454828",
+          "pointer_hex": "0x00409da0",
+          "is_null": false,
+          "symbol": "HandleHeardWordsEvent"
+        },
+        {
+          "index": 12,
+          "address": "0045482c",
+          "pointer_hex": "0x00409e00",
+          "is_null": false,
+          "symbol": "HandleWordLearningEvent"
+        },
+        {
+          "index": 13,
+          "address": "00454830",
+          "pointer_hex": "0x0040da20",
+          "is_null": false,
+          "symbol": "QueueEvent8AfterBoundsUpdate"
+        },
+        {
+          "index": 14,
+          "address": "00454834",
+          "pointer_hex": "0x00425c00",
+          "is_null": false,
+          "symbol": "DispatchEvent7AfterBoundsUpdate"
+        },
+        {
+          "index": 15,
+          "address": "00454838",
+          "pointer_hex": "0x00425c20",
+          "is_null": false,
+          "symbol": "DispatchEvent8"
+        },
+        {
+          "index": 16,
+          "address": "0045483c",
+          "pointer_hex": "0x0040e9f0",
+          "is_null": false,
+          "symbol": "DeleteObjectAndPurgeRuntimeReferences"
+        },
+        {
+          "index": 17,
+          "address": "00454840",
+          "pointer_hex": "0x0042cc00",
+          "is_null": false,
+          "symbol": "CanBeDestroyed"
+        },
+        {
+          "index": 18,
+          "address": "00454844",
+          "pointer_hex": "0x0040e4d0",
+          "is_null": false,
+          "symbol": "ReferencesObject"
+        },
+        {
+          "index": 19,
+          "address": "00454848",
+          "pointer_hex": "0x0040edc0",
+          "is_null": false,
+          "symbol": "ClearReferencesToObject"
+        },
+        {
+          "index": 20,
+          "address": "0045484c",
+          "pointer_hex": "0x0043c0b0",
+          "is_null": false,
+          "symbol": "TranslateBy"
+        },
+        {
+          "index": 21,
+          "address": "00454850",
+          "pointer_hex": "0x0043c070",
+          "is_null": false,
+          "symbol": "SetDownFootPositionAndRecomputeLayout"
+        },
+        {
+          "index": 22,
+          "address": "00454854",
+          "pointer_hex": "0x0043c380",
+          "is_null": false,
+          "symbol": "UpdateAndInvalidateBounds"
+        },
+        {
+          "index": 23,
+          "address": "00454858",
+          "pointer_hex": "0x0043c2f0",
+          "is_null": false,
+          "symbol": "SetDownFootPositionAndInvalidateBounds"
+        },
+        {
+          "index": 24,
+          "address": "0045485c",
+          "pointer_hex": "0x0040e0d0",
+          "is_null": false,
+          "symbol": "RemoveFromWorld"
+        },
+        {
+          "index": 25,
+          "address": "00454860",
+          "pointer_hex": "0x00425e20",
+          "is_null": false,
+          "symbol": "IsSoundSourceBelowWorldY"
+        },
+        {
+          "index": 26,
+          "address": "00454864",
+          "pointer_hex": "0x00406d40",
+          "is_null": false,
+          "symbol": "CopySpriteBounds"
+        },
+        {
+          "index": 27,
+          "address": "00454868",
+          "pointer_hex": "0x00406d60",
+          "is_null": false,
+          "symbol": "GetBodyRenderPlane"
+        },
+        {
+          "index": 28,
+          "address": "0045486c",
+          "pointer_hex": "0x004095c0",
+          "is_null": false,
+          "symbol": "GetClickEventIdAtWorldPosition"
+        },
+        {
+          "index": 29,
+          "address": "00454870",
+          "pointer_hex": "0x004096b0",
+          "is_null": false,
+          "symbol": "GetPartCentre"
+        },
+        {
+          "index": 30,
+          "address": "00454874",
+          "pointer_hex": "0x00406d70",
+          "is_null": false,
+          "symbol": "GetSpriteBoundsMinX"
+        },
+        {
+          "index": 31,
+          "address": "00454878",
+          "pointer_hex": "0x00406d80",
+          "is_null": false,
+          "symbol": "GetSpriteBoundsMinY"
+        },
+        {
+          "index": 32,
+          "address": "0045487c",
+          "pointer_hex": "0x00406d20",
+          "is_null": false,
+          "symbol": "GetSpriteBoundsWidth"
+        },
+        {
+          "index": 33,
+          "address": "00454880",
+          "pointer_hex": "0x00406d30",
+          "is_null": false,
+          "symbol": "GetSpriteBoundsHeight"
+        },
+        {
+          "index": 34,
+          "address": "00454884",
+          "pointer_hex": "0x0040dbc0",
+          "is_null": false,
+          "symbol": "DispatchScriptEvent"
+        },
+        {
+          "index": 35,
+          "address": "00454888",
+          "pointer_hex": "0x0043beb0",
+          "is_null": false,
+          "symbol": "ParseAnimationSequence"
+        },
+        {
+          "index": 36,
+          "address": "0045488c",
+          "pointer_hex": "0x0043bf00",
+          "is_null": false,
+          "symbol": "IsAnimationSequenceComplete"
+        },
+        {
+          "index": 37,
+          "address": "00454890",
+          "pointer_hex": "0x0043bf10",
+          "is_null": false,
+          "symbol": "SetTargetPoseFromTableIndex"
+        },
+        {
+          "index": 38,
+          "address": "00454894",
+          "pointer_hex": "0x00410260",
+          "is_null": false,
+          "symbol": "DefaultImageVirtualReturnZero"
+        },
+        {
+          "index": 39,
+          "address": "00454898",
+          "pointer_hex": "0x00426680",
+          "is_null": false,
+          "symbol": "PreloadImageSequence"
+        },
+        {
+          "index": 40,
+          "address": "0045489c",
+          "pointer_hex": "0x00423780",
+          "is_null": false,
+          "symbol": "MoveBy"
+        },
+        {
+          "index": 41,
+          "address": "004548a0",
+          "pointer_hex": "0x00408fe0",
+          "is_null": false,
+          "symbol": "Update"
+        },
+        {
+          "index": 42,
+          "address": "004548a4",
+          "pointer_hex": "0x00409110",
+          "is_null": false,
+          "symbol": "UpdateDriveThresholdState"
+        },
+        {
+          "index": 43,
+          "address": "004548a8",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        },
+        {
+          "index": 44,
+          "address": "004548ac",
+          "pointer_hex": "0x00401ed0",
+          "is_null": false,
+          "symbol": "NoOpVirtualMethod"
+        }
+      ]
+    }
+  }
+}

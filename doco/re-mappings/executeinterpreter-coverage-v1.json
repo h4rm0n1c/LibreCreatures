@@ -1,0 +1,5580 @@
+{
+  "schema": "c1-executeinterpreter-coverage-v2",
+  "program": "Creatures.exe",
+  "function": "Macro::ExecuteInterpreter",
+  "address": "0041dc40",
+  "evidence_snapshot_sha256": "ce33b958a77ecae12ddf5b29f1156a5e02138ec6036a8639b5f5b74bffee70ae",
+  "native_scope": {
+    "instruction_count": 3178,
+    "unique_token_values": 107,
+    "token_comparison_sites": 128
+  },
+  "checkpoint_scope": {
+    "live_checkpoint_files": 91,
+    "superseded_checkpoint_files_excluded": 2,
+    "all_live_translation_checkpoints": 175
+  },
+  "counts": {
+    "token_sites_with_native_evidence": 128,
+    "token_sites_without_native_evidence": 0,
+    "token_sites_with_compile_checked_clean_slice": 128,
+    "token_sites_without_compile_checked_clean_slice": 0,
+    "outer_interpreter_integrated": true
+  },
+  "completion_gates": {
+    "native_token_site_evidence": {
+      "complete": true,
+      "completed": 128,
+      "total": 128
+    },
+    "clean_slice_compilation": {
+      "complete": true,
+      "completed": 128,
+      "total": 128
+    },
+    "unique_token_value_coverage": {
+      "complete": true,
+      "completed": 107,
+      "total": 107
+    },
+    "outer_executeinterpreter_integration": {
+      "complete": true,
+      "completed": 1,
+      "total": 1
+    },
+    "typed_family_owner_contract": {
+      "complete": true,
+      "completed": 14,
+      "total": 14
+    },
+    "static_command_route_implementation": {
+      "complete": true,
+      "completed": 106,
+      "total": 106
+    },
+    "lifecycle_finalization_contract": {
+      "complete": true,
+      "completed": 1,
+      "total": 1
+    },
+    "native_route_verification": {
+      "complete": true,
+      "completed": 1,
+      "total": 1
+    },
+    "known_route_gaps_closed": {
+      "complete": true,
+      "completed": 1,
+      "total": 1
+    },
+    "opaque_dispatch_boundary_removed": {
+      "complete": true,
+      "completed": 1,
+      "total": 1
+    },
+    "runtime_trace_instrumentation": {
+      "complete": true,
+      "completed": 1,
+      "total": 1
+    }
+  },
+  "completion": {
+    "semantic_token_slices_complete": true,
+    "typed_dispatch_contract_complete": true,
+    "executeinterpreter_complete": true,
+    "instruction_level_translation_measured": false,
+    "instruction_level_translation_note": "The 3178-instruction native size is reported as scope only; token-site checkpoints do not claim instruction-by-instruction translation until an explicit dispatcher/source integration checkpoint exists."
+  },
+  "percentages": {
+    "token_sites_evidenced": 100.0,
+    "token_sites_compiled": 100.0,
+    "unique_tokens_compiled_complete": 100.0
+  },
+  "token_summary": [
+    {
+      "token": "room",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041dd5a"
+      ]
+    },
+    {
+      "token": "fire",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041dd6b"
+      ]
+    },
+    {
+      "token": "knob",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041dd7c"
+      ]
+    },
+    {
+      "token": "app:",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041dd8d"
+      ]
+    },
+    {
+      "token": "bbd:",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041dd9e"
+      ]
+    },
+    {
+      "token": "stm#",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041ddaf"
+      ]
+    },
+    {
+      "token": "say#",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041ddba"
+      ]
+    },
+    {
+      "token": "say$",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041ddc1"
+      ]
+    },
+    {
+      "token": "writ",
+      "compare_site_count": 4,
+      "evidence_site_count": 4,
+      "compiled_site_count": 4,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041de94",
+        "0041ef2e",
+        "0041f66b",
+        "0041f735"
+      ]
+    },
+    {
+      "token": "sign",
+      "compare_site_count": 3,
+      "evidence_site_count": 3,
+      "compiled_site_count": 3,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041dea1",
+        "0041ef3b",
+        "0041f6fd"
+      ]
+    },
+    {
+      "token": "tact",
+      "compare_site_count": 3,
+      "evidence_site_count": 3,
+      "compiled_site_count": 3,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041dea8",
+        "0041ef42",
+        "0041f6ed"
+      ]
+    },
+    {
+      "token": "shou",
+      "compare_site_count": 3,
+      "evidence_site_count": 3,
+      "compiled_site_count": 3,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041dfa7",
+        "0041f010",
+        "0041f740"
+      ]
+    },
+    {
+      "token": "dde:",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041e0f3"
+      ]
+    },
+    {
+      "token": "aim:",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041e0fa"
+      ]
+    },
+    {
+      "token": "quit",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041e16e"
+      ]
+    },
+    {
+      "token": "APPR",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041e199"
+      ]
+    },
+    {
+      "token": "sys:",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041e1a6"
+      ]
+    },
+    {
+      "token": "new:",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041e1ad"
+      ]
+    },
+    {
+      "token": "drea",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041e23d"
+      ]
+    },
+    {
+      "token": "vocb",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041e244"
+      ]
+    },
+    {
+      "token": "fade",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041e327"
+      ]
+    },
+    {
+      "token": "stpc",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041e338"
+      ]
+    },
+    {
+      "token": "gsub",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041e349"
+      ]
+    },
+    {
+      "token": "sndc",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041e350"
+      ]
+    },
+    {
+      "token": "exec",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041e357"
+      ]
+    },
+    {
+      "token": "subr",
+      "compare_site_count": 2,
+      "evidence_site_count": 2,
+      "compiled_site_count": 2,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041e434",
+        "0041feb7"
+      ]
+    },
+    {
+      "token": "touc",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041e4f9"
+      ]
+    },
+    {
+      "token": "prld",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041e500"
+      ]
+    },
+    {
+      "token": "tele",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041e5f0"
+      ]
+    },
+    {
+      "token": "snde",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041e5fd"
+      ]
+    },
+    {
+      "token": "cdie",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041e604"
+      ]
+    },
+    {
+      "token": "done",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041e72c"
+      ]
+    },
+    {
+      "token": "repe",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041e737"
+      ]
+    },
+    {
+      "token": "tick",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041e991"
+      ]
+    },
+    {
+      "token": "trig",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041e9a2"
+      ]
+    },
+    {
+      "token": "mate",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041e9b3"
+      ]
+    },
+    {
+      "token": "base",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041e9c4"
+      ]
+    },
+    {
+      "token": "else",
+      "compare_site_count": 3,
+      "evidence_site_count": 3,
+      "compiled_site_count": 3,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041e9cf",
+        "0041ec44",
+        "0041ecb2"
+      ]
+    },
+    {
+      "token": "pose",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041e9d6"
+      ]
+    },
+    {
+      "token": "endi",
+      "compare_site_count": 5,
+      "evidence_site_count": 5,
+      "compiled_site_count": 5,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041ea66",
+        "0041eaca",
+        "0041ec36",
+        "0041eca2",
+        "0041f0a0"
+      ]
+    },
+    {
+      "token": "doif",
+      "compare_site_count": 5,
+      "evidence_site_count": 5,
+      "compiled_site_count": 5,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041ea74",
+        "0041eabb",
+        "0041eb23",
+        "0041ec52",
+        "0041ec93"
+      ]
+    },
+    {
+      "token": "sndf",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041eb18"
+      ]
+    },
+    {
+      "token": "fore",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041ecf5"
+      ]
+    },
+    {
+      "token": "on__",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041ed06"
+      ]
+    },
+    {
+      "token": "off_",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041ed0d"
+      ]
+    },
+    {
+      "token": "cons",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041ee14"
+      ]
+    },
+    {
+      "token": "dbug",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041eee9"
+      ]
+    },
+    {
+      "token": "targ",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041eefa"
+      ]
+    },
+    {
+      "token": "mesg",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041ef05"
+      ]
+    },
+    {
+      "token": "f**k",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041f0ab"
+      ]
+    },
+    {
+      "token": "endm",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041f109"
+      ]
+    },
+    {
+      "token": "kill",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041f11a"
+      ]
+    },
+    {
+      "token": "walk",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041f127"
+      ]
+    },
+    {
+      "token": "sndl",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041f12e"
+      ]
+    },
+    {
+      "token": "tool",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041f1cf"
+      ]
+    },
+    {
+      "token": "untl",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041f1da"
+      ]
+    },
+    {
+      "token": "slim",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041f506"
+      ]
+    },
+    {
+      "token": "chem",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041f517"
+      ]
+    },
+    {
+      "token": "dbgm",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041f51e"
+      ]
+    },
+    {
+      "token": "anim",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041f62c"
+      ]
+    },
+    {
+      "token": "stim",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041f637"
+      ]
+    },
+    {
+      "token": "from",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041f6f6"
+      ]
+    },
+    {
+      "token": "edit",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041f97c"
+      ]
+    },
+    {
+      "token": "sndq",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041f98d"
+      ]
+    },
+    {
+      "token": "mvto",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041f99e"
+      ]
+    },
+    {
+      "token": "vrsn",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041f9af"
+      ]
+    },
+    {
+      "token": "enum",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041f9c0"
+      ]
+    },
+    {
+      "token": "cabn",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041f9cb"
+      ]
+    },
+    {
+      "token": "poin",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041f9d2"
+      ]
+    },
+    {
+      "token": "next",
+      "compare_site_count": 2,
+      "evidence_site_count": 2,
+      "compiled_site_count": 2,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041fbb8",
+        "00420373"
+      ]
+    },
+    {
+      "token": "retn",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041fc7e"
+      ]
+    },
+    {
+      "token": "sayn",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041fc85"
+      ]
+    },
+    {
+      "token": "drop",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041fd0e"
+      ]
+    },
+    {
+      "token": "aslp",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041fd1f"
+      ]
+    },
+    {
+      "token": "loop",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041fd26"
+      ]
+    },
+    {
+      "token": "stop",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041fdea"
+      ]
+    },
+    {
+      "token": "scrp",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041fdf1"
+      ]
+    },
+    {
+      "token": "dpas",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041fe8e"
+      ]
+    },
+    {
+      "token": "over",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041fe9f"
+      ]
+    },
+    {
+      "token": "rtar",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041feb0"
+      ]
+    },
+    {
+      "token": "ever",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0041febe"
+      ]
+    },
+    {
+      "token": "appr",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "00420044"
+      ]
+    },
+    {
+      "token": "bhvr",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0042004b"
+      ]
+    },
+    {
+      "token": "plds",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "00420193"
+      ]
+    },
+    {
+      "token": "reps",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "004202a5"
+      ]
+    },
+    {
+      "token": "wait",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "004202ac"
+      ]
+    },
+    {
+      "token": "modv",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "00420362"
+      ]
+    },
+    {
+      "token": "part",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "00420384"
+      ]
+    },
+    {
+      "token": "evnt",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "00420395"
+      ]
+    },
+    {
+      "token": "spot",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "004203a0"
+      ]
+    },
+    {
+      "token": "impt",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "004203a7"
+      ]
+    },
+    {
+      "token": "mcrt",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "00420499"
+      ]
+    },
+    {
+      "token": "inst",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "004204a0"
+      ]
+    },
+    {
+      "token": "andv",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "004206b9"
+      ]
+    },
+    {
+      "token": "subv",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "004206ca"
+      ]
+    },
+    {
+      "token": "addv",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "004206d1"
+      ]
+    },
+    {
+      "token": "setv",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "00420894"
+      ]
+    },
+    {
+      "token": "negv",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "004208a5"
+      ]
+    },
+    {
+      "token": "rmev",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "004208b2"
+      ]
+    },
+    {
+      "token": "dbgv",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "004208b9"
+      ]
+    },
+    {
+      "token": "mulv",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "00420948"
+      ]
+    },
+    {
+      "token": "orrv",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "0042094f"
+      ]
+    },
+    {
+      "token": "mvby",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "004209f6"
+      ]
+    },
+    {
+      "token": "divv",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "00420a07"
+      ]
+    },
+    {
+      "token": "scrx",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "00420a12"
+      ]
+    },
+    {
+      "token": "ltcy",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "00420b2c"
+      ]
+    },
+    {
+      "token": "snez",
+      "compare_site_count": 1,
+      "evidence_site_count": 1,
+      "compiled_site_count": 1,
+      "status": "compiled_complete",
+      "compare_addresses": [
+        "00420b37"
+      ]
+    }
+  ],
+  "next_worklist": [],
+  "structural_worklist": [],
+  "structural_units": [
+    {
+      "unit": "dispatcher_vocabulary_inventory",
+      "checkpoint": "0041dc40-macro-opcode-inventory-v1.json",
+      "evidence": true,
+      "compiled": true,
+      "integrated": false
+    },
+    {
+      "unit": "family_router",
+      "checkpoint": "0041dc40-macro-dispatch-family-router-v1.json",
+      "evidence": true,
+      "compiled": true,
+      "integrated": false
+    },
+    {
+      "unit": "control_flow_state_machine",
+      "checkpoint": "0041dc40-macro-control-flow-v1.json",
+      "evidence": true,
+      "compiled": true,
+      "integrated": false
+    },
+    {
+      "unit": "wait_and_common_finalization",
+      "checkpoint": "00420c6f-macro-finalization-contract-v1.json",
+      "evidence": true,
+      "compiled": true,
+      "integrated": false
+    },
+    {
+      "unit": "exception_cleanup",
+      "checkpoint": "00420cf0-macro-exception-v1.json",
+      "evidence": true,
+      "compiled": true,
+      "integrated": false
+    },
+    {
+      "unit": "outer_interpreter_integration",
+      "checkpoint": "0041dc40-macro-typed-dispatch-router-v1.json",
+      "evidence": true,
+      "compiled": true,
+      "integrated": true
+    }
+  ],
+  "dispatch_families": [
+    {
+      "family": "control_flow",
+      "handler_symbols": [
+        "execute_control_flow_command",
+        "execute_global_subroutine_command",
+        "execute_object_enumeration_command",
+        "execute_wait_command",
+        "execute_counted_repeat_command"
+      ],
+      "handler_symbols_present": [
+        "execute_control_flow_command",
+        "execute_global_subroutine_command",
+        "execute_object_enumeration_command",
+        "execute_wait_command",
+        "execute_counted_repeat_command"
+      ],
+      "missing_handler_symbols": [],
+      "typed_owner_contract_present": true,
+      "known_route_gaps": [],
+      "status": "ready"
+    },
+    {
+      "family": "arithmetic_and_lvalue",
+      "handler_symbols": [
+        "execute_arithmetic_command",
+        "execute_randomize_variable_command"
+      ],
+      "handler_symbols_present": [
+        "execute_arithmetic_command",
+        "execute_randomize_variable_command"
+      ],
+      "missing_handler_symbols": [],
+      "typed_owner_contract_present": true,
+      "known_route_gaps": [],
+      "status": "ready"
+    },
+    {
+      "family": "object_motion",
+      "handler_symbols": [
+        "execute_object_motion_command",
+        "execute_teleport_command"
+      ],
+      "handler_symbols_present": [
+        "execute_object_motion_command",
+        "execute_teleport_command"
+      ],
+      "missing_handler_symbols": [],
+      "typed_owner_contract_present": true,
+      "known_route_gaps": [],
+      "status": "ready"
+    },
+    {
+      "family": "object_appearance",
+      "handler_symbols": [
+        "execute_pose_command",
+        "execute_preload_image_sequence_command"
+      ],
+      "handler_symbols_present": [
+        "execute_pose_command",
+        "execute_preload_image_sequence_command"
+      ],
+      "missing_handler_symbols": [],
+      "typed_owner_contract_present": true,
+      "known_route_gaps": [],
+      "status": "ready"
+    },
+    {
+      "family": "object_and_script_lifecycle",
+      "handler_symbols": [
+        "execute_instantiate_command",
+        "execute_script_command",
+        "execute_script_extended_command",
+        "execute_mate_command",
+        "execute_delete_creature_command",
+        "execute_dream_command",
+        "execute_sleep_command",
+        "execute_drop_command",
+        "execute_touch_command",
+        "execute_part_command",
+        "execute_over_command",
+        "execute_done_command",
+        "execute_edit_command",
+        "execute_base_command",
+        "execute_behavior_command",
+        "execute_kill_command"
+      ],
+      "handler_symbols_present": [
+        "execute_instantiate_command",
+        "execute_script_command",
+        "execute_script_extended_command",
+        "execute_mate_command",
+        "execute_delete_creature_command",
+        "execute_dream_command",
+        "execute_sleep_command",
+        "execute_drop_command",
+        "execute_touch_command",
+        "execute_part_command",
+        "execute_over_command",
+        "execute_done_command",
+        "execute_edit_command",
+        "execute_base_command",
+        "execute_behavior_command",
+        "execute_kill_command"
+      ],
+      "missing_handler_symbols": [],
+      "typed_owner_contract_present": true,
+      "known_route_gaps": [],
+      "status": "ready"
+    },
+    {
+      "family": "compound_geometry",
+      "handler_symbols": [
+        "execute_compound_geometry_command",
+        "execute_compound_knob_command",
+        "execute_object_bounds_command"
+      ],
+      "handler_symbols_present": [
+        "execute_compound_geometry_command",
+        "execute_compound_knob_command",
+        "execute_object_bounds_command"
+      ],
+      "missing_handler_symbols": [],
+      "typed_owner_contract_present": true,
+      "known_route_gaps": [],
+      "status": "ready"
+    },
+    {
+      "family": "creature_motor",
+      "handler_symbols": [
+        "execute_creature_motor_command"
+      ],
+      "handler_symbols_present": [
+        "execute_creature_motor_command"
+      ],
+      "missing_handler_symbols": [],
+      "typed_owner_contract_present": true,
+      "known_route_gaps": [],
+      "status": "ready"
+    },
+    {
+      "family": "creature_runtime",
+      "handler_symbols": [
+        "execute_creature_runtime_command"
+      ],
+      "handler_symbols_present": [
+        "execute_creature_runtime_command"
+      ],
+      "missing_handler_symbols": [],
+      "typed_owner_contract_present": true,
+      "known_route_gaps": [],
+      "status": "ready"
+    },
+    {
+      "family": "vehicle_interaction",
+      "handler_symbols": [
+        "execute_vehicle_command"
+      ],
+      "handler_symbols_present": [
+        "execute_vehicle_command"
+      ],
+      "missing_handler_symbols": [],
+      "typed_owner_contract_present": true,
+      "known_route_gaps": [],
+      "status": "ready"
+    },
+    {
+      "family": "sound",
+      "handler_symbols": [
+        "execute_sound_command",
+        "execute_sound_policy_command"
+      ],
+      "handler_symbols_present": [
+        "execute_sound_command",
+        "execute_sound_policy_command"
+      ],
+      "missing_handler_symbols": [],
+      "typed_owner_contract_present": true,
+      "known_route_gaps": [],
+      "status": "ready"
+    },
+    {
+      "family": "speech_and_messaging",
+      "handler_symbols": [
+        "execute_speech_command",
+        "execute_message_command"
+      ],
+      "handler_symbols_present": [
+        "execute_speech_command",
+        "execute_message_command"
+      ],
+      "missing_handler_symbols": [],
+      "typed_owner_contract_present": true,
+      "known_route_gaps": [],
+      "status": "ready"
+    },
+    {
+      "family": "stimulus_and_events",
+      "handler_symbols": [
+        "execute_stimulus_command",
+        "execute_stimulus_prefix_command",
+        "execute_event_command",
+        "execute_remove_event_command",
+        "execute_trigger_command",
+        "execute_chemical_command",
+        "execute_fire_command",
+        "execute_drive_presentation_command"
+      ],
+      "handler_symbols_present": [
+        "execute_stimulus_command",
+        "execute_stimulus_prefix_command",
+        "execute_event_command",
+        "execute_remove_event_command",
+        "execute_trigger_command",
+        "execute_chemical_command",
+        "execute_fire_command",
+        "execute_drive_presentation_command"
+      ],
+      "missing_handler_symbols": [],
+      "typed_owner_contract_present": true,
+      "known_route_gaps": [],
+      "status": "ready"
+    },
+    {
+      "family": "debug_system_and_misc",
+      "handler_symbols": [
+        "execute_debug_command",
+        "execute_system_caos_command",
+        "execute_tool_command",
+        "execute_animation_command",
+        "execute_pointer_command",
+        "execute_approach_command",
+        "execute_random_target_command",
+        "execute_object_enumeration_command"
+      ],
+      "handler_symbols_present": [
+        "execute_debug_command",
+        "execute_system_caos_command",
+        "execute_tool_command",
+        "execute_animation_command",
+        "execute_pointer_command",
+        "execute_approach_command",
+        "execute_random_target_command",
+        "execute_object_enumeration_command"
+      ],
+      "missing_handler_symbols": [],
+      "typed_owner_contract_present": true,
+      "known_route_gaps": [],
+      "status": "ready"
+    },
+    {
+      "family": "prefixed",
+      "handler_symbols": [
+        "execute_application_prefix_command",
+        "execute_aim_prefix_command",
+        "execute_blackboard_caos_command",
+        "execute_dde_command",
+        "execute_system_caos_command",
+        "execute_new_command"
+      ],
+      "handler_symbols_present": [
+        "execute_application_prefix_command",
+        "execute_aim_prefix_command",
+        "execute_blackboard_caos_command",
+        "execute_dde_command",
+        "execute_system_caos_command",
+        "execute_new_command"
+      ],
+      "missing_handler_symbols": [],
+      "typed_owner_contract_present": true,
+      "known_route_gaps": [],
+      "status": "ready"
+    }
+  ],
+  "command_route_summary": {
+    "total_commands": 100,
+    "direct_dispatch": 61,
+    "family_handler_dispatch": 36,
+    "nested_token_not_top_level": 3,
+    "classified_unrouted": 0,
+    "not_classified": 0
+  },
+  "command_route_ledger": [
+    {
+      "command": "do_if",
+      "family": "control_flow",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_control_flow_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "else_",
+      "family": "control_flow",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_control_flow_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "end_if",
+      "family": "control_flow",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_control_flow_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "loop",
+      "family": "control_flow",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_control_flow_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "ever",
+      "family": "control_flow",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_control_flow_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "until",
+      "family": "control_flow",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_control_flow_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "repeat",
+      "family": "control_flow",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_control_flow_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "repeat_counted",
+      "family": "control_flow",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_control_flow_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "next",
+      "family": "control_flow",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_object_enumeration_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "global_subroutine",
+      "family": "control_flow",
+      "dispatch_reference": true,
+      "handler_symbols": [],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "subroutine",
+      "family": "control_flow",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_control_flow_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "return_from_subroutine",
+      "family": "control_flow",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_control_flow_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "stop",
+      "family": "control_flow",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_control_flow_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "kill",
+      "family": "object_and_script_lifecycle",
+      "dispatch_reference": true,
+      "handler_symbols": [],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "set_variable",
+      "family": "arithmetic_and_lvalue",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_arithmetic_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "add_variable",
+      "family": "arithmetic_and_lvalue",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_arithmetic_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "subtract_variable",
+      "family": "arithmetic_and_lvalue",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_arithmetic_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "multiply_variable",
+      "family": "arithmetic_and_lvalue",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_arithmetic_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "divide_variable",
+      "family": "arithmetic_and_lvalue",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_arithmetic_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "modulo_variable",
+      "family": "arithmetic_and_lvalue",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_arithmetic_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "bitwise_and_variable",
+      "family": "arithmetic_and_lvalue",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_arithmetic_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "bitwise_or_variable",
+      "family": "arithmetic_and_lvalue",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_arithmetic_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "negate_variable",
+      "family": "arithmetic_and_lvalue",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_arithmetic_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "randomize_variable",
+      "family": "arithmetic_and_lvalue",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_randomize_variable_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "move_by",
+      "family": "object_motion",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_object_motion_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "move_to",
+      "family": "object_motion",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_object_motion_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "instantiate",
+      "family": "object_and_script_lifecycle",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_instantiate_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "script",
+      "family": "object_and_script_lifecycle",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_script_command",
+        "execute_script_extended_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "script_extended",
+      "family": "object_and_script_lifecycle",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_script_extended_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "endm",
+      "family": "object_and_script_lifecycle",
+      "dispatch_reference": true,
+      "handler_symbols": [],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "mate",
+      "family": "object_and_script_lifecycle",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_mate_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "delete_creature",
+      "family": "object_and_script_lifecycle",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_delete_creature_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "dream",
+      "family": "object_and_script_lifecycle",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_dream_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "sleep",
+      "family": "object_and_script_lifecycle",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_sleep_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "drop",
+      "family": "object_and_script_lifecycle",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_drop_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "touch",
+      "family": "object_and_script_lifecycle",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_touch_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "part",
+      "family": "object_and_script_lifecycle",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_part_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "execute",
+      "family": "object_and_script_lifecycle",
+      "dispatch_reference": true,
+      "handler_symbols": [],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "quit",
+      "family": "object_and_script_lifecycle",
+      "dispatch_reference": true,
+      "handler_symbols": [],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "over",
+      "family": "object_and_script_lifecycle",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_over_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "done",
+      "family": "object_and_script_lifecycle",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_done_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "edit",
+      "family": "object_and_script_lifecycle",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_edit_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "base",
+      "family": "object_and_script_lifecycle",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_base_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "pose",
+      "family": "object_appearance",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_pose_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "behavior",
+      "family": "object_and_script_lifecycle",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_behavior_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "spot",
+      "family": "compound_geometry",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_compound_geometry_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "sound_start",
+      "family": "sound",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_sound_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "sound_change",
+      "family": "sound",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_sound_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "sound_loop",
+      "family": "sound",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_sound_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "sound_fade",
+      "family": "sound",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_sound_policy_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "sound_query",
+      "family": "sound",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_sound_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "sound_voice",
+      "family": "sound",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_sound_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "sound_stop_channel",
+      "family": "sound",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_sound_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "fade",
+      "family": "sound",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_sound_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "tele",
+      "family": "object_motion",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_teleport_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "say_hash",
+      "family": "speech_and_messaging",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_speech_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "say_dollar",
+      "family": "speech_and_messaging",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_speech_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "say_name",
+      "family": "speech_and_messaging",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_speech_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "message",
+      "family": "speech_and_messaging",
+      "dispatch_reference": true,
+      "handler_symbols": [],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "target",
+      "family": "speech_and_messaging",
+      "dispatch_reference": true,
+      "handler_symbols": [],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "from_object",
+      "family": "speech_and_messaging",
+      "dispatch_reference": true,
+      "handler_symbols": [],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "stimulus",
+      "family": "stimulus_and_events",
+      "dispatch_reference": true,
+      "handler_symbols": [],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "speech_range_stimulus",
+      "family": "stimulus_and_events",
+      "dispatch_reference": false,
+      "handler_symbols": [],
+      "status": "nested_token_not_top_level"
+    },
+    {
+      "command": "sign_stimulus",
+      "family": "stimulus_and_events",
+      "dispatch_reference": false,
+      "handler_symbols": [],
+      "status": "nested_token_not_top_level"
+    },
+    {
+      "command": "tact_stimulus",
+      "family": "stimulus_and_events",
+      "dispatch_reference": false,
+      "handler_symbols": [],
+      "status": "nested_token_not_top_level"
+    },
+    {
+      "command": "event",
+      "family": "stimulus_and_events",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_event_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "remove_event",
+      "family": "stimulus_and_events",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_remove_event_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "trig",
+      "family": "stimulus_and_events",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_trigger_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "chem",
+      "family": "stimulus_and_events",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_chemical_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "debug_message",
+      "family": "debug_system_and_misc",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_debug_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "debug_value",
+      "family": "debug_system_and_misc",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_debug_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "dbug",
+      "family": "debug_system_and_misc",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_debug_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "vocabulary",
+      "family": "debug_system_and_misc",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_debug_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "version",
+      "family": "debug_system_and_misc",
+      "dispatch_reference": true,
+      "handler_symbols": [],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "room",
+      "family": "debug_system_and_misc",
+      "dispatch_reference": true,
+      "handler_symbols": [],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "sound_pause",
+      "family": "sound",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_sound_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "vehicle_grab_passengers",
+      "family": "vehicle_interaction",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_vehicle_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "vehicle_set_passenger",
+      "family": "vehicle_interaction",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_vehicle_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "cabinet",
+      "family": "debug_system_and_misc",
+      "dispatch_reference": true,
+      "handler_symbols": [],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "knob",
+      "family": "debug_system_and_misc",
+      "dispatch_reference": true,
+      "handler_symbols": [],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "slim",
+      "family": "debug_system_and_misc",
+      "dispatch_reference": true,
+      "handler_symbols": [],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "tick",
+      "family": "debug_system_and_misc",
+      "dispatch_reference": true,
+      "handler_symbols": [],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "enumerate_objects",
+      "family": "debug_system_and_misc",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_object_enumeration_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "random_target",
+      "family": "debug_system_and_misc",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_random_target_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "drive_presentation",
+      "family": "stimulus_and_events",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_drive_presentation_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "mcrt",
+      "family": "object_motion",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_object_motion_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "tool",
+      "family": "debug_system_and_misc",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_tool_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "walk",
+      "family": "debug_system_and_misc",
+      "dispatch_reference": true,
+      "handler_symbols": [],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "pointer",
+      "family": "debug_system_and_misc",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_pointer_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "wait",
+      "family": "debug_system_and_misc",
+      "dispatch_reference": true,
+      "handler_symbols": [],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "approach",
+      "family": "debug_system_and_misc",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_approach_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "uppercase_approach",
+      "family": "debug_system_and_misc",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_approach_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "anim",
+      "family": "debug_system_and_misc",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_animation_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "preload_image_sequence",
+      "family": "object_appearance",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_preload_image_sequence_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "set_creature_action_activation_boost",
+      "family": "creature_motor",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_creature_motor_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "fire",
+      "family": "stimulus_and_events",
+      "dispatch_reference": true,
+      "handler_symbols": [
+        "execute_fire_command"
+      ],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "stm_hash",
+      "family": "stimulus_and_events",
+      "dispatch_reference": true,
+      "handler_symbols": [],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "hidden_fertilize",
+      "family": "debug_system_and_misc",
+      "dispatch_reference": true,
+      "handler_symbols": [],
+      "status": "direct_dispatch"
+    },
+    {
+      "command": "less_than_creature",
+      "family": "creature_runtime",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_creature_runtime_command"
+      ],
+      "status": "family_handler_dispatch"
+    },
+    {
+      "command": "bacterium_update",
+      "family": "creature_runtime",
+      "dispatch_reference": false,
+      "handler_symbols": [
+        "execute_creature_runtime_command"
+      ],
+      "status": "family_handler_dispatch"
+    }
+  ],
+  "prefix_route_summary": {
+    "total_prefixes": 6,
+    "direct_dispatch": 6,
+    "route_gaps": 0
+  },
+  "prefix_route_ledger": [
+    {
+      "prefix": "application",
+      "dispatch_reference": true,
+      "handler": "execute_application_prefix_command",
+      "handler_call": true,
+      "status": "direct_dispatch"
+    },
+    {
+      "prefix": "aim",
+      "dispatch_reference": true,
+      "handler": "execute_aim_prefix_command",
+      "handler_call": true,
+      "status": "direct_dispatch"
+    },
+    {
+      "prefix": "blackboard",
+      "dispatch_reference": true,
+      "handler": "execute_blackboard_caos_command",
+      "handler_call": true,
+      "status": "direct_dispatch"
+    },
+    {
+      "prefix": "dde",
+      "dispatch_reference": true,
+      "handler": "execute_dde_command",
+      "handler_call": true,
+      "status": "direct_dispatch"
+    },
+    {
+      "prefix": "system",
+      "dispatch_reference": true,
+      "handler": "execute_system_caos_command",
+      "handler_call": true,
+      "status": "direct_dispatch"
+    },
+    {
+      "prefix": "new_object",
+      "dispatch_reference": true,
+      "handler": "execute_new_command",
+      "handler_call": true,
+      "status": "direct_dispatch"
+    }
+  ],
+  "native_route_verification_backlog": [],
+  "runtime_trace_instrumentation": {
+    "complete": true,
+    "matches": {
+      "trace_type": true,
+      "binding_slot": true,
+      "fetch_event": true,
+      "result_event": true,
+      "finalization_event": true,
+      "exception_event": true,
+      "scheduler_event": true
+    },
+    "probe": {
+      "status": "passed_foreground",
+      "source_file": "tests/c1_macro_interpreter_trace_test.cpp",
+      "cases": {
+        "endm_scheduler_retain": {
+          "fetches": 1,
+          "results": 1,
+          "iteration_finalizations": 0,
+          "exceptions": 0,
+          "scheduler_actions": 1,
+          "result": "scheduler_cleanup_required"
+        },
+        "wait_cursor_rewind": {
+          "fetches": 2,
+          "results": 2,
+          "iteration_finalizations": 3,
+          "exceptions": 0,
+          "scheduler_actions": 1,
+          "result": "scheduler_cleanup_required"
+        },
+        "exception_cleanup": {
+          "fetches": 1,
+          "results": 1,
+          "iteration_finalizations": 1,
+          "exceptions": 1,
+          "scheduler_actions": 1,
+          "result": "scheduler_cleanup_required"
+        },
+        "scheduler_adapter_output": {
+          "fetches": 1,
+          "results": 1,
+          "iteration_finalizations": 0,
+          "exceptions": 0,
+          "scheduler_actions": 1,
+          "output_length": 0
+        },
+        "scheduler_adapter_start": {
+          "fetches": 1,
+          "results": 1,
+          "iteration_finalizations": 0,
+          "exceptions": 0,
+          "scheduler_actions": 1,
+          "started": true
+        }
+      },
+      "command": "pinned x86 MSVC compile/link, then WINEDEBUG=-all /tmp/c1_macro_adapter_test.exe",
+      "not_claimed": [
+        "native byte equivalence"
+      ]
+    },
+    "note": "The observer records actual outer-loop fetch, handler-result, finalization, exception, and scheduler-action events when a concrete host supplies a trace object. It does not itself claim native equivalence or close the held adapter/runtime items."
+  },
+  "opaque_dispatch_boundary": {
+    "free": true,
+    "matches": {
+      "virtual_execute_interpreter_callback": false,
+      "output_buffer_callback_call": false,
+      "scheduler_callback_call": false
+    },
+    "note": "The callback is a deliberate hold until the explicit typed VM dispatcher and scheduler cleanup are integrated; its presence is not counted as interpreter completion."
+  },
+  "token_sites": [
+    {
+      "token": "room",
+      "compare_address": "0041dd5a",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-room-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-room-v1.json"
+      ]
+    },
+    {
+      "token": "fire",
+      "compare_address": "0041dd6b",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-fire-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-fire-v1.json"
+      ]
+    },
+    {
+      "token": "knob",
+      "compare_address": "0041dd7c",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-knob-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-knob-v1.json"
+      ]
+    },
+    {
+      "token": "app:",
+      "compare_address": "0041dd8d",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-prefix-boundaries-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-prefix-boundaries-v1.json"
+      ]
+    },
+    {
+      "token": "bbd:",
+      "compare_address": "0041dd9e",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-bbd-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-bbd-v1.json"
+      ]
+    },
+    {
+      "token": "stm#",
+      "compare_address": "0041ddaf",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-stm-prefix-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-stm-prefix-v1.json"
+      ]
+    },
+    {
+      "token": "say#",
+      "compare_address": "0041ddba",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-speech-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-speech-v1.json"
+      ]
+    },
+    {
+      "token": "say$",
+      "compare_address": "0041ddc1",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-speech-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-speech-v1.json"
+      ]
+    },
+    {
+      "token": "writ",
+      "compare_address": "0041de94",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-stm-prefix-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-stm-prefix-v1.json"
+      ]
+    },
+    {
+      "token": "writ",
+      "compare_address": "0041ef2e",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-message-stimulus-nested-attribution-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-message-stimulus-nested-attribution-v1.json"
+      ]
+    },
+    {
+      "token": "writ",
+      "compare_address": "0041f66b",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-stim-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-stim-v1.json"
+      ]
+    },
+    {
+      "token": "writ",
+      "compare_address": "0041f735",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-message-stimulus-nested-attribution-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-message-stimulus-nested-attribution-v1.json"
+      ]
+    },
+    {
+      "token": "sign",
+      "compare_address": "0041dea1",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-stm-prefix-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-stm-prefix-v1.json"
+      ]
+    },
+    {
+      "token": "sign",
+      "compare_address": "0041ef3b",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-message-stimulus-nested-attribution-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-message-stimulus-nested-attribution-v1.json"
+      ]
+    },
+    {
+      "token": "sign",
+      "compare_address": "0041f6fd",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-message-stimulus-nested-attribution-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-message-stimulus-nested-attribution-v1.json"
+      ]
+    },
+    {
+      "token": "tact",
+      "compare_address": "0041dea8",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-stm-prefix-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-stm-prefix-v1.json"
+      ]
+    },
+    {
+      "token": "tact",
+      "compare_address": "0041ef42",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-message-stimulus-nested-attribution-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-message-stimulus-nested-attribution-v1.json"
+      ]
+    },
+    {
+      "token": "tact",
+      "compare_address": "0041f6ed",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-stim-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-stim-v1.json"
+      ]
+    },
+    {
+      "token": "shou",
+      "compare_address": "0041dfa7",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-stm-prefix-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-stm-prefix-v1.json"
+      ]
+    },
+    {
+      "token": "shou",
+      "compare_address": "0041f010",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-message-stimulus-nested-attribution-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-message-stimulus-nested-attribution-v1.json"
+      ]
+    },
+    {
+      "token": "shou",
+      "compare_address": "0041f740",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-message-stimulus-nested-attribution-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-message-stimulus-nested-attribution-v1.json"
+      ]
+    },
+    {
+      "token": "dde:",
+      "compare_address": "0041e0f3",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-dde-prefix-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-dde-prefix-v1.json"
+      ]
+    },
+    {
+      "token": "aim:",
+      "compare_address": "0041e0fa",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-prefix-boundaries-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-prefix-boundaries-v1.json"
+      ]
+    },
+    {
+      "token": "quit",
+      "compare_address": "0041e16e",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-prefix-boundaries-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-prefix-boundaries-v1.json"
+      ]
+    },
+    {
+      "token": "APPR",
+      "compare_address": "0041e199",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-appr-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-appr-v1.json"
+      ]
+    },
+    {
+      "token": "sys:",
+      "compare_address": "0041e1a6",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-appr-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-appr-v1.json"
+      ]
+    },
+    {
+      "token": "new:",
+      "compare_address": "0041e1ad",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-new-prefix-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-new-prefix-v1.json"
+      ]
+    },
+    {
+      "token": "drea",
+      "compare_address": "0041e23d",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-drea-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-drea-v1.json"
+      ]
+    },
+    {
+      "token": "vocb",
+      "compare_address": "0041e244",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-vocb-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-vocb-v1.json"
+      ]
+    },
+    {
+      "token": "fade",
+      "compare_address": "0041e327",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-fade-dispatch-v2.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-fade-dispatch-v2.json"
+      ]
+    },
+    {
+      "token": "stpc",
+      "compare_address": "0041e338",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-stop-channel-dispatch-v2.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-stop-channel-dispatch-v2.json"
+      ]
+    },
+    {
+      "token": "gsub",
+      "compare_address": "0041e349",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-gsub-subroutine-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-gsub-subroutine-v1.json"
+      ]
+    },
+    {
+      "token": "sndc",
+      "compare_address": "0041e350",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-sound-change-dispatch-v2.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-sound-change-dispatch-v2.json"
+      ]
+    },
+    {
+      "token": "exec",
+      "compare_address": "0041e357",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-exec-parser-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-exec-parser-v1.json"
+      ]
+    },
+    {
+      "token": "subr",
+      "compare_address": "0041e434",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-gsub-subroutine-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-gsub-subroutine-v1.json"
+      ]
+    },
+    {
+      "token": "subr",
+      "compare_address": "0041feb7",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ]
+    },
+    {
+      "token": "touc",
+      "compare_address": "0041e4f9",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-touch-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-touch-v1.json"
+      ]
+    },
+    {
+      "token": "prld",
+      "compare_address": "0041e500",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-prld-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-prld-v1.json"
+      ]
+    },
+    {
+      "token": "tele",
+      "compare_address": "0041e5f0",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-tele-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-tele-v1.json"
+      ]
+    },
+    {
+      "token": "snde",
+      "compare_address": "0041e5fd",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-snde-attribution-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-snde-attribution-v1.json"
+      ]
+    },
+    {
+      "token": "cdie",
+      "compare_address": "0041e604",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-cdie-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-cdie-v1.json"
+      ]
+    },
+    {
+      "token": "done",
+      "compare_address": "0041e72c",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-done-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-done-v1.json"
+      ]
+    },
+    {
+      "token": "repe",
+      "compare_address": "0041e737",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-repe-attribution-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-repe-attribution-v1.json"
+      ]
+    },
+    {
+      "token": "tick",
+      "compare_address": "0041e991",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-tick-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-tick-v1.json"
+      ]
+    },
+    {
+      "token": "trig",
+      "compare_address": "0041e9a2",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-trig-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-trig-v1.json"
+      ]
+    },
+    {
+      "token": "mate",
+      "compare_address": "0041e9b3",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-mate-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-mate-v1.json"
+      ]
+    },
+    {
+      "token": "base",
+      "compare_address": "0041e9c4",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-base-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-base-v1.json"
+      ]
+    },
+    {
+      "token": "else",
+      "compare_address": "0041e9cf",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-else-attribution-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-else-attribution-v1.json"
+      ]
+    },
+    {
+      "token": "else",
+      "compare_address": "0041ec44",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-doif-attribution-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-doif-attribution-v1.json"
+      ]
+    },
+    {
+      "token": "else",
+      "compare_address": "0041ecb2",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-doif-attribution-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-doif-attribution-v1.json"
+      ]
+    },
+    {
+      "token": "pose",
+      "compare_address": "0041e9d6",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-pose-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-pose-v1.json"
+      ]
+    },
+    {
+      "token": "endi",
+      "compare_address": "0041ea66",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-else-attribution-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-else-attribution-v1.json"
+      ]
+    },
+    {
+      "token": "endi",
+      "compare_address": "0041eaca",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-else-attribution-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-else-attribution-v1.json"
+      ]
+    },
+    {
+      "token": "endi",
+      "compare_address": "0041ec36",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-doif-attribution-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-doif-attribution-v1.json"
+      ]
+    },
+    {
+      "token": "endi",
+      "compare_address": "0041eca2",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-doif-attribution-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-doif-attribution-v1.json"
+      ]
+    },
+    {
+      "token": "endi",
+      "compare_address": "0041f0a0",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ]
+    },
+    {
+      "token": "doif",
+      "compare_address": "0041ea74",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-else-attribution-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-else-attribution-v1.json"
+      ]
+    },
+    {
+      "token": "doif",
+      "compare_address": "0041eabb",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-else-attribution-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-else-attribution-v1.json"
+      ]
+    },
+    {
+      "token": "doif",
+      "compare_address": "0041eb23",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-doif-attribution-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-doif-attribution-v1.json"
+      ]
+    },
+    {
+      "token": "doif",
+      "compare_address": "0041ec52",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-doif-attribution-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-doif-attribution-v1.json"
+      ]
+    },
+    {
+      "token": "doif",
+      "compare_address": "0041ec93",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-doif-attribution-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-doif-attribution-v1.json"
+      ]
+    },
+    {
+      "token": "sndf",
+      "compare_address": "0041eb18",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-sndf-attribution-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-sndf-attribution-v1.json"
+      ]
+    },
+    {
+      "token": "fore",
+      "compare_address": "0041ecf5",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-sndf-attribution-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-sndf-attribution-v1.json"
+      ]
+    },
+    {
+      "token": "on__",
+      "compare_address": "0041ed06",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-sndf-attribution-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-sndf-attribution-v1.json"
+      ]
+    },
+    {
+      "token": "off_",
+      "compare_address": "0041ed0d",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-sndf-attribution-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-sndf-attribution-v1.json"
+      ]
+    },
+    {
+      "token": "cons",
+      "compare_address": "0041ee14",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-sndf-attribution-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-sndf-attribution-v1.json"
+      ]
+    },
+    {
+      "token": "dbug",
+      "compare_address": "0041eee9",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-dbug-targ-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-dbug-targ-v1.json"
+      ]
+    },
+    {
+      "token": "targ",
+      "compare_address": "0041eefa",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-dbug-targ-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-dbug-targ-v1.json"
+      ]
+    },
+    {
+      "token": "mesg",
+      "compare_address": "0041ef05",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-message-events-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-message-events-v1.json"
+      ]
+    },
+    {
+      "token": "f**k",
+      "compare_address": "0041f0ab",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ]
+    },
+    {
+      "token": "endm",
+      "compare_address": "0041f109",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-kill-walk-sndl-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-kill-walk-sndl-v1.json"
+      ]
+    },
+    {
+      "token": "kill",
+      "compare_address": "0041f11a",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-kill-walk-sndl-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-kill-walk-sndl-v1.json"
+      ]
+    },
+    {
+      "token": "walk",
+      "compare_address": "0041f127",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-kill-walk-sndl-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-kill-walk-sndl-v1.json"
+      ]
+    },
+    {
+      "token": "sndl",
+      "compare_address": "0041f12e",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-kill-walk-sndl-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-kill-walk-sndl-v1.json"
+      ]
+    },
+    {
+      "token": "tool",
+      "compare_address": "0041f1cf",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-tool-registration-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-tool-registration-v1.json"
+      ]
+    },
+    {
+      "token": "untl",
+      "compare_address": "0041f1da",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-untl-comparison-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-untl-comparison-v1.json"
+      ]
+    },
+    {
+      "token": "slim",
+      "compare_address": "0041f506",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-slim-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-slim-v1.json"
+      ]
+    },
+    {
+      "token": "chem",
+      "compare_address": "0041f517",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-chem-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-chem-v1.json"
+      ]
+    },
+    {
+      "token": "dbgm",
+      "compare_address": "0041f51e",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-debug-value-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-debug-value-v1.json"
+      ]
+    },
+    {
+      "token": "anim",
+      "compare_address": "0041f62c",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-anim-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-anim-v1.json"
+      ]
+    },
+    {
+      "token": "stim",
+      "compare_address": "0041f637",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-stim-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-stim-v1.json"
+      ]
+    },
+    {
+      "token": "from",
+      "compare_address": "0041f6f6",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-message-stimulus-nested-attribution-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-message-stimulus-nested-attribution-v1.json"
+      ]
+    },
+    {
+      "token": "edit",
+      "compare_address": "0041f97c",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-edit-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-edit-v1.json"
+      ]
+    },
+    {
+      "token": "sndq",
+      "compare_address": "0041f98d",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-sndq-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-sndq-v1.json"
+      ]
+    },
+    {
+      "token": "mvto",
+      "compare_address": "0041f99e",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-mvto-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-mvto-v1.json"
+      ]
+    },
+    {
+      "token": "vrsn",
+      "compare_address": "0041f9af",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ]
+    },
+    {
+      "token": "enum",
+      "compare_address": "0041f9c0",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-enum-next-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-enum-next-v1.json"
+      ]
+    },
+    {
+      "token": "cabn",
+      "compare_address": "0041f9cb",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-cabn-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-cabn-v1.json"
+      ]
+    },
+    {
+      "token": "poin",
+      "compare_address": "0041f9d2",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-poin-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-poin-v1.json"
+      ]
+    },
+    {
+      "token": "next",
+      "compare_address": "0041fbb8",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ]
+    },
+    {
+      "token": "next",
+      "compare_address": "00420373",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-enum-next-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-enum-next-v1.json"
+      ]
+    },
+    {
+      "token": "retn",
+      "compare_address": "0041fc7e",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ]
+    },
+    {
+      "token": "sayn",
+      "compare_address": "0041fc85",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ]
+    },
+    {
+      "token": "drop",
+      "compare_address": "0041fd0e",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ]
+    },
+    {
+      "token": "aslp",
+      "compare_address": "0041fd1f",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-aslp-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-aslp-v1.json"
+      ]
+    },
+    {
+      "token": "loop",
+      "compare_address": "0041fd26",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ]
+    },
+    {
+      "token": "stop",
+      "compare_address": "0041fdea",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-drop-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-drop-v1.json"
+      ]
+    },
+    {
+      "token": "scrp",
+      "compare_address": "0041fdf1",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-script-event-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-script-event-v1.json"
+      ]
+    },
+    {
+      "token": "dpas",
+      "compare_address": "0041fe8e",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-dpas-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-dpas-v1.json"
+      ]
+    },
+    {
+      "token": "over",
+      "compare_address": "0041fe9f",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-over-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-over-v1.json"
+      ]
+    },
+    {
+      "token": "rtar",
+      "compare_address": "0041feb0",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-rtar-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-rtar-v1.json"
+      ]
+    },
+    {
+      "token": "ever",
+      "compare_address": "0041febe",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ]
+    },
+    {
+      "token": "appr",
+      "compare_address": "00420044",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ]
+    },
+    {
+      "token": "bhvr",
+      "compare_address": "0042004b",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-bhvr-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-bhvr-v1.json"
+      ]
+    },
+    {
+      "token": "plds",
+      "compare_address": "00420193",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-spas-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-spas-v1.json"
+      ]
+    },
+    {
+      "token": "reps",
+      "compare_address": "004202a5",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ]
+    },
+    {
+      "token": "wait",
+      "compare_address": "004202ac",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ]
+    },
+    {
+      "token": "modv",
+      "compare_address": "00420362",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ]
+    },
+    {
+      "token": "part",
+      "compare_address": "00420384",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-part-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-part-v1.json"
+      ]
+    },
+    {
+      "token": "evnt",
+      "compare_address": "00420395",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-script-event-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-script-event-v1.json"
+      ]
+    },
+    {
+      "token": "spot",
+      "compare_address": "004203a0",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-impt-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-impt-v1.json"
+      ]
+    },
+    {
+      "token": "impt",
+      "compare_address": "004203a7",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-impt-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-impt-v1.json"
+      ]
+    },
+    {
+      "token": "mcrt",
+      "compare_address": "00420499",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-mcrt-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-mcrt-v1.json"
+      ]
+    },
+    {
+      "token": "inst",
+      "compare_address": "004204a0",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-inst-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-inst-v1.json"
+      ]
+    },
+    {
+      "token": "andv",
+      "compare_address": "004206b9",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ]
+    },
+    {
+      "token": "subv",
+      "compare_address": "004206ca",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ]
+    },
+    {
+      "token": "addv",
+      "compare_address": "004206d1",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ]
+    },
+    {
+      "token": "setv",
+      "compare_address": "00420894",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-attribution-control-arithmetic-v1.json"
+      ]
+    },
+    {
+      "token": "negv",
+      "compare_address": "004208a5",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-attribution-arithmetic-motion-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-attribution-arithmetic-motion-v1.json"
+      ]
+    },
+    {
+      "token": "rmev",
+      "compare_address": "004208b2",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-rmev-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-rmev-v1.json"
+      ]
+    },
+    {
+      "token": "dbgv",
+      "compare_address": "004208b9",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-debug-value-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-debug-value-v1.json"
+      ]
+    },
+    {
+      "token": "mulv",
+      "compare_address": "00420948",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-attribution-arithmetic-motion-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-attribution-arithmetic-motion-v1.json"
+      ]
+    },
+    {
+      "token": "orrv",
+      "compare_address": "0042094f",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-attribution-arithmetic-motion-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-attribution-arithmetic-motion-v1.json"
+      ]
+    },
+    {
+      "token": "mvby",
+      "compare_address": "004209f6",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-attribution-arithmetic-motion-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-attribution-arithmetic-motion-v1.json"
+      ]
+    },
+    {
+      "token": "divv",
+      "compare_address": "00420a07",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-attribution-arithmetic-motion-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-attribution-arithmetic-motion-v1.json"
+      ]
+    },
+    {
+      "token": "scrx",
+      "compare_address": "00420a12",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-scrx-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-scrx-v1.json"
+      ]
+    },
+    {
+      "token": "ltcy",
+      "compare_address": "00420b2c",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-snez-ltcy-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-snez-ltcy-v1.json"
+      ]
+    },
+    {
+      "token": "snez",
+      "compare_address": "00420b37",
+      "evidence_checkpointed": true,
+      "clean_slice_compiled": true,
+      "evidence_checkpoints": [
+        "0041dc40-macro-snez-ltcy-v1.json"
+      ],
+      "compile_checkpoints": [
+        "0041dc40-macro-snez-ltcy-v1.json"
+      ]
+    }
+  ],
+  "checkpoint_attribution": [
+    {
+      "checkpoint": "0041dc40-macro-anim-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 6,
+      "token_compare_addresses": [
+        "0041f62c"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041f891",
+        "00426660",
+        "00429420",
+        "0042b8b0"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-appr-v1.json",
+      "batch_id": "B017-scripting-interpreter-appr",
+      "compile_checked": true,
+      "native_address_count": 8,
+      "token_compare_addresses": [
+        "0041e199",
+        "0041e1a6"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041e1d0",
+        "0041e1fd",
+        "0041e202",
+        "0041e226",
+        "0041e229"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-arithmetic-v1.json",
+      "batch_id": "B008-scripting-interpreter-arithmetic",
+      "compile_checked": true,
+      "native_address_count": 1,
+      "token_compare_addresses": [],
+      "non_token_native_addresses": [
+        "0041dc40"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-aslp-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 6,
+      "token_compare_addresses": [
+        "0041fd1f"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041fd54",
+        "0041fd72",
+        "0041fd7f",
+        "0041fd84"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-attribution-arithmetic-motion-v1.json",
+      "batch_id": "B035-scripting-interpreter-arithmetic-motion-attribution",
+      "compile_checked": true,
+      "native_address_count": 5,
+      "token_compare_addresses": [
+        "004208a5",
+        "00420948",
+        "0042094f",
+        "004209f6",
+        "00420a07"
+      ],
+      "non_token_native_addresses": []
+    },
+    {
+      "checkpoint": "0041dc40-macro-attribution-control-arithmetic-v1.json",
+      "batch_id": "B034-scripting-interpreter-control-arithmetic-attribution",
+      "compile_checked": true,
+      "native_address_count": 18,
+      "token_compare_addresses": [
+        "0041f0a0",
+        "0041f0ab",
+        "0041f9af",
+        "0041fbb8",
+        "0041fc7e",
+        "0041fc85",
+        "0041fd0e",
+        "0041fd26",
+        "0041feb7",
+        "0041febe",
+        "00420044",
+        "004202a5",
+        "004202ac",
+        "00420362",
+        "004206b9",
+        "004206ca",
+        "004206d1",
+        "00420894"
+      ],
+      "non_token_native_addresses": []
+    },
+    {
+      "checkpoint": "0041dc40-macro-base-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 6,
+      "token_compare_addresses": [
+        "0041e9c4"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041eaef",
+        "0041eb04",
+        "0041eb0d",
+        "00420c6f"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-bbd-v1.json",
+      "batch_id": "B013-scripting-interpreter-bbd",
+      "compile_checked": true,
+      "native_address_count": 16,
+      "token_compare_addresses": [
+        "0041dd9e"
+      ],
+      "non_token_native_addresses": [
+        "0041d8a0",
+        "0041d8cb",
+        "0041d8e2",
+        "0041d90b",
+        "0041d91c",
+        "0041d923",
+        "0041d957",
+        "0041d981",
+        "0041d984",
+        "0041d9c2",
+        "0041da4e",
+        "0041da55",
+        "0041da73",
+        "0041dc40",
+        "0041e0e7"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-bhvr-v1.json",
+      "batch_id": "B009-scripting-interpreter-bhvr",
+      "compile_checked": true,
+      "native_address_count": 7,
+      "token_compare_addresses": [
+        "0042004b"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "00420056",
+        "0042008f",
+        "0042009a",
+        "004200a5",
+        "004200b0"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-cabn-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 5,
+      "token_compare_addresses": [
+        "0041f9cb"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041fa19",
+        "0042b9f0",
+        "0042bad0"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-cdie-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 5,
+      "token_compare_addresses": [
+        "0041e604"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041e60f",
+        "0041e625",
+        "0041e630"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-chem-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 10,
+      "token_compare_addresses": [
+        "0041f517"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041f563",
+        "0041f56e",
+        "0041f573",
+        "0041f5a9",
+        "0041f5c0",
+        "0041f5cd",
+        "0041f5f3",
+        "0041f5f8"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-control-flow-v1.json",
+      "batch_id": "B008-scripting-interpreter-control-flow",
+      "compile_checked": true,
+      "native_address_count": 1,
+      "token_compare_addresses": [],
+      "non_token_native_addresses": [
+        "0041dc40"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-dbug-targ-v1.json",
+      "batch_id": "B031-scripting-interpreter-dbug-targ-semantic-repair",
+      "compile_checked": true,
+      "native_address_count": 4,
+      "token_compare_addresses": [
+        "0041eee9",
+        "0041eefa"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041f05e"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-dde-prefix-v1.json",
+      "batch_id": "B016-scripting-interpreter-dde-prefix",
+      "compile_checked": true,
+      "native_address_count": 4,
+      "token_compare_addresses": [
+        "0041e0f3"
+      ],
+      "non_token_native_addresses": [
+        "0041bcb0",
+        "0041dc40",
+        "0041e0f8"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-debug-value-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 11,
+      "token_compare_addresses": [
+        "0041f51e",
+        "004208b9"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041f529",
+        "0041f537",
+        "0041f54f",
+        "0041f556",
+        "004208c4",
+        "004208d2",
+        "004208d8",
+        "004208f6"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-dispatch-family-router-v1.json",
+      "batch_id": "B008-scripting-interpreter-dispatch-family-router",
+      "compile_checked": true,
+      "native_address_count": 1,
+      "token_compare_addresses": [],
+      "non_token_native_addresses": [
+        "0041dc40"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-doif-attribution-v1.json",
+      "batch_id": "B030-scripting-interpreter-doif-attribution-repair",
+      "compile_checked": true,
+      "native_address_count": 8,
+      "token_compare_addresses": [
+        "0041eb23",
+        "0041ec36",
+        "0041ec44",
+        "0041ec52",
+        "0041ec93",
+        "0041eca2",
+        "0041ecb2"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-done-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 3,
+      "token_compare_addresses": [
+        "0041e72c"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041e7cd"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-dpas-v1.json",
+      "batch_id": "B008-scripting-interpreter-dpas",
+      "compile_checked": true,
+      "native_address_count": 13,
+      "token_compare_addresses": [
+        "0041fe8e"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "004200f8",
+        "00420121",
+        "00420135",
+        "0042013d",
+        "00420142",
+        "00420146",
+        "00420151",
+        "0042015c",
+        "00420164",
+        "00420184",
+        "00420190"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-drea-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 4,
+      "token_compare_addresses": [
+        "0041e23d"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041e270",
+        "0041e2a4"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-drop-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 4,
+      "token_compare_addresses": [
+        "0041fdea"
+      ],
+      "non_token_native_addresses": [
+        "00408420",
+        "0041dc40",
+        "0041fdbf"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-edit-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 4,
+      "token_compare_addresses": [
+        "0041f97c"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0042033c",
+        "00420357"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-else-attribution-v1.json",
+      "batch_id": "B028-scripting-interpreter-else-attribution-repair",
+      "compile_checked": true,
+      "native_address_count": 6,
+      "token_compare_addresses": [
+        "0041e9cf",
+        "0041ea66",
+        "0041ea74",
+        "0041eabb",
+        "0041eaca"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-enum-next-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 9,
+      "token_compare_addresses": [
+        "0041f9c0",
+        "00420373"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041fa85",
+        "0041faf0",
+        "0041fb04",
+        "0041fb15",
+        "004704a8",
+        "004704ac"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-exec-parser-v1.json",
+      "batch_id": "B023-scripting-interpreter-exec-parser",
+      "compile_checked": true,
+      "native_address_count": 5,
+      "token_compare_addresses": [
+        "0041e357"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041e362",
+        "0041e375",
+        "0041e386"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-fade-dispatch-v2.json",
+      "batch_id": "B020-scripting-interpreter-fade-dispatch",
+      "compile_checked": true,
+      "native_address_count": 6,
+      "token_compare_addresses": [
+        "0041e327"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041e5ca",
+        "0041e5d8",
+        "0041e5e6",
+        "0041e5eb"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-fade-v1.json",
+      "batch_id": "B008-scripting-interpreter-fade",
+      "compile_checked": false,
+      "native_address_count": 1,
+      "token_compare_addresses": [],
+      "non_token_native_addresses": [
+        "0041dc40"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-fire-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 18,
+      "token_compare_addresses": [
+        "0041dd6b"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041e83c",
+        "0041e84b",
+        "0041e858",
+        "0041e85d",
+        "0041e888",
+        "0041e89c",
+        "0041e8b0",
+        "0041e8bd",
+        "0041e8d0",
+        "0041e8f1",
+        "0041e935",
+        "0041e945",
+        "0041e951",
+        "0041e957",
+        "0041e970",
+        "0041e988"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-gpas-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 9,
+      "token_compare_addresses": [],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "004201a4",
+        "004201a9",
+        "0042021d",
+        "00420223",
+        "0042022b",
+        "00420233",
+        "00420238",
+        "0042023e"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-gsub-subroutine-v1.json",
+      "batch_id": "B024-scripting-interpreter-gsub-subroutine-cache",
+      "compile_checked": true,
+      "native_address_count": 8,
+      "token_compare_addresses": [
+        "0041e349",
+        "0041e434"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041e3c1",
+        "0041e420",
+        "0041e43b",
+        "0041e46f",
+        "0041e475"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-impt-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 9,
+      "token_compare_addresses": [
+        "004203a0",
+        "004203a7"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "004203b2",
+        "004203b4",
+        "004203b9",
+        "004203c7",
+        "004203dc",
+        "004203e2"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-inst-v1.json",
+      "batch_id": "B008-scripting-interpreter-inst",
+      "compile_checked": true,
+      "native_address_count": 4,
+      "token_compare_addresses": [
+        "004204a0"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "004204ab",
+        "004204b2"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-interpreter-dispatch-held-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": false,
+      "native_address_count": 1,
+      "token_compare_addresses": [],
+      "non_token_native_addresses": [
+        "0041dc40"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-kill-walk-sndl-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 16,
+      "token_compare_addresses": [
+        "0041f109",
+        "0041f11a",
+        "0041f127",
+        "0041f12e"
+      ],
+      "non_token_native_addresses": [
+        "004082c0",
+        "0041dc40",
+        "0041f139",
+        "0041f167",
+        "0041f187",
+        "0041f192",
+        "0041f19e",
+        "0041f1b5",
+        "0041f1c2",
+        "0042cd70",
+        "0042cf30",
+        "00457b28"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-knob-v1.json",
+      "batch_id": "B012-scripting-interpreter-knob",
+      "compile_checked": true,
+      "native_address_count": 12,
+      "token_compare_addresses": [
+        "0041dd7c"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041e2df",
+        "0041e2e1",
+        "0041e2e6",
+        "0041e2ea",
+        "0041e2ef",
+        "0041e2f7",
+        "0041e312",
+        "0041e315",
+        "0041e31b",
+        "0041e322"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-mate-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 6,
+      "token_compare_addresses": [
+        "0041e9b3"
+      ],
+      "non_token_native_addresses": [
+        "0040cbc0",
+        "0041dc40",
+        "0041f0b6",
+        "0041f0d7",
+        "00420c6f"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-mcrt-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 13,
+      "token_compare_addresses": [
+        "00420499"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041f615",
+        "0041f617",
+        "0041f61c",
+        "0041f622",
+        "004204b7",
+        "004204c2",
+        "004204d7",
+        "004204e4",
+        "004204f1",
+        "00420500",
+        "00420509"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-message-events-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 9,
+      "token_compare_addresses": [
+        "0041ef05"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041ef67",
+        "0041ef8e",
+        "0041f037",
+        "00422e80",
+        "00422f90",
+        "00423030",
+        "00423090"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-message-stimulus-nested-attribution-v1.json",
+      "batch_id": "B032-scripting-interpreter-message-stimulus-nested-attribution",
+      "compile_checked": true,
+      "native_address_count": 9,
+      "token_compare_addresses": [
+        "0041ef2e",
+        "0041ef3b",
+        "0041ef42",
+        "0041f010",
+        "0041f6f6",
+        "0041f6fd",
+        "0041f735",
+        "0041f740"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-motion-v1.json",
+      "batch_id": "B008-scripting-interpreter-object-motion",
+      "compile_checked": true,
+      "native_address_count": 1,
+      "token_compare_addresses": [],
+      "non_token_native_addresses": [
+        "0041dc40"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-mvto-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 3,
+      "token_compare_addresses": [
+        "0041f99e"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041fce4"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-new-prefix-v1.json",
+      "batch_id": "B018-scripting-interpreter-new-prefix",
+      "compile_checked": true,
+      "native_address_count": 6,
+      "token_compare_addresses": [
+        "0041e1ad"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041e1b2",
+        "0041e1b8",
+        "0041e1ba",
+        "0041e1bf"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-opcode-inventory-v1.json",
+      "batch_id": "B008-scripting-interpreter-opcode-inventory",
+      "compile_checked": true,
+      "native_address_count": 1,
+      "token_compare_addresses": [],
+      "non_token_native_addresses": [
+        "0041dc40"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-over-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 8,
+      "token_compare_addresses": [
+        "0041fe9f"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "00420017",
+        "0042001f",
+        "00420027",
+        "0042002d",
+        "00420035",
+        "0042003b"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-part-v1.json",
+      "batch_id": "B008-scripting-interpreter-part",
+      "compile_checked": true,
+      "native_address_count": 6,
+      "token_compare_addresses": [
+        "00420384"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "00420487",
+        "00420489",
+        "0042048e",
+        "00420494"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-poin-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 5,
+      "token_compare_addresses": [
+        "0041f9d2"
+      ],
+      "non_token_native_addresses": [
+        "00406dc0",
+        "0041dc40",
+        "0041f9dd",
+        "0041fa02"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-pose-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 6,
+      "token_compare_addresses": [
+        "0041e9d6"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041e9e6",
+        "0041e9f3",
+        "0041ea08",
+        "0041ea10"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-prefix-boundaries-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 5,
+      "token_compare_addresses": [
+        "0041dd8d",
+        "0041e0fa",
+        "0041e16e"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041e146"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-prld-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 9,
+      "token_compare_addresses": [
+        "0041e500"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041e511",
+        "0041e52d",
+        "0041e538",
+        "0041e541",
+        "00426680",
+        "004294d0",
+        "0042b980"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-repe-attribution-v1.json",
+      "batch_id": "B027-scripting-interpreter-repe-attribution-repair",
+      "compile_checked": true,
+      "native_address_count": 8,
+      "token_compare_addresses": [
+        "0041e737"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041e742",
+        "0041e764",
+        "0041e76d",
+        "0041e77d",
+        "0041e7a9",
+        "0041e7c3"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-reps-kill-routes-v1.json",
+      "batch_id": "B004-macro-interpreter-lifecycle",
+      "compile_checked": true,
+      "native_address_count": 5,
+      "token_compare_addresses": [],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "004202c3",
+        "004202ce",
+        "0042050e",
+        "00420609"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-rmev-v1.json",
+      "batch_id": "B008-scripting-interpreter-rmev",
+      "compile_checked": true,
+      "native_address_count": 5,
+      "token_compare_addresses": [
+        "004208b2"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "00420903",
+        "0042090a",
+        "00420918"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-rndv-v1.json",
+      "batch_id": "B008-scripting-interpreter-rndv",
+      "compile_checked": true,
+      "native_address_count": 8,
+      "token_compare_addresses": [],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "00420780",
+        "004207eb",
+        "00420807",
+        "0042080e",
+        "0042081d",
+        "00420821",
+        "00420843"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-room-v1.json",
+      "batch_id": "B011-scripting-interpreter-room",
+      "compile_checked": true,
+      "native_address_count": 22,
+      "token_compare_addresses": [
+        "0041dd5a"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041f8ce",
+        "0041f8d0",
+        "0041f8d9",
+        "0041f8e6",
+        "0041f8f3",
+        "0041f900",
+        "0041f907",
+        "0041f90a",
+        "0041f910",
+        "0041f927",
+        "0041f931",
+        "0041f93b",
+        "0041f945",
+        "0041f949",
+        "0041f95e",
+        "0041f968",
+        "0041f971",
+        "0041f974",
+        "0041f977",
+        "004202fa"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-router-rndv-v1.json",
+      "batch_id": "B008-scripting-interpreter-router-rndv",
+      "compile_checked": true,
+      "native_address_count": 8,
+      "token_compare_addresses": [],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "00420780",
+        "004207eb",
+        "00420807",
+        "0042080e",
+        "0042081d",
+        "00420821",
+        "00420843"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-rtar-v1.json",
+      "batch_id": "B010-scripting-interpreter-rtar",
+      "compile_checked": true,
+      "native_address_count": 9,
+      "token_compare_addresses": [
+        "0041feb0"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041fee0",
+        "0041ff39",
+        "0041ff8c",
+        "0041ffa7",
+        "0041fff0",
+        "00420003",
+        "00420c6f"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-script-event-v1.json",
+      "batch_id": "B036-scripting-interpreter-scrp-evnt",
+      "compile_checked": true,
+      "native_address_count": 12,
+      "token_compare_addresses": [
+        "0041fdf1",
+        "00420395"
+      ],
+      "non_token_native_addresses": [
+        "0041fdfc",
+        "0041fe07",
+        "0041fe14",
+        "0041fe20",
+        "0041fe30",
+        "0041fe3a",
+        "00420475",
+        "00420477",
+        "0042047d",
+        "00420c6f"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-scrx-v1.json",
+      "batch_id": "B008-scripting-interpreter-scrx",
+      "compile_checked": true,
+      "native_address_count": 8,
+      "token_compare_addresses": [
+        "00420a12"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "00420a1d",
+        "00420a26",
+        "00420a35",
+        "00420a43",
+        "00420a4c",
+        "00420abc"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-slim-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 6,
+      "token_compare_addresses": [
+        "0041f506"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041f511",
+        "0041f607",
+        "0041f615",
+        "0041f622"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-snde-attribution-v1.json",
+      "batch_id": "B026-scripting-interpreter-snde-attribution-repair",
+      "compile_checked": true,
+      "native_address_count": 6,
+      "token_compare_addresses": [
+        "0041e5fd"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041e63a",
+        "0041e655",
+        "0041e668",
+        "0042ce20"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-sndf-attribution-v1.json",
+      "batch_id": "B029-scripting-interpreter-sndf-attribution-repair",
+      "compile_checked": true,
+      "native_address_count": 6,
+      "token_compare_addresses": [
+        "0041eb18",
+        "0041ecf5",
+        "0041ed06",
+        "0041ed0d",
+        "0041ee14"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-sndq-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 4,
+      "token_compare_addresses": [
+        "0041f98d"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041fe54",
+        "0042ce20"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-sndv-v1.json",
+      "batch_id": "B009-scripting-interpreter-sndv",
+      "compile_checked": true,
+      "native_address_count": 5,
+      "token_compare_addresses": [],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "00420780",
+        "00420790",
+        "004207a3",
+        "004207e0"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-snez-ltcy-v1.json",
+      "batch_id": "B008-scripting-interpreter-snez-ltcy",
+      "compile_checked": true,
+      "native_address_count": 9,
+      "token_compare_addresses": [
+        "00420b2c",
+        "00420b37"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "00420be5",
+        "00420c10",
+        "00420c48",
+        "00420c4d",
+        "00420c68",
+        "00420c6f"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-sound-cache-v1.json",
+      "batch_id": "B008-scripting-interpreter-sound-cache",
+      "compile_checked": false,
+      "native_address_count": 1,
+      "token_compare_addresses": [],
+      "non_token_native_addresses": [
+        "0041dc40"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-sound-change-dispatch-v2.json",
+      "batch_id": "B022-scripting-interpreter-sndc-dispatch",
+      "compile_checked": true,
+      "native_address_count": 6,
+      "token_compare_addresses": [
+        "0041e350"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041e38b",
+        "0041e3a6",
+        "0041e3b7",
+        "0041e3bc"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-sound-policy-v1.json",
+      "batch_id": "B008-scripting-interpreter-sound-policy",
+      "compile_checked": false,
+      "native_address_count": 1,
+      "token_compare_addresses": [],
+      "non_token_native_addresses": [
+        "0041dc40"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-sound-v1.json",
+      "batch_id": "B008-scripting-interpreter-sound",
+      "compile_checked": false,
+      "native_address_count": 1,
+      "token_compare_addresses": [],
+      "non_token_native_addresses": [
+        "0041dc40"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-spas-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 11,
+      "token_compare_addresses": [
+        "00420193"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "004201ab",
+        "004201b4",
+        "004201bf",
+        "004201c6",
+        "004201ce",
+        "004201d6",
+        "004201ec",
+        "004201f8",
+        "00420212"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-speech-v1.json",
+      "batch_id": "B015-scripting-interpreter-speech",
+      "compile_checked": true,
+      "native_address_count": 10,
+      "token_compare_addresses": [
+        "0041ddba",
+        "0041ddc1"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041ddbf",
+        "0041ddc6",
+        "0041ddcc",
+        "0041ddd9",
+        "0041de07",
+        "0041de11",
+        "0041de57"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-spot-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 16,
+      "token_compare_addresses": [],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "004203e7",
+        "004203e9",
+        "004203f2",
+        "004203ff",
+        "0042040c",
+        "00420415",
+        "0042041a",
+        "00420428",
+        "00420431",
+        "0042043d",
+        "0042044e",
+        "0042045b",
+        "00420462",
+        "00420469",
+        "00420470"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-stim-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 22,
+      "token_compare_addresses": [
+        "0041f637",
+        "0041f66b",
+        "0041f6ed"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041f642",
+        "0041f672",
+        "0041f681",
+        "0041f68e",
+        "0041f69b",
+        "0041f6a8",
+        "0041f6b3",
+        "0041f6d9",
+        "0041f70f",
+        "0041f72b",
+        "0041f74b",
+        "0041f79f",
+        "0041f7b8",
+        "0041f7bf",
+        "0041f7cf",
+        "0041f80f",
+        "0041f82b",
+        "0041f881"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-stimulus-fanout-correction-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 3,
+      "token_compare_addresses": [],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "00423390",
+        "00423470"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-stimulus-fanout-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 3,
+      "token_compare_addresses": [],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "00423390",
+        "00423470"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-stimulus-shou-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 1,
+      "token_compare_addresses": [],
+      "non_token_native_addresses": [
+        "0041dc40"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-stimulus-writ-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 1,
+      "token_compare_addresses": [],
+      "non_token_native_addresses": [
+        "0041dc40"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-stm-prefix-v1.json",
+      "batch_id": "B014-scripting-interpreter-stm-prefix",
+      "compile_checked": true,
+      "native_address_count": 14,
+      "token_compare_addresses": [
+        "0041ddaf",
+        "0041de94",
+        "0041dea1",
+        "0041dea8",
+        "0041dfa7"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041ddb4",
+        "0041de78",
+        "0041deb3",
+        "0041ded4",
+        "0041df23",
+        "0041df97",
+        "0041dfd5",
+        "0041e0c4"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-stop-channel-dispatch-v2.json",
+      "batch_id": "B021-scripting-interpreter-stpc-dispatch",
+      "compile_checked": true,
+      "native_address_count": 7,
+      "token_compare_addresses": [
+        "0041e338"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041e480",
+        "0041e48e",
+        "0041e4c0",
+        "0041e4da",
+        "0041e4df"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-stop-channel-v1.json",
+      "batch_id": "B008-scripting-interpreter-stop-channel",
+      "compile_checked": false,
+      "native_address_count": 1,
+      "token_compare_addresses": [],
+      "non_token_native_addresses": [
+        "0041dc40"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-tele-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 23,
+      "token_compare_addresses": [
+        "0041e5f0"
+      ],
+      "non_token_native_addresses": [
+        "004132a0",
+        "004172f0",
+        "0041dc40",
+        "0041e672",
+        "0041e674",
+        "0041e681",
+        "0041e690",
+        "0041e6a4",
+        "0041e6af",
+        "0041e6b7",
+        "0041e6c2",
+        "0041e6c9",
+        "0041e6d9",
+        "0041e6e0",
+        "0041e6ec",
+        "0041e700",
+        "0041e711",
+        "0041e716",
+        "0041e720",
+        "0041e726",
+        "004257f0",
+        "00426470"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-tick-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 7,
+      "token_compare_addresses": [
+        "0041e991"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041f0e1",
+        "0041f0e8",
+        "0041f0f8",
+        "0041f101",
+        "0041f104"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-tool-registration-v1.json",
+      "batch_id": "B033-scripting-interpreter-tool-registration",
+      "compile_checked": true,
+      "native_address_count": 9,
+      "token_compare_addresses": [
+        "0041f1cf"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041f2dd",
+        "0041f303",
+        "0041f36c",
+        "0041f430",
+        "0041f4ab",
+        "0041f4d4",
+        "0041f4f6"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-tool-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 11,
+      "token_compare_addresses": [],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041f2dd",
+        "0041f303",
+        "0041f31b",
+        "0041f36c",
+        "0041f3b2",
+        "0041f3c8",
+        "0041f44f",
+        "0041f4ab",
+        "0041f4d4",
+        "0041f4f6"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-touch-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 8,
+      "token_compare_addresses": [
+        "0041e4f9"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041e546",
+        "0041e56b",
+        "0041e575",
+        "0041e57e",
+        "0041e587",
+        "0041e5c0"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-trig-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 7,
+      "token_compare_addresses": [
+        "0041e9a2"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041ee5c",
+        "0041eea4",
+        "0041eece",
+        "0041eee0",
+        "00420c6f"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-typed-dispatch-router-v1.json",
+      "batch_id": "B004-macro-interpreter-typed-dispatch",
+      "compile_checked": true,
+      "native_address_count": 0,
+      "token_compare_addresses": [],
+      "non_token_native_addresses": []
+    },
+    {
+      "checkpoint": "0041dc40-macro-untl-comparison-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 13,
+      "token_compare_addresses": [
+        "0041f1da"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041f1e7",
+        "0041f21d",
+        "0041f22b",
+        "0041f24f",
+        "0041f25d",
+        "0041f26b",
+        "0041f279",
+        "0041f287",
+        "0041f293",
+        "0041f2a7",
+        "0041f2b8"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-vocb-v1.json",
+      "batch_id": "B019-scripting-interpreter-vocb",
+      "compile_checked": true,
+      "native_address_count": 6,
+      "token_compare_addresses": [
+        "0041e244"
+      ],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041e24f",
+        "0041e25d",
+        "0041e270",
+        "0041e275"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-vrsn-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": true,
+      "native_address_count": 7,
+      "token_compare_addresses": [],
+      "non_token_native_addresses": [
+        "0041dc40",
+        "0041fbfc",
+        "0041fc03",
+        "0041fc2b",
+        "0041fc5b",
+        "0041fc6c",
+        "0041fc74"
+      ]
+    },
+    {
+      "checkpoint": "0041dc40-macro-wait-finalization-v1.json",
+      "batch_id": "B001-scripting-semantic_translation",
+      "compile_checked": false,
+      "native_address_count": 1,
+      "token_compare_addresses": [],
+      "non_token_native_addresses": [
+        "0041dc40"
+      ]
+    }
+  ],
+  "integrity": {
+    "duplicate_token_site_claims": [],
+    "duplicate_token_site_claim_count": 0,
+    "explicit_address_claims_required": true
+  },
+  "interpretation": {
+    "native_evidence_is_not_source_completion": true,
+    "compiled_slice_is_not_outer_integration": true,
+    "instruction_coverage_is_not_claimed_by_token_site_counts": true,
+    "queue_row_0041dc40_remains_pending": false
+  }
+}

@@ -1,0 +1,437 @@
+{
+  "schema": "c1-boundary-contract-audit-v1",
+  "program": "Creatures.exe",
+  "snapshot_sha256": "ce33b958a77ecae12ddf5b29f1156a5e02138ec6036a8639b5f5b74bffee70ae",
+  "contract": {
+    "compiler_runtime_is_toolchain_supplied": true,
+    "external_boundary_is_sdk_or_import_supplied": true,
+    "game_policy_callers_remain_in_queue": true,
+    "bootstrap_free_function_bucket_is_not_a_source_input": true
+  },
+  "counts": {
+    "project_functions": 2332,
+    "compiler_runtime_rows": 955,
+    "external_boundary_rows": 453,
+    "queue_work_items": 923,
+    "queue_runtime_or_external_rows": 0,
+    "queue_suspicious_owned_names": 0
+  },
+  "runtime_families": {
+    "allocation": 7,
+    "crt_startup": 20,
+    "exception_unwind": 703,
+    "iostream_file": 28,
+    "msvc_containers": 43,
+    "msvc_string": 20,
+    "other_compiler_runtime": 134
+  },
+  "runtime_family_examples": {
+    "other_compiler_runtime": [
+      {
+        "address": "004013b0",
+        "name": "InitializeEntityRegistry"
+      },
+      {
+        "address": "004013e0",
+        "name": "InitializeNonSceneryObjectRegistry"
+      },
+      {
+        "address": "00401560",
+        "name": "InitializeSceneryRegistry"
+      },
+      {
+        "address": "00401590",
+        "name": "InitializeWorldObjectRegistry"
+      },
+      {
+        "address": "00401851",
+        "name": "InitializeAtlBaseModuleAndRegisterCleanup"
+      },
+      {
+        "address": "004019d0",
+        "name": "guard_check_icall"
+      },
+      {
+        "address": "00401ed0",
+        "name": "NoOpVirtualMethod"
+      },
+      {
+        "address": "00402040",
+        "name": "std::exception::exception_copy"
+      }
+    ],
+    "iostream_file": [
+      {
+        "address": "00401867",
+        "name": "RegisterMsvcFacetNodeCleanup"
+      },
+      {
+        "address": "004104a0",
+        "name": "std::basic_ofstream<char,std::char_traits<char>>::~basic_ofstream"
+      },
+      {
+        "address": "00410900",
+        "name": "StdBasicOfstream_CloseAndDispatch"
+      },
+      {
+        "address": "00410e10",
+        "name": "std::basic_ofstream<char,std::char_traits<char>>::basic_ofstream"
+      },
+      {
+        "address": "00410ef0",
+        "name": "StdBasicFilebuf_InitializeCodecvtFacet"
+      },
+      {
+        "address": "00410f30",
+        "name": "StdBasicFilebuf_Sync"
+      },
+      {
+        "address": "00410f70",
+        "name": "MsvcBasicFilebuf_SetBuffer"
+      },
+      {
+        "address": "00411050",
+        "name": "MsvcBasicFilebuf_SeekPosition"
+      }
+    ],
+    "allocation": [
+      {
+        "address": "00401f30",
+        "name": "DeleteHeapAllocation"
+      },
+      {
+        "address": "00406480",
+        "name": "MsvcStringAllocatorAllocate"
+      },
+      {
+        "address": "00406640",
+        "name": "MsvcAlignedDeallocateWithCapacity"
+      },
+      {
+        "address": "00406680",
+        "name": "MsvcAlignedAllocateFromSize"
+      },
+      {
+        "address": "004066d0",
+        "name": "MsvcAlignedDeallocate"
+      },
+      {
+        "address": "0044a750",
+        "name": "MsvcOperatorDeleteWrapper"
+      },
+      {
+        "address": "0044a75e",
+        "name": "MsvcOperatorDeleteAdapter"
+      }
+    ],
+    "exception_unwind": [
+      {
+        "address": "00402080",
+        "name": "MsvcException_ScalarDeletingDestructor"
+      },
+      {
+        "address": "00402150",
+        "name": "MsvcBadAlloc_CopyConstruct"
+      },
+      {
+        "address": "004081b8",
+        "name": "Catch@004081b8"
+      },
+      {
+        "address": "004081c8",
+        "name": "MsvcCppEhFunclet_00481c8"
+      },
+      {
+        "address": "004081ce",
+        "name": "Catch@004081ce"
+      },
+      {
+        "address": "00408950",
+        "name": "MsvcEhCleanupCStringAt248"
+      },
+      {
+        "address": "0040f963",
+        "name": "Catch_All@0040f963"
+      },
+      {
+        "address": "0040f996",
+        "name": "MsvcCppEhFunclet_004f996"
+      }
+    ],
+    "msvc_string": [
+      {
+        "address": "00406420",
+        "name": "MsvcBasicString_Reset"
+      },
+      {
+        "address": "004064e0",
+        "name": "MsvcBasicString_AppendBytes"
+      },
+      {
+        "address": "00411dc0",
+        "name": "MsvcBasicString_AppendChar"
+      },
+      {
+        "address": "004398d0",
+        "name": "MsvcBasicString_Reserve"
+      },
+      {
+        "address": "00439a20",
+        "name": "MsvcBasicString_MoveConstruct"
+      },
+      {
+        "address": "00439a60",
+        "name": "MsvcBasicString_AssignCString"
+      },
+      {
+        "address": "00439aa0",
+        "name": "MsvcBasicString_CopyConstruct"
+      },
+      {
+        "address": "00439fe0",
+        "name": "MsvcBasicString_AssignBytes"
+      }
+    ],
+    "msvc_containers": [
+      {
+        "address": "00414240",
+        "name": "MsvcSmallBuffer_ReleaseHeapIfLarge"
+      },
+      {
+        "address": "0042d1f0",
+        "name": "MsvcUnwindCleanup_FreeHeapBufferAtFramePlus4"
+      },
+      {
+        "address": "0042d490",
+        "name": "ResizeU32VectorWithFill"
+      },
+      {
+        "address": "0042d560",
+        "name": "FillU32Range"
+      },
+      {
+        "address": "0042d580",
+        "name": "FillU32RangeOptimized"
+      },
+      {
+        "address": "0042d5e0",
+        "name": "FreeU32ArrayAllocation"
+      },
+      {
+        "address": "00435f20",
+        "name": "MsvcVectorStorage_Release"
+      },
+      {
+        "address": "00435f80",
+        "name": "MsvcListStorage_Release"
+      }
+    ],
+    "crt_startup": [
+      {
+        "address": "0044a71f",
+        "name": "__security_check_cookie"
+      },
+      {
+        "address": "0044ab3a",
+        "name": "___scrt_acquire_startup_lock"
+      },
+      {
+        "address": "0044ab6c",
+        "name": "___scrt_initialize_crt"
+      },
+      {
+        "address": "0044aba5",
+        "name": "___scrt_initialize_onexit_tables"
+      },
+      {
+        "address": "0044acc3",
+        "name": "___scrt_release_startup_lock"
+      },
+      {
+        "address": "0044ace0",
+        "name": "___scrt_uninitialize_crt"
+      },
+      {
+        "address": "0044ad36",
+        "name": "_atexit"
+      },
+      {
+        "address": "0044af4e",
+        "name": "___scrt_common_main_seh"
+      }
+    ]
+  },
+  "bootstrap": {
+    "bootstrap_source_files": 299,
+    "bootstrap_boundary_sections": {
+      "compiler_runtime": 954,
+      "external_boundary": 451,
+      "platform_or_application_glue": 27
+    },
+    "legacy_evidence_files": [
+      "API-MS-WIN-CRT-HEAP-L1-1-0.DLL.cpp",
+      "API-MS-WIN-CRT-LOCALE-L1-1-0.DLL.cpp",
+      "API-MS-WIN-CRT-MATH-L1-1-0.DLL.cpp",
+      "API-MS-WIN-CRT-RUNTIME-L1-1-0.DLL.cpp",
+      "API-MS-WIN-CRT-STDIO-L1-1-0.DLL.cpp",
+      "C1MsvcString.hpp",
+      "MFC140.DLL.cpp",
+      "MSVCP140.DLL.cpp",
+      "VCRUNTIME140.DLL.cpp",
+      "_free_functions.cpp",
+      "std.cpp"
+    ],
+    "c1_prefixed_runtime_artifacts": [
+      {
+        "file": "C1MfcCStringArray.cpp",
+        "names": [
+          "C1MfcCString",
+          "C1MfcCStringArray"
+        ]
+      },
+      {
+        "file": "CAOSConsoleDlg.cpp",
+        "names": [
+          "C1MfcCString"
+        ]
+      },
+      {
+        "file": "CBrain.cpp",
+        "names": [
+          "C1MsvcVectorThiscallCallback"
+        ]
+      },
+      {
+        "file": "CCreatureRegister.cpp",
+        "names": [
+          "C1MsvcVectorThiscallCallback"
+        ]
+      },
+      {
+        "file": "CGallery.cpp",
+        "names": [
+          "C1MsvcVectorThiscallCallback"
+        ]
+      },
+      {
+        "file": "CMainFrame.cpp",
+        "names": [
+          "C1MsvcString",
+          "C1MsvcVectorThiscallCallback"
+        ]
+      },
+      {
+        "file": "COwner.cpp",
+        "names": [
+          "C1MsvcVectorThiscallCallback"
+        ]
+      },
+      {
+        "file": "Creature.cpp",
+        "names": [
+          "C1MsvcVectorThiscallCallback"
+        ]
+      },
+      {
+        "file": "MapData.cpp",
+        "names": [
+          "C1MsvcVectorThiscallCallback"
+        ]
+      },
+      {
+        "file": "SFCApp.cpp",
+        "names": [
+          "C1MsvcString"
+        ]
+      },
+      {
+        "file": "SFCDoc.cpp",
+        "names": [
+          "C1MsvcVectorThiscallCallback"
+        ]
+      },
+      {
+        "file": "SFCView.cpp",
+        "names": [
+          "C1MsvcString"
+        ]
+      },
+      {
+        "file": "_free_functions.cpp",
+        "names": [
+          "C1MsvcString",
+          "C1MsvcStringDataPointer",
+          "C1MsvcThiscallVoidPtr",
+          "C1MsvcVectorThiscallCallback",
+          "C1Snprintf_00449740"
+        ]
+      },
+      {
+        "file": "C1MfcCString.hpp",
+        "names": [
+          "C1MfcCString"
+        ]
+      },
+      {
+        "file": "C1MfcCStringArray.hpp",
+        "names": [
+          "C1MfcCStringArray"
+        ]
+      },
+      {
+        "file": "C1MsvcBasicFilebufCharLayout.hpp",
+        "names": [
+          "C1MsvcBasicFilebufCharLayout",
+          "C1MsvcBasicStreambufCharLayout"
+        ]
+      },
+      {
+        "file": "C1MsvcBasicOfstreamCharLayout.hpp",
+        "names": [
+          "C1MsvcBasicFilebufCharLayout",
+          "C1MsvcBasicOfstreamCharLayout"
+        ]
+      },
+      {
+        "file": "C1MsvcBasicStreambufCharLayout.hpp",
+        "names": [
+          "C1MsvcBasicStreambufCharLayout"
+        ]
+      },
+      {
+        "file": "CAOSConsoleDlg.hpp",
+        "names": [
+          "C1MfcCString",
+          "C1MfcCStringArray"
+        ]
+      },
+      {
+        "file": "DebugConsoleDialog.hpp",
+        "names": [
+          "C1MsvcBasicOfstreamCharLayout"
+        ]
+      },
+      {
+        "file": "PipeServerCommandContext.hpp",
+        "names": [
+          "C1MsvcString"
+        ]
+      }
+    ]
+  },
+  "clean_source": {
+    "exists": true,
+    "source_files": 269,
+    "forbidden_token_findings": [],
+    "status": "pass"
+  },
+  "checks": {
+    "duplicate_queue_addresses": [],
+    "queue_missing_project_rows": [],
+    "non_metadata_missing_file": [],
+    "forbidden_destinations": [],
+    "suspicious_owned_names": [],
+    "reviewed_boundary_regressions": [],
+    "failures": []
+  }
+}

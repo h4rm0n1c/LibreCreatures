@@ -1,0 +1,578 @@
+{
+  "schema": "c1-port-completeness-v1",
+  "program": "Creatures.exe",
+  "dimensions": [
+    {
+      "dimension": "function inventory",
+      "source": "c1-boundary-contract-audit-v1.json",
+      "total": 2332,
+      "resolved": 2331,
+      "note": "every recovered function is classified as toolchain, SDK/import or C1-owned"
+    },
+    {
+      "dimension": "function translation",
+      "source": "queue + admissions ledger",
+      "total": 923,
+      "resolved": 377,
+      "outstanding_kind": "verify and checkpoint",
+      "note": "546 of the 546 outstanding are already admitted translations; 0 are unwritten"
+    },
+    {
+      "dimension": "composition liveness",
+      "source": "c1-composition-liveness-audit-v1.json + composition holds",
+      "total": 101,
+      "resolved": 101,
+      "outstanding_kind": "bind held boundaries",
+      "note": "1 composition holds remain: translated behaviour that the executable cannot yet reach"
+    },
+    {
+      "dimension": "menu command routing",
+      "source": "c1-ui-surface-audit-v1.json",
+      "total": 51,
+      "resolved": 51,
+      "outstanding_kind": "route to a native handler",
+      "note": "concrete_document=1; concrete_frame=44; framework_default=2; framework_shell_only=3; placeholder=1"
+    },
+    {
+      "dimension": "absent shell classes",
+      "source": "held framework-metadata rows",
+      "total": 11,
+      "resolved": 0,
+      "outstanding_kind": "implement the MFC class",
+      "note": "modules holding rows because the port has no counterpart class at all"
+    }
+  ],
+  "work_queue": [
+    {
+      "kind": "composition_hold",
+      "module": "application/main_frame.cpp",
+      "count": 1,
+      "addresses": [
+        "00421080"
+      ],
+      "why": "translated behaviour not reachable from the executable"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "application/application.cpp",
+      "count": 81,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "objects/object.cpp",
+      "count": 27,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "creatures/skeleton.cpp",
+      "count": 27,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "objects/compound_object.cpp",
+      "count": 24,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "creatures/creature.cpp",
+      "count": 23,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "display/rendering.cpp",
+      "count": 21,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "ui/views.cpp",
+      "count": 20,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "objects/simple_object.cpp",
+      "count": 19,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "sound/sound.cpp",
+      "count": 17,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "creatures/genome.cpp",
+      "count": 16,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "scripting/pipe_server.cpp",
+      "count": 15,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "application/document.cpp",
+      "count": 14,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "application/sfc_ole.cpp",
+      "count": 11,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "ui/caos_console.cpp",
+      "count": 10,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "creatures/body.cpp",
+      "count": 9,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "creatures/voice.cpp",
+      "count": 9,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "application/main_frame.cpp",
+      "count": 9,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "ui/debug_console.cpp",
+      "count": 9,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "ui/tip_dialog.cpp",
+      "count": 8,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "objects/entity.cpp",
+      "count": 8,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "brain/brain.cpp",
+      "count": 7,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "ui/event_bar.cpp",
+      "count": 7,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "display/image.cpp",
+      "count": 7,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "brain/blackboard.cpp",
+      "count": 7,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "ui/tools.cpp",
+      "count": 6,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "scripting/macro.cpp",
+      "count": 6,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "scripting/macro_holder.cpp",
+      "count": 6,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "application/embedded_kits.cpp",
+      "count": 5,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "ui/place_dialog.cpp",
+      "count": 5,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "ui/world_statistics.cpp",
+      "count": 5,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "world/viewport.cpp",
+      "count": 4,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "brain/lobe.cpp",
+      "count": 4,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "creatures/registry.cpp",
+      "count": 4,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "display/palette.cpp",
+      "count": 4,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "ui/toolbars.cpp",
+      "count": 3,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "biochemistry/biochemistry.cpp",
+      "count": 3,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "creatures/bacterium.cpp",
+      "count": 3,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "platform/formatting.cpp",
+      "count": 3,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "display/gallery.cpp",
+      "count": 3,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "creatures/update.cpp",
+      "count": 3,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "platform/registry.cpp",
+      "count": 3,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "creatures/events.cpp",
+      "count": 3,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "ui/creature_selection.cpp",
+      "count": 3,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "world/update_timer.cpp",
+      "count": 3,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "world/map.cpp",
+      "count": 3,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "world/geometry.cpp",
+      "count": 3,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "objects/bubble.cpp",
+      "count": 3,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "world/tick.cpp",
+      "count": 2,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "objects/call_button.cpp",
+      "count": 2,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "ui/version_dialog.cpp",
+      "count": 2,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "brain/neuron.cpp",
+      "count": 2,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "objects/vehicle.cpp",
+      "count": 2,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "ui/windows.cpp",
+      "count": 2,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "ui/score.cpp",
+      "count": 2,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "ui/volume_dialog.cpp",
+      "count": 2,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "common/filesystem.cpp",
+      "count": 2,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "brain/rules.cpp",
+      "count": 2,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "brain/instinct.cpp",
+      "count": 2,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "application/file_commands.cpp",
+      "count": 2,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "platform/mfc_adapters.cpp",
+      "count": 2,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "archive/backup.cpp",
+      "count": 2,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "platform/environment.cpp",
+      "count": 1,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "platform/security.cpp",
+      "count": 1,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "objects/debug.cpp",
+      "count": 1,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "display/blit.cpp",
+      "count": 1,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "application/commands.cpp",
+      "count": 1,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "objects/events.cpp",
+      "count": 1,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "world/places.cpp",
+      "count": 1,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "platform/com.cpp",
+      "count": 1,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "application/resources.cpp",
+      "count": 1,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "display/font.cpp",
+      "count": 1,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "platform/gdi.cpp",
+      "count": 1,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "display/bitmap.cpp",
+      "count": 1,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "creatures/attention.cpp",
+      "count": 1,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "brain/locus_resolver.cpp",
+      "count": 1,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "common/logging.cpp",
+      "count": 1,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "scripting/classifier_scripts.cpp",
+      "count": 1,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "display/sprite_cache.cpp",
+      "count": 1,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "objects/scenery.cpp",
+      "count": 1,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "objects/lifecycle.cpp",
+      "count": 1,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "display/profiler.cpp",
+      "count": 1,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "ui/menus.cpp",
+      "count": 1,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "creatures/learned_words.cpp",
+      "count": 1,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "ui/main_window.cpp",
+      "count": 1,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "common/time.cpp",
+      "count": 1,
+      "why": "admitted translation with no address-keyed checkpoint"
+    },
+    {
+      "kind": "verify_and_checkpoint",
+      "module": "application/file_dialog.cpp",
+      "count": 1,
+      "why": "admitted translation with no address-keyed checkpoint"
+    }
+  ],
+  "counts": {
+    "composition_holds": 1,
+    "rows_pending_checkpoint": 546,
+    "rows_unwritten": 0,
+    "menu_commands_unrouted": 0
+  }
+}

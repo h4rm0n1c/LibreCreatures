@@ -1,0 +1,3731 @@
+{
+  "schema": "c1-clean-source-admissions-v1",
+  "program": "Creatures.exe",
+  "snapshot_sha256": "ce33b958a77ecae12ddf5b29f1156a5e02138ec6036a8639b5f5b74bffee70ae",
+  "admitted": [
+    {
+      "address": "00421c00",
+      "source_file": "ui/toolbars.cpp",
+      "source_symbol": "creatures1::ui::MainToolbar::create"
+    },
+    {
+      "address": "00443ff0",
+      "source_file": "ui/toolbars.cpp",
+      "source_symbol": "creatures1::ui::add_kit_toolbar_bitmap"
+    },
+    {
+      "address": "00421e80",
+      "source_file": "ui/toolbars.cpp",
+      "source_symbol": "creatures1::ui::MainToolbar::serialize"
+    },
+    {
+      "address": "00416b80",
+      "source_file": "ui/event_bar.cpp",
+      "source_symbol": "creatures1::ui::EventBar::window_proc"
+    },
+    {
+      "address": "00416fe0",
+      "source_file": "ui/event_bar.cpp",
+      "source_symbol": "creatures1::ui::EventBar::serialize"
+    },
+    {
+      "address": "00416540",
+      "source_file": "ui/event_bar.cpp",
+      "source_symbol": "creatures1::ui::add_object_to_event_bar_display_list"
+    },
+    {
+      "address": "004165b0",
+      "source_file": "ui/event_bar.cpp",
+      "source_symbol": "creatures1::ui::EventBar::remove_object"
+    },
+    {
+      "address": "004043b0",
+      "source_file": "brain/locus_resolver.cpp",
+      "source_symbol": "creatures1::brain::Brain::resolve_genome_locus"
+    },
+    {
+      "address": "00417d70",
+      "source_file": "application/file_dialog.cpp",
+      "source_symbol": "creatures1::application::prompt_for_exp_file_path"
+    },
+    {
+      "address": "004350e0",
+      "source_file": "ui/menus.cpp",
+      "source_symbol": "creatures1::ui::find_camera_submenu"
+    },
+    {
+      "address": "00442870",
+      "source_file": "display/image.cpp",
+      "source_symbol": "creatures1::display::Image::serialize"
+    },
+    {
+      "address": "00442b40",
+      "source_file": "display/image.cpp",
+      "source_symbol": "creatures1::display::Image::blit_to_dib"
+    },
+    {
+      "address": "00434950",
+      "source_file": "application/file_commands.cpp",
+      "source_symbol": "creatures1::application::save_active_document_and_resume_world_timer"
+    },
+    {
+      "address": "004349b0",
+      "source_file": "application/file_commands.cpp",
+      "source_symbol": "creatures1::application::save_active_document_as_and_resume_world_timer"
+    },
+    {
+      "address": "00422df0",
+      "source_file": "world/map.cpp",
+      "source_symbol": "creatures1::world::find_room_containing_point"
+    },
+    {
+      "address": "00422e40",
+      "source_file": "world/map.cpp",
+      "source_symbol": "creatures1::world::get_ambient_temperature_at_point"
+    },
+    {
+      "address": "0040a380",
+      "source_file": "creatures/learned_words.cpp",
+      "source_symbol": "creatures1::creatures::normalize_learned_word_response"
+    },
+    {
+      "address": "0043be00",
+      "source_file": "creatures/skeleton.cpp",
+      "source_symbol": "creatures1::creatures::Skeleton::set_target_pose_string"
+    },
+    {
+      "address": "0043be70",
+      "source_file": "creatures/skeleton.cpp",
+      "source_symbol": "creatures1::creatures::Skeleton::is_pose_at_target"
+    },
+    {
+      "address": "0043c0b0",
+      "source_file": "creatures/skeleton.cpp",
+      "source_symbol": "creatures1::creatures::Skeleton::translate_by"
+    },
+    {
+      "address": "004322d0",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_eye_view_command"
+    },
+    {
+      "address": "00433440",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::toggle_burble_setting"
+    },
+    {
+      "address": "00433480",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_burble_command"
+    },
+    {
+      "address": "0043f440",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::toggle_burble_setting"
+    },
+    {
+      "address": "0043f480",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_sfcapp_burble_command"
+    },
+    {
+      "address": "00433c00",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_creature_selection_command"
+    },
+    {
+      "address": "00433c60",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_creature_selection_command"
+    },
+    {
+      "address": "00433cc0",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_creature_selection_command"
+    },
+    {
+      "address": "00433d20",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_creature_selection_command"
+    },
+    {
+      "address": "00433d80",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_creature_selection_command"
+    },
+    {
+      "address": "00433de0",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_creature_selection_command"
+    },
+    {
+      "address": "00433e40",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_creature_selection_command"
+    },
+    {
+      "address": "00433ea0",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_creature_selection_command"
+    },
+    {
+      "address": "00433f00",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_creature_selection_command"
+    },
+    {
+      "address": "00433f60",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_creature_selection_command"
+    },
+    {
+      "address": "00433fc0",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_creature_selection_command"
+    },
+    {
+      "address": "00443e20",
+      "source_file": "platform/com.cpp",
+      "source_symbol": "creatures1::platform::resolve_com_progid_local_server_path"
+    },
+    {
+      "address": "00445b30",
+      "source_file": "platform/security.cpp",
+      "source_symbol": "creatures1::platform::build_current_user_security_descriptor"
+    },
+    {
+      "address": "0042f360",
+      "source_file": "platform/registry.cpp",
+      "source_symbol": "creatures1::platform::open_creatures_registry_keys"
+    },
+    {
+      "address": "0042f450",
+      "source_file": "platform/registry.cpp",
+      "source_symbol": "creatures1::platform::close_registry_key_pair"
+    },
+    {
+      "address": "0042f470",
+      "source_file": "platform/registry.cpp",
+      "source_symbol": "creatures1::platform::read_or_initialize_registry_dword_pair"
+    },
+    {
+      "address": "004171d0",
+      "source_file": "platform/gdi.cpp",
+      "source_symbol": "creatures1::platform::measure_text_extent"
+    },
+    {
+      "address": "00406760",
+      "source_file": "platform/formatting.cpp",
+      "source_symbol": "creatures1::platform::secure_vsnprintf"
+    },
+    {
+      "address": "00406790",
+      "source_file": "platform/formatting.cpp",
+      "source_symbol": "creatures1::platform::secure_snprintf"
+    },
+    {
+      "address": "00449740",
+      "source_file": "platform/formatting.cpp",
+      "source_symbol": "creatures1::platform::secure_vsnprintf_bounded"
+    },
+    {
+      "address": "00443dd0",
+      "source_file": "platform/environment.cpp",
+      "source_symbol": "creatures1::platform::WineEnvironment::is_running_under_wine"
+    },
+    {
+      "address": "0040ee20",
+      "source_file": "platform/mfc_adapters.cpp",
+      "source_symbol": "creatures1::platform::point_in_rect_xy"
+    },
+    {
+      "address": "0040fcd0",
+      "source_file": "platform/mfc_adapters.cpp",
+      "source_symbol": "creatures1::platform::set_edit_selection_and_scroll"
+    },
+    {
+      "address": "0040e2d0",
+      "source_file": "application/embedded_kits.cpp",
+      "source_symbol": "creatures1::application::notify_funeral_kit_of_creature_death"
+    },
+    {
+      "address": "00435c10",
+      "source_file": "archive/funeral_kit.cpp",
+      "source_symbol": "creatures1::archive::flush_funeral_kit_document_state_words"
+    },
+    {
+      "address": "004390a0",
+      "source_file": "display/profiler.cpp",
+      "source_symbol": "creatures1::display::EscapeXmlForProfilerReport"
+    },
+    {
+      "address": "00437ef0",
+      "source_file": "ui/magic_profiler.cpp",
+      "source_symbol": "creatures1::ui::generate_magic_profiler_report"
+    },
+    {
+      "address": "0043f3d0",
+      "source_file": "ui/tip_dialog.cpp",
+      "source_symbol": "creatures1::ui::show_startup_tip_dialog"
+    },
+    {
+      "address": "00443620",
+      "source_file": "ui/tip_dialog.cpp",
+      "source_symbol": "creatures1::ui::TipDialog::TipDialog"
+    },
+    {
+      "address": "00443950",
+      "source_file": "ui/tip_dialog.cpp",
+      "source_symbol": "creatures1::ui::TipDialog::~TipDialog"
+    },
+    {
+      "address": "00443a10",
+      "source_file": "ui/tip_dialog.cpp",
+      "source_symbol": "creatures1::ui::TipDialog::on_next_tip"
+    },
+    {
+      "address": "00443a40",
+      "source_file": "ui/tip_dialog.cpp",
+      "source_symbol": "creatures1::ui::TipDialog::read_next_tip_text"
+    },
+    {
+      "address": "00443ac0",
+      "source_file": "ui/tip_dialog.cpp",
+      "source_symbol": "creatures1::ui::TipDialog::on_ctl_color"
+    },
+    {
+      "address": "00443b00",
+      "source_file": "ui/tip_dialog.cpp",
+      "source_symbol": "creatures1::ui::TipDialog::on_ok"
+    },
+    {
+      "address": "00443b70",
+      "source_file": "ui/tip_dialog.cpp",
+      "source_symbol": "creatures1::ui::TipDialog::on_paint"
+    },
+    {
+      "address": "00439310",
+      "source_file": "brain/classifiers.cpp",
+      "source_symbol": "creatures1::brain::ResolveClassifierDisplayName"
+    },
+    {
+      "address": "00434020",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_creature_selection_command"
+    },
+    {
+      "address": "00434080",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_creature_selection_command"
+    },
+    {
+      "address": "004340e0",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_creature_selection_command"
+    },
+    {
+      "address": "00434140",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_creature_selection_command"
+    },
+    {
+      "address": "004341a0",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_creature_selection_command"
+    },
+    {
+      "address": "00434200",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_creature_selection_command"
+    },
+    {
+      "address": "00434260",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_creature_selection_command"
+    },
+    {
+      "address": "004342c0",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_creature_selection_command"
+    },
+    {
+      "address": "00434320",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_creature_selection_command"
+    },
+    {
+      "address": "00434380",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_creature_selection_command"
+    },
+    {
+      "address": "004343e0",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_creature_selection_command"
+    },
+    {
+      "address": "00434440",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_creature_selection_command"
+    },
+    {
+      "address": "004344a0",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_creature_selection_command"
+    },
+    {
+      "address": "00434500",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_creature_selection_command"
+    },
+    {
+      "address": "00434560",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_creature_selection_command"
+    },
+    {
+      "address": "004345c0",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_creature_selection_command"
+    },
+    {
+      "address": "00422720",
+      "source_file": "ui/main_window.cpp",
+      "source_symbol": "creatures1::ui::update_main_window_title_for_selected_creature"
+    },
+    {
+      "address": "00444cb0",
+      "source_file": "ui/volume_dialog.cpp",
+      "source_symbol": "creatures1::ui::initialise_volume_dialog"
+    },
+    {
+      "address": "00444d80",
+      "source_file": "ui/volume_dialog.cpp",
+      "source_symbol": "creatures1::ui::apply_volume_slider_change"
+    },
+    {
+      "address": "00434620",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_creature_selection_command"
+    },
+    {
+      "address": "00434680",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_creature_selection_command"
+    },
+    {
+      "address": "004346e0",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_creature_selection_command"
+    },
+    {
+      "address": "00434740",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_creature_selection_command"
+    },
+    {
+      "address": "00434a10",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::toggle_debug_log_category"
+    },
+    {
+      "address": "00434a30",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_debug_log_category_command"
+    },
+    {
+      "address": "00434a70",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::toggle_debug_logging"
+    },
+    {
+      "address": "00434a90",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::update_debug_logging_command"
+    },
+    {
+      "address": "00402500",
+      "source_file": "brain/lobe.cpp",
+      "source_symbol": "creatures1::brain::Lobe::Lobe"
+    },
+    {
+      "address": "00402580",
+      "source_file": "brain/lobe.cpp",
+      "source_symbol": "creatures1::brain::Lobe::~Lobe"
+    },
+    {
+      "address": "00405010",
+      "source_file": "brain/lobe.cpp",
+      "source_symbol": "creatures1::brain::Lobe::update_early_phase"
+    }
+   ,
+  {
+    "address": "00402250",
+    "source_file": "brain/rules.cpp",
+    "source_symbol": "creatures1::brain::LobeRuleExpression::load_from_genome"
+  }
+  ,
+  {
+    "address": "00406220",
+    "source_file": "brain/neuron.cpp",
+    "source_symbol": "creatures1::brain::format_connection_debug_description"
+  }
+  ,
+  {
+    "address": "00442eb0",
+    "source_file": "display/font.cpp",
+    "source_symbol": "creatures1::display::load_charset_data"
+  },
+  {
+    "address": "004023a0",
+    "source_file": "brain/rules.cpp",
+    "source_symbol": "creatures1::brain::LobeConnectionRule::load_from_genome"
+  },
+  {
+    "address": "004025d0",
+    "source_file": "brain/lobe.cpp",
+    "source_symbol": "creatures1::brain::Lobe::load_genome"
+  },
+  {
+    "address": "00402840",
+    "source_file": "brain/lobe.cpp",
+    "source_symbol": "creatures1::brain::Lobe::allocate_runtime_state"
+  },
+  {
+    "address": "00413b50",
+    "source_file": "display/palette.cpp",
+    "source_symbol": "creatures1::display::load_palette_dta_into_buffer"
+  },
+  {
+    "address": "00430b10",
+    "source_file": "display/palette.cpp",
+    "source_symbol": "creatures1::display::initialize_game_palette"
+  },
+  {
+    "address": "00418210",
+    "source_file": "objects/debug.cpp",
+    "source_symbol": "creatures1::objects::format_object_debug_label"
+  },
+  {
+    "address": "00426430",
+    "source_file": "creatures/attention.cpp",
+    "source_symbol": "creatures1::creatures::get_attention_record_index"
+  },
+  {
+    "address": "00422d70",
+    "source_file": "world/map.cpp",
+    "source_symbol": "creatures1::world::find_nearest_room_bounds_at_point"
+  },
+  {
+    "address": "00406cd0",
+    "source_file": "common/time.cpp",
+    "source_symbol": "creatures1::common::write_current_time"
+  },
+  {
+    "address": "00417f80",
+    "source_file": "world/update_timer.cpp",
+    "source_symbol": "creatures1::world::configure_update_timer_interval"
+  },
+  {
+    "address": "00420eb0",
+    "source_file": "application/commands.cpp",
+    "source_symbol": "creatures1::application::dispatch_main_frame_command"
+  },
+  {
+    "address": "00401f40",
+    "source_file": "display/blit.cpp",
+    "source_symbol": "creatures1::display::blit_zero_transparent_pixels"
+  },
+  {
+    "address": "00432ce0",
+    "source_file": "creatures/update.cpp",
+    "source_symbol": "creatures1::creatures::update_all_creature_drive_threshold_states"
+  },
+  {
+    "address": "0042f6b0",
+    "source_file": "ui/score.cpp",
+    "source_symbol": "creatures1::ui::allocate_and_construct_score"
+  },
+  {
+    "address": "00401220",
+    "source_file": "scripting/tables.cpp",
+    "source_symbol": "creatures1::scripting::initialize_script_definition_table"
+  },
+  {
+    "address": "00401270",
+    "source_file": "objects/events.cpp",
+    "source_symbol": "creatures1::objects::clear_immediate_object_event_queue"
+  },
+  {
+    "address": "00401290",
+    "source_file": "objects/events.cpp",
+    "source_symbol": "creatures1::objects::clear_delayed_object_event_queue"
+  },
+  {
+    "address": "00422e80",
+    "source_file": "objects/events.cpp",
+    "source_symbol": "creatures1::objects::ObjectEventScheduler::queue_object_event"
+  },
+  {
+    "address": "00432d20",
+    "source_file": "objects/events.cpp",
+    "source_symbol": "creatures1::objects::ObjectEventScheduler::process_queued_events"
+  },
+  {
+    "address": "004354f0",
+    "source_file": "common/filesystem.cpp",
+    "source_symbol": "creatures1::common::remove_first_matching_file"
+  },
+  {
+    "address": "00435680",
+    "source_file": "common/filesystem.cpp",
+    "source_symbol": "creatures1::common::copy_files_matching_pattern"
+  },
+  {
+    "address": "004215f0",
+    "source_file": "application/embedded_kits.cpp",
+    "source_symbol": "creatures1::application::set_embedded_kit_tool_availability_by_name"
+  },
+  {
+    "address": "00412280",
+    "source_file": "application/resources.cpp",
+    "source_symbol": "creatures1::application::copy_primary_resource_directory_path"
+  },
+  {
+    "address": "00417b40",
+    "source_file": "world/geometry.cpp",
+    "source_symbol": "creatures1::world::wrapped_world_rects_overlap"
+  },
+  {
+    "address": "00417bb0",
+    "source_file": "world/geometry.cpp",
+    "source_symbol": "creatures1::world::intersect_wrapped_world_rects"
+  },
+  {
+    "address": "00417cc0",
+    "source_file": "world/geometry.cpp",
+    "source_symbol": "creatures1::world::union_wrapped_world_rects"
+  },
+  {
+    "address": "00433200",
+    "source_file": "world/tick.cpp",
+    "source_symbol": "creatures1::world::update_creature_bacteria_and_environment"
+  },
+  {
+    "address": "00413c50",
+    "source_file": "display/palette.cpp",
+    "source_symbol": "creatures1::display::build_palette_channel_ramp"
+  },
+  {
+    "address": "00412ea0",
+    "source_file": "world/viewport.cpp",
+    "source_symbol": "creatures1::world::convert_world_rect_to_viewport_rect"
+  },
+  {
+    "address": "00412f10",
+    "source_file": "world/viewport.cpp",
+    "source_symbol": "creatures1::world::scroll_viewport_if_non_zero"
+  },
+  {
+    "address": "00434ef0",
+    "source_file": "world/update_timer.cpp",
+    "source_symbol": "creatures1::world::dispatch_world_update_timer_with_state"
+  },
+  {
+    "address": "00435cb0",
+    "source_file": "world/update_timer.cpp",
+    "source_symbol": "creatures1::world::set_world_update_paused"
+  },
+  {
+    "address": "00410970",
+    "source_file": "ui/windows.cpp",
+    "source_symbol": "creatures1::ui::toggle_window_always_on_top"
+  },
+    {
+      "address": "00410bf0",
+      "source_file": "ui/windows.cpp",
+      "source_symbol": "creatures1::ui::on_activate_flash_window"
+    },
+    {
+      "address": "004357e0",
+      "source_file": "archive/backup.cpp",
+      "source_symbol": "creatures1::archive::refresh_temporary_world_backup"
+    },
+    {
+      "address": "004359b0",
+      "source_file": "archive/backup.cpp",
+      "source_symbol": "creatures1::archive::promote_temporary_world_backup"
+    },
+    {
+      "address": "00410260",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::relative_image_index"
+    },
+    {
+      "address": "00419440",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::image_sequence_is_empty"
+    },
+    {
+      "address": "00423780",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::move_by"
+    },
+    {
+      "address": "00423790",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::get_bounds"
+    },
+    {
+      "address": "004237b0",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::get_part_center"
+    },
+    {
+      "address": "00423820",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::clear_references_to"
+    },
+    {
+      "address": "00425e20",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::is_sound_source_below_world_y"
+    },
+    {
+      "address": "00405da0",
+      "source_file": "brain/neuron.cpp",
+      "source_symbol": "creatures1::brain::migrate_rule_connections"
+    },
+    {
+      "address": "00426420",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::click_event_id_at_world_position"
+    },
+    {
+      "address": "00426660",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::parse_image_sequence"
+    },
+    {
+      "address": "00426670",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::set_relative_image_index"
+    },
+    {
+      "address": "00426680",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::preload_image_sequence"
+    },
+    {
+      "address": "00419d50",
+      "source_file": "scripting/macro.cpp",
+      "source_symbol": "creatures1::scripting::purge_destroy_when_finished_macros_for_owner"
+    },
+    {
+      "address": "0042cd50",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::references_object"
+    },
+    {
+      "address": "00404a40",
+      "source_file": "brain/brain.cpp",
+      "source_symbol": "creatures1::brain::Brain::add_lobe_neuron_activation"
+    },
+    {
+      "address": "00406160",
+      "source_file": "brain/brain.cpp",
+      "source_symbol": "creatures1::brain::Brain::reset_runtime_activity"
+    },
+    {
+      "address": "00441b90",
+      "source_file": "display/sprite_cache.cpp",
+      "source_symbol": "creatures1::display::SpriteFileCache::acquire"
+    },
+    {
+      "address": "004427f0",
+      "source_file": "display/image.cpp",
+      "source_symbol": "creatures1::display::Image::Image"
+    },
+    {
+      "address": "00442e40",
+      "source_file": "display/image.cpp",
+      "source_symbol": "creatures1::display::Image::release_pixel_data"
+    },
+    {
+      "address": "00442320",
+      "source_file": "display/image.cpp",
+      "source_symbol": "creatures1::display::Image::~Image"
+    },
+    {
+      "address": "00442ac0",
+      "source_file": "display/image.cpp",
+      "source_symbol": "creatures1::display::Image::get_pixel_data"
+    },
+    {
+      "address": "00442d10",
+      "source_file": "display/image.cpp",
+      "source_symbol": "creatures1::display::Image::load_pixel_data"
+    },
+    {
+      "address": "00413950",
+      "source_file": "objects/lifecycle.cpp",
+      "source_symbol": "creatures1::objects::update_view_anchored_objects"
+    },
+    {
+      "address": "00406840",
+      "source_file": "creatures/registry.cpp",
+      "source_symbol": "creatures1::creatures::CreatureRegister::CreatureRegister"
+    },
+    {
+      "address": "004069f0",
+      "source_file": "creatures/registry.cpp",
+      "source_symbol": "creatures1::creatures::CreatureRegister::~CreatureRegister"
+    },
+    {
+      "address": "00406a60",
+      "source_file": "creatures/registry.cpp",
+      "source_symbol": "creatures1::creatures::CreatureRegister::serialize"
+    },
+    {
+      "address": "00404a90",
+      "source_file": "brain/brain.cpp",
+      "source_symbol": "creatures1::brain::Brain::format_activity_report"
+    },
+    {
+      "address": "0041a680",
+      "source_file": "scripting/classifier_scripts.cpp",
+      "source_symbol": "creatures1::scripting::serialize_scripts_for_classifier"
+    },
+    {
+      "address": "00422250",
+      "source_file": "ui/creature_selection.cpp",
+      "source_symbol": "creatures1::ui::rebuild_creature_selection_menu"
+    },
+    {
+      "address": "0040a1f0",
+      "source_file": "creatures/creature.cpp",
+      "source_symbol": "creatures1::creatures::Creature::regenerate_learned_word_response"
+    },
+    {
+      "address": "00406d20",
+      "source_file": "creatures/skeleton.cpp",
+      "source_symbol": "creatures1::creatures::Skeleton::sprite_bounds_width"
+    },
+    {
+      "address": "00406d30",
+      "source_file": "creatures/skeleton.cpp",
+      "source_symbol": "creatures1::creatures::Skeleton::sprite_bounds_height"
+    },
+    {
+      "address": "00406d40",
+      "source_file": "creatures/skeleton.cpp",
+      "source_symbol": "creatures1::creatures::Skeleton::get_bounds"
+    },
+    {
+      "address": "00406d60",
+      "source_file": "creatures/skeleton.cpp",
+      "source_symbol": "creatures1::creatures::Skeleton::body_render_plane"
+    },
+    {
+      "address": "00406d70",
+      "source_file": "creatures/skeleton.cpp",
+      "source_symbol": "creatures1::creatures::Skeleton::sprite_bounds_min_x"
+    },
+    {
+      "address": "00406d80",
+      "source_file": "creatures/skeleton.cpp",
+      "source_symbol": "creatures1::creatures::Skeleton::sprite_bounds_min_y"
+    },
+    {
+      "address": "00408270",
+      "source_file": "creatures/registry.cpp",
+      "source_symbol": "creatures1::creatures::remove_creature_from_registry"
+    },
+    {
+      "address": "00445900",
+      "source_file": "display/bitmap.cpp",
+      "source_symbol": "creatures1::display::write_dib_rect_to_file"
+    },
+    {
+      "address": "004449e0",
+      "source_file": "application/embedded_kits.cpp",
+      "source_symbol": "creatures1::application::broadcast_embedded_control_state"
+    },
+  {
+    "address": "00444a70",
+    "source_file": "application/embedded_kits.cpp",
+    "source_symbol": "creatures1::application::shutdown_embedded_kit_tool"
+  },
+  {
+    "address": "0040ac90",
+    "source_file": "creatures/creature.cpp",
+    "source_symbol": "creatures1::creatures::resolve_pointer_attention_target"
+  },
+  {
+    "address": "0040e520",
+    "source_file": "creatures/creature.cpp",
+    "source_symbol": "creatures1::creatures::format_status_for_external_query"
+  },
+  {
+    "address": "00413d20",
+    "source_file": "display/palette.cpp",
+    "source_symbol": "creatures1::display::build_creature_palette_remap"
+  },
+  {
+    "address": "004211b0",
+    "source_file": "application/main_frame.cpp",
+    "source_symbol": "creatures1::application::initialize_main_frame"
+  },
+  {
+    "address": "00432360",
+    "source_file": "application/application.cpp",
+    "source_symbol": "creatures1::application::update_creature_name_combo_history"
+  },
+  {
+    "address": "004334c0",
+    "source_file": "application/application.cpp",
+    "source_symbol": "creatures1::application::show_volume_dialog"
+  },
+  {
+    "address": "004335f0",
+    "source_file": "application/application.cpp",
+    "source_symbol": "creatures1::application::open_webpage_url_shortcut"
+  },
+  {
+    "address": "004337e0",
+    "source_file": "application/application.cpp",
+    "source_symbol": "creatures1::application::arm_world_update_timer"
+  },
+  {
+    "address": "00434920",
+    "source_file": "application/application.cpp",
+    "source_symbol": "creatures1::application::request_euthanasia"
+  },
+  {
+    "address": "00434ac0",
+    "source_file": "application/application.cpp",
+    "source_symbol": "creatures1::application::ensure_debug_console_dialog"
+  },
+  {
+    "address": "00434ce0",
+    "source_file": "application/application.cpp",
+    "source_symbol": "creatures1::application::update_show_debug_console_command"
+  },
+  {
+    "address": "00435b20",
+    "source_file": "application/application.cpp",
+    "source_symbol": "creatures1::application::show_remove_favourite_place_dialog"
+  },
+  {
+    "address": "00435ce0",
+    "source_file": "application/application.cpp",
+    "source_symbol": "creatures1::application::select_next_creature"
+  },
+  {
+    "address": "0043f360",
+    "source_file": "application/application.cpp",
+    "source_symbol": "creatures1::application::update_idle_cadence"
+  },
+  {
+    "address": "0043f4f0",
+    "source_file": "application/application.cpp",
+    "source_symbol": "creatures1::application::handle_file_open"
+  },
+  {
+    "address": "0043f550",
+    "source_file": "application/application.cpp",
+    "source_symbol": "creatures1::application::handle_file_new"
+  },
+  {
+    "address": "0042d860",
+    "source_file": "application/embedded_kits.cpp",
+    "source_symbol": "creatures1::application::send_your_id_is_message"
+  },
+  {
+    "address": "004440e0",
+    "source_file": "application/embedded_kits.cpp",
+    "source_symbol": "creatures1::application::populate_embedded_kit_menu_and_toolbar"
+  },
+  {
+    "address": "004444e0",
+    "source_file": "application/embedded_kits.cpp",
+    "source_symbol": "creatures1::application::execute_embedded_kit_tool"
+  },
+  {
+    "address": "00432320",
+    "source_file": "application/document.cpp",
+    "source_symbol": "creatures1::application::go_to_first_favourite_place"
+  },
+  {
+    "address": "00435320",
+    "source_file": "application/document.cpp",
+    "source_symbol": "creatures1::application::go_to_second_favourite_place"
+  },
+  {
+    "address": "00435360",
+    "source_file": "application/document.cpp",
+    "source_symbol": "creatures1::application::go_to_third_favourite_place"
+  },
+  {
+    "address": "004353a0",
+    "source_file": "application/document.cpp",
+    "source_symbol": "creatures1::application::go_to_fourth_favourite_place"
+  },
+  {
+    "address": "004353e0",
+    "source_file": "application/document.cpp",
+    "source_symbol": "creatures1::application::go_to_fifth_favourite_place"
+  },
+  {
+    "address": "00435420",
+    "source_file": "application/document.cpp",
+    "source_symbol": "creatures1::application::go_to_sixth_favourite_place"
+  },
+  {
+    "address": "004336d0",
+    "source_file": "application/document.cpp",
+    "source_symbol": "creatures1::application::service_world_update_timer"
+  },
+  {
+    "address": "00410630",
+    "source_file": "ui/debug_console.cpp",
+    "source_symbol": "creatures1::ui::initialise_debug_console"
+  },
+  {
+    "address": "00410710",
+    "source_file": "ui/debug_console.cpp",
+    "source_symbol": "creatures1::ui::refresh_debug_log"
+  },
+  {
+    "address": "004107a0",
+    "source_file": "ui/debug_console.cpp",
+    "source_symbol": "creatures1::ui::clear_debug_log"
+  },
+  {
+    "address": "00410840",
+    "source_file": "ui/debug_console.cpp",
+    "source_symbol": "creatures1::ui::pause_world_update"
+  },
+  {
+    "address": "00410870",
+    "source_file": "ui/debug_console.cpp",
+    "source_symbol": "creatures1::ui::toggle_world_update_pause"
+  },
+  {
+    "address": "004108e0",
+    "source_file": "ui/debug_console.cpp",
+    "source_symbol": "creatures1::ui::copy_filter_control_text"
+  },
+  {
+    "address": "00410940",
+    "source_file": "ui/debug_console.cpp",
+    "source_symbol": "creatures1::ui::toggle_filter_enabled"
+  },
+  {
+    "address": "004109b0",
+    "source_file": "ui/debug_console.cpp",
+    "source_symbol": "creatures1::ui::copy_all_debug_log"
+  },
+  {
+    "address": "004109f0",
+    "source_file": "ui/debug_console.cpp",
+    "source_symbol": "creatures1::ui::copy_visible_debug_log"
+  },
+  {
+    "address": "00410a50",
+    "source_file": "ui/debug_console.cpp",
+    "source_symbol": "creatures1::ui::toggle_log_file_mirroring"
+  },
+  {
+    "address": "0040ef80",
+    "source_file": "ui/caos_console.cpp",
+    "source_symbol": "creatures1::ui::initialise_caos_console"
+  },
+  {
+    "address": "0040f1c0",
+    "source_file": "ui/caos_console.cpp",
+    "source_symbol": "creatures1::ui::clear_caos_command_input"
+  },
+  {
+    "address": "0040f360",
+    "source_file": "ui/caos_console.cpp",
+    "source_symbol": "creatures1::ui::clear_caos_output"
+  },
+  {
+    "address": "0040f570",
+    "source_file": "ui/caos_console.cpp",
+    "source_symbol": "creatures1::ui::toggle_caos_always_on_top"
+  },
+  {
+    "address": "0040f5b0",
+    "source_file": "ui/caos_console.cpp",
+    "source_symbol": "creatures1::ui::resize_caos_console"
+  },
+  {
+    "address": "0040f760",
+    "source_file": "ui/caos_console.cpp",
+    "source_symbol": "creatures1::ui::apply_caos_minimum_size"
+  },
+  {
+    "address": "0040fa10",
+    "source_file": "ui/caos_console.cpp",
+    "source_symbol": "creatures1::ui::append_caos_output"
+  },
+  {
+    "address": "0040fb60",
+    "source_file": "ui/caos_console.cpp",
+    "source_symbol": "creatures1::ui::translate_caos_key"
+  },
+  {
+    "address": "00418000",
+    "source_file": "common/logging.cpp",
+    "source_symbol": "creatures1::common::debug_log"
+  },
+  {
+    "address": "004420c0",
+    "source_file": "display/gallery.cpp",
+    "source_symbol": "creatures1::display::create_gallery"
+  },
+  {
+    "address": "004424d0",
+    "source_file": "display/gallery.cpp",
+    "source_symbol": "creatures1::display::serialize_gallery"
+  },
+  {
+    "address": "00442400",
+    "source_file": "display/gallery.cpp",
+    "source_symbol": "creatures1::display::acquire_gallery"
+  },
+    {
+      "address": "004122b0",
+      "source_file": "display/rendering.cpp",
+      "source_symbol": "creatures1::display::WorldRenderer::WorldRenderer"
+    },
+    {
+      "address": "004172f0",
+      "source_file": "ui/eye_view.cpp",
+      "source_symbol": "creatures1::ui::update_eye_view_title"
+    },
+    {
+      "address": "004175e0",
+      "source_file": "ui/eye_view.cpp",
+      "source_symbol": "creatures1::ui::persist_eye_view_window_position"
+    },
+    {
+      "address": "00417660",
+      "source_file": "ui/eye_view.cpp",
+      "source_symbol": "creatures1::ui::resize_eye_view"
+    },
+    {
+      "address": "00417690",
+      "source_file": "ui/eye_view.cpp",
+      "source_symbol": "creatures1::ui::on_eye_view_palette_changed"
+    },
+    {
+      "address": "004176c0",
+      "source_file": "ui/eye_view.cpp",
+      "source_symbol": "creatures1::ui::on_eye_view_query_new_palette"
+    },
+    {
+      "address": "00417440",
+      "source_file": "ui/eye_view.cpp",
+      "source_symbol": "creatures1::ui::create_eye_view_window"
+    },
+  {
+    "address": "00412490",
+    "source_file": "display/rendering.cpp",
+    "source_symbol": "creatures1::display::WorldRenderer::redraw_full_view"
+  },
+  {
+    "address": "00412510",
+    "source_file": "display/rendering.cpp",
+    "source_symbol": "creatures1::display::WorldRenderer::resize_back_buffer_for_viewport"
+  },
+  {
+    "address": "00412590",
+    "source_file": "display/rendering.cpp",
+    "source_symbol": "creatures1::display::WorldRenderer::realize_palette"
+  },
+  {
+    "address": "004127a0",
+    "source_file": "display/rendering.cpp",
+    "source_symbol": "creatures1::display::WorldRenderer::present_world_rect"
+  },
+  {
+    "address": "004131a0",
+    "source_file": "display/rendering.cpp",
+    "source_symbol": "creatures1::display::WorldRenderer::request_viewport_origin"
+  },
+  {
+    "address": "004132a0",
+    "source_file": "display/rendering.cpp",
+    "source_symbol": "creatures1::display::WorldRenderer::request_viewport_origin_for_selected_creature"
+  },
+  {
+    "address": "004136a0",
+    "source_file": "display/rendering.cpp",
+    "source_symbol": "creatures1::display::WorldRenderer::advance_smooth_scroll"
+  },
+  {
+    "address": "00413810",
+    "source_file": "display/rendering.cpp",
+    "source_symbol": "creatures1::display::WorldRenderer::set_viewport_origin"
+  },
+  {
+    "address": "00413a20",
+    "source_file": "display/rendering.cpp",
+    "source_symbol": "creatures1::display::WorldRenderer::create_back_buffer_dib"
+  },
+  {
+    "address": "00413aa0",
+    "source_file": "display/rendering.cpp",
+    "source_symbol": "creatures1::display::WorldRenderer::update_dib_palette"
+  },
+  {
+    "address": "004144a0",
+    "source_file": "display/rendering.cpp",
+    "source_symbol": "creatures1::display::inplace_merge_visible_sprite_records_by_plane"
+  },
+  {
+    "address": "00414570",
+    "source_file": "display/rendering.cpp",
+    "source_symbol": "creatures1::display::merge_visible_sprite_record_runs_to_buffer"
+  },
+  {
+    "address": "00432140",
+    "source_file": "application/application.cpp",
+    "source_symbol": "creatures1::application::toggle_eye_view"
+  },
+  {
+    "address": "00434d20",
+    "source_file": "application/application.cpp",
+    "source_symbol": "creatures1::application::show_caos_console_dialog"
+  },
+  {
+    "address": "0043df30",
+    "source_file": "application/application.cpp",
+    "source_symbol": "creatures1::application::initialise_sfc_app_state"
+  },
+  {
+    "address": "00444b50",
+    "source_file": "application/kit_processes.cpp",
+    "source_symbol": "creatures1::application::terminate_launched_kit_processes"
+  },
+  {
+    "address": "00401950",
+    "source_file": "creatures/bacterium.cpp",
+    "source_symbol": "creatures1::creatures::Bacterium::Bacterium"
+  },
+    {
+      "address": "00401c70",
+      "source_file": "creatures/bacterium.cpp",
+      "source_symbol": "creatures1::creatures::Bacterium::replicate_and_mutate"
+    },
+    {
+      "address": "00408d30",
+      "source_file": "creatures/genome.cpp",
+      "source_symbol": "creatures1::creatures::resolve_genome_locus"
+    },
+    {
+      "address": "00418400",
+      "source_file": "creatures/genome.cpp",
+      "source_symbol": "creatures1::creatures::Genome::Genome"
+    },
+    {
+      "address": "00418950",
+      "source_file": "creatures/genome.cpp",
+      "source_symbol": "creatures1::creatures::Genome::save_generated_genome"
+    },
+    {
+      "address": "00418e00",
+      "source_file": "creatures/genome.cpp",
+      "source_symbol": "creatures1::creatures::Genome::copy_byte_with_mutation"
+    },
+    {
+      "address": "00418f70",
+      "source_file": "creatures/genome.cpp",
+      "source_symbol": "creatures1::creatures::Genome::count_matching_genes"
+    },
+    {
+      "address": "00419040",
+      "source_file": "creatures/genome.cpp",
+      "source_symbol": "creatures1::creatures::Genome::find_next_matching_gene"
+    },
+    {
+      "address": "00418c70",
+      "source_file": "creatures/genome.cpp",
+      "source_symbol": "creatures1::creatures::Genome::copy_gene_with_mutation"
+    },
+    {
+      "address": "00418a20",
+      "source_file": "creatures/genome.cpp",
+      "source_symbol": "creatures1::creatures::Genome::recombine_genome_streams"
+    },
+    {
+      "address": "004187f0",
+      "source_file": "creatures/genome.cpp",
+      "source_symbol": "creatures1::creatures::generate_offspring_genome_file"
+    },
+    {
+      "address": "004195f0",
+      "source_file": "scripting/macro.cpp",
+      "source_symbol": "creatures1::scripting::Macro::serialize"
+    },
+    {
+      "address": "0041a210",
+      "source_file": "scripting/macro.cpp",
+      "source_symbol": "creatures1::scripting::Macro::remove_from_running_scheduler_and_release"
+    },
+    {
+      "address": "0041a280",
+      "source_file": "scripting/macro.cpp",
+      "source_symbol": "creatures1::scripting::Macro::load_script_text"
+    },
+    {
+      "address": "004192d0",
+      "source_file": "scripting/macro_holder.cpp",
+      "source_symbol": "creatures1::scripting::MacroHolder::invoke_dispatch_entry"
+    },
+    {
+      "address": "00419300",
+      "source_file": "scripting/macro_holder.cpp",
+      "source_symbol": "creatures1::scripting::MacroHolder::reset_result_and_invoke_result_entry"
+    },
+    {
+      "address": "00419400",
+      "source_file": "scripting/macro_holder.cpp",
+      "source_symbol": "creatures1::scripting::MacroHolder::dispatch_format_brain_activity_report"
+    },
+    {
+      "address": "00419500",
+      "source_file": "scripting/macro_holder.cpp",
+      "source_symbol": "creatures1::scripting::MacroHolder::format_brain_activity_report"
+    },
+    {
+      "address": "00419540",
+      "source_file": "scripting/macro_holder.cpp",
+      "source_symbol": "creatures1::scripting::MacroHolder::set_zero_callback_result"
+    },
+    {
+      "address": "00419550",
+      "source_file": "scripting/macro.cpp",
+      "source_symbol": "creatures1::scripting::Macro::read_next_token"
+    },
+    {
+      "address": "0041a130",
+      "source_file": "scripting/macro.cpp",
+      "source_symbol": "creatures1::scripting::Macro::reset_execution_state"
+    },
+    {
+      "address": "0041a3e0",
+      "source_file": "scripting/macro.cpp",
+      "source_symbol": "creatures1::scripting::Macro::remove_from_running_scheduler_and_destroy"
+    },
+    {
+      "address": "0041bc30",
+      "source_file": "scripting/macro.cpp",
+      "source_symbol": "creatures1::scripting::Macro::read_bracketed_text_argument"
+    },
+    {
+      "address": "00420e70",
+      "source_file": "scripting/macro.cpp",
+      "source_symbol": "creatures1::scripting::Macro::censor_script_profanity"
+    },
+    {
+      "address": "004191b0",
+      "source_file": "scripting/macro_holder.cpp",
+      "source_symbol": "creatures1::scripting::MacroHolder::MacroHolder"
+    },
+    {
+      "address": "00440450",
+      "source_file": "sound/sound.cpp",
+      "source_symbol": "creatures1::sound::SoundManager::SoundManager"
+    },
+    {
+      "address": "004407d0",
+      "source_file": "sound/sound.cpp",
+      "source_symbol": "creatures1::sound::SoundManager::load_cached_sound"
+    },
+    {
+      "address": "0043f5b0",
+      "source_file": "sound/sound.cpp",
+      "source_symbol": "creatures1::sound::initialize_sound_system"
+    },
+    {
+      "address": "004414f0",
+      "source_file": "sound/sound.cpp",
+      "source_symbol": "creatures1::sound::SoundManager::find_or_load_cache_entry"
+    },
+    {
+      "address": "00440ee0",
+      "source_file": "sound/sound.cpp",
+      "source_symbol": "creatures1::sound::SoundManager::stop_all_sounds"
+    },
+    {
+      "address": "00441150",
+      "source_file": "sound/sound.cpp",
+      "source_symbol": "creatures1::sound::SoundManager::stop_channel"
+    },
+    {
+      "address": "004411c0",
+      "source_file": "sound/sound.cpp",
+      "source_symbol": "creatures1::sound::SoundManager::destroy_cached_sound"
+    },
+    {
+      "address": "00441250",
+      "source_file": "sound/sound.cpp",
+      "source_symbol": "creatures1::sound::SoundManager::clear_sound_cache"
+    },
+    {
+      "address": "004412c0",
+      "source_file": "sound/sound.cpp",
+      "source_symbol": "creatures1::sound::SoundManager::suspend_mixer"
+    },
+    {
+      "address": "00441310",
+      "source_file": "sound/sound.cpp",
+      "source_symbol": "creatures1::sound::SoundManager::restore_mixer"
+    },
+    {
+      "address": "00445d00",
+      "source_file": "scripting/pipe_server.cpp",
+      "source_symbol": "creatures1::scripting::PipeServer::stop"
+    },
+    {
+      "address": "00446110",
+      "source_file": "scripting/pipe_server.cpp",
+      "source_symbol": "creatures1::scripting::PipeServer::serve_client"
+    },
+    {
+      "address": "00448570",
+      "source_file": "scripting/pipe_server.cpp",
+      "source_symbol": "creatures1::scripting::PipeServer::execute_fire_command"
+    },
+    {
+      "address": "00436a20",
+      "source_file": "ui/views.cpp",
+      "source_symbol": "creatures1::ui::on_draw"
+    },
+    {
+      "address": "00436aa0",
+      "source_file": "ui/views.cpp",
+      "source_symbol": "creatures1::ui::on_size"
+    },
+    {
+      "address": "00436ad0",
+      "source_file": "ui/views.cpp",
+      "source_symbol": "creatures1::ui::begin_drag_resize"
+    },
+    {
+      "address": "00436b10",
+      "source_file": "ui/views.cpp",
+      "source_symbol": "creatures1::ui::on_mouse_button_release"
+    },
+    {
+      "address": "00437200",
+      "source_file": "ui/views.cpp",
+      "source_symbol": "creatures1::ui::on_left_button_down"
+    },
+    {
+      "address": "00437240",
+      "source_file": "ui/views.cpp",
+      "source_symbol": "creatures1::ui::on_right_button_down"
+    },
+    {
+      "address": "00437270",
+      "source_file": "ui/views.cpp",
+      "source_symbol": "creatures1::ui::queue_text_input"
+    },
+    {
+      "address": "004372c0",
+      "source_file": "ui/views.cpp",
+      "source_symbol": "creatures1::ui::reset_world_scrollbars"
+    },
+    {
+      "address": "004374e0",
+      "source_file": "ui/views.cpp",
+      "source_symbol": "creatures1::ui::toggle_infinite_scroll_world_size"
+    },
+    {
+      "address": "00437560",
+      "source_file": "ui/views.cpp",
+      "source_symbol": "creatures1::ui::update_world_half_height_command"
+    },
+    {
+      "address": "00412610",
+      "source_file": "display/rendering.cpp",
+      "source_symbol": "creatures1::display::WorldRenderer::queue_dirty_world_rect"
+    },
+    {
+      "address": "004140d0",
+      "source_file": "display/rendering.cpp",
+      "source_symbol": "creatures1::display::insertion_sort_visible_sprite_records_by_plane"
+    },
+    {
+      "address": "00414190",
+      "source_file": "display/rendering.cpp",
+      "source_symbol": "creatures1::display::stable_sort_visible_sprite_records_by_plane"
+    },
+    {
+      "address": "0044ba80",
+      "source_file": "display/rendering.cpp",
+      "source_symbol": "creatures1::display::reverse_visible_sprite_record_range"
+    },
+    {
+      "address": "00414260",
+      "source_file": "display/rendering.cpp",
+      "source_symbol": "creatures1::display::stable_sort_visible_sprite_records_by_plane"
+    },
+    {
+      "address": "00414640",
+      "source_file": "display/rendering.cpp",
+      "source_symbol": "creatures1::display::inplace_merge_visible_sprite_records_by_plane"
+    },
+    {
+      "address": "004148d0",
+      "source_file": "display/rendering.cpp",
+      "source_symbol": "creatures1::display::symmetric_merge_visible_sprite_record_ranges_by_plane"
+    },
+    {
+      "address": "00413090",
+      "source_file": "display/rendering.cpp",
+      "source_symbol": "creatures1::display::WorldRenderer::is_selected_creature_within_safe_area"
+    },
+    {
+      "address": "00437910",
+      "source_file": "ui/views.cpp",
+      "source_symbol": "creatures1::ui::return_viewport_navigation_to_selected_creature"
+    },
+    {
+      "address": "00412f30",
+      "source_file": "display/rendering.cpp",
+      "source_symbol": "creatures1::display::WorldRenderer::scroll_viewport"
+    },
+    {
+      "address": "00401410",
+      "source_file": "objects/renderable_set.cpp",
+      "source_symbol": "creatures1::objects::initialize_renderable_object_set"
+    },
+    {
+      "address": "00418e90",
+      "source_file": "creatures/genome.cpp",
+      "source_symbol": "creatures1::creatures::generate_unique_genome_filename"
+    },
+    {
+      "address": "00413360",
+      "source_file": "world/viewport.cpp",
+      "source_symbol": "creatures1::world::center_viewport_on_selected_creature_if_in_pan_region"
+    },
+    {
+      "address": "00445f00",
+      "source_file": "scripting/pipe_server.cpp",
+      "source_symbol": "creatures1::scripting::pipe_server_thread_entry"
+    },
+    {
+      "address": "00401890",
+      "source_file": "biochemistry/biochemistry.cpp",
+      "source_symbol": "creatures1::biochemistry::Biochemistry::add_chemical_moles"
+    },
+    {
+      "address": "0042db00",
+      "source_file": "biochemistry/biochemistry.cpp",
+      "source_symbol": "creatures1::biochemistry::Biochemistry::Biochemistry"
+    },
+    {
+      "address": "0042ee10",
+      "source_file": "biochemistry/biochemistry.cpp",
+      "source_symbol": "creatures1::biochemistry::Biochemistry::update"
+    },
+    {
+      "address": "0042dbe0",
+      "source_file": "biochemistry/biochemistry.cpp",
+      "source_symbol": "creatures1::biochemistry::Biochemistry::serialize"
+    },
+    {
+      "address": "0042e940",
+      "source_file": "biochemistry/biochemistry.cpp",
+      "source_symbol": "creatures1::biochemistry::Biochemistry::load_genome"
+    },
+    {
+      "address": "00436440",
+      "source_file": "ui/views.cpp",
+      "source_symbol": "creatures1::ui::initialize_view"
+    },
+    {
+      "address": "00437320",
+      "source_file": "ui/views.cpp",
+      "source_symbol": "creatures1::ui::on_horizontal_scroll"
+    },
+    {
+      "address": "00437400",
+      "source_file": "ui/views.cpp",
+      "source_symbol": "creatures1::ui::on_vertical_scroll"
+    },
+    {
+      "address": "004375a0",
+      "source_file": "ui/views.cpp",
+      "source_symbol": "creatures1::ui::on_set_focus"
+    },
+    {
+      "address": "004375e0",
+      "source_file": "ui/views.cpp",
+      "source_symbol": "creatures1::ui::on_kill_focus"
+    },
+    {
+      "address": "00437610",
+      "source_file": "ui/views.cpp",
+      "source_symbol": "creatures1::ui::set_viewport_navigation_mode"
+    },
+    {
+      "address": "004379a0",
+      "source_file": "ui/views.cpp",
+      "source_symbol": "creatures1::ui::toggle_follow_selected_creature_mode"
+    },
+    {
+      "address": "004368a0",
+      "source_file": "ui/views.cpp",
+      "source_symbol": "creatures1::ui::configure_pre_create_window"
+    },
+    {
+      "address": "00436910",
+      "source_file": "ui/views.cpp",
+      "source_symbol": "creatures1::ui::initialize_view_window"
+    },
+    {
+      "address": "00437aa0",
+      "source_file": "ui/views.cpp",
+      "source_symbol": "creatures1::ui::update_follow_selected_creature_command"
+    },
+    {
+      "address": "00433850",
+      "source_file": "ui/creature_selection.cpp",
+      "source_symbol": "creatures1::ui::set_selected_creature"
+    },
+    {
+      "address": "00433920",
+      "source_file": "ui/creature_selection.cpp",
+      "source_symbol": "creatures1::ui::select_creature_by_menu_index"
+    },
+    {
+      "address": "00433a10",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::select_creature_by_menu_command"
+    },
+    {
+      "address": "00433a20",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::select_creature_by_menu_command"
+    },
+    {
+      "address": "00433a30",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::select_creature_by_menu_command"
+    },
+    {
+      "address": "00433a40",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::select_creature_by_menu_command"
+    },
+    {
+      "address": "00433a50",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::select_creature_by_menu_command"
+    },
+    {
+      "address": "00433a60",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::select_creature_by_menu_command"
+    },
+    {
+      "address": "00433a70",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::select_creature_by_menu_command"
+    },
+    {
+      "address": "00433a80",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::select_creature_by_menu_command"
+    },
+    {
+      "address": "00433a90",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::select_creature_by_menu_command"
+    },
+    {
+      "address": "00433aa0",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::select_creature_by_menu_command"
+    },
+    {
+      "address": "00433ab0",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::select_creature_by_menu_command"
+    },
+    {
+      "address": "00433ac0",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::select_creature_by_menu_command"
+    },
+    {
+      "address": "00433ad0",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::select_creature_by_menu_command"
+    },
+    {
+      "address": "00433ae0",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::select_creature_by_menu_command"
+    },
+    {
+      "address": "00440710",
+      "source_file": "sound/sound.cpp",
+      "source_symbol": "creatures1::sound::SoundManager::~SoundManager"
+    },
+    {
+      "address": "00441360",
+      "source_file": "sound/sound.cpp",
+      "source_symbol": "creatures1::sound::SoundManager::ensure_sound_cache_capacity"
+    },
+    {
+      "address": "004419d0",
+      "source_file": "sound/sound.cpp",
+      "source_symbol": "creatures1::sound::SoundManager::stop_continuous_sound"
+    },
+    {
+      "address": "00431d20",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::export_current_creature"
+    },
+    {
+      "address": "004333b0",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::toggle_mute_and_stop_sounds"
+    },
+    {
+      "address": "00433af0",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::select_creature_by_menu_command"
+    },
+    {
+      "address": "00433b00",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::select_creature_by_menu_command"
+    },
+    {
+      "address": "00433b10",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::select_creature_by_menu_command"
+    },
+    {
+      "address": "00433b20",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::select_creature_by_menu_command"
+    },
+    {
+      "address": "00433b30",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::select_creature_by_menu_command"
+    },
+    {
+      "address": "00433b40",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::select_creature_by_menu_command"
+    },
+    {
+      "address": "00433b50",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::select_creature_by_menu_command"
+    },
+    {
+      "address": "00433b60",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::select_creature_by_menu_command"
+    },
+    {
+      "address": "00433b70",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::select_creature_by_menu_command"
+    },
+    {
+      "address": "00433b80",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::select_creature_by_menu_command"
+    },
+    {
+      "address": "00433b90",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::select_creature_by_menu_command"
+    },
+    {
+      "address": "00433ba0",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::select_creature_by_menu_command"
+    },
+    {
+      "address": "00433bb0",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::select_creature_by_menu_command"
+    },
+    {
+      "address": "00433bc0",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::select_creature_by_menu_command"
+    },
+    {
+      "address": "00425750",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::Object"
+    },
+    {
+      "address": "00425b60",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::unregister_from_non_scenery_object_registry"
+    },
+    {
+      "address": "00425c20",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::dispatch_event_8"
+    },
+    {
+      "address": "0042cc00",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::can_be_destroyed"
+    },
+    {
+      "address": "00423880",
+      "source_file": "objects/compound_object.cpp",
+      "source_symbol": "creatures1::objects::CompoundObject::sound_source_x"
+    },
+    {
+      "address": "00423890",
+      "source_file": "objects/compound_object.cpp",
+      "source_symbol": "creatures1::objects::CompoundObject::sound_source_y"
+    },
+    {
+      "address": "004238a0",
+      "source_file": "objects/compound_object.cpp",
+      "source_symbol": "creatures1::objects::CompoundObject::current_visual_width"
+    },
+    {
+      "address": "004238c0",
+      "source_file": "objects/compound_object.cpp",
+      "source_symbol": "creatures1::objects::CompoundObject::current_visual_height"
+    },
+    {
+      "address": "0042a5a0",
+      "source_file": "objects/compound_object.cpp",
+      "source_symbol": "creatures1::objects::CompoundObject::initialize_part_storage"
+    },
+    {
+      "address": "0042aa10",
+      "source_file": "objects/compound_object.cpp",
+      "source_symbol": "creatures1::objects::CompoundObject::move_by"
+    },
+    {
+      "address": "0042aa70",
+      "source_file": "objects/compound_object.cpp",
+      "source_symbol": "creatures1::objects::CompoundObject::move_to"
+    },
+    {
+      "address": "0042b740",
+      "source_file": "objects/compound_object.cpp",
+      "source_symbol": "creatures1::objects::CompoundObject::render_plane"
+    },
+    {
+      "address": "0042b750",
+      "source_file": "objects/compound_object.cpp",
+      "source_symbol": "creatures1::objects::CompoundObject::click_event_id_at_world_position"
+    },
+    {
+      "address": "0042b800",
+      "source_file": "objects/compound_object.cpp",
+      "source_symbol": "creatures1::objects::CompoundObject::get_part_center"
+    },
+    {
+      "address": "0042b8b0",
+      "source_file": "objects/compound_object.cpp",
+      "source_symbol": "creatures1::objects::CompoundObject::parse_image_sequence"
+    },
+    {
+      "address": "0042b910",
+      "source_file": "objects/compound_object.cpp",
+      "source_symbol": "creatures1::objects::CompoundObject::image_sequence_is_empty"
+    },
+    {
+      "address": "0042b960",
+      "source_file": "objects/compound_object.cpp",
+      "source_symbol": "creatures1::objects::CompoundObject::relative_image_index"
+    },
+    {
+      "address": "0042b980",
+      "source_file": "objects/compound_object.cpp",
+      "source_symbol": "creatures1::objects::CompoundObject::preload_image_sequence"
+    },
+    {
+      "address": "004237c0",
+      "source_file": "objects/simple_object.cpp",
+      "source_symbol": "creatures1::objects::SimpleObject::sound_source_x"
+    },
+    {
+      "address": "004237d0",
+      "source_file": "objects/simple_object.cpp",
+      "source_symbol": "creatures1::objects::SimpleObject::sound_source_y"
+    },
+    {
+      "address": "004237e0",
+      "source_file": "objects/simple_object.cpp",
+      "source_symbol": "creatures1::objects::SimpleObject::current_visual_width"
+    },
+    {
+      "address": "00423800",
+      "source_file": "objects/simple_object.cpp",
+      "source_symbol": "creatures1::objects::SimpleObject::current_visual_height"
+    },
+    {
+      "address": "004267c0",
+      "source_file": "objects/simple_object.cpp",
+      "source_symbol": "creatures1::objects::SimpleObject::move_to"
+    },
+    {
+      "address": "00426800",
+      "source_file": "objects/simple_object.cpp",
+      "source_symbol": "creatures1::objects::SimpleObject::move_by"
+    },
+    {
+      "address": "00426ba0",
+      "source_file": "objects/simple_object.cpp",
+      "source_symbol": "creatures1::objects::SimpleObject::get_bounds"
+    },
+    {
+      "address": "00426c00",
+      "source_file": "objects/simple_object.cpp",
+      "source_symbol": "creatures1::objects::SimpleObject::render_plane"
+    },
+    {
+      "address": "00427fc0",
+      "source_file": "objects/simple_object.cpp",
+      "source_symbol": "creatures1::objects::SimpleObject::click_event_id_at_world_position"
+    },
+    {
+      "address": "00428cc0",
+      "source_file": "objects/simple_object.cpp",
+      "source_symbol": "creatures1::objects::SimpleObject::get_part_center"
+    },
+    {
+      "address": "00429420",
+      "source_file": "objects/simple_object.cpp",
+      "source_symbol": "creatures1::objects::SimpleObject::parse_image_sequence"
+    },
+    {
+      "address": "00429470",
+      "source_file": "objects/simple_object.cpp",
+      "source_symbol": "creatures1::objects::SimpleObject::image_sequence_is_empty"
+    },
+    {
+      "address": "004294c0",
+      "source_file": "objects/simple_object.cpp",
+      "source_symbol": "creatures1::objects::SimpleObject::relative_image_index"
+    },
+    {
+      "address": "00445130",
+      "source_file": "creatures/voice.cpp",
+      "source_symbol": "creatures1::creatures::Voice::lookup_sound_pair_for_trigram"
+    },
+    {
+      "address": "00445600",
+      "source_file": "creatures/voice.cpp",
+      "source_symbol": "creatures1::creatures::Voice::serialize"
+    },
+    {
+      "address": "0040e350",
+      "source_file": "creatures/genome.cpp",
+      "source_symbol": "creatures1::creatures::build_current_creature_genome_gene_counts"
+    },
+    {
+      "address": "004176e0",
+      "source_file": "ui/eye_view.cpp",
+      "source_symbol": "creatures1::ui::update_selected_creature_follow_viewport"
+    },
+    {
+      "address": "004362a0",
+      "source_file": "ui/classifier_tip.cpp",
+      "source_symbol": "creatures1::ui::hide_classifier_tip"
+    },
+    {
+      "address": "00407070",
+      "source_file": "brain/instinct.cpp",
+      "source_symbol": "creatures1::brain::Instinct::serialize"
+    },
+    {
+      "address": "004185c0",
+      "source_file": "creatures/genome.cpp",
+      "source_symbol": "creatures1::creatures::Genome::serialize"
+    },
+    {
+      "address": "004376b0",
+      "source_file": "ui/views.cpp",
+      "source_symbol": "creatures1::ui::update_keyboard_scroll"
+    },
+    {
+      "address": "0042da60",
+      "source_file": "creatures/owner.cpp",
+      "source_symbol": "creatures1::creatures::Owner::serialize"
+    },
+    {
+      "address": "0040f780",
+      "source_file": "ui/caos_console.cpp",
+      "source_symbol": "creatures1::ui::execute_caos_command"
+    },
+    {
+      "address": "0040f1f0",
+      "source_file": "ui/caos_console.cpp",
+      "source_symbol": "creatures1::ui::submit_caos_command"
+    },
+    {
+      "address": "00445040",
+      "source_file": "creatures/voice.cpp",
+      "source_symbol": "creatures1::creatures::Voice::Voice"
+    },
+    {
+      "address": "004452b0",
+      "source_file": "creatures/voice.cpp",
+      "source_symbol": "creatures1::creatures::Voice::prepare_speech_text"
+    },
+    {
+      "address": "004047c0",
+      "source_file": "brain/brain.cpp",
+      "source_symbol": "creatures1::brain::Brain::initialize_connections"
+    },
+    {
+      "address": "004453c0",
+      "source_file": "creatures/voice.cpp",
+      "source_symbol": "creatures1::creatures::Voice::get_next_sound_pair"
+    },
+    {
+      "address": "004214a0",
+      "source_file": "application/main_frame.cpp",
+      "source_symbol": "creatures1::application::prepare_main_frame_window"
+    },
+    {
+      "address": "00421670",
+      "source_file": "application/main_frame.cpp",
+      "source_symbol": "creatures1::application::toggle_embedded_kit_tool"
+    },
+    {
+      "address": "004218a0",
+      "source_file": "application/main_frame.cpp",
+      "source_symbol": "creatures1::application::query_new_main_frame_palette"
+    },
+    {
+      "address": "004218c0",
+      "source_file": "application/main_frame.cpp",
+      "source_symbol": "creatures1::application::notify_main_frame_palette_changed"
+    },
+    {
+      "address": "0043beb0",
+      "source_file": "creatures/skeleton.cpp",
+      "source_symbol": "creatures1::creatures::Skeleton::parse_animation_sequence"
+    },
+    {
+      "address": "0043bf00",
+      "source_file": "creatures/skeleton.cpp",
+      "source_symbol": "creatures1::creatures::Skeleton::is_animation_sequence_complete"
+    },
+    {
+      "address": "0043bf10",
+      "source_file": "creatures/skeleton.cpp",
+      "source_symbol": "creatures1::creatures::Skeleton::set_target_pose_from_table_index"
+    },
+    {
+      "address": "00422f90",
+      "source_file": "creatures/events.cpp",
+      "source_symbol": "creatures1::creatures::queue_events_in_speech_range"
+    },
+    {
+      "address": "00423030",
+      "source_file": "creatures/events.cpp",
+      "source_symbol": "creatures1::creatures::queue_events_for_perceiving_creatures"
+    },
+    {
+      "address": "00423390",
+      "source_file": "creatures/events.cpp",
+      "source_symbol": "creatures1::creatures::queue_sign_stimulus_for_perceiving_creatures"
+    },
+    {
+      "address": "00444fc0",
+      "source_file": "creatures/voice.cpp",
+      "source_symbol": "creatures1::creatures::create_voice"
+    },
+    {
+      "address": "00445030",
+      "source_file": "creatures/voice.cpp",
+      "source_symbol": "creatures1::creatures::Voice::runtime_class_name"
+    },
+    {
+      "address": "004450f0",
+      "source_file": "creatures/voice.cpp",
+      "source_symbol": "creatures1::creatures::Voice::~Voice"
+    },
+    {
+      "address": "004454e0",
+      "source_file": "creatures/voice.cpp",
+      "source_symbol": "creatures1::creatures::Voice::load_voice_file"
+    },
+    {
+      "address": "00418330",
+      "source_file": "creatures/genome.cpp",
+      "source_symbol": "creatures1::creatures::create_genome"
+    },
+    {
+      "address": "00418380",
+      "source_file": "creatures/genome.cpp",
+      "source_symbol": "creatures1::creatures::Genome::runtime_class_name"
+    },
+    {
+      "address": "00418390",
+      "source_file": "creatures/genome.cpp",
+      "source_symbol": "creatures1::creatures::Genome::~Genome"
+    },
+    {
+      "address": "004183e0",
+      "source_file": "creatures/genome.cpp",
+      "source_symbol": "creatures1::creatures::Genome::~Genome"
+    },
+    {
+      "address": "00440dc0",
+      "source_file": "sound/sound.cpp",
+      "source_symbol": "creatures1::sound::SoundManager::start_channel"
+    },
+    {
+      "address": "00441740",
+      "source_file": "sound/sound.cpp",
+      "source_symbol": "creatures1::sound::SoundManager::play_or_queue"
+    },
+    {
+      "address": "00441850",
+      "source_file": "sound/sound.cpp",
+      "source_symbol": "creatures1::sound::SoundManager::start_continuous_sound"
+    },
+    {
+      "address": "00408520",
+      "source_file": "creatures/creature.cpp",
+      "source_symbol": "creatures1::creatures::Creature::initialize_runtime_state"
+    },
+    {
+      "address": "00408960",
+      "source_file": "creatures/creature.cpp",
+      "source_symbol": "creatures1::creatures::Creature::load_genome"
+    },
+    {
+      "address": "0040b8a0",
+      "source_file": "creatures/creature.cpp",
+      "source_symbol": "creatures1::creatures::Creature::apply_stimulus"
+    },
+    {
+      "address": "00405170",
+      "source_file": "brain/lobe.cpp",
+      "source_symbol": "creatures1::brain::Lobe::update_late_phase"
+    },
+    {
+      "address": "00409880",
+      "source_file": "creatures/creature.cpp",
+      "source_symbol": "creatures1::creatures::Creature::handle_queued_event_slot5"
+    },
+    {
+      "address": "004098a0",
+      "source_file": "creatures/creature.cpp",
+      "source_symbol": "creatures1::creatures::Creature::handle_queued_event_slot6"
+    },
+    {
+      "address": "004098c0",
+      "source_file": "creatures/creature.cpp",
+      "source_symbol": "creatures1::creatures::Creature::handle_queued_event_slot7"
+    },
+    {
+      "address": "0040af70",
+      "source_file": "creatures/creature.cpp",
+      "source_symbol": "creatures1::creatures::Creature::append_default_response_prefix"
+    },
+    {
+      "address": "00404e90",
+      "source_file": "brain/brain.cpp",
+      "source_symbol": "creatures1::brain::Brain::update"
+    },
+    {
+      "address": "0043c380",
+      "source_file": "creatures/skeleton.cpp",
+      "source_symbol": "creatures1::creatures::Skeleton::update_and_invalidate_bounds"
+    },
+    {
+      "address": "00407370",
+      "source_file": "brain/instinct.cpp",
+      "source_symbol": "creatures1::brain::Instinct::run_dream_step"
+    },
+    {
+      "address": "00440fc0",
+      "source_file": "sound/sound.cpp",
+      "source_symbol": "creatures1::sound::SoundManager::update"
+    },
+    {
+      "address": "0042f7a0",
+      "source_file": "ui/score.cpp",
+      "source_symbol": "creatures1::ui::Score::serialize"
+    },
+    {
+      "address": "0043f2c0",
+      "source_file": "ui/version_dialog.cpp",
+      "source_symbol": "creatures1::ui::show_version_dialog"
+    },
+    {
+      "address": "00444ef0",
+      "source_file": "ui/version_dialog.cpp",
+      "source_symbol": "creatures1::ui::initialise_community_edition_version_dialog"
+    },
+    {
+      "address": "00413420",
+      "source_file": "world/viewport.cpp",
+      "source_symbol": "creatures1::world::follow_selected_creature_viewport"
+    },
+    {
+      "address": "004019e0",
+      "source_file": "creatures/bacterium.cpp",
+      "source_symbol": "creatures1::creatures::Bacterium::serialize"
+    },
+    {
+      "address": "00433310",
+      "source_file": "world/tick.cpp",
+      "source_symbol": "creatures1::world::advance_bacterium_service_phase"
+    },
+    {
+      "address": "004179f0",
+      "source_file": "world/places.cpp",
+      "source_symbol": "creatures1::application::FavouritePlace::serialize"
+    },
+    {
+      "address": "00422a00",
+      "source_file": "world/map.cpp",
+      "source_symbol": "creatures1::world::serialize_map_data"
+    },
+    {
+      "address": "00401d80",
+      "source_file": "creatures/bacterium.cpp",
+      "source_symbol": "creatures1::creatures::Bacterium::update"
+    },
+    {
+      "address": "0042f970",
+      "source_file": "application/sfc_ole.cpp",
+      "source_symbol": "creatures1::application::CSfcOLE::~CSfcOLE"
+    },
+    {
+      "address": "0042fa30",
+      "source_file": "application/sfc_ole.cpp",
+      "source_symbol": "creatures1::application::CSfcOLE::CreateMacro"
+    },
+    {
+      "address": "0042fb00",
+      "source_file": "application/sfc_ole.cpp",
+      "source_symbol": "creatures1::application::CSfcOLE::DestroyMacro"
+    },
+    {
+      "address": "0042fb60",
+      "source_file": "application/sfc_ole.cpp",
+      "source_symbol": "creatures1::application::CSfcOLE::LoadMacro"
+    },
+    {
+      "address": "0042fbf0",
+      "source_file": "application/sfc_ole.cpp",
+      "source_symbol": "creatures1::application::CSfcOLE::RequestMacro"
+    },
+    {
+      "address": "0042fc90",
+      "source_file": "application/sfc_ole.cpp",
+      "source_symbol": "creatures1::application::CSfcOLE::ExecuteMacro"
+    },
+    {
+      "address": "0042fd60",
+      "source_file": "application/sfc_ole.cpp",
+      "source_symbol": "creatures1::application::CSfcOLE::CreateCommand"
+    },
+    {
+      "address": "0042fe30",
+      "source_file": "application/sfc_ole.cpp",
+      "source_symbol": "creatures1::application::CSfcOLE::DestroyCommand"
+    },
+    {
+      "address": "0042fea0",
+      "source_file": "application/sfc_ole.cpp",
+      "source_symbol": "creatures1::application::CSfcOLE::LoadCommand"
+    },
+    {
+      "address": "0042ffa0",
+      "source_file": "application/sfc_ole.cpp",
+      "source_symbol": "creatures1::application::CSfcOLE::RequestCommand"
+    },
+    {
+      "address": "004300d0",
+      "source_file": "application/sfc_ole.cpp",
+      "source_symbol": "creatures1::application::CSfcOLE::FireCommand"
+    },
+    {
+      "address": "00432ee0",
+      "source_file": "creatures/update.cpp",
+      "source_symbol": "creatures1::creatures::update_all_creature_brain_inputs"
+    },
+    {
+      "address": "00433020",
+      "source_file": "creatures/update.cpp",
+      "source_symbol": "creatures1::creatures::update_all_creature_perception_and_attention"
+    },
+    {
+      "address": "00423090",
+      "source_file": "creatures/events.cpp",
+      "source_symbol": "creatures1::creatures::queue_tact_events_for_overlapping_creatures"
+    },
+    {
+      "address": "00423150",
+      "source_file": "creatures/events.cpp",
+      "source_symbol": "creatures1::creatures::queue_stimulus_for_perceiving_creatures"
+    },
+    {
+      "address": "004231f0",
+      "source_file": "creatures/events.cpp",
+      "source_symbol": "creatures1::creatures::queue_stimulus_for_overlapping_creatures"
+    },
+    {
+      "address": "00423320",
+      "source_file": "creatures/events.cpp",
+      "source_symbol": "creatures1::creatures::copy_queued_creature_stimulus"
+    },
+    {
+      "address": "00423470",
+      "source_file": "creatures/events.cpp",
+      "source_symbol": "creatures1::creatures::queue_tact_stimulus_for_overlapping_creatures"
+    },
+    {
+      "address": "0040c5c0",
+      "source_file": "creatures/creature.cpp",
+      "source_symbol": "creatures1::creatures::Creature::first_seen_stimulus_magnitude"
+    },
+    {
+      "address": "0040e4d0",
+      "source_file": "creatures/creature.cpp",
+      "source_symbol": "creatures1::creatures::Creature::references_object"
+    },
+    {
+      "address": "0040edc0",
+      "source_file": "creatures/creature.cpp",
+      "source_symbol": "creatures1::creatures::Creature::clear_references_to_object"
+    },
+    {
+      "address": "0040b820",
+      "source_file": "creatures/creature.cpp",
+      "source_symbol": "creatures1::creatures::Creature::trigger_built_in_stimulus"
+    },
+    {
+      "address": "0042d890",
+      "source_file": "creatures/owner.cpp",
+      "source_symbol": "creatures1::creatures::Owner::create_object"
+    },
+    {
+      "address": "004238e0",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::create_object"
+    },
+    {
+      "address": "00425ba0",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::handle_queued_creature_event"
+    },
+    {
+      "address": "00427c60",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::handle_queued_event_3"
+    },
+    {
+      "address": "0040f380",
+      "source_file": "ui/caos_console.cpp",
+      "source_symbol": "creatures1::ui::load_caos_script_from_file"
+    },
+    {
+      "address": "00435200",
+      "source_file": "world/places.cpp",
+      "source_symbol": "creatures1::application::remove_favourite_place_at_index"
+    },
+    {
+      "address": "00404560",
+      "source_file": "brain/brain.cpp",
+      "source_symbol": "creatures1::brain::Brain::load_genome"
+    },
+    {
+      "address": "00449780",
+      "source_file": "scripting/pipe_server.cpp",
+      "source_symbol": "creatures1::scripting::CPipeDispatchProxy::~CPipeDispatchProxy"
+    },
+    {
+      "address": "00449800",
+      "source_file": "scripting/pipe_server.cpp",
+      "source_symbol": "creatures1::scripting::CPipeDispatchProxy::QueryInterface"
+    },
+    {
+      "address": "00449870",
+      "source_file": "scripting/pipe_server.cpp",
+      "source_symbol": "creatures1::scripting::CPipeDispatchProxy::AddRef"
+    },
+    {
+      "address": "00449890",
+      "source_file": "scripting/pipe_server.cpp",
+      "source_symbol": "creatures1::scripting::CPipeDispatchProxy::Release"
+    },
+    {
+      "address": "004498c0",
+      "source_file": "scripting/pipe_server.cpp",
+      "source_symbol": "creatures1::scripting::CPipeDispatchProxy::GetTypeInfoCount"
+    },
+    {
+      "address": "004498d0",
+      "source_file": "scripting/pipe_server.cpp",
+      "source_symbol": "creatures1::scripting::CPipeDispatchProxy::GetTypeInfo"
+    },
+    {
+      "address": "004498f0",
+      "source_file": "scripting/pipe_server.cpp",
+      "source_symbol": "creatures1::scripting::CPipeDispatchProxy::GetIDsOfNames"
+    },
+    {
+      "address": "00449950",
+      "source_file": "scripting/pipe_server.cpp",
+      "source_symbol": "creatures1::scripting::CPipeDispatchProxy::Invoke"
+    },
+    {
+      "address": "0042f2e0",
+      "source_file": "ui/place_dialog.cpp",
+      "source_symbol": "creatures1::ui::PlaceDialog::exchange_data"
+    },
+    {
+      "address": "0042f320",
+      "source_file": "ui/place_dialog.cpp",
+      "source_symbol": "creatures1::ui::PlaceDialog::on_place_name_changed"
+    },
+    {
+      "address": "0042f330",
+      "source_file": "ui/place_dialog.cpp",
+      "source_symbol": "creatures1::ui::PlaceDialog::on_init_dialog"
+    },
+    {
+      "address": "0042f580",
+      "source_file": "ui/place_dialog.cpp",
+      "source_symbol": "creatures1::ui::RemovePlaceDialog::on_remove_place_list_selection_changed"
+    },
+    {
+      "address": "0042f5e0",
+      "source_file": "ui/place_dialog.cpp",
+      "source_symbol": "creatures1::ui::RemovePlaceDialog::on_init_dialog"
+    },
+    {
+      "address": "00410560",
+      "source_file": "ui/debug_console.cpp",
+      "source_symbol": "creatures1::ui::exchange_debug_console_data"
+    },
+    {
+      "address": "004166c0",
+      "source_file": "ui/event_bar.cpp",
+      "source_symbol": "creatures1::ui::EventBar::refresh_object_display_panes"
+    },
+    {
+      "address": "004168b0",
+      "source_file": "ui/event_bar.cpp",
+      "source_symbol": "creatures1::ui::EventBar::update_status_panes"
+    },
+    {
+      "address": "00416da0",
+      "source_file": "ui/event_bar.cpp",
+      "source_symbol": "creatures1::ui::EventBar::on_left_button_down"
+    },
+    {
+      "address": "00412aa0",
+      "source_file": "display/rendering.cpp",
+      "source_symbol": "creatures1::display::WorldRenderer::render_world_rect_to_dib"
+    },
+    {
+      "address": "00412830",
+      "source_file": "display/rendering.cpp",
+      "source_symbol": "creatures1::display::WorldRenderer::render_and_present_rect"
+    },
+    {
+      "address": "0043e1d0",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::initialise_sfc_app"
+    },
+    {
+      "address": "00402c50",
+      "source_file": "brain/brain.cpp",
+      "source_symbol": "creatures1::brain::Brain::serialize"
+    },
+    {
+      "address": "00445f10",
+      "source_file": "scripting/pipe_server.cpp",
+      "source_symbol": "creatures1::scripting::PipeServer::run_worker"
+    },
+    {
+      "address": "00446620",
+      "source_file": "scripting/pipe_server.cpp",
+      "source_symbol": "creatures1::scripting::PipeServer::marshal_command_to_main_thread"
+    },
+    {
+      "address": "00421a30",
+      "source_file": "application/main_frame.cpp",
+      "source_symbol": "creatures1::application::handle_pipe_server_command"
+    },
+    {
+      "address": "004216d0",
+      "source_file": "application/main_frame.cpp",
+      "source_symbol": "creatures1::application::update_embedded_kit_tool_command"
+    },
+    {
+      "address": "0043b5a0",
+      "source_file": "creatures/skeleton.cpp",
+      "source_symbol": "creatures1::creatures::Skeleton::recompute_body_part_layout"
+    },
+    {
+      "address": "00420ed0",
+      "source_file": "application/main_frame.cpp",
+      "source_symbol": "creatures1::application::CMainFrameEmbeddedRecord::CMainFrameEmbeddedRecord"
+    },
+    {
+      "address": "00420f10",
+      "source_file": "application/main_frame.cpp",
+      "source_symbol": "creatures1::application::CMainFrame::CreateObject"
+    },
+    {
+      "address": "00421080",
+      "source_file": "application/main_frame.cpp",
+      "source_symbol": "creatures1::application::CMainFrame::~CMainFrame"
+    },
+    {
+      "address": "004215b0",
+      "source_file": "application/main_frame.cpp",
+      "source_symbol": "creatures1::application::CMainFrame::GetMessageString"
+    },
+    {
+      "address": "00421900",
+      "source_file": "application/main_frame.cpp",
+      "source_symbol": "creatures1::application::CMainFrame::OnClose"
+    },
+    {
+      "address": "004219b0",
+      "source_file": "application/main_frame.cpp",
+      "source_symbol": "creatures1::application::CMainFrame::OnGetMinMaxInfo"
+    },
+    {
+      "address": "00421a10",
+      "source_file": "application/main_frame.cpp",
+      "source_symbol": "creatures1::application::CMainFrame::OnShutdownEmbeddedKitTool"
+    },
+    {
+      "address": "00422180",
+      "source_file": "application/main_frame.cpp",
+      "source_symbol": "creatures1::application::CMainFrame::ActivateFrame"
+    },
+    {
+      "address": "0043f4b0",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::SFCApp::ExitInstance"
+    },
+    {
+      "address": "00406dc0",
+      "source_file": "creatures/skeleton.cpp",
+      "source_symbol": "creatures1::creatures::Skeleton::select_target_pose_for_motion_guarded"
+    },
+    {
+      "address": "00408080",
+      "source_file": "creatures/skeleton.cpp",
+      "source_symbol": "creatures1::creatures::Skeleton::body_sprites_are_stale"
+    },
+    {
+      "address": "0043aaf0",
+      "source_file": "creatures/skeleton.cpp",
+      "source_symbol": "creatures1::creatures::Skeleton::Skeleton"
+    },
+    {
+      "address": "0043abd0",
+      "source_file": "creatures/skeleton.cpp",
+      "source_symbol": "creatures1::creatures::Skeleton::~Skeleton"
+    },
+    {
+      "address": "0043ac70",
+      "source_file": "creatures/skeleton.cpp",
+      "source_symbol": "creatures1::creatures::Skeleton::initialize_pose_and_motion_state"
+    },
+    {
+      "address": "0043b8f0",
+      "source_file": "creatures/skeleton.cpp",
+      "source_symbol": "creatures1::creatures::Skeleton::update_limb_frames_for_pose"
+    },
+    {
+      "address": "0043bf40",
+      "source_file": "creatures/skeleton.cpp",
+      "source_symbol": "creatures1::creatures::Skeleton::select_target_pose_for_motion"
+    },
+    {
+      "address": "0043dc50",
+      "source_file": "creatures/skeleton.cpp",
+      "source_symbol": "creatures1::creatures::Skeleton::clear_body_parts_and_gallery"
+    },
+    {
+      "address": "0043dcd0",
+      "source_file": "creatures/skeleton.cpp",
+      "source_symbol": "creatures1::creatures::Skeleton::references_object"
+    },
+    {
+      "address": "0043dd00",
+      "source_file": "creatures/skeleton.cpp",
+      "source_symbol": "creatures1::creatures::Skeleton::clear_references_to"
+    },
+    {
+      "address": "004257f0",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::set_bounds_mode"
+    },
+    {
+      "address": "00426470",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::update_movement_bounds"
+    },
+    {
+      "address": "00426640",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::dispatch_script_event"
+    },
+    {
+      "address": "0042d0b0",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::clear_reference_and_set_default_bounds"
+    },
+    {
+      "address": "00429490",
+      "source_file": "objects/simple_object.cpp",
+      "source_symbol": "creatures1::objects::SimpleObject::set_relative_image_index"
+    },
+    {
+      "address": "00429510",
+      "source_file": "objects/simple_object.cpp",
+      "source_symbol": "creatures1::objects::SimpleObject::set_image_index"
+    },
+    {
+      "address": "00425b00",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::queue_event_8_after_bounds_update"
+    },
+    {
+      "address": "00425c00",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::dispatch_event_7_after_bounds_update"
+    },
+    {
+      "address": "0042cd70",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::initialize_runtime_state"
+    },
+    {
+      "address": "00425e40",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::compute_sound_attenuation_and_pan"
+    },
+    {
+      "address": "00425f80",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::sound_audibility_state"
+    },
+    {
+      "address": "0042ce20",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::play_sound_effect"
+    },
+    {
+      "address": "0042cf30",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::set_continuous_sound"
+    },
+    {
+      "address": "00415520",
+      "source_file": "objects/entity.cpp",
+      "source_symbol": "creatures1::objects::Entity::get_current_image_bounds"
+    },
+    {
+      "address": "00415580",
+      "source_file": "objects/entity.cpp",
+      "source_symbol": "creatures1::objects::Entity::advance_image_sequence"
+    },
+    {
+      "address": "00426190",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::update_sound"
+    },
+    {
+      "address": "00426840",
+      "source_file": "objects/scenery.cpp",
+      "source_symbol": "creatures1::objects::Scenery::move_to_and_redraw"
+    },
+    {
+      "address": "00414da0",
+      "source_file": "objects/entity.cpp",
+      "source_symbol": "creatures1::objects::Entity::create_object"
+    },
+    {
+      "address": "004154e0",
+      "source_file": "objects/entity.cpp",
+      "source_symbol": "creatures1::objects::Entity::unregister_from_registry"
+    },
+    {
+      "address": "00414ff0",
+      "source_file": "objects/entity.cpp",
+      "source_symbol": "creatures1::objects::Entity::~Entity"
+    },
+    {
+      "address": "004235f0",
+      "source_file": "objects/entity.cpp",
+      "source_symbol": "creatures1::objects::Entity::fill_current_image_rect"
+    },
+    {
+      "address": "00423660",
+      "source_file": "objects/entity.cpp",
+      "source_symbol": "creatures1::objects::Entity::draw_text_to_current_image"
+    },
+    {
+      "address": "00415090",
+      "source_file": "objects/entity.cpp",
+      "source_symbol": "creatures1::objects::Entity::serialize"
+    },
+    {
+      "address": "00426cf0",
+      "source_file": "objects/simple_object.cpp",
+      "source_symbol": "creatures1::objects::SimpleObject::SimpleObject"
+    },
+    {
+      "address": "00426f90",
+      "source_file": "objects/simple_object.cpp",
+      "source_symbol": "creatures1::objects::SimpleObject::move_to_and_redraw"
+    },
+    {
+      "address": "00427500",
+      "source_file": "objects/simple_object.cpp",
+      "source_symbol": "creatures1::objects::SimpleObject::move_by_and_redraw"
+    },
+    {
+      "address": "00433380",
+      "source_file": "application/document.cpp",
+      "source_symbol": "creatures1::application::Document::update_informative_selection_menu"
+    },
+    {
+      "address": "00433410",
+      "source_file": "application/document.cpp",
+      "source_symbol": "creatures1::application::Document::update_mute_menu"
+    },
+    {
+      "address": "00434f30",
+      "source_file": "application/document.cpp",
+      "source_symbol": "creatures1::application::Document::add_favourite_place_from_current_viewport"
+    },
+    {
+      "address": "004301f0",
+      "source_file": "application/document.cpp",
+      "source_symbol": "creatures1::application::Document::create"
+    },
+    {
+      "address": "004303d0",
+      "source_file": "application/document.cpp",
+      "source_symbol": "creatures1::application::Document::runtime_class"
+    },
+    {
+      "address": "00430410",
+      "source_file": "application/document.cpp",
+      "source_symbol": "creatures1::application::Document::destroy"
+    },
+    {
+      "address": "00430cd0",
+      "source_file": "application/document.cpp",
+      "source_symbol": "creatures1::application::Document::delete_contents"
+    },
+    {
+      "address": "00430e90",
+      "source_file": "application/document.cpp",
+      "source_symbol": "creatures1::application::Document::close"
+    },
+    {
+      "address": "00430f10",
+      "source_file": "application/document.cpp",
+      "source_symbol": "creatures1::application::Document::save"
+    },
+    {
+      "address": "004361b0",
+      "source_file": "application/document.cpp",
+      "source_symbol": "creatures1::application::Document::get_document_adapter"
+    },
+    {
+      "address": "00446c10",
+      "source_file": "scripting/pipe_server.cpp",
+      "source_symbol": "creatures1::scripting::PipeServer::dispatch_command"
+    },
+    {
+      "address": "0040e9f0",
+      "source_file": "objects/lifecycle.cpp",
+      "source_symbol": "creatures1::objects::delete_object_and_purge_runtime_references"
+    },
+    {
+      "address": "00449c00",
+      "source_file": "ui/world_statistics.cpp",
+      "source_symbol": "creatures1::ui::create_world_statistics_frame"
+    },
+    {
+      "address": "00449d20",
+      "source_file": "ui/world_statistics.cpp",
+      "source_symbol": "creatures1::ui::on_world_statistics_timer"
+    },
+    {
+      "address": "00449d40",
+      "source_file": "ui/world_statistics.cpp",
+      "source_symbol": "creatures1::ui::refresh_world_statistics"
+    },
+    {
+      "address": "00449ea0",
+      "source_file": "ui/world_statistics.cpp",
+      "source_symbol": "creatures1::ui::pretranslate_world_statistics"
+    },
+    {
+      "address": "00449ef0",
+      "source_file": "ui/world_statistics.cpp",
+      "source_symbol": "creatures1::ui::close_world_statistics_frame"
+    },
+    {
+      "address": "0042a680",
+      "source_file": "objects/compound_object.cpp",
+      "source_symbol": "creatures1::objects::CompoundObject::CompoundObject"
+    },
+    {
+      "address": "0042a950",
+      "source_file": "objects/compound_object.cpp",
+      "source_symbol": "creatures1::objects::CompoundObject::~CompoundObject"
+    },
+    {
+      "address": "0042aad0",
+      "source_file": "objects/compound_object.cpp",
+      "source_symbol": "creatures1::objects::CompoundObject::move_by_and_redraw"
+    },
+    {
+      "address": "0042b2b0",
+      "source_file": "objects/compound_object.cpp",
+      "source_symbol": "creatures1::objects::CompoundObject::queue_primary_part_dirty_rect"
+    },
+    {
+      "address": "0042b4c0",
+      "source_file": "objects/compound_object.cpp",
+      "source_symbol": "creatures1::objects::CompoundObject::handle_queued_event_0"
+    },
+    {
+      "address": "0042b570",
+      "source_file": "objects/compound_object.cpp",
+      "source_symbol": "creatures1::objects::CompoundObject::handle_queued_event_1"
+    },
+    {
+      "address": "0042b620",
+      "source_file": "objects/compound_object.cpp",
+      "source_symbol": "creatures1::objects::CompoundObject::handle_queued_event_2"
+    },
+    {
+      "address": "00423cb0",
+      "source_file": "objects/compound_object.cpp",
+      "source_symbol": "creatures1::objects::create_compound_object"
+    },
+    {
+      "address": "0042b720",
+      "source_file": "objects/compound_object.cpp",
+      "source_symbol": "creatures1::objects::CompoundObject::get_bounds"
+    },
+    {
+      "address": "0042b940",
+      "source_file": "objects/compound_object.cpp",
+      "source_symbol": "creatures1::objects::CompoundObject::set_relative_image_index"
+    },
+    {
+      "address": "0042b9d0",
+      "source_file": "objects/compound_object.cpp",
+      "source_symbol": "creatures1::objects::CompoundObject::set_image_index"
+    },
+    {
+      "address": "00415ec0",
+      "source_file": "creatures/body.cpp",
+      "source_symbol": "creatures1::creatures::BodyPart::BodyPart"
+    },
+    {
+      "address": "0043c3e0",
+      "source_file": "creatures/body.cpp",
+      "source_symbol": "creatures1::creatures::resolve_existing_body_part_filename_with_fallback"
+    },
+    {
+      "address": "00414e60",
+      "source_file": "creatures/body.cpp",
+      "source_symbol": "creatures1::creatures::create_body_part"
+    },
+    {
+      "address": "00414ee0",
+      "source_file": "creatures/body.cpp",
+      "source_symbol": "creatures1::creatures::create_body"
+    },
+    {
+      "address": "00414f70",
+      "source_file": "creatures/body.cpp",
+      "source_symbol": "creatures1::creatures::create_limb"
+    },
+    {
+      "address": "0043c6d0",
+      "source_file": "creatures/body.cpp",
+      "source_symbol": "creatures1::creatures::load_body_part_attachment_data"
+    },
+    {
+      "address": "00415f30",
+      "source_file": "creatures/body.cpp",
+      "source_symbol": "creatures1::creatures::BodyPart::serialize"
+    },
+    {
+      "address": "00416060",
+      "source_file": "creatures/body.cpp",
+      "source_symbol": "creatures1::creatures::LimbPart::serialize"
+    },
+    {
+      "address": "00416290",
+      "source_file": "creatures/body.cpp",
+      "source_symbol": "creatures1::creatures::Body::serialize"
+    },
+    {
+      "address": "00423e40",
+      "source_file": "brain/blackboard.cpp",
+      "source_symbol": "creatures1::brain::Blackboard::create"
+    },
+    {
+      "address": "0042c910",
+      "source_file": "brain/blackboard.cpp",
+      "source_symbol": "creatures1::brain::Blackboard::initialize_state"
+    },
+    {
+      "address": "0042c9a0",
+      "source_file": "brain/blackboard.cpp",
+      "source_symbol": "creatures1::brain::Blackboard::redraw_display"
+    },
+    {
+      "address": "0042ca90",
+      "source_file": "brain/blackboard.cpp",
+      "source_symbol": "creatures1::brain::Blackboard::set_edit_mode"
+    },
+    {
+      "address": "0042cb00",
+      "source_file": "brain/blackboard.cpp",
+      "source_symbol": "creatures1::brain::Blackboard::finalize_text_input"
+    },
+    {
+      "address": "0042cb70",
+      "source_file": "brain/blackboard.cpp",
+      "source_symbol": "creatures1::brain::Blackboard::set_current_word_text"
+    },
+    {
+      "address": "0042cba0",
+      "source_file": "brain/blackboard.cpp",
+      "source_symbol": "creatures1::brain::Blackboard::tick"
+    },
+    {
+      "address": "004082c0",
+      "source_file": "creatures/creature.cpp",
+      "source_symbol": "creatures1::creatures::Creature::select_walk_gait"
+    },
+    {
+      "address": "00409110",
+      "source_file": "creatures/creature.cpp",
+      "source_symbol": "creatures1::creatures::Creature::update_drive_threshold_state"
+    },
+    {
+      "address": "004095c0",
+      "source_file": "creatures/creature.cpp",
+      "source_symbol": "creatures1::creatures::Creature::click_event_id_at_world_position"
+    },
+    {
+      "address": "004096b0",
+      "source_file": "creatures/creature.cpp",
+      "source_symbol": "creatures1::creatures::Creature::get_part_center"
+    },
+    {
+      "address": "00409750",
+      "source_file": "creatures/creature.cpp",
+      "source_symbol": "creatures1::creatures::Creature::can_perceive"
+    },
+    {
+      "address": "004259a0",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::~Object"
+    },
+    {
+      "address": "00425a70",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::~Object"
+    },
+    {
+      "address": "00425c30",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::find_topmost_overlapping_object"
+    },
+    {
+      "address": "0043b950",
+      "source_file": "creatures/skeleton.cpp",
+      "source_symbol": "creatures1::creatures::Skeleton::update_anchor_and_bounds"
+    },
+    {
+      "address": "0043ba20",
+      "source_file": "creatures/skeleton.cpp",
+      "source_symbol": "creatures1::creatures::Skeleton::apply_pose_string"
+    },
+    {
+      "address": "0043c070",
+      "source_file": "creatures/skeleton.cpp",
+      "source_symbol": "creatures1::creatures::Skeleton::set_down_foot_position_and_recompute_layout"
+    },
+    {
+      "address": "0043c2f0",
+      "source_file": "creatures/skeleton.cpp",
+      "source_symbol": "creatures1::creatures::Skeleton::set_down_foot_position_and_invalidate_bounds"
+    },
+    {
+      "address": "0042b9f0",
+      "source_file": "objects/vehicle.cpp",
+      "source_symbol": "creatures1::objects::Vehicle::Vehicle"
+    },
+    {
+      "address": "0042bb80",
+      "source_file": "objects/vehicle.cpp",
+      "source_symbol": "creatures1::objects::Vehicle::synchronize_fixed_point_position_and_queue_redraw"
+    },
+    {
+      "address": "0042bc00",
+      "source_file": "objects/vehicle.cpp",
+      "source_symbol": "creatures1::objects::Vehicle::queue_event_4_for_creatures_in_local_bounds"
+    },
+    {
+      "address": "004309a0",
+      "source_file": "application/document.cpp",
+      "source_symbol": "creatures1::application::Document::open_document"
+    },
+    {
+      "address": "00429f80",
+      "source_file": "objects/bubble.cpp",
+      "source_symbol": "creatures1::objects::Bubble::references_object"
+    },
+    {
+      "address": "0042a4c0",
+      "source_file": "objects/bubble.cpp",
+      "source_symbol": "creatures1::objects::Bubble::tick"
+    },
+    {
+      "address": "0042a580",
+      "source_file": "objects/bubble.cpp",
+      "source_symbol": "creatures1::objects::Bubble::clear_references_to"
+    },
+    {
+      "address": "0042b6c0",
+      "source_file": "objects/compound_object.cpp",
+      "source_symbol": "creatures1::objects::CompoundObject::tick"
+    },
+    {
+      "address": "0040a490",
+      "source_file": "creatures/creature.cpp",
+      "source_symbol": "creatures1::creatures::Creature::initialize_default_vocabulary"
+    },
+    {
+      "address": "0040abc0",
+      "source_file": "creatures/creature.cpp",
+      "source_symbol": "creatures1::creatures::Creature::apply_goal_direction"
+    },
+    {
+      "address": "0040da20",
+      "source_file": "creatures/creature.cpp",
+      "source_symbol": "creatures1::creatures::Creature::queue_event_8_after_bounds_update"
+    },
+    {
+      "address": "00409e80",
+      "source_file": "creatures/creature.cpp",
+      "source_symbol": "creatures1::creatures::Creature::initialize_learned_word_records"
+    },
+    {
+      "address": "00408420",
+      "source_file": "creatures/creature.cpp",
+      "source_symbol": "creatures1::creatures::Creature::notify_dependents_on_removal"
+    },
+    {
+      "address": "00409ce0",
+      "source_file": "creatures/creature.cpp",
+      "source_symbol": "creatures1::creatures::Creature::update_unbounded_world_position"
+    },
+    {
+      "address": "0040cbc0",
+      "source_file": "creatures/creature.cpp",
+      "source_symbol": "creatures1::creatures::Creature::process_insemination"
+    },
+    {
+      "address": "0040bf10",
+      "source_file": "creatures/creature.cpp",
+      "source_symbol": "creatures1::creatures::Creature::update_perception"
+    },
+    {
+      "address": "0040ccc0",
+      "source_file": "creatures/creature.cpp",
+      "source_symbol": "creatures1::creatures::Creature::update_goal_direction"
+    },
+    {
+      "address": "0043bb20",
+      "source_file": "creatures/creature.cpp",
+      "source_symbol": "creatures1::creatures::Creature::advance_pose_animation"
+    },
+    {
+      "address": "00408fe0",
+      "source_file": "creatures/creature.cpp",
+      "source_symbol": "creatures1::creatures::Creature::update"
+    },
+    {
+      "address": "0043c800",
+      "source_file": "creatures/skeleton.cpp",
+      "source_symbol": "creatures1::creatures::Skeleton::load_genome"
+    },
+    {
+      "address": "0040a0c0",
+      "source_file": "creatures/creature.cpp",
+      "source_symbol": "creatures1::creatures::Creature::update_learned_word_record"
+    },
+    {
+      "address": "0040afa0",
+      "source_file": "creatures/creature.cpp",
+      "source_symbol": "creatures1::creatures::Creature::speak_action_phrase"
+    },
+    {
+      "address": "0040a630",
+      "source_file": "creatures/creature.cpp",
+      "source_symbol": "creatures1::creatures::Creature::process_heard_words"
+    },
+    {
+      "address": "0040bbc0",
+      "source_file": "creatures/creature.cpp",
+      "source_symbol": "creatures1::creatures::Creature::update_attention"
+    },
+    {
+      "address": "00401090",
+      "source_file": "scripting/dde.cpp",
+      "source_symbol": "creatures1::scripting::initialize_dde_service"
+    },
+    {
+      "address": "00423ed0",
+      "source_file": "objects/object.cpp",
+      "source_symbol": "creatures1::objects::Object::serialize"
+    },
+    {
+      "address": "0043ade0",
+      "source_file": "creatures/skeleton.cpp",
+      "source_symbol": "creatures1::creatures::Skeleton::serialize"
+    },
+  {
+    "address": "00407440",
+    "source_file": "creatures/creature.cpp",
+    "source_symbol": "creatures1::creatures::Creature::serialize"
+  },
+  {
+    "address": "0040dda0",
+    "source_file": "creatures/creature.cpp",
+    "source_symbol": "creatures1::creatures::Creature::deserialize"
+  },
+  {
+    "address": "0040c8d0",
+    "source_file": "creatures/creature.cpp",
+    "source_symbol": "creatures1::creatures::Creature::update_environment_and_life_stage"
+  },
+  {
+    "address": "0040e0d0",
+    "source_file": "creatures/creature.cpp",
+    "source_symbol": "creatures1::creatures::Creature::remove_from_world"
+  },
+  {
+    "address": "00409190",
+    "source_file": "creatures/creature.cpp",
+    "source_symbol": "creatures1::creatures::Creature::update_bacterium_and_environment"
+  },
+  {
+    "address": "00409360",
+    "source_file": "creatures/creature.cpp",
+    "source_symbol": "creatures1::creatures::Creature::process_dreaming"
+  },
+  {
+    "address": "00424b30",
+    "source_file": "objects/compound_object.cpp",
+    "source_symbol": "creatures1::objects::CompoundObject::serialize"
+  },
+  {
+    "address": "0042a800",
+    "source_file": "objects/compound_object.cpp",
+    "source_symbol": "creatures1::objects::CompoundObject::CompoundObject"
+  },
+  {
+    "address": "0042ae40",
+    "source_file": "objects/compound_object.cpp",
+    "source_symbol": "creatures1::objects::CompoundObject::move_to_and_redraw"
+  },
+  {
+    "address": "004098e0",
+    "source_file": "creatures/creature.cpp",
+    "source_symbol": "creatures1::creatures::Creature::handle_pickup_event"
+  },
+  {
+    "address": "00424dd0",
+    "source_file": "objects/vehicle.cpp",
+    "source_symbol": "creatures1::objects::Vehicle::serialize"
+  },
+  {
+    "address": "0042bad0",
+    "source_file": "objects/vehicle.cpp",
+    "source_symbol": "creatures1::objects::Vehicle::Vehicle"
+  },
+  {
+    "address": "0042bd90",
+    "source_file": "objects/vehicle.cpp",
+    "source_symbol": "creatures1::objects::Vehicle::tick"
+  },
+  {
+    "address": "0042c0b0",
+    "source_file": "objects/vehicle.cpp",
+    "source_symbol": "creatures1::objects::Vehicle::handle_queued_event_0"
+  },
+  {
+    "address": "0042c170",
+    "source_file": "objects/vehicle.cpp",
+    "source_symbol": "creatures1::objects::Vehicle::handle_queued_event_1"
+  },
+  {
+    "address": "0042c230",
+    "source_file": "objects/vehicle.cpp",
+    "source_symbol": "creatures1::objects::Vehicle::handle_queued_event_2"
+  },
+  {
+    "address": "0042c2c0",
+    "source_file": "objects/vehicle.cpp",
+    "source_symbol": "creatures1::objects::Vehicle::complete_floor_arrival"
+  },
+  {
+    "address": "0042c320",
+    "source_file": "objects/lift.cpp",
+    "source_symbol": "creatures1::objects::Lift::initialize_state"
+  },
+  {
+    "address": "0042c3e0",
+    "source_file": "objects/lift.cpp",
+    "source_symbol": "creatures1::objects::Lift::update_bounds_and_queue_redraw"
+  },
+  {
+    "address": "0042c4f0",
+    "source_file": "objects/lift.cpp",
+    "source_symbol": "creatures1::objects::Lift::tick"
+  },
+  {
+    "address": "0042c5c0",
+    "source_file": "objects/lift.cpp",
+    "source_symbol": "creatures1::objects::Lift::request_move_up"
+  },
+  {
+    "address": "0042c680",
+    "source_file": "objects/lift.cpp",
+    "source_symbol": "creatures1::objects::Lift::request_move_down"
+  },
+  {
+    "address": "00425360",
+    "source_file": "brain/blackboard.cpp",
+    "source_symbol": "creatures1::brain::Blackboard::serialize"
+  },
+  {
+    "address": "004250a0",
+    "source_file": "objects/lift.cpp",
+    "source_symbol": "creatures1::objects::Lift::serialize"
+  },
+  {
+    "address": "0042c590",
+    "source_file": "objects/lift.cpp",
+    "source_symbol": "creatures1::objects::Lift::select_nearest_call_button_and_start_move"
+  },
+  {
+    "address": "0042c740",
+    "source_file": "objects/lift.cpp",
+    "source_symbol": "creatures1::objects::Lift::select_nearest_call_button_and_start_move"
+  },
+  {
+    "address": "00424380",
+    "source_file": "objects/scenery.cpp",
+    "source_symbol": "creatures1::objects::Scenery::serialize"
+  },
+  {
+    "address": "0040dbc0",
+    "source_file": "creatures/creature.cpp",
+    "source_symbol": "creatures1::creatures::Creature::dispatch_script_event"
+  },
+  {
+    "address": "0040b160",
+    "source_file": "creatures/creature.cpp",
+    "source_symbol": "creatures1::creatures::Creature::speak_dominant_drive_phrase"
+  },
+  {
+    "address": "0040b560",
+    "source_file": "creatures/creature.cpp",
+    "source_symbol": "creatures1::creatures::Creature::speak_text_with_voice"
+  },
+  {
+    "address": "0040b5f0",
+    "source_file": "creatures/creature.cpp",
+    "source_symbol": "creatures1::creatures::Creature::speak"
+  },
+  {
+    "address": "00409da0",
+    "source_file": "creatures/creature.cpp",
+    "source_symbol": "creatures1::creatures::Creature::handle_heard_words_event"
+  },
+  {
+    "address": "00409e00",
+    "source_file": "creatures/creature.cpp",
+    "source_symbol": "creatures1::creatures::Creature::handle_word_learning_event"
+  },
+  {
+    "address": "00409ae0",
+    "source_file": "creatures/creature.cpp",
+    "source_symbol": "creatures1::creatures::Creature::handle_drop_event"
+  },
+  {
+    "address": "0040d930",
+    "source_file": "creatures/creature.cpp",
+    "source_symbol": "creatures1::creatures::Creature::initialize_from_genome"
+  },
+  {
+    "address": "0040da80",
+    "source_file": "creatures/creature.cpp",
+    "source_symbol": "creatures1::creatures::Creature::set_sleep_indicator"
+  },
+  {
+    "address": "0040dc30",
+    "source_file": "creatures/creature.cpp",
+    "source_symbol": "creatures1::creatures::Creature::die"
+  },
+  {
+    "address": "004249e0",
+    "source_file": "objects/bubble.cpp",
+    "source_symbol": "creatures1::objects::Bubble::serialize"
+  },
+  {
+    "address": "004243e0",
+    "source_file": "objects/simple_object.cpp",
+    "source_symbol": "creatures1::objects::SimpleObject::serialize"
+  },
+  {
+    "address": "004294d0",
+    "source_file": "objects/simple_object.cpp",
+    "source_symbol": "creatures1::objects::SimpleObject::preload_image_sequence"
+  },
+  {
+    "address": "00428b50",
+    "source_file": "objects/simple_object.cpp",
+    "source_symbol": "creatures1::objects::SimpleObject::initialize_unbounded_object_placement"
+  },
+  {
+    "address": "00427ae0",
+    "source_file": "objects/simple_object.cpp",
+    "source_symbol": "creatures1::objects::SimpleObject::handle_queued_event_0"
+  },
+  {
+    "address": "00427b60",
+    "source_file": "objects/simple_object.cpp",
+    "source_symbol": "creatures1::objects::SimpleObject::handle_queued_event_1"
+  },
+  {
+    "address": "00427be0",
+    "source_file": "objects/simple_object.cpp",
+    "source_symbol": "creatures1::objects::SimpleObject::handle_queued_event_2"
+  },
+  {
+    "address": "00424900",
+    "source_file": "objects/call_button.cpp",
+    "source_symbol": "creatures1::objects::CallButton::serialize"
+  },
+  {
+    "address": "00429a70",
+    "source_file": "objects/call_button.cpp",
+    "source_symbol": "creatures1::objects::CallButton::update_lift_state_and_queue_redraw"
+  },
+  {
+    "address": "00429c10",
+    "source_file": "objects/call_button.cpp",
+    "source_symbol": "creatures1::objects::CallButton::request_lift_call"
+  },
+  {
+    "address": "00426ee0",
+    "source_file": "objects/simple_object.cpp",
+    "source_symbol": "creatures1::objects::SimpleObject::finalize_object_edit"
+  },
+  {
+    "address": "0041a8e0",
+    "source_file": "scripting/classifier_scripts.cpp",
+    "source_symbol": "creatures1::scripting::deserialize_scripts_for_classifier"
+  }
+  ,{
+    "address": "004246c0",
+    "source_file": "ui/tools.cpp",
+    "source_symbol": "creatures1::ui::PointerTool::serialize"
+  },
+  {
+    "address": "00429da0",
+    "source_file": "objects/bubble.cpp",
+    "source_symbol": "creatures1::objects::Bubble::Bubble"
+  },
+  {
+    "address": "00429f90",
+    "source_file": "objects/bubble.cpp",
+    "source_symbol": "creatures1::objects::Bubble::destroy_and_redraw"
+  },
+  {
+    "address": "0042a1a0",
+    "source_file": "objects/bubble.cpp",
+    "source_symbol": "creatures1::objects::Bubble::set_text"
+  },
+  {
+    "address": "00426c10",
+    "source_file": "objects/simple_object.cpp",
+    "source_symbol": "creatures1::objects::SimpleObject::SimpleObject"
+  },
+  {
+    "address": "00426580",
+    "source_file": "objects/simple_object.cpp",
+    "source_symbol": "creatures1::objects::SimpleObject::create_bubble"
+  },
+  {
+    "address": "00426e30",
+    "source_file": "objects/simple_object.cpp",
+    "source_symbol": "creatures1::objects::SimpleObject::~SimpleObject"
+  },
+  {
+    "address": "00427a70",
+    "source_file": "objects/simple_object.cpp",
+    "source_symbol": "creatures1::objects::SimpleObject::tick"
+  },
+  {
+    "address": "00427cc0",
+    "source_file": "objects/simple_object.cpp",
+    "source_symbol": "creatures1::objects::SimpleObject::handle_queued_event_4"
+  },
+  {
+    "address": "00428bb0",
+    "source_file": "objects/simple_object.cpp",
+    "source_symbol": "creatures1::objects::SimpleObject::end_interaction_with_source"
+  },
+  {
+    "address": "00427f40",
+    "source_file": "objects/simple_object.cpp",
+    "source_symbol": "creatures1::objects::SimpleObject::handle_queued_event_5"
+  },
+  {
+    "address": "0040d580",
+    "source_file": "creatures/creature.cpp",
+    "source_symbol": "creatures1::creatures::Creature::Creature"
+  },
+  {
+    "address": "0041a440",
+    "source_file": "scripting/classifier_scripts.cpp",
+    "source_symbol": "creatures1::scripting::install_script_text_for_classifier"
+  },
+    {
+      "address": "00419e00",
+      "source_file": "scripting/classifier_scripts.cpp",
+      "source_symbol": "creatures1::scripting::execute_script_for_classifier"
+    },
+    {
+      "address": "00431fb0",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::import_creature"
+    },
+    {
+      "address": "004324c0",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::trigger_selected_creature_script_event"
+    },
+    {
+      "address": "00433bd0",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::select_creature_by_menu_command"
+    },
+    {
+      "address": "00433be0",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::select_creature_by_menu_command"
+    },
+    {
+      "address": "00433bf0",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::select_creature_by_menu_command"
+    },
+    {
+      "address": "004347a0",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::create_and_select_generated_creature"
+    },
+    {
+      "address": "00434830",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::create_and_select_generated_creature"
+    },
+    {
+      "address": "004348c0",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::infect_selected_creature_with_random_bacterium"
+    },
+    {
+      "address": "00435490",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::force_age_selected_creature_one_stage"
+    },
+    {
+      "address": "00435e00",
+      "source_file": "application/application.cpp",
+      "source_symbol": "creatures1::application::select_previous_creature"
+    },
+    {
+      "address": "004304c0",
+      "source_file": "application/document.cpp",
+      "source_symbol": "creatures1::application::Document::on_new_document"
+    },
+    {
+      "address": "004311a0",
+      "source_file": "application/document.cpp",
+      "source_symbol": "creatures1::application::Document::serialize"
+    },
+    {
+      "address": "00433340",
+      "source_file": "application/document.cpp",
+      "source_symbol": "creatures1::application::Document::toggle_informative_selection_menu"
+    },
+    {
+      "address": "0040b680",
+      "source_file": "creatures/creature.cpp",
+      "source_symbol": "creatures1::creatures::Creature::set_action"
+    },
+    {
+      "address": "0040c630",
+      "source_file": "creatures/creature.cpp",
+      "source_symbol": "creatures1::creatures::Creature::update_action_selection"
+    },
+    {
+      "address": "0040fdb0",
+      "source_file": "scripting/dde.cpp",
+      "source_symbol": "creatures1::scripting::handle_dde_callback"
+    },
+    {
+      "address": "0040fda0",
+      "source_file": "scripting/dde.cpp",
+      "source_symbol": "creatures1::scripting::initialize_dde_service"
+    },
+    {
+      "address": "004100e0",
+      "source_file": "scripting/dde.cpp",
+      "source_symbol": "creatures1::scripting::find_conversation"
+    },
+    {
+      "address": "00410120",
+      "source_file": "scripting/dde.cpp",
+      "source_symbol": "creatures1::scripting::create_dde_item_data"
+    },
+    {
+      "address": "004101e0",
+      "source_file": "scripting/dde.cpp",
+      "source_symbol": "creatures1::scripting::create_dde_item_data"
+    },
+    {
+      "address": "00410270",
+      "source_file": "scripting/dde.cpp",
+      "source_symbol": "creatures1::scripting::create_dde_item_data"
+    },
+    {
+      "address": "0042f740",
+      "source_file": "scripting/dde.cpp",
+      "source_symbol": "creatures1::scripting::notify_dde_score_changed"
+    },
+    {
+      "address": "0044edf0",
+      "source_file": "scripting/dde.cpp",
+      "source_symbol": "creatures1::scripting::shutdown_dde_service"
+    },
+    {
+      "address": "0041bcb0",
+      "source_file": "scripting/macro.cpp",
+      "source_symbol": "creatures1::scripting::Macro::execute_dde_command"
+    },
+    {
+      "address": "0041cd30",
+      "source_file": "scripting/macro.cpp",
+      "source_symbol": "creatures1::scripting::Macro::execute_system_caos_command"
+    },
+    {
+      "address": "0041daa0",
+      "source_file": "scripting/macro.cpp",
+      "source_symbol": "creatures1::scripting::Macro::report_syntax_error"
+    },
+    {
+      "address": "00420cf0",
+      "source_file": "scripting/macro.cpp",
+      "source_symbol": "creatures1::scripting::Macro::handle_script_execution_exception"
+    },
+    {
+      "address": "0041d8a0",
+      "source_file": "scripting/macro.cpp",
+      "source_symbol": "creatures1::scripting::Macro::execute_blackboard_caos_command"
+    },
+    {
+      "address": "0041a020",
+      "source_file": "scripting/macro.cpp",
+      "source_symbol": "creatures1::scripting::Macro::execute_to_output_buffer"
+    },
+    {
+      "address": "0041a320",
+      "source_file": "scripting/macro.cpp",
+      "source_symbol": "creatures1::scripting::Macro::start_execution"
+    },
+    {
+      "address": "0041d130",
+      "source_file": "scripting/macro.cpp",
+      "source_symbol": "creatures1::scripting::Macro::execute_new_command"
+    },
+    {
+      "address": "0041a9d0",
+      "source_file": "scripting/macro.cpp",
+      "source_symbol": "creatures1::scripting::Macro::parse_rvalue"
+    },
+    {
+      "address": "0041b9f0",
+      "source_file": "scripting/macro.cpp",
+      "source_symbol": "creatures1::scripting::Macro::assign_lvalue"
+    },
+    {
+      "address": "00437b30",
+      "source_file": "ui/views.cpp",
+      "source_symbol": "creatures1::ui::on_key_down"
+    },
+    {
+      "address": "00436b30",
+      "source_file": "ui/views.cpp",
+      "source_symbol": "creatures1::ui::on_mouse_move"
+    },
+    {
+      "address": "00428860",
+      "source_file": "ui/tools.cpp",
+      "source_symbol": "creatures1::ui::PointerTool::process_pending_input"
+    },
+    {
+      "address": "00429620",
+      "source_file": "ui/tools.cpp",
+      "source_symbol": "creatures1::ui::PointerTool::handle_queued_event_4"
+    },
+    {
+      "address": "00429720",
+      "source_file": "ui/tools.cpp",
+      "source_symbol": "creatures1::ui::PointerTool::handle_queued_event_5"
+    },
+    {
+      "address": "00429860",
+      "source_file": "ui/tools.cpp",
+      "source_symbol": "creatures1::ui::PointerTool::set_text_with_toolbar_update"
+    },
+    {
+      "address": "00429960",
+      "source_file": "ui/tools.cpp",
+      "source_symbol": "creatures1::ui::PointerTool::set_persistent_bubble_text"
+    },
+    {
+      "address": "004299b0",
+      "source_file": "ui/tools.cpp",
+      "source_symbol": "creatures1::ui::PointerTool::set_transient_bubble_text"
+    },
+    {
+      "address": "00429a00",
+      "source_file": "ui/tools.cpp",
+      "source_symbol": "creatures1::ui::PointerTool::execute_click_script_fallback"
+    },
+    {
+      "address": "00419330",
+      "source_file": "scripting/macro_holder.cpp",
+      "source_symbol": "creatures1::scripting::MacroHolder::dispatch_start_macro_execution"
+    },
+    {
+      "address": "00419340",
+      "source_file": "scripting/macro_holder.cpp",
+      "source_symbol": "creatures1::scripting::MacroHolder::execute_and_publish_macro_output"
+    },
+    {
+      "address": "00419450",
+      "source_file": "scripting/macro_holder.cpp",
+      "source_symbol": "creatures1::scripting::MacroHolder::start_macro_execution"
+    },
+    {
+      "address": "00419470",
+      "source_file": "scripting/macro_holder.cpp",
+      "source_symbol": "creatures1::scripting::MacroHolder::execute_macro_to_output_buffer"
+    },
+    {
+      "address": "00427fd0",
+      "source_file": "objects/simple_object.cpp",
+      "source_symbol": "creatures1::objects::SimpleObject::update_unbounded_position_and_redraw"
+    },
+    {
+      "address": "00428d30",
+      "source_file": "objects/simple_object.cpp",
+      "source_symbol": "creatures1::objects::SimpleObject::update_entity_for_explicit_rect_bounds_and_redraw"
+    },
+    {
+      "address": "004324e0",
+      "source_file": "application/document.cpp",
+      "source_symbol": "creatures1::application::Document::update_world"
+    },
+    {
+      "address": "00421a00",
+      "source_file": "application/main_frame.cpp",
+      "source_symbol": "creatures1::application::CMainFrame::OnTimer"
+    },
+    {
+      "address": "00422040",
+      "source_file": "application/main_frame.cpp",
+      "source_symbol": "creatures1::application::CMainFrame::OnAgeSelectedCreatureAndSeedWords"
+    },
+    {
+      "address": "0041dc40",
+      "source_file": "scripting/macro.cpp",
+      "source_symbol": "creatures1::scripting::Macro::execute_interpreter"
+    }
+  ],
+  "support_sources": [
+    {
+      "source_file": "application/resource_hosts.cpp",
+      "owner_addresses": [
+        "0043c800"
+      ],
+      "reason": "Application-owned resource/file host support required by the admitted Skeleton::LoadGenome owner; no standalone recovered function is claimed."
+    },
+    {
+      "source_file": "common/static_data.cpp",
+      "owner_addresses": [
+        "0040b680",
+        "0040ccc0",
+        "0043bb20"
+      ],
+      "reason": "Source-native definitions for recovered C1 data tables consumed by admitted Creature action, goal-direction, and pose-animation owners; the data objects are not standalone queue functions."
+    },
+    {
+      "source_file": "platform/executable_entry.cpp",
+      "owner_addresses": [
+        "0043df30",
+        "0043e1d0"
+      ],
+      "reason": "Narrow WinMain-to-AfxWinMain process-entry adapter required to host the admitted SFC application startup owners; the CRT/MFC entry machinery remains an external runtime boundary."
+    }
+  ]
+}

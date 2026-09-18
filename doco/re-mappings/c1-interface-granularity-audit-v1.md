@@ -1,0 +1,273 @@
+# C1 interface granularity
+
+- Abstract interfaces: **274**
+- Never implemented: **96**
+- Exactly one implementor: **161** (of which 103 are named as boundaries by a ledger checkpoint)
+- Two or more implementors: **17**
+- Collapsible candidates: **58**
+
+A checkpointed boundary documents recovered structure and is not
+collapsed silently, even with a single implementor.
+
+## Never implemented
+
+- `BacteriumServiceHost` (src/c1/world/tick.hpp, 11 pure virtuals)
+- `BacteriumUpdateHost` (src/c1/creatures/bacterium.hpp, 6 pure virtuals)
+- `BacteriumUpdateTarget` (src/c1/world/tick.hpp, 2 pure virtuals)
+- `BlackboardDisplayHost` (src/c1/brain/blackboard.hpp, 2 pure virtuals)
+- `BlackboardRuntimeHost` (src/c1/brain/blackboard.hpp, 0 pure virtuals)
+- `BlackboardTextInputHost` (src/c1/brain/blackboard.hpp, 4 pure virtuals)
+- `BrainUpdateHost` (src/c1/brain/brain.hpp, 1 pure virtuals)
+- `BubbleTickHost` (src/c1/objects/bubble.hpp, 2 pure virtuals)
+- `BuiltInStimulusDebugHost` (src/c1/creatures/creature.hpp, 3 pure virtuals)
+- `CSfcOLEHost` (src/c1/application/sfc_ole.hpp, 6 pure virtuals)
+- `CallButtonRuntimeHost` (src/c1/objects/call_button.hpp, 3 pure virtuals)
+- `CompoundObjectConstructionHost` (src/c1/objects/compound_object.hpp, 1 pure virtuals)
+- `CompoundObjectEventHost` (src/c1/objects/compound_object.hpp, 4 pure virtuals)
+- `CompoundObjectLifetimeHost` (src/c1/objects/compound_object.hpp, 4 pure virtuals)
+- `CompoundObjectTickHost` (src/c1/objects/compound_object.hpp, 2 pure virtuals)
+- `CreatureBoundsEventHost` (src/c1/creatures/creature.hpp, 3 pure virtuals)
+- `CreatureDropHost` (src/c1/creatures/creature.hpp, 6 pure virtuals)
+- `CreatureEventFanoutHost` (src/c1/creatures/events.hpp, 17 pure virtuals)
+- `CreatureHeardWordsHost` (src/c1/creatures/creature.hpp, 5 pure virtuals)
+- `CreatureNameHistoryUi` (src/c1/application/application.hpp, 7 pure virtuals)
+- `CreaturePerceptionHost` (src/c1/creatures/creature.hpp, 8 pure virtuals)
+- `CreaturePickupHost` (src/c1/creatures/creature.hpp, 8 pure virtuals)
+- `CreaturePoseAnimationHost` (src/c1/creatures/creature.hpp, 2 pure virtuals)
+- `CreatureRemovalHost` (src/c1/creatures/creature.hpp, 9 pure virtuals)
+- `CreatureScriptEventHost` (src/c1/creatures/creature.hpp, 1 pure virtuals)
+- `CreatureSpeechPhraseHost` (src/c1/creatures/creature.hpp, 4 pure virtuals)
+- `CreatureStatusTextApi` (src/c1/creatures/creature.hpp, 1 pure virtuals)
+- `CreatureStatusWorldApi` (src/c1/creatures/creature.hpp, 2 pure virtuals)
+- `CreatureUnboundedWorldPositionHost` (src/c1/creatures/creature.hpp, 4 pure virtuals)
+- `CreatureUpdateHost` (src/c1/creatures/creature.hpp, 2 pure virtuals)
+- `CreatureWordLearningHost` (src/c1/creatures/creature.hpp, 1 pure virtuals)
+- `CreatureWorldUpdateHost` (src/c1/creatures/update.hpp, 21 pure virtuals)
+- `DdeCallbackHost` (src/c1/scripting/dde.hpp, 11 pure virtuals)
+- `DdeItemDataHost` (src/c1/scripting/dde.hpp, 5 pure virtuals)
+- `DdeRuntimeHost` (src/c1/scripting/dde.hpp, 7 pure virtuals)
+- `DibFileSystem` (src/c1/display/bitmap.hpp, 2 pure virtuals)
+- `DibOutputFile` (src/c1/display/bitmap.hpp, 2 pure virtuals)
+- `DocumentAdapterHost` (src/c1/application/document.hpp, 2 pure virtuals)
+- `DocumentCommandUpdateHost` (src/c1/application/document.hpp, 2 pure virtuals)
+- `DocumentConstructionHost` (src/c1/application/document.hpp, 8 pure virtuals)
+- `DocumentDestructionHost` (src/c1/application/document.hpp, 2 pure virtuals)
+- `DocumentSaveTarget` (src/c1/application/file_commands.hpp, 2 pure virtuals)
+- `DocumentTimerHost` (src/c1/application/document.hpp, 15 pure virtuals)
+- `DocumentViewportHost` (src/c1/application/document.hpp, 2 pure virtuals)
+- `DriveThresholdObject` (src/c1/creatures/update.hpp, 2 pure virtuals)
+- `EditControlApi` (src/c1/platform/mfc_adapters.hpp, 2 pure virtuals)
+- `EmbeddedKitGateway` (src/c1/application/embedded_kits.hpp, 3 pure virtuals)
+- `EmbeddedKitRegistrationApi` (src/c1/application/embedded_kits.hpp, 6 pure virtuals)
+- `ExportFileDialog` (src/c1/application/file_dialog.hpp, 2 pure virtuals)
+- `FavouritePlaceDialogHost` (src/c1/application/application.hpp, 1 pure virtuals)
+- `FavouritePlaceRemovalHost` (src/c1/world/places.hpp, 5 pure virtuals)
+- `FileCommandHost` (src/c1/application/application.hpp, 4 pure virtuals)
+- `FileDialogPlatform` (src/c1/application/file_dialog.hpp, 3 pure virtuals)
+- `FuneralKitGateway` (src/c1/archive/funeral_kit.hpp, 2 pure virtuals)
+- `GenomeLocusStorage` (src/c1/creatures/genome.hpp, 5 pure virtuals)
+- `ImagePreloadHost` (src/c1/objects/entity.hpp, 1 pure virtuals)
+- `LiftRuntimeHost` (src/c1/objects/lift.hpp, 6 pure virtuals)
+- `MacroBlackboardHost` (src/c1/scripting/macro.hpp, 7 pure virtuals)
+- `MacroInterpreterTrace` (src/c1/scripting/macro.hpp, 5 pure virtuals)
+- `MacroMessageHost` (src/c1/scripting/macro.hpp, 3 pure virtuals)
+- `MacroNewObjectHost` (src/c1/scripting/macro.hpp, 11 pure virtuals)
+- `MacroStimulusHost` (src/c1/scripting/macro.hpp, 9 pure virtuals)
+- `MacroSystemHost` (src/c1/scripting/macro.hpp, 12 pure virtuals)
+- `MainFrameEmbeddedKitTogglePlatform` (src/c1/application/main_frame.hpp, 5 pure virtuals)
+- `MainFrameEmbeddedKitUpdatePlatform` (src/c1/application/main_frame.hpp, 10 pure virtuals)
+- `MainFrameTimerHost` (src/c1/application/file_commands.hpp, 3 pure virtuals)
+- `MainFrameWindow` (src/c1/application/commands.hpp, 1 pure virtuals)
+- `MainWindowApi` (src/c1/ui/main_window.hpp, 1 pure virtuals)
+- `NamedPipeSecurityApi` (src/c1/platform/security.hpp, 1 pure virtuals)
+- `ObjectCleanupHost` (src/c1/objects/object.hpp, 4 pure virtuals)
+- `ObjectDeletionHost` (src/c1/objects/lifecycle.hpp, 18 pure virtuals)
+- `ObjectEventDispatchHost` (src/c1/objects/object.hpp, 1 pure virtuals)
+- `ObjectEventRuntime` (src/c1/objects/events.hpp, 13 pure virtuals)
+- `OwnerInitializationHost` (src/c1/creatures/owner.hpp, 1 pure virtuals)
+- `PlaceDialogDataExchange` (src/c1/ui/place_dialog.hpp, 2 pure virtuals)
+- `PlaceDialogPlatform` (src/c1/ui/place_dialog.hpp, 2 pure virtuals)
+- `PointerAttentionApi` (src/c1/creatures/creature.hpp, 8 pure virtuals)
+- `RegistryApi` (src/c1/platform/registry.hpp, 3 pure virtuals)
+- `RemovePlaceDialogPlatform` (src/c1/ui/place_dialog.hpp, 9 pure virtuals)
+- `SecureFormattingApi` (src/c1/platform/formatting.hpp, 2 pure virtuals)
+- `SecureStringCopyApi` (src/c1/application/resources.hpp, 1 pure virtuals)
+- `SelectedCreatureScriptCommandHost` (src/c1/application/application.hpp, 2 pure virtuals)
+- `SelectedCreatureTitleSource` (src/c1/ui/main_window.hpp, 1 pure virtuals)
+- `SimpleObjectEditHost` (src/c1/objects/simple_object.hpp, 1 pure virtuals)
+- `SimpleObjectTickHost` (src/c1/objects/simple_object.hpp, 7 pure virtuals)
+- `TextInputQueue` (src/c1/ui/views.hpp, 3 pure virtuals)
+- `TextMeasurementApi` (src/c1/platform/gdi.hpp, 1 pure virtuals)
+- `ToolbarPlatform` (src/c1/ui/toolbars.hpp, 17 pure virtuals)
+- `UpdateTimerStateConsumer` (src/c1/world/update_timer.hpp, 1 pure virtuals)
+- `VehicleTickHost` (src/c1/objects/vehicle.hpp, 1 pure virtuals)
+- `ViewportScroller` (src/c1/world/viewport.hpp, 1 pure virtuals)
+- `WindowCommandApi` (src/c1/application/commands.hpp, 1 pure virtuals)
+- `WindowPlatform` (src/c1/ui/windows.hpp, 3 pure virtuals)
+- `WorldStatisticsHost` (src/c1/ui/world_statistics.hpp, 11 pure virtuals)
+- `WorldUpdateControl` (src/c1/world/update_timer.hpp, 2 pure virtuals)
+- `WorldUpdateTimerHost` (src/c1/application/application.hpp, 3 pure virtuals)
+
+## Single implementor
+
+- `BacteriumArchive` -> MfcMapDataArchive (src/c1/creatures/bacterium.hpp)
+- `BacteriumRandomSource` -> WindowsBacteriumRandomSource (src/c1/creatures/bacterium.hpp) [checkpointed]
+- `BinaryResourceFile` -> BinaryReadAdapter (src/c1/display/font.hpp) [checkpointed]
+- `BinaryResourceFileSystem` -> C1ResourceHost (src/c1/display/font.hpp) [checkpointed]
+- `BiochemistryArchive` -> MfcBiochemistryArchive (src/c1/biochemistry/biochemistry.hpp)
+- `BiochemistryLocusHost` -> MfcBiochemistryLocusHost (src/c1/biochemistry/biochemistry.hpp) [checkpointed]
+- `BodyResourceHost` -> C1ResourceHost (src/c1/creatures/body.hpp) [checkpointed]
+- `BodySpriteFileHost` -> C1WindowsDocument (src/c1/creatures/skeleton.hpp) [checkpointed]
+- `BrainArchive` -> MfcBrainArchive (src/c1/brain/brain.hpp) [checkpointed]
+- `BubbleConstructionHost` -> C1WindowsDocument (src/c1/objects/bubble.hpp) [checkpointed]
+- `BubbleRedrawHost` -> C1WindowsDocument (src/c1/objects/bubble.hpp) [checkpointed]
+- `BubbleTextHost` -> C1WindowsDocument (src/c1/objects/bubble.hpp) [checkpointed]
+- `BurbleSettingStore` -> RegistryBurbleStore (src/c1/application/application.hpp)
+- `CaosConsoleApplicationHost` -> C1MainFrame (src/c1/application/application.hpp) [checkpointed]
+- `CaosConsoleHost` -> C1CaosConsoleDialog (src/c1/ui/caos_console.hpp) [checkpointed]
+- `CaosScriptLoadHost` -> C1CaosConsoleDialog (src/c1/ui/caos_console.hpp) [checkpointed]
+- `ClassifierTipHost` -> C1WindowsView (src/c1/ui/classifier_tip.hpp) [checkpointed]
+- `ComLocalServerApi` -> WindowsComLocalServer (src/c1/platform/com.hpp)
+- `CommandUi` -> FrameCommandUi (src/c1/application/application.hpp)
+- `CompoundObjectMoveRedrawHost` -> C1WindowsDocument (src/c1/objects/compound_object.hpp)
+- `CreatureArchive` -> MfcCreatureArchive (src/c1/creatures/creature.hpp) [checkpointed]
+- `CreatureAttentionHost` -> WindowsCreatureAttentionHost (src/c1/creatures/creature.hpp) [checkpointed]
+- `CreatureBacteriumEnvironmentHost` -> WindowsCreatureBacteriumEnvironmentHost (src/c1/creatures/creature.hpp) [checkpointed]
+- `CreatureConstructionHost` -> WindowsCreatureConstructionHost (src/c1/creatures/creature.hpp) [checkpointed]
+- `CreatureDeathHost` -> WindowsCreatureDeathHost (src/c1/creatures/creature.hpp) [checkpointed]
+- `CreatureDeserializationHost` -> WindowsCreatureDeserializationHost (src/c1/creatures/creature.hpp) [checkpointed]
+- `CreatureEnvironmentHost` -> WindowsCreatureEnvironmentHost (src/c1/creatures/creature.hpp) [checkpointed]
+- `CreatureExportArchive` -> MfcCreatureExportArchive (src/c1/application/application.hpp)
+- `CreatureExportHost` -> WindowsCreatureExportHost (src/c1/application/application.hpp) [checkpointed]
+- `CreatureGoalDirectionHost` -> WindowsCreatureBacteriumEnvironmentHost (src/c1/creatures/creature.hpp)
+- `CreatureImportArchive` -> MfcCreatureImportArchive (src/c1/application/application.hpp) [checkpointed]
+- `CreatureImportHost` -> WindowsCreatureImportHost (src/c1/application/application.hpp) [checkpointed]
+- `CreatureInseminationHost` -> WindowsCreatureInseminationHost (src/c1/creatures/creature.hpp) [checkpointed]
+- `CreatureScriptDispatchHost` -> WindowsCreatureAttentionHost (src/c1/creatures/creature.hpp) [checkpointed]
+- `CreatureSelectionCycleHost` -> C1WindowsDocument (src/c1/application/application.hpp)
+- `CreatureSelectionEntry` -> Creature (src/c1/creatures/selection.hpp) [checkpointed]
+- `CreatureSelectionMenuPlatform` -> C1NativeCreatureSelectionMenuPlatform (src/c1/ui/creature_selection.hpp)
+- `CreatureSelectorApi` -> Selector (src/c1/ui/toolbars.hpp)
+- `CreatureSpeechHost` -> WindowsCreatureSpeechHost (src/c1/creatures/creature.hpp) [checkpointed]
+- `DdeScoreNotificationHost` -> DocumentScoreNotification (src/c1/scripting/dde.hpp)
+- `DebugConsoleHost` -> C1DebugConsoleDialog (src/c1/application/application.hpp) [checkpointed]
+- `DebugLogHost` -> C1DebugConsoleDialog (src/c1/common/logging.hpp) [checkpointed]
+- `DocumentCloseHost` -> C1WindowsDocument (src/c1/application/document.hpp) [checkpointed]
+- `DocumentContentsHost` -> C1WindowsDocument (src/c1/application/document.hpp) [checkpointed]
+- `DocumentFavouritePlaceHost` -> AddFavouritePlaceHost (src/c1/application/document.hpp) [checkpointed]
+- `DocumentInformativeSelectionHost` -> C1WindowsDocument (src/c1/application/document.hpp)
+- `DocumentNewWorldHost` -> C1WindowsDocument (src/c1/application/document.hpp)
+- `DocumentOpenHost` -> C1WindowsDocument (src/c1/application/document.hpp) [checkpointed]
+- `DocumentSaveHost` -> C1WindowsDocument (src/c1/application/document.hpp) [checkpointed]
+- `DocumentSerializationHost` -> C1WindowsDocument (src/c1/application/document.hpp) [checkpointed]
+- `DocumentWorldUpdateHost` -> C1WindowsDocument (src/c1/application/document.hpp) [checkpointed]
+- `EmbeddedKitControlApi` -> FrameKitControl (src/c1/application/embedded_kits.hpp)
+- `EmbeddedKitExecutionApi` -> WindowsEmbeddedKitHost (src/c1/application/embedded_kits.hpp)
+- `EmbeddedKitIdentityMessageApi` -> WindowsEmbeddedKitHost (src/c1/application/embedded_kits.hpp)
+- `EmbeddedKitMenuApi` -> C1NativeEmbeddedKitMenuPlatform (src/c1/application/embedded_kits.hpp)
+- `EmbeddedKitShutdownApi` -> WindowsEmbeddedKitHost (src/c1/application/embedded_kits.hpp)
+- `EntityArchive` -> MfcEntityArchive (src/c1/objects/entity.hpp) [checkpointed]
+- `EntityImageSequenceRenderHost` -> WindowsEntityImageSequenceRenderHost (src/c1/objects/entity.hpp) [checkpointed]
+- `EntityRasterHost` -> C1WindowsDocument (src/c1/objects/entity.hpp) [checkpointed]
+- `EntityRegistryHost` -> WorldRuntime (src/c1/objects/entity.hpp) [checkpointed]
+- `EuthanasiaHost` -> WindowsEuthanasiaHost (src/c1/application/application.hpp)
+- `EventBarArchiveApi` -> MfcEventBarArchive (src/c1/ui/event_bar.hpp) [checkpointed]
+- `EventBarInteractionApi` -> C1EventBarObjectAdapter (src/c1/ui/event_bar.hpp)
+- `EventBarObjectPolicyApi` -> C1EventBarObjectAdapter (src/c1/ui/event_bar.hpp)
+- `EventBarStatusApi` -> C1EventBarStatusAdapter (src/c1/ui/event_bar.hpp)
+- `EventBarWindowApi` -> C1EventBar (src/c1/ui/event_bar.hpp)
+- `EyeViewApplicationHost` -> C1WindowsDocument (src/c1/application/application.hpp) [checkpointed]
+- `EyeViewHost` -> C1EyeViewWindow (src/c1/ui/eye_view.hpp) [checkpointed]
+- `FavouritePlaceArchive` -> MfcFavouritePlaceArchive (src/c1/world/places.hpp) [checkpointed]
+- `FileSystemApi` -> C1NativeBackupFileSystem (src/c1/common/filesystem.hpp)
+- `FollowViewportHost` -> C1EyeViewWindow (src/c1/ui/eye_view.hpp) [checkpointed]
+- `ForceAgeSelectedCreatureHost` -> WindowsForceAgeHost (src/c1/application/application.hpp)
+- `GalleryHost` -> C1ResourceHost (src/c1/display/gallery.hpp) [checkpointed]
+- `GeneratedCreatureCommandHost` -> WindowsGeneratedCreatureHost (src/c1/application/application.hpp) [checkpointed]
+- `GenomeArchive` -> CreatureArchiveGenomeAdapter (src/c1/creatures/genome.hpp) [checkpointed]
+- `GenomeFileStore` -> C1CreatureResourceHost (src/c1/creatures/genome.hpp) [checkpointed]
+- `GenomeFilenameRegistry` -> WindowsCreatureInseminationHost (src/c1/creatures/genome.hpp) [checkpointed]
+- `GenomeRandomSource` -> WindowsCreatureInseminationHost (src/c1/creatures/genome.hpp) [checkpointed]
+- `ImageArchive` -> MfcMapDataArchive (src/c1/display/image.hpp) [checkpointed]
+- `InfectSelectedCreatureHost` -> WindowsInfectCreatureHost (src/c1/application/application.hpp)
+- `InitializationHost` -> C1WindowsDocument (src/c1/creatures/creature.hpp) [checkpointed]
+- `InstinctArchive` -> MfcInstinctArchive (src/c1/brain/instinct.hpp)
+- `KitProcessHost` -> KitProcessAdapter (src/c1/application/kit_processes.hpp) [checkpointed]
+- `MacroApplicationHost` -> WindowsMacroHost (src/c1/scripting/macro.hpp) [checkpointed]
+- `MacroArchive` -> MfcMacroArchive (src/c1/scripting/macro.hpp) [checkpointed]
+- `MacroCommandHost` -> WindowsMacroHost (src/c1/scripting/macro.hpp) [checkpointed]
+- `MacroDdeHost` -> WindowsMacroHost (src/c1/scripting/macro.hpp) [checkpointed]
+- `MacroDebugHost` -> WindowsMacroHost (src/c1/scripting/macro.hpp) [checkpointed]
+- `MacroExceptionHost` -> WindowsMacroHost (src/c1/scripting/macro.hpp) [checkpointed]
+- `MacroHolderHost` -> WindowsMacroHost (src/c1/scripting/macro_holder.hpp) [checkpointed]
+- `MacroObjectEventHost` -> WindowsMacroHost (src/c1/scripting/macro.hpp) [checkpointed]
+- `MacroObjectMotionHost` -> WindowsMacroHost (src/c1/scripting/macro.hpp) [checkpointed]
+- `MacroRuntimeHost` -> WindowsMacroHost (src/c1/scripting/macro.hpp) [checkpointed]
+- `MacroSchedulerHost` -> MacroSchedulerHostAdapter (src/c1/scripting/macro.hpp) [checkpointed]
+- `MacroSoundHost` -> WindowsMacroHost (src/c1/scripting/macro.hpp) [checkpointed]
+- `MacroSoundPolicyHost` -> WindowsMacroHost (src/c1/scripting/macro.hpp) [checkpointed]
+- `MacroSpeechHost` -> WindowsMacroHost (src/c1/scripting/macro.hpp) [checkpointed]
+- `MagicProfilerWindowApi` -> ReportWindow (src/c1/ui/magic_profiler.hpp)
+- `MainFrameActivationPlatform` -> C1MainFrame (src/c1/application/main_frame.hpp) [checkpointed]
+- `MainFrameAgeCommandPlatform` -> WindowsAgeCommandPlatform (src/c1/application/main_frame.hpp) [checkpointed]
+- `MainFrameCreatePlatform` -> C1MainFrame (src/c1/application/main_frame.hpp)
+- `MainFrameLifecyclePlatform` -> C1MainFrame (src/c1/application/main_frame.hpp) [checkpointed]
+- `MainFrameMinMaxPlatform` -> C1MainFrame (src/c1/application/main_frame.hpp)
+- `MainFramePalettePlatform` -> C1MainFrame (src/c1/application/main_frame.hpp)
+- `MainFramePipeServerPlatform` -> C1MainFrame (src/c1/application/main_frame.hpp) [checkpointed]
+- `MainFrameWindowCreationPlatform` -> C1MainFrame (src/c1/application/main_frame.hpp)
+- `MapDataArchive` -> MfcMapDataArchive (src/c1/world/map.hpp) [checkpointed]
+- `MapDataSerializationHost` -> MapData (src/c1/world/map.hpp)
+- `MenuPlatform` -> C1NativeCreatureSelectionMenuPlatform (src/c1/ui/menus.hpp)
+- `MultibyteTextApi` -> C1WindowsDocument (src/c1/creatures/learned_words.hpp) [checkpointed]
+- `MuteControlHost` -> C1NativeMuteControl (src/c1/application/application.hpp)
+- `ObjectInitializationHost` -> C1WindowsDocument (src/c1/objects/object.hpp) [checkpointed]
+- `ObjectLifetimeHost` -> C1WindowsDocument (src/c1/objects/object.hpp)
+- `ObjectOverlapHost` -> WindowsPointerToolRuntimeHost (src/c1/objects/object.hpp) [checkpointed]
+- `ObjectRegistryHost` -> WorldRuntime (src/c1/objects/object.hpp) [checkpointed]
+- `ObjectSoundPlaybackHost` -> C1WindowsDocument (src/c1/objects/object.hpp) [checkpointed]
+- `ObjectSoundViewportHost` -> C1WindowsDocument (src/c1/objects/object.hpp)
+- `PaletteDtaFile` -> PaletteReadAdapter (src/c1/display/palette.hpp) [checkpointed]
+- `PaletteDtaFileSystem` -> C1PaletteDtaHost (src/c1/display/palette.hpp) [checkpointed]
+- `PalettePlatform` -> WindowsPalettePlatform (src/c1/display/palette.hpp)
+- `PipeServerHost` -> WindowsPipeServerRuntime (src/c1/scripting/pipe_server.hpp) [checkpointed]
+- `PointerToolArchiveHost` -> PointerToolArchive (src/c1/ui/tools.hpp) [checkpointed]
+- `PointerToolRuntimeHost` -> WindowsPointerToolRuntimeHost (src/c1/ui/tools.hpp) [checkpointed]
+- `RectangleHitTestApi` -> C1WindowsDocument (src/c1/platform/mfc_adapters.hpp) [checkpointed]
+- `ResourceFileBackend` -> StandardResourceFileBackend (src/c1/application/resource_hosts.hpp) [checkpointed]
+- `ResourceReadFile` -> StandardReadFile (src/c1/application/resource_hosts.hpp)
+- `ResourceWriteFile` -> StandardWriteFile (src/c1/application/resource_hosts.hpp)
+- `SceneryMoveRedrawHost` -> C1WindowsDocument (src/c1/objects/scenery.hpp) [checkpointed]
+- `ScoreArchive` -> MfcScoreArchive (src/c1/ui/score.hpp) [checkpointed]
+- `ScriptArchiveReader` -> MfcObjectArchive (src/c1/scripting/classifier_scripts.hpp) [checkpointed]
+- `ScriptDefinitionInstallHost` -> C1WindowsDocument (src/c1/scripting/classifier_scripts.hpp) [checkpointed]
+- `ScriptExecutionHost` -> WindowsScriptExecutionHost (src/c1/scripting/classifier_scripts.hpp) [checkpointed]
+- `SfcAppSettingsHost` -> C1SettingsHost (src/c1/application/application.hpp)
+- `SfcAppShutdownHost` -> C1ShutdownHost (src/c1/application/application.hpp)
+- `SfcAppStartupHost` -> C1StartupHost (src/c1/application/application.hpp) [checkpointed]
+- `SfcViewHost` -> C1WindowsView (src/c1/ui/views.hpp)
+- `SimpleObjectBubbleHost` -> C1WindowsDocument (src/c1/objects/simple_object.hpp) [checkpointed]
+- `SimpleObjectConstructionHost` -> C1WindowsDocument (src/c1/objects/simple_object.hpp)
+- `SimpleObjectInteractionHost` -> WindowsPointerToolRuntimeHost (src/c1/objects/simple_object.hpp) [checkpointed]
+- `SkeletonArchive` -> MfcCreatureArchive (src/c1/creatures/skeleton.hpp) [checkpointed]
+- `SkeletonLifetimeHost` -> WindowsSkeletonLifetimeHost (src/c1/creatures/skeleton.hpp) [checkpointed]
+- `SkeletonRenderPlaneHost` -> WindowsSkeletonRenderPlaneHost (src/c1/creatures/skeleton.hpp)
+- `SoundSystemHost` -> WindowsSoundSystemHost (src/c1/sound/sound.hpp)
+- `SpriteIndexOutputFile` -> SpriteIndexWriteAdapter (src/c1/display/sprite_cache.hpp) [checkpointed]
+- `SpriteIndexOutputFileSystem` -> C1ResourceHost (src/c1/display/sprite_cache.hpp) [checkpointed]
+- `StimulusSourceHost` -> WindowsStimulusSourceHost (src/c1/creatures/creature.hpp) [checkpointed]
+- `TimerScheduler` -> Scheduler (src/c1/world/update_timer.hpp)
+- `TipDialogPlatform` -> C1TipDialogPlatform (src/c1/ui/tip_dialog.hpp) [checkpointed]
+- `TipFile` -> C1NativeTipFile (src/c1/ui/tip_dialog.hpp)
+- `ToolbarArchiveApi` -> MfcToolbarArchive (src/c1/ui/toolbars.hpp) [checkpointed]
+- `VehicleEventHost` -> WindowsVehicleEventHost (src/c1/objects/vehicle.hpp) [checkpointed]
+- `VersionDialogPlatform` -> C1NativeVersionDialog (src/c1/ui/version_dialog.hpp)
+- `ViewAnchorObject` -> ObjectViewAnchor (src/c1/objects/lifecycle.hpp) [checkpointed]
+- `VoiceArchive` -> CreatureVoiceArchive (src/c1/creatures/voice.hpp)
+- `VoiceFileStore` -> C1CreatureResourceHost (src/c1/creatures/voice.hpp)
+- `VolumeDialogHost` -> C1NativeVolumeDialogHost (src/c1/application/application.hpp)
+- `VolumePersistenceApi` -> C1NativeVolumeDialog (src/c1/ui/volume_dialog.hpp)
+- `VolumeSliderApi` -> C1NativeVolumeDialog (src/c1/ui/volume_dialog.hpp)
+- `WebpageShortcutHost` -> C1NativeWebpageShortcut (src/c1/application/application.hpp)
+- `WineVersionExportProbe` -> Probe (src/c1/platform/environment.hpp)
+- `WorldRendererHost` -> C1WindowsDocument (src/c1/display/rendering.hpp)

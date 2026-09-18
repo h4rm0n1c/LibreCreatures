@@ -1,0 +1,6255 @@
+{
+  "schema": "c1-interface-granularity-audit-v1",
+  "counts": {
+    "interfaces": 274,
+    "orphan": 96,
+    "single_implementor": 161,
+    "multi_implementor": 17,
+    "single_and_checkpoint_recorded": 103,
+    "collapsible_candidates": 58,
+    "base_only_ceremony": 0,
+    "non_virtual_diamonds": 0
+  },
+  "base_only": [],
+  "non_virtual_diamonds": [],
+  "orphan": [
+    {
+      "interface": "BacteriumServiceHost",
+      "file": "src/c1/world/tick.hpp",
+      "pure_virtuals": 11,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "BacteriumUpdateHost",
+      "file": "src/c1/creatures/bacterium.hpp",
+      "pure_virtuals": 6,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "BacteriumUpdateTarget",
+      "file": "src/c1/world/tick.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "BlackboardDisplayHost",
+      "file": "src/c1/brain/blackboard.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 10,
+      "base_only": false
+    },
+    {
+      "interface": "BlackboardRuntimeHost",
+      "file": "src/c1/brain/blackboard.hpp",
+      "pure_virtuals": 0,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 8,
+      "base_only": false
+    },
+    {
+      "interface": "BlackboardTextInputHost",
+      "file": "src/c1/brain/blackboard.hpp",
+      "pure_virtuals": 4,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 0,
+      "base_only": true
+    },
+    {
+      "interface": "BrainUpdateHost",
+      "file": "src/c1/brain/brain.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "BubbleTickHost",
+      "file": "src/c1/objects/bubble.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "BuiltInStimulusDebugHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 3,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 10,
+      "base_only": false
+    },
+    {
+      "interface": "CSfcOLEHost",
+      "file": "src/c1/application/sfc_ole.hpp",
+      "pure_virtuals": 6,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CallButtonRuntimeHost",
+      "file": "src/c1/objects/call_button.hpp",
+      "pure_virtuals": 3,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 6,
+      "base_only": false
+    },
+    {
+      "interface": "CompoundObjectConstructionHost",
+      "file": "src/c1/objects/compound_object.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "CompoundObjectEventHost",
+      "file": "src/c1/objects/compound_object.hpp",
+      "pure_virtuals": 4,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 8,
+      "base_only": false
+    },
+    {
+      "interface": "CompoundObjectLifetimeHost",
+      "file": "src/c1/objects/compound_object.hpp",
+      "pure_virtuals": 4,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 14,
+      "base_only": false
+    },
+    {
+      "interface": "CompoundObjectTickHost",
+      "file": "src/c1/objects/compound_object.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureBoundsEventHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 3,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureDropHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 6,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureEventFanoutHost",
+      "file": "src/c1/creatures/events.hpp",
+      "pure_virtuals": 17,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 39,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureHeardWordsHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 5,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureNameHistoryUi",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 7,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreaturePerceptionHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 8,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "CreaturePickupHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 8,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreaturePoseAnimationHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureRemovalHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 9,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureScriptEventHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 6,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureSpeechPhraseHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 4,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 9,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureStatusTextApi",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureStatusWorldApi",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureUnboundedWorldPositionHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 4,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureUpdateHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureWordLearningHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureWorldUpdateHost",
+      "file": "src/c1/creatures/update.hpp",
+      "pure_virtuals": 21,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "DdeCallbackHost",
+      "file": "src/c1/scripting/dde.hpp",
+      "pure_virtuals": 11,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "DdeItemDataHost",
+      "file": "src/c1/scripting/dde.hpp",
+      "pure_virtuals": 5,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "DdeRuntimeHost",
+      "file": "src/c1/scripting/dde.hpp",
+      "pure_virtuals": 7,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "DibFileSystem",
+      "file": "src/c1/display/bitmap.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "DibOutputFile",
+      "file": "src/c1/display/bitmap.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "DocumentAdapterHost",
+      "file": "src/c1/application/document.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "DocumentCommandUpdateHost",
+      "file": "src/c1/application/document.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "DocumentConstructionHost",
+      "file": "src/c1/application/document.hpp",
+      "pure_virtuals": 8,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "DocumentDestructionHost",
+      "file": "src/c1/application/document.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "DocumentSaveTarget",
+      "file": "src/c1/application/file_commands.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 7,
+      "base_only": false
+    },
+    {
+      "interface": "DocumentTimerHost",
+      "file": "src/c1/application/document.hpp",
+      "pure_virtuals": 15,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "DocumentViewportHost",
+      "file": "src/c1/application/document.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 13,
+      "base_only": false
+    },
+    {
+      "interface": "DriveThresholdObject",
+      "file": "src/c1/creatures/update.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "EditControlApi",
+      "file": "src/c1/platform/mfc_adapters.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "EmbeddedKitGateway",
+      "file": "src/c1/application/embedded_kits.hpp",
+      "pure_virtuals": 3,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "EmbeddedKitRegistrationApi",
+      "file": "src/c1/application/embedded_kits.hpp",
+      "pure_virtuals": 6,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "ExportFileDialog",
+      "file": "src/c1/application/file_dialog.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "FavouritePlaceDialogHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "FavouritePlaceRemovalHost",
+      "file": "src/c1/world/places.hpp",
+      "pure_virtuals": 5,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "FileCommandHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 4,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "FileDialogPlatform",
+      "file": "src/c1/application/file_dialog.hpp",
+      "pure_virtuals": 3,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "FuneralKitGateway",
+      "file": "src/c1/archive/funeral_kit.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "GenomeLocusStorage",
+      "file": "src/c1/creatures/genome.hpp",
+      "pure_virtuals": 5,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "ImagePreloadHost",
+      "file": "src/c1/objects/entity.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 5,
+      "base_only": false
+    },
+    {
+      "interface": "LiftRuntimeHost",
+      "file": "src/c1/objects/lift.hpp",
+      "pure_virtuals": 6,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 23,
+      "base_only": false
+    },
+    {
+      "interface": "MacroBlackboardHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 7,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "MacroInterpreterTrace",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 5,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 1,
+      "base_only": false
+    },
+    {
+      "interface": "MacroMessageHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 3,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "MacroNewObjectHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 11,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "MacroStimulusHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 9,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 5,
+      "base_only": false
+    },
+    {
+      "interface": "MacroSystemHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 12,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 11,
+      "base_only": false
+    },
+    {
+      "interface": "MainFrameEmbeddedKitTogglePlatform",
+      "file": "src/c1/application/main_frame.hpp",
+      "pure_virtuals": 5,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "MainFrameEmbeddedKitUpdatePlatform",
+      "file": "src/c1/application/main_frame.hpp",
+      "pure_virtuals": 10,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "MainFrameTimerHost",
+      "file": "src/c1/application/file_commands.hpp",
+      "pure_virtuals": 3,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 6,
+      "base_only": false
+    },
+    {
+      "interface": "MainFrameWindow",
+      "file": "src/c1/application/commands.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "MainWindowApi",
+      "file": "src/c1/ui/main_window.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "NamedPipeSecurityApi",
+      "file": "src/c1/platform/security.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "ObjectCleanupHost",
+      "file": "src/c1/objects/object.hpp",
+      "pure_virtuals": 4,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "ObjectDeletionHost",
+      "file": "src/c1/objects/lifecycle.hpp",
+      "pure_virtuals": 18,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "ObjectEventDispatchHost",
+      "file": "src/c1/objects/object.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "ObjectEventRuntime",
+      "file": "src/c1/objects/events.hpp",
+      "pure_virtuals": 13,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 6,
+      "base_only": false
+    },
+    {
+      "interface": "OwnerInitializationHost",
+      "file": "src/c1/creatures/owner.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "PlaceDialogDataExchange",
+      "file": "src/c1/ui/place_dialog.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "PlaceDialogPlatform",
+      "file": "src/c1/ui/place_dialog.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "PointerAttentionApi",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 8,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "RegistryApi",
+      "file": "src/c1/platform/registry.hpp",
+      "pure_virtuals": 3,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 6,
+      "base_only": false
+    },
+    {
+      "interface": "RemovePlaceDialogPlatform",
+      "file": "src/c1/ui/place_dialog.hpp",
+      "pure_virtuals": 9,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "SecureFormattingApi",
+      "file": "src/c1/platform/formatting.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 6,
+      "base_only": false
+    },
+    {
+      "interface": "SecureStringCopyApi",
+      "file": "src/c1/application/resources.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "SelectedCreatureScriptCommandHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "SelectedCreatureTitleSource",
+      "file": "src/c1/ui/main_window.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "SimpleObjectEditHost",
+      "file": "src/c1/objects/simple_object.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "SimpleObjectTickHost",
+      "file": "src/c1/objects/simple_object.hpp",
+      "pure_virtuals": 7,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 6,
+      "base_only": false
+    },
+    {
+      "interface": "TextInputQueue",
+      "file": "src/c1/ui/views.hpp",
+      "pure_virtuals": 3,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "TextMeasurementApi",
+      "file": "src/c1/platform/gdi.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "ToolbarPlatform",
+      "file": "src/c1/ui/toolbars.hpp",
+      "pure_virtuals": 17,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 6,
+      "base_only": false
+    },
+    {
+      "interface": "UpdateTimerStateConsumer",
+      "file": "src/c1/world/update_timer.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "VehicleTickHost",
+      "file": "src/c1/objects/vehicle.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "ViewportScroller",
+      "file": "src/c1/world/viewport.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "WindowCommandApi",
+      "file": "src/c1/application/commands.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "WindowPlatform",
+      "file": "src/c1/ui/windows.hpp",
+      "pure_virtuals": 3,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "WorldStatisticsHost",
+      "file": "src/c1/ui/world_statistics.hpp",
+      "pure_virtuals": 11,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 10,
+      "base_only": false
+    },
+    {
+      "interface": "WorldUpdateControl",
+      "file": "src/c1/world/update_timer.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "WorldUpdateTimerHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 3,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    }
+  ],
+  "single_implementor": [
+    {
+      "interface": "BacteriumArchive",
+      "file": "src/c1/creatures/bacterium.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "MfcMapDataArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "BacteriumRandomSource",
+      "file": "src/c1/creatures/bacterium.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "WindowsBacteriumRandomSource"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 12,
+      "base_only": false
+    },
+    {
+      "interface": "BinaryResourceFile",
+      "file": "src/c1/display/font.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "BinaryReadAdapter"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 7,
+      "base_only": false
+    },
+    {
+      "interface": "BinaryResourceFileSystem",
+      "file": "src/c1/display/font.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "C1ResourceHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 15,
+      "base_only": false
+    },
+    {
+      "interface": "BiochemistryArchive",
+      "file": "src/c1/biochemistry/biochemistry.hpp",
+      "pure_virtuals": 7,
+      "implementors": [
+        "MfcBiochemistryArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "BiochemistryLocusHost",
+      "file": "src/c1/biochemistry/biochemistry.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "MfcBiochemistryLocusHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 9,
+      "base_only": false
+    },
+    {
+      "interface": "BodyResourceHost",
+      "file": "src/c1/creatures/body.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "C1ResourceHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 10,
+      "base_only": false
+    },
+    {
+      "interface": "BodySpriteFileHost",
+      "file": "src/c1/creatures/skeleton.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "BrainArchive",
+      "file": "src/c1/brain/brain.hpp",
+      "pure_virtuals": 5,
+      "implementors": [
+        "MfcBrainArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "BubbleConstructionHost",
+      "file": "src/c1/objects/bubble.hpp",
+      "pure_virtuals": 0,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 5,
+      "base_only": false
+    },
+    {
+      "interface": "BubbleRedrawHost",
+      "file": "src/c1/objects/bubble.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "BubbleTextHost",
+      "file": "src/c1/objects/bubble.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "BurbleSettingStore",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "RegistryBurbleStore"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CaosConsoleApplicationHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "C1MainFrame"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CaosConsoleHost",
+      "file": "src/c1/ui/caos_console.hpp",
+      "pure_virtuals": 26,
+      "implementors": [
+        "C1CaosConsoleDialog"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 20,
+      "base_only": false
+    },
+    {
+      "interface": "CaosScriptLoadHost",
+      "file": "src/c1/ui/caos_console.hpp",
+      "pure_virtuals": 6,
+      "implementors": [
+        "C1CaosConsoleDialog"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "ClassifierTipHost",
+      "file": "src/c1/ui/classifier_tip.hpp",
+      "pure_virtuals": 10,
+      "implementors": [
+        "C1WindowsView"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "ComLocalServerApi",
+      "file": "src/c1/platform/com.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "WindowsComLocalServer"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "CommandUi",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "FrameCommandUi"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 18,
+      "base_only": false
+    },
+    {
+      "interface": "CompoundObjectMoveRedrawHost",
+      "file": "src/c1/objects/compound_object.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 7,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureArchive",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "MfcCreatureArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 13,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureAttentionHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 14,
+      "implementors": [
+        "WindowsCreatureAttentionHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 10,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureBacteriumEnvironmentHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "WindowsCreatureBacteriumEnvironmentHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureConstructionHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 12,
+      "implementors": [
+        "WindowsCreatureConstructionHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureDeathHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 10,
+      "implementors": [
+        "WindowsCreatureDeathHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureDeserializationHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 12,
+      "implementors": [
+        "WindowsCreatureDeserializationHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureEnvironmentHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 5,
+      "implementors": [
+        "WindowsCreatureEnvironmentHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 18,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureExportArchive",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "MfcCreatureExportArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureExportHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 8,
+      "implementors": [
+        "WindowsCreatureExportHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureGoalDirectionHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "WindowsCreatureBacteriumEnvironmentHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 8,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureImportArchive",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "MfcCreatureImportArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureImportHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "WindowsCreatureImportHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureInseminationHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 5,
+      "implementors": [
+        "WindowsCreatureInseminationHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureScriptDispatchHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "WindowsCreatureAttentionHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureSelectionCycleHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 14,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 12,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureSelectionEntry",
+      "file": "src/c1/creatures/selection.hpp",
+      "pure_virtuals": 8,
+      "implementors": [
+        "Creature"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 32,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureSelectionMenuPlatform",
+      "file": "src/c1/ui/creature_selection.hpp",
+      "pure_virtuals": 5,
+      "implementors": [
+        "C1NativeCreatureSelectionMenuPlatform"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureSelectorApi",
+      "file": "src/c1/ui/toolbars.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "Selector"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureSpeechHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "WindowsCreatureSpeechHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 21,
+      "base_only": false
+    },
+    {
+      "interface": "DdeScoreNotificationHost",
+      "file": "src/c1/scripting/dde.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "DocumentScoreNotification"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "DebugConsoleHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 5,
+      "implementors": [
+        "C1DebugConsoleDialog"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 25,
+      "base_only": false
+    },
+    {
+      "interface": "DebugLogHost",
+      "file": "src/c1/common/logging.hpp",
+      "pure_virtuals": 14,
+      "implementors": [
+        "C1DebugConsoleDialog"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 37,
+      "base_only": false
+    },
+    {
+      "interface": "DocumentCloseHost",
+      "file": "src/c1/application/document.hpp",
+      "pure_virtuals": 6,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "DocumentContentsHost",
+      "file": "src/c1/application/document.hpp",
+      "pure_virtuals": 17,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "DocumentFavouritePlaceHost",
+      "file": "src/c1/application/document.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "AddFavouritePlaceHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "DocumentInformativeSelectionHost",
+      "file": "src/c1/application/document.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "DocumentNewWorldHost",
+      "file": "src/c1/application/document.hpp",
+      "pure_virtuals": 12,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "DocumentOpenHost",
+      "file": "src/c1/application/document.hpp",
+      "pure_virtuals": 19,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "DocumentSaveHost",
+      "file": "src/c1/application/document.hpp",
+      "pure_virtuals": 14,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "DocumentSerializationHost",
+      "file": "src/c1/application/document.hpp",
+      "pure_virtuals": 47,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "DocumentWorldUpdateHost",
+      "file": "src/c1/application/document.hpp",
+      "pure_virtuals": 76,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "EmbeddedKitControlApi",
+      "file": "src/c1/application/embedded_kits.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "FrameKitControl"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "EmbeddedKitExecutionApi",
+      "file": "src/c1/application/embedded_kits.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "WindowsEmbeddedKitHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "EmbeddedKitIdentityMessageApi",
+      "file": "src/c1/application/embedded_kits.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "WindowsEmbeddedKitHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "EmbeddedKitMenuApi",
+      "file": "src/c1/application/embedded_kits.hpp",
+      "pure_virtuals": 7,
+      "implementors": [
+        "C1NativeEmbeddedKitMenuPlatform"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "EmbeddedKitShutdownApi",
+      "file": "src/c1/application/embedded_kits.hpp",
+      "pure_virtuals": 10,
+      "implementors": [
+        "WindowsEmbeddedKitHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "EntityArchive",
+      "file": "src/c1/objects/entity.hpp",
+      "pure_virtuals": 11,
+      "implementors": [
+        "MfcEntityArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 8,
+      "base_only": false
+    },
+    {
+      "interface": "EntityImageSequenceRenderHost",
+      "file": "src/c1/objects/entity.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "WindowsEntityImageSequenceRenderHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 14,
+      "base_only": false
+    },
+    {
+      "interface": "EntityRasterHost",
+      "file": "src/c1/objects/entity.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 5,
+      "base_only": false
+    },
+    {
+      "interface": "EntityRegistryHost",
+      "file": "src/c1/objects/entity.hpp",
+      "pure_virtuals": 5,
+      "implementors": [
+        "WorldRuntime"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 24,
+      "base_only": false
+    },
+    {
+      "interface": "EuthanasiaHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "WindowsEuthanasiaHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "EventBarArchiveApi",
+      "file": "src/c1/ui/event_bar.hpp",
+      "pure_virtuals": 7,
+      "implementors": [
+        "MfcEventBarArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "EventBarInteractionApi",
+      "file": "src/c1/ui/event_bar.hpp",
+      "pure_virtuals": 15,
+      "implementors": [
+        "C1EventBarObjectAdapter"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "EventBarObjectPolicyApi",
+      "file": "src/c1/ui/event_bar.hpp",
+      "pure_virtuals": 8,
+      "implementors": [
+        "C1EventBarObjectAdapter"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 16,
+      "base_only": false
+    },
+    {
+      "interface": "EventBarStatusApi",
+      "file": "src/c1/ui/event_bar.hpp",
+      "pure_virtuals": 12,
+      "implementors": [
+        "C1EventBarStatusAdapter"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 8,
+      "base_only": false
+    },
+    {
+      "interface": "EventBarWindowApi",
+      "file": "src/c1/ui/event_bar.hpp",
+      "pure_virtuals": 7,
+      "implementors": [
+        "C1EventBar"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "EyeViewApplicationHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 7,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "EyeViewHost",
+      "file": "src/c1/ui/eye_view.hpp",
+      "pure_virtuals": 16,
+      "implementors": [
+        "C1EyeViewWindow"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 12,
+      "base_only": false
+    },
+    {
+      "interface": "FavouritePlaceArchive",
+      "file": "src/c1/world/places.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "MfcFavouritePlaceArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "FileSystemApi",
+      "file": "src/c1/common/filesystem.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "C1NativeBackupFileSystem"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 9,
+      "base_only": false
+    },
+    {
+      "interface": "FollowViewportHost",
+      "file": "src/c1/ui/eye_view.hpp",
+      "pure_virtuals": 7,
+      "implementors": [
+        "C1EyeViewWindow"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "ForceAgeSelectedCreatureHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "WindowsForceAgeHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "GalleryHost",
+      "file": "src/c1/display/gallery.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "C1ResourceHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 5,
+      "base_only": false
+    },
+    {
+      "interface": "GeneratedCreatureCommandHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "WindowsGeneratedCreatureHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "GenomeArchive",
+      "file": "src/c1/creatures/genome.hpp",
+      "pure_virtuals": 7,
+      "implementors": [
+        "CreatureArchiveGenomeAdapter"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "GenomeFileStore",
+      "file": "src/c1/creatures/genome.hpp",
+      "pure_virtuals": 5,
+      "implementors": [
+        "C1CreatureResourceHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 13,
+      "base_only": false
+    },
+    {
+      "interface": "GenomeFilenameRegistry",
+      "file": "src/c1/creatures/genome.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "WindowsCreatureInseminationHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "GenomeRandomSource",
+      "file": "src/c1/creatures/genome.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "WindowsCreatureInseminationHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 11,
+      "base_only": false
+    },
+    {
+      "interface": "ImageArchive",
+      "file": "src/c1/display/image.hpp",
+      "pure_virtuals": 9,
+      "implementors": [
+        "MfcMapDataArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "InfectSelectedCreatureHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 5,
+      "implementors": [
+        "WindowsInfectCreatureHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "InitializationHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 5,
+      "base_only": false
+    },
+    {
+      "interface": "InstinctArchive",
+      "file": "src/c1/brain/instinct.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "MfcInstinctArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "KitProcessHost",
+      "file": "src/c1/application/kit_processes.hpp",
+      "pure_virtuals": 7,
+      "implementors": [
+        "KitProcessAdapter"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "MacroApplicationHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "WindowsMacroHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 5,
+      "base_only": false
+    },
+    {
+      "interface": "MacroArchive",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 9,
+      "implementors": [
+        "MfcMacroArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "MacroCommandHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "WindowsMacroHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 66,
+      "base_only": false
+    },
+    {
+      "interface": "MacroDdeHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 12,
+      "implementors": [
+        "WindowsMacroHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "MacroDebugHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "WindowsMacroHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "MacroExceptionHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "WindowsMacroHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "MacroHolderHost",
+      "file": "src/c1/scripting/macro_holder.hpp",
+      "pure_virtuals": 11,
+      "implementors": [
+        "WindowsMacroHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "MacroObjectEventHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "WindowsMacroHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "MacroObjectMotionHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "WindowsMacroHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 5,
+      "base_only": false
+    },
+    {
+      "interface": "MacroRuntimeHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 64,
+      "implementors": [
+        "WindowsMacroHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 120,
+      "base_only": false
+    },
+    {
+      "interface": "MacroSchedulerHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 0,
+      "implementors": [
+        "MacroSchedulerHostAdapter"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "MacroSoundHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 5,
+      "implementors": [
+        "WindowsMacroHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "MacroSoundPolicyHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "WindowsMacroHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "MacroSpeechHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "WindowsMacroHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "MagicProfilerWindowApi",
+      "file": "src/c1/ui/magic_profiler.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "ReportWindow"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "MainFrameActivationPlatform",
+      "file": "src/c1/application/main_frame.hpp",
+      "pure_virtuals": 8,
+      "implementors": [
+        "C1MainFrame"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "MainFrameAgeCommandPlatform",
+      "file": "src/c1/application/main_frame.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "WindowsAgeCommandPlatform"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "MainFrameCreatePlatform",
+      "file": "src/c1/application/main_frame.hpp",
+      "pure_virtuals": 14,
+      "implementors": [
+        "C1MainFrame"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "MainFrameLifecyclePlatform",
+      "file": "src/c1/application/main_frame.hpp",
+      "pure_virtuals": 17,
+      "implementors": [
+        "C1MainFrame"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 6,
+      "base_only": false
+    },
+    {
+      "interface": "MainFrameMinMaxPlatform",
+      "file": "src/c1/application/main_frame.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "C1MainFrame"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "MainFramePalettePlatform",
+      "file": "src/c1/application/main_frame.hpp",
+      "pure_virtuals": 7,
+      "implementors": [
+        "C1MainFrame"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "MainFramePipeServerPlatform",
+      "file": "src/c1/application/main_frame.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "C1MainFrame"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "MainFrameWindowCreationPlatform",
+      "file": "src/c1/application/main_frame.hpp",
+      "pure_virtuals": 6,
+      "implementors": [
+        "C1MainFrame"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "MapDataArchive",
+      "file": "src/c1/world/map.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "MfcMapDataArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "MapDataSerializationHost",
+      "file": "src/c1/world/map.hpp",
+      "pure_virtuals": 8,
+      "implementors": [
+        "MapData"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "MenuPlatform",
+      "file": "src/c1/ui/menus.hpp",
+      "pure_virtuals": 5,
+      "implementors": [
+        "C1NativeCreatureSelectionMenuPlatform"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "MultibyteTextApi",
+      "file": "src/c1/creatures/learned_words.hpp",
+      "pure_virtuals": 6,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 35,
+      "base_only": false
+    },
+    {
+      "interface": "MuteControlHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "C1NativeMuteControl"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "ObjectInitializationHost",
+      "file": "src/c1/objects/object.hpp",
+      "pure_virtuals": 10,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "ObjectLifetimeHost",
+      "file": "src/c1/objects/object.hpp",
+      "pure_virtuals": 13,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "ObjectOverlapHost",
+      "file": "src/c1/objects/object.hpp",
+      "pure_virtuals": 6,
+      "implementors": [
+        "WindowsPointerToolRuntimeHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "ObjectRegistryHost",
+      "file": "src/c1/objects/object.hpp",
+      "pure_virtuals": 5,
+      "implementors": [
+        "WorldRuntime"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 13,
+      "base_only": false
+    },
+    {
+      "interface": "ObjectSoundPlaybackHost",
+      "file": "src/c1/objects/object.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 37,
+      "base_only": false
+    },
+    {
+      "interface": "ObjectSoundViewportHost",
+      "file": "src/c1/objects/object.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "PaletteDtaFile",
+      "file": "src/c1/display/palette.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "PaletteReadAdapter"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "PaletteDtaFileSystem",
+      "file": "src/c1/display/palette.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "C1PaletteDtaHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "PalettePlatform",
+      "file": "src/c1/display/palette.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "WindowsPalettePlatform"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "PipeServerHost",
+      "file": "src/c1/scripting/pipe_server.hpp",
+      "pure_virtuals": 32,
+      "implementors": [
+        "WindowsPipeServerRuntime"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "PointerToolArchiveHost",
+      "file": "src/c1/ui/tools.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "PointerToolArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "PointerToolRuntimeHost",
+      "file": "src/c1/ui/tools.hpp",
+      "pure_virtuals": 21,
+      "implementors": [
+        "WindowsPointerToolRuntimeHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 14,
+      "base_only": false
+    },
+    {
+      "interface": "RectangleHitTestApi",
+      "file": "src/c1/platform/mfc_adapters.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 6,
+      "base_only": false
+    },
+    {
+      "interface": "ResourceFileBackend",
+      "file": "src/c1/application/resource_hosts.hpp",
+      "pure_virtuals": 5,
+      "implementors": [
+        "StandardResourceFileBackend"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 9,
+      "base_only": false
+    },
+    {
+      "interface": "ResourceReadFile",
+      "file": "src/c1/application/resource_hosts.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "StandardReadFile"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 10,
+      "base_only": false
+    },
+    {
+      "interface": "ResourceWriteFile",
+      "file": "src/c1/application/resource_hosts.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "StandardWriteFile"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 6,
+      "base_only": false
+    },
+    {
+      "interface": "SceneryMoveRedrawHost",
+      "file": "src/c1/objects/scenery.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "ScoreArchive",
+      "file": "src/c1/ui/score.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "MfcScoreArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "ScriptArchiveReader",
+      "file": "src/c1/scripting/classifier_scripts.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "MfcObjectArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "ScriptDefinitionInstallHost",
+      "file": "src/c1/scripting/classifier_scripts.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 9,
+      "base_only": false
+    },
+    {
+      "interface": "ScriptExecutionHost",
+      "file": "src/c1/scripting/classifier_scripts.hpp",
+      "pure_virtuals": 6,
+      "implementors": [
+        "WindowsScriptExecutionHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "SfcAppSettingsHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 8,
+      "implementors": [
+        "C1SettingsHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "SfcAppShutdownHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "C1ShutdownHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "SfcAppStartupHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 23,
+      "implementors": [
+        "C1StartupHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "SfcViewHost",
+      "file": "src/c1/ui/views.hpp",
+      "pure_virtuals": 58,
+      "implementors": [
+        "C1WindowsView"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 55,
+      "base_only": false
+    },
+    {
+      "interface": "SimpleObjectBubbleHost",
+      "file": "src/c1/objects/simple_object.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "SimpleObjectConstructionHost",
+      "file": "src/c1/objects/simple_object.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "SimpleObjectInteractionHost",
+      "file": "src/c1/objects/simple_object.hpp",
+      "pure_virtuals": 6,
+      "implementors": [
+        "WindowsPointerToolRuntimeHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 6,
+      "base_only": false
+    },
+    {
+      "interface": "SkeletonArchive",
+      "file": "src/c1/creatures/skeleton.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "MfcCreatureArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "SkeletonLifetimeHost",
+      "file": "src/c1/creatures/skeleton.hpp",
+      "pure_virtuals": 5,
+      "implementors": [
+        "WindowsSkeletonLifetimeHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 9,
+      "base_only": false
+    },
+    {
+      "interface": "SkeletonRenderPlaneHost",
+      "file": "src/c1/creatures/skeleton.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "WindowsSkeletonRenderPlaneHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 8,
+      "base_only": false
+    },
+    {
+      "interface": "SoundSystemHost",
+      "file": "src/c1/sound/sound.hpp",
+      "pure_virtuals": 29,
+      "implementors": [
+        "WindowsSoundSystemHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 5,
+      "base_only": false
+    },
+    {
+      "interface": "SpriteIndexOutputFile",
+      "file": "src/c1/display/sprite_cache.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "SpriteIndexWriteAdapter"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "SpriteIndexOutputFileSystem",
+      "file": "src/c1/display/sprite_cache.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "C1ResourceHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 1,
+      "base_only": false
+    },
+    {
+      "interface": "StimulusSourceHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "WindowsStimulusSourceHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 18,
+      "base_only": false
+    },
+    {
+      "interface": "TimerScheduler",
+      "file": "src/c1/world/update_timer.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "Scheduler"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "TipDialogPlatform",
+      "file": "src/c1/ui/tip_dialog.hpp",
+      "pure_virtuals": 16,
+      "implementors": [
+        "C1TipDialogPlatform"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 5,
+      "base_only": false
+    },
+    {
+      "interface": "TipFile",
+      "file": "src/c1/ui/tip_dialog.hpp",
+      "pure_virtuals": 5,
+      "implementors": [
+        "C1NativeTipFile"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "ToolbarArchiveApi",
+      "file": "src/c1/ui/toolbars.hpp",
+      "pure_virtuals": 5,
+      "implementors": [
+        "MfcToolbarArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 6,
+      "base_only": false
+    },
+    {
+      "interface": "VehicleEventHost",
+      "file": "src/c1/objects/vehicle.hpp",
+      "pure_virtuals": 5,
+      "implementors": [
+        "WindowsVehicleEventHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "VersionDialogPlatform",
+      "file": "src/c1/ui/version_dialog.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "C1NativeVersionDialog"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "ViewAnchorObject",
+      "file": "src/c1/objects/lifecycle.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "ObjectViewAnchor"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 7,
+      "base_only": false
+    },
+    {
+      "interface": "VoiceArchive",
+      "file": "src/c1/creatures/voice.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "CreatureVoiceArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "VoiceFileStore",
+      "file": "src/c1/creatures/voice.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "C1CreatureResourceHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 7,
+      "base_only": false
+    },
+    {
+      "interface": "VolumeDialogHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 5,
+      "implementors": [
+        "C1NativeVolumeDialogHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "VolumePersistenceApi",
+      "file": "src/c1/ui/volume_dialog.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "C1NativeVolumeDialog"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "VolumeSliderApi",
+      "file": "src/c1/ui/volume_dialog.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "C1NativeVolumeDialog"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "WebpageShortcutHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "C1NativeWebpageShortcut"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "WineVersionExportProbe",
+      "file": "src/c1/platform/environment.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "Probe"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "WorldRendererHost",
+      "file": "src/c1/display/rendering.hpp",
+      "pure_virtuals": 30,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 3,
+      "base_only": false
+    }
+  ],
+  "multi_implementor": [
+    {
+      "interface": "CreatureObjectIdentityHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "C1WindowsDocument",
+        "WindowsCreatureAttentionHost"
+      ],
+      "implementor_count": 2,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureRegistryMutation",
+      "file": "src/c1/creatures/selection.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "C1WindowsDocument",
+        "WorldRuntime"
+      ],
+      "implementor_count": 2,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureRegistryView",
+      "file": "src/c1/creatures/selection.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "C1WindowsDocument",
+        "WorldRuntime"
+      ],
+      "implementor_count": 2,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "GalleryRegistry",
+      "file": "src/c1/display/gallery.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "C1ResourceHost",
+        "WorldRuntime"
+      ],
+      "implementor_count": 2,
+      "checkpoint_recorded": true,
+      "used_as_type": 5,
+      "base_only": false
+    },
+    {
+      "interface": "GenomeInitializationHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 6,
+      "implementors": [
+        "Host",
+        "WindowsCreatureConstructionHost"
+      ],
+      "implementor_count": 2,
+      "checkpoint_recorded": true,
+      "used_as_type": 5,
+      "base_only": false
+    },
+    {
+      "interface": "MacroExecutionHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "MacroSchedulerHostAdapter",
+        "WindowsMacroHost"
+      ],
+      "implementor_count": 2,
+      "checkpoint_recorded": true,
+      "used_as_type": 8,
+      "base_only": false
+    },
+    {
+      "interface": "MacroInterpreterHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "MacroSchedulerHostAdapter",
+        "WindowsMacroHost"
+      ],
+      "implementor_count": 2,
+      "checkpoint_recorded": true,
+      "used_as_type": 6,
+      "base_only": false
+    },
+    {
+      "interface": "ObjectArchive",
+      "file": "src/c1/objects/object.hpp",
+      "pure_virtuals": 14,
+      "implementors": [
+        "MfcCreatureArchive",
+        "MfcObjectArchive"
+      ],
+      "implementor_count": 2,
+      "checkpoint_recorded": true,
+      "used_as_type": 20,
+      "base_only": false
+    },
+    {
+      "interface": "ObjectImmediateEventQueueHost",
+      "file": "src/c1/objects/object.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "WindowsCreatureAttentionHost",
+        "WindowsImmediateEventQueueHost",
+        "WindowsPointerToolRuntimeHost"
+      ],
+      "implementor_count": 3,
+      "checkpoint_recorded": true,
+      "used_as_type": 8,
+      "base_only": false
+    },
+    {
+      "interface": "ObjectMovementBoundsHost",
+      "file": "src/c1/objects/object.hpp",
+      "pure_virtuals": 6,
+      "implementors": [
+        "C1WindowsDocument",
+        "WindowsPointerToolRuntimeHost"
+      ],
+      "implementor_count": 2,
+      "checkpoint_recorded": true,
+      "used_as_type": 15,
+      "base_only": false
+    },
+    {
+      "interface": "ObjectRenderableSetHost",
+      "file": "src/c1/objects/object.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "WindowsPointerToolRuntimeHost",
+        "WorldRuntime"
+      ],
+      "implementor_count": 2,
+      "checkpoint_recorded": true,
+      "used_as_type": 13,
+      "base_only": false
+    },
+    {
+      "interface": "ObjectScriptDispatchHost",
+      "file": "src/c1/objects/object.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "WindowsObjectScriptDispatchHost",
+        "WindowsPointerToolRuntimeHost"
+      ],
+      "implementor_count": 2,
+      "checkpoint_recorded": true,
+      "used_as_type": 12,
+      "base_only": false
+    },
+    {
+      "interface": "ScriptArchiveWriter",
+      "file": "src/c1/scripting/classifier_scripts.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "MfcCreatureArchive",
+        "MfcObjectArchive"
+      ],
+      "implementor_count": 2,
+      "checkpoint_recorded": true,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "SimpleObjectMoveRedrawHost",
+      "file": "src/c1/objects/simple_object.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "C1WindowsDocument",
+        "PointerToolArchive",
+        "WindowsPointerToolRuntimeHost"
+      ],
+      "implementor_count": 3,
+      "checkpoint_recorded": true,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "SimpleObjectPlacementHost",
+      "file": "src/c1/objects/simple_object.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "C1WindowsDocument",
+        "PointerToolArchive"
+      ],
+      "implementor_count": 2,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "SkeletonWorldHost",
+      "file": "src/c1/creatures/skeleton.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "SkeletonMoveHost",
+        "SkeletonMoveRedraw"
+      ],
+      "implementor_count": 2,
+      "checkpoint_recorded": false,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "StringArchive",
+      "file": "src/c1/archive/string_archive.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "CreatureStringArchive",
+        "MfcFavouritePlaceArchive",
+        "MfcStringArchive"
+      ],
+      "implementor_count": 3,
+      "checkpoint_recorded": true,
+      "used_as_type": 4,
+      "base_only": false
+    }
+  ],
+  "rows": [
+    {
+      "interface": "BacteriumArchive",
+      "file": "src/c1/creatures/bacterium.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "MfcMapDataArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "BacteriumRandomSource",
+      "file": "src/c1/creatures/bacterium.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "WindowsBacteriumRandomSource"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 12,
+      "base_only": false
+    },
+    {
+      "interface": "BacteriumServiceHost",
+      "file": "src/c1/world/tick.hpp",
+      "pure_virtuals": 11,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "BacteriumUpdateHost",
+      "file": "src/c1/creatures/bacterium.hpp",
+      "pure_virtuals": 6,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "BacteriumUpdateTarget",
+      "file": "src/c1/world/tick.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "BinaryResourceFile",
+      "file": "src/c1/display/font.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "BinaryReadAdapter"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 7,
+      "base_only": false
+    },
+    {
+      "interface": "BinaryResourceFileSystem",
+      "file": "src/c1/display/font.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "C1ResourceHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 15,
+      "base_only": false
+    },
+    {
+      "interface": "BiochemistryArchive",
+      "file": "src/c1/biochemistry/biochemistry.hpp",
+      "pure_virtuals": 7,
+      "implementors": [
+        "MfcBiochemistryArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "BiochemistryLocusHost",
+      "file": "src/c1/biochemistry/biochemistry.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "MfcBiochemistryLocusHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 9,
+      "base_only": false
+    },
+    {
+      "interface": "BlackboardDisplayHost",
+      "file": "src/c1/brain/blackboard.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 10,
+      "base_only": false
+    },
+    {
+      "interface": "BlackboardRuntimeHost",
+      "file": "src/c1/brain/blackboard.hpp",
+      "pure_virtuals": 0,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 8,
+      "base_only": false
+    },
+    {
+      "interface": "BlackboardTextInputHost",
+      "file": "src/c1/brain/blackboard.hpp",
+      "pure_virtuals": 4,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 0,
+      "base_only": true
+    },
+    {
+      "interface": "BodyResourceHost",
+      "file": "src/c1/creatures/body.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "C1ResourceHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 10,
+      "base_only": false
+    },
+    {
+      "interface": "BodySpriteFileHost",
+      "file": "src/c1/creatures/skeleton.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "BrainArchive",
+      "file": "src/c1/brain/brain.hpp",
+      "pure_virtuals": 5,
+      "implementors": [
+        "MfcBrainArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "BrainUpdateHost",
+      "file": "src/c1/brain/brain.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "BubbleConstructionHost",
+      "file": "src/c1/objects/bubble.hpp",
+      "pure_virtuals": 0,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 5,
+      "base_only": false
+    },
+    {
+      "interface": "BubbleRedrawHost",
+      "file": "src/c1/objects/bubble.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "BubbleTextHost",
+      "file": "src/c1/objects/bubble.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "BubbleTickHost",
+      "file": "src/c1/objects/bubble.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "BuiltInStimulusDebugHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 3,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 10,
+      "base_only": false
+    },
+    {
+      "interface": "BurbleSettingStore",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "RegistryBurbleStore"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CSfcOLEHost",
+      "file": "src/c1/application/sfc_ole.hpp",
+      "pure_virtuals": 6,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CallButtonRuntimeHost",
+      "file": "src/c1/objects/call_button.hpp",
+      "pure_virtuals": 3,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 6,
+      "base_only": false
+    },
+    {
+      "interface": "CaosConsoleApplicationHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "C1MainFrame"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CaosConsoleHost",
+      "file": "src/c1/ui/caos_console.hpp",
+      "pure_virtuals": 26,
+      "implementors": [
+        "C1CaosConsoleDialog"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 20,
+      "base_only": false
+    },
+    {
+      "interface": "CaosScriptLoadHost",
+      "file": "src/c1/ui/caos_console.hpp",
+      "pure_virtuals": 6,
+      "implementors": [
+        "C1CaosConsoleDialog"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "ClassifierTipHost",
+      "file": "src/c1/ui/classifier_tip.hpp",
+      "pure_virtuals": 10,
+      "implementors": [
+        "C1WindowsView"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "ComLocalServerApi",
+      "file": "src/c1/platform/com.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "WindowsComLocalServer"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "CommandUi",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "FrameCommandUi"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 18,
+      "base_only": false
+    },
+    {
+      "interface": "CompoundObjectConstructionHost",
+      "file": "src/c1/objects/compound_object.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "CompoundObjectEventHost",
+      "file": "src/c1/objects/compound_object.hpp",
+      "pure_virtuals": 4,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 8,
+      "base_only": false
+    },
+    {
+      "interface": "CompoundObjectLifetimeHost",
+      "file": "src/c1/objects/compound_object.hpp",
+      "pure_virtuals": 4,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 14,
+      "base_only": false
+    },
+    {
+      "interface": "CompoundObjectMoveRedrawHost",
+      "file": "src/c1/objects/compound_object.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 7,
+      "base_only": false
+    },
+    {
+      "interface": "CompoundObjectTickHost",
+      "file": "src/c1/objects/compound_object.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureArchive",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "MfcCreatureArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 13,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureAttentionHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 14,
+      "implementors": [
+        "WindowsCreatureAttentionHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 10,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureBacteriumEnvironmentHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "WindowsCreatureBacteriumEnvironmentHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureBoundsEventHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 3,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureConstructionHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 12,
+      "implementors": [
+        "WindowsCreatureConstructionHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureDeathHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 10,
+      "implementors": [
+        "WindowsCreatureDeathHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureDeserializationHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 12,
+      "implementors": [
+        "WindowsCreatureDeserializationHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureDropHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 6,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureEnvironmentHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 5,
+      "implementors": [
+        "WindowsCreatureEnvironmentHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 18,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureEventFanoutHost",
+      "file": "src/c1/creatures/events.hpp",
+      "pure_virtuals": 17,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 39,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureExportArchive",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "MfcCreatureExportArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureExportHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 8,
+      "implementors": [
+        "WindowsCreatureExportHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureGoalDirectionHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "WindowsCreatureBacteriumEnvironmentHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 8,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureHeardWordsHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 5,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureImportArchive",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "MfcCreatureImportArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureImportHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "WindowsCreatureImportHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureInseminationHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 5,
+      "implementors": [
+        "WindowsCreatureInseminationHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureNameHistoryUi",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 7,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureObjectIdentityHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "C1WindowsDocument",
+        "WindowsCreatureAttentionHost"
+      ],
+      "implementor_count": 2,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreaturePerceptionHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 8,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "CreaturePickupHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 8,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreaturePoseAnimationHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureRegistryMutation",
+      "file": "src/c1/creatures/selection.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "C1WindowsDocument",
+        "WorldRuntime"
+      ],
+      "implementor_count": 2,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureRegistryView",
+      "file": "src/c1/creatures/selection.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "C1WindowsDocument",
+        "WorldRuntime"
+      ],
+      "implementor_count": 2,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureRemovalHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 9,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureScriptDispatchHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "WindowsCreatureAttentionHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureScriptEventHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 6,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureSelectionCycleHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 14,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 12,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureSelectionEntry",
+      "file": "src/c1/creatures/selection.hpp",
+      "pure_virtuals": 8,
+      "implementors": [
+        "Creature"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 32,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureSelectionMenuPlatform",
+      "file": "src/c1/ui/creature_selection.hpp",
+      "pure_virtuals": 5,
+      "implementors": [
+        "C1NativeCreatureSelectionMenuPlatform"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureSelectorApi",
+      "file": "src/c1/ui/toolbars.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "Selector"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureSpeechHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "WindowsCreatureSpeechHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 21,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureSpeechPhraseHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 4,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 9,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureStatusTextApi",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureStatusWorldApi",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureUnboundedWorldPositionHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 4,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureUpdateHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureWordLearningHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "CreatureWorldUpdateHost",
+      "file": "src/c1/creatures/update.hpp",
+      "pure_virtuals": 21,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "DdeCallbackHost",
+      "file": "src/c1/scripting/dde.hpp",
+      "pure_virtuals": 11,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "DdeItemDataHost",
+      "file": "src/c1/scripting/dde.hpp",
+      "pure_virtuals": 5,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "DdeRuntimeHost",
+      "file": "src/c1/scripting/dde.hpp",
+      "pure_virtuals": 7,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "DdeScoreNotificationHost",
+      "file": "src/c1/scripting/dde.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "DocumentScoreNotification"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "DebugConsoleHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 5,
+      "implementors": [
+        "C1DebugConsoleDialog"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 25,
+      "base_only": false
+    },
+    {
+      "interface": "DebugLogHost",
+      "file": "src/c1/common/logging.hpp",
+      "pure_virtuals": 14,
+      "implementors": [
+        "C1DebugConsoleDialog"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 37,
+      "base_only": false
+    },
+    {
+      "interface": "DibFileSystem",
+      "file": "src/c1/display/bitmap.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "DibOutputFile",
+      "file": "src/c1/display/bitmap.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "DocumentAdapterHost",
+      "file": "src/c1/application/document.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "DocumentCloseHost",
+      "file": "src/c1/application/document.hpp",
+      "pure_virtuals": 6,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "DocumentCommandUpdateHost",
+      "file": "src/c1/application/document.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "DocumentConstructionHost",
+      "file": "src/c1/application/document.hpp",
+      "pure_virtuals": 8,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "DocumentContentsHost",
+      "file": "src/c1/application/document.hpp",
+      "pure_virtuals": 17,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "DocumentDestructionHost",
+      "file": "src/c1/application/document.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "DocumentFavouritePlaceHost",
+      "file": "src/c1/application/document.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "AddFavouritePlaceHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "DocumentInformativeSelectionHost",
+      "file": "src/c1/application/document.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "DocumentNewWorldHost",
+      "file": "src/c1/application/document.hpp",
+      "pure_virtuals": 12,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "DocumentOpenHost",
+      "file": "src/c1/application/document.hpp",
+      "pure_virtuals": 19,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "DocumentSaveHost",
+      "file": "src/c1/application/document.hpp",
+      "pure_virtuals": 14,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "DocumentSaveTarget",
+      "file": "src/c1/application/file_commands.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 7,
+      "base_only": false
+    },
+    {
+      "interface": "DocumentSerializationHost",
+      "file": "src/c1/application/document.hpp",
+      "pure_virtuals": 47,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "DocumentTimerHost",
+      "file": "src/c1/application/document.hpp",
+      "pure_virtuals": 15,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "DocumentViewportHost",
+      "file": "src/c1/application/document.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 13,
+      "base_only": false
+    },
+    {
+      "interface": "DocumentWorldUpdateHost",
+      "file": "src/c1/application/document.hpp",
+      "pure_virtuals": 76,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "DriveThresholdObject",
+      "file": "src/c1/creatures/update.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "EditControlApi",
+      "file": "src/c1/platform/mfc_adapters.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "EmbeddedKitControlApi",
+      "file": "src/c1/application/embedded_kits.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "FrameKitControl"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "EmbeddedKitExecutionApi",
+      "file": "src/c1/application/embedded_kits.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "WindowsEmbeddedKitHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "EmbeddedKitGateway",
+      "file": "src/c1/application/embedded_kits.hpp",
+      "pure_virtuals": 3,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "EmbeddedKitIdentityMessageApi",
+      "file": "src/c1/application/embedded_kits.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "WindowsEmbeddedKitHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "EmbeddedKitMenuApi",
+      "file": "src/c1/application/embedded_kits.hpp",
+      "pure_virtuals": 7,
+      "implementors": [
+        "C1NativeEmbeddedKitMenuPlatform"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "EmbeddedKitRegistrationApi",
+      "file": "src/c1/application/embedded_kits.hpp",
+      "pure_virtuals": 6,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "EmbeddedKitShutdownApi",
+      "file": "src/c1/application/embedded_kits.hpp",
+      "pure_virtuals": 10,
+      "implementors": [
+        "WindowsEmbeddedKitHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "EntityArchive",
+      "file": "src/c1/objects/entity.hpp",
+      "pure_virtuals": 11,
+      "implementors": [
+        "MfcEntityArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 8,
+      "base_only": false
+    },
+    {
+      "interface": "EntityImageSequenceRenderHost",
+      "file": "src/c1/objects/entity.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "WindowsEntityImageSequenceRenderHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 14,
+      "base_only": false
+    },
+    {
+      "interface": "EntityRasterHost",
+      "file": "src/c1/objects/entity.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 5,
+      "base_only": false
+    },
+    {
+      "interface": "EntityRegistryHost",
+      "file": "src/c1/objects/entity.hpp",
+      "pure_virtuals": 5,
+      "implementors": [
+        "WorldRuntime"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 24,
+      "base_only": false
+    },
+    {
+      "interface": "EuthanasiaHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "WindowsEuthanasiaHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "EventBarArchiveApi",
+      "file": "src/c1/ui/event_bar.hpp",
+      "pure_virtuals": 7,
+      "implementors": [
+        "MfcEventBarArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "EventBarInteractionApi",
+      "file": "src/c1/ui/event_bar.hpp",
+      "pure_virtuals": 15,
+      "implementors": [
+        "C1EventBarObjectAdapter"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "EventBarObjectPolicyApi",
+      "file": "src/c1/ui/event_bar.hpp",
+      "pure_virtuals": 8,
+      "implementors": [
+        "C1EventBarObjectAdapter"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 16,
+      "base_only": false
+    },
+    {
+      "interface": "EventBarStatusApi",
+      "file": "src/c1/ui/event_bar.hpp",
+      "pure_virtuals": 12,
+      "implementors": [
+        "C1EventBarStatusAdapter"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 8,
+      "base_only": false
+    },
+    {
+      "interface": "EventBarWindowApi",
+      "file": "src/c1/ui/event_bar.hpp",
+      "pure_virtuals": 7,
+      "implementors": [
+        "C1EventBar"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "ExportFileDialog",
+      "file": "src/c1/application/file_dialog.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "EyeViewApplicationHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 7,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "EyeViewHost",
+      "file": "src/c1/ui/eye_view.hpp",
+      "pure_virtuals": 16,
+      "implementors": [
+        "C1EyeViewWindow"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 12,
+      "base_only": false
+    },
+    {
+      "interface": "FavouritePlaceArchive",
+      "file": "src/c1/world/places.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "MfcFavouritePlaceArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "FavouritePlaceDialogHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "FavouritePlaceRemovalHost",
+      "file": "src/c1/world/places.hpp",
+      "pure_virtuals": 5,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "FileCommandHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 4,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "FileDialogPlatform",
+      "file": "src/c1/application/file_dialog.hpp",
+      "pure_virtuals": 3,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "FileSystemApi",
+      "file": "src/c1/common/filesystem.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "C1NativeBackupFileSystem"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 9,
+      "base_only": false
+    },
+    {
+      "interface": "FollowViewportHost",
+      "file": "src/c1/ui/eye_view.hpp",
+      "pure_virtuals": 7,
+      "implementors": [
+        "C1EyeViewWindow"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "ForceAgeSelectedCreatureHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "WindowsForceAgeHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "FuneralKitGateway",
+      "file": "src/c1/archive/funeral_kit.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "GalleryHost",
+      "file": "src/c1/display/gallery.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "C1ResourceHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 5,
+      "base_only": false
+    },
+    {
+      "interface": "GalleryRegistry",
+      "file": "src/c1/display/gallery.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "C1ResourceHost",
+        "WorldRuntime"
+      ],
+      "implementor_count": 2,
+      "checkpoint_recorded": true,
+      "used_as_type": 5,
+      "base_only": false
+    },
+    {
+      "interface": "GeneratedCreatureCommandHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "WindowsGeneratedCreatureHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "GenomeArchive",
+      "file": "src/c1/creatures/genome.hpp",
+      "pure_virtuals": 7,
+      "implementors": [
+        "CreatureArchiveGenomeAdapter"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "GenomeFileStore",
+      "file": "src/c1/creatures/genome.hpp",
+      "pure_virtuals": 5,
+      "implementors": [
+        "C1CreatureResourceHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 13,
+      "base_only": false
+    },
+    {
+      "interface": "GenomeFilenameRegistry",
+      "file": "src/c1/creatures/genome.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "WindowsCreatureInseminationHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "GenomeInitializationHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 6,
+      "implementors": [
+        "Host",
+        "WindowsCreatureConstructionHost"
+      ],
+      "implementor_count": 2,
+      "checkpoint_recorded": true,
+      "used_as_type": 5,
+      "base_only": false
+    },
+    {
+      "interface": "GenomeLocusStorage",
+      "file": "src/c1/creatures/genome.hpp",
+      "pure_virtuals": 5,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "GenomeRandomSource",
+      "file": "src/c1/creatures/genome.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "WindowsCreatureInseminationHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 11,
+      "base_only": false
+    },
+    {
+      "interface": "ImageArchive",
+      "file": "src/c1/display/image.hpp",
+      "pure_virtuals": 9,
+      "implementors": [
+        "MfcMapDataArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "ImagePreloadHost",
+      "file": "src/c1/objects/entity.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 5,
+      "base_only": false
+    },
+    {
+      "interface": "InfectSelectedCreatureHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 5,
+      "implementors": [
+        "WindowsInfectCreatureHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "InitializationHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 5,
+      "base_only": false
+    },
+    {
+      "interface": "InstinctArchive",
+      "file": "src/c1/brain/instinct.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "MfcInstinctArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "KitProcessHost",
+      "file": "src/c1/application/kit_processes.hpp",
+      "pure_virtuals": 7,
+      "implementors": [
+        "KitProcessAdapter"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "LiftRuntimeHost",
+      "file": "src/c1/objects/lift.hpp",
+      "pure_virtuals": 6,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 23,
+      "base_only": false
+    },
+    {
+      "interface": "MacroApplicationHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "WindowsMacroHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 5,
+      "base_only": false
+    },
+    {
+      "interface": "MacroArchive",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 9,
+      "implementors": [
+        "MfcMacroArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "MacroBlackboardHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 7,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "MacroCommandHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "WindowsMacroHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 66,
+      "base_only": false
+    },
+    {
+      "interface": "MacroDdeHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 12,
+      "implementors": [
+        "WindowsMacroHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "MacroDebugHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "WindowsMacroHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "MacroExceptionHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "WindowsMacroHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "MacroExecutionHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "MacroSchedulerHostAdapter",
+        "WindowsMacroHost"
+      ],
+      "implementor_count": 2,
+      "checkpoint_recorded": true,
+      "used_as_type": 8,
+      "base_only": false
+    },
+    {
+      "interface": "MacroHolderHost",
+      "file": "src/c1/scripting/macro_holder.hpp",
+      "pure_virtuals": 11,
+      "implementors": [
+        "WindowsMacroHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "MacroInterpreterHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "MacroSchedulerHostAdapter",
+        "WindowsMacroHost"
+      ],
+      "implementor_count": 2,
+      "checkpoint_recorded": true,
+      "used_as_type": 6,
+      "base_only": false
+    },
+    {
+      "interface": "MacroInterpreterTrace",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 5,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 1,
+      "base_only": false
+    },
+    {
+      "interface": "MacroMessageHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 3,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "MacroNewObjectHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 11,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "MacroObjectEventHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "WindowsMacroHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "MacroObjectMotionHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "WindowsMacroHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 5,
+      "base_only": false
+    },
+    {
+      "interface": "MacroRuntimeHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 64,
+      "implementors": [
+        "WindowsMacroHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 120,
+      "base_only": false
+    },
+    {
+      "interface": "MacroSchedulerHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 0,
+      "implementors": [
+        "MacroSchedulerHostAdapter"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "MacroSoundHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 5,
+      "implementors": [
+        "WindowsMacroHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "MacroSoundPolicyHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "WindowsMacroHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "MacroSpeechHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "WindowsMacroHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "MacroStimulusHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 9,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 5,
+      "base_only": false
+    },
+    {
+      "interface": "MacroSystemHost",
+      "file": "src/c1/scripting/macro.hpp",
+      "pure_virtuals": 12,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 11,
+      "base_only": false
+    },
+    {
+      "interface": "MagicProfilerWindowApi",
+      "file": "src/c1/ui/magic_profiler.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "ReportWindow"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "MainFrameActivationPlatform",
+      "file": "src/c1/application/main_frame.hpp",
+      "pure_virtuals": 8,
+      "implementors": [
+        "C1MainFrame"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "MainFrameAgeCommandPlatform",
+      "file": "src/c1/application/main_frame.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "WindowsAgeCommandPlatform"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "MainFrameCreatePlatform",
+      "file": "src/c1/application/main_frame.hpp",
+      "pure_virtuals": 14,
+      "implementors": [
+        "C1MainFrame"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "MainFrameEmbeddedKitTogglePlatform",
+      "file": "src/c1/application/main_frame.hpp",
+      "pure_virtuals": 5,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "MainFrameEmbeddedKitUpdatePlatform",
+      "file": "src/c1/application/main_frame.hpp",
+      "pure_virtuals": 10,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "MainFrameLifecyclePlatform",
+      "file": "src/c1/application/main_frame.hpp",
+      "pure_virtuals": 17,
+      "implementors": [
+        "C1MainFrame"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 6,
+      "base_only": false
+    },
+    {
+      "interface": "MainFrameMinMaxPlatform",
+      "file": "src/c1/application/main_frame.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "C1MainFrame"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "MainFramePalettePlatform",
+      "file": "src/c1/application/main_frame.hpp",
+      "pure_virtuals": 7,
+      "implementors": [
+        "C1MainFrame"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "MainFramePipeServerPlatform",
+      "file": "src/c1/application/main_frame.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "C1MainFrame"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "MainFrameTimerHost",
+      "file": "src/c1/application/file_commands.hpp",
+      "pure_virtuals": 3,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 6,
+      "base_only": false
+    },
+    {
+      "interface": "MainFrameWindow",
+      "file": "src/c1/application/commands.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "MainFrameWindowCreationPlatform",
+      "file": "src/c1/application/main_frame.hpp",
+      "pure_virtuals": 6,
+      "implementors": [
+        "C1MainFrame"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "MainWindowApi",
+      "file": "src/c1/ui/main_window.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "MapDataArchive",
+      "file": "src/c1/world/map.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "MfcMapDataArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "MapDataSerializationHost",
+      "file": "src/c1/world/map.hpp",
+      "pure_virtuals": 8,
+      "implementors": [
+        "MapData"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "MenuPlatform",
+      "file": "src/c1/ui/menus.hpp",
+      "pure_virtuals": 5,
+      "implementors": [
+        "C1NativeCreatureSelectionMenuPlatform"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "MultibyteTextApi",
+      "file": "src/c1/creatures/learned_words.hpp",
+      "pure_virtuals": 6,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 35,
+      "base_only": false
+    },
+    {
+      "interface": "MuteControlHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "C1NativeMuteControl"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "NamedPipeSecurityApi",
+      "file": "src/c1/platform/security.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "ObjectArchive",
+      "file": "src/c1/objects/object.hpp",
+      "pure_virtuals": 14,
+      "implementors": [
+        "MfcCreatureArchive",
+        "MfcObjectArchive"
+      ],
+      "implementor_count": 2,
+      "checkpoint_recorded": true,
+      "used_as_type": 20,
+      "base_only": false
+    },
+    {
+      "interface": "ObjectCleanupHost",
+      "file": "src/c1/objects/object.hpp",
+      "pure_virtuals": 4,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "ObjectDeletionHost",
+      "file": "src/c1/objects/lifecycle.hpp",
+      "pure_virtuals": 18,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "ObjectEventDispatchHost",
+      "file": "src/c1/objects/object.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "ObjectEventRuntime",
+      "file": "src/c1/objects/events.hpp",
+      "pure_virtuals": 13,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 6,
+      "base_only": false
+    },
+    {
+      "interface": "ObjectImmediateEventQueueHost",
+      "file": "src/c1/objects/object.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "WindowsCreatureAttentionHost",
+        "WindowsImmediateEventQueueHost",
+        "WindowsPointerToolRuntimeHost"
+      ],
+      "implementor_count": 3,
+      "checkpoint_recorded": true,
+      "used_as_type": 8,
+      "base_only": false
+    },
+    {
+      "interface": "ObjectInitializationHost",
+      "file": "src/c1/objects/object.hpp",
+      "pure_virtuals": 10,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "ObjectLifetimeHost",
+      "file": "src/c1/objects/object.hpp",
+      "pure_virtuals": 13,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "ObjectMovementBoundsHost",
+      "file": "src/c1/objects/object.hpp",
+      "pure_virtuals": 6,
+      "implementors": [
+        "C1WindowsDocument",
+        "WindowsPointerToolRuntimeHost"
+      ],
+      "implementor_count": 2,
+      "checkpoint_recorded": true,
+      "used_as_type": 15,
+      "base_only": false
+    },
+    {
+      "interface": "ObjectOverlapHost",
+      "file": "src/c1/objects/object.hpp",
+      "pure_virtuals": 6,
+      "implementors": [
+        "WindowsPointerToolRuntimeHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "ObjectRegistryHost",
+      "file": "src/c1/objects/object.hpp",
+      "pure_virtuals": 5,
+      "implementors": [
+        "WorldRuntime"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 13,
+      "base_only": false
+    },
+    {
+      "interface": "ObjectRenderableSetHost",
+      "file": "src/c1/objects/object.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "WindowsPointerToolRuntimeHost",
+        "WorldRuntime"
+      ],
+      "implementor_count": 2,
+      "checkpoint_recorded": true,
+      "used_as_type": 13,
+      "base_only": false
+    },
+    {
+      "interface": "ObjectScriptDispatchHost",
+      "file": "src/c1/objects/object.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "WindowsObjectScriptDispatchHost",
+        "WindowsPointerToolRuntimeHost"
+      ],
+      "implementor_count": 2,
+      "checkpoint_recorded": true,
+      "used_as_type": 12,
+      "base_only": false
+    },
+    {
+      "interface": "ObjectSoundPlaybackHost",
+      "file": "src/c1/objects/object.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 37,
+      "base_only": false
+    },
+    {
+      "interface": "ObjectSoundViewportHost",
+      "file": "src/c1/objects/object.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "OwnerInitializationHost",
+      "file": "src/c1/creatures/owner.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "PaletteDtaFile",
+      "file": "src/c1/display/palette.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "PaletteReadAdapter"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "PaletteDtaFileSystem",
+      "file": "src/c1/display/palette.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "C1PaletteDtaHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "PalettePlatform",
+      "file": "src/c1/display/palette.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "WindowsPalettePlatform"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "PipeServerHost",
+      "file": "src/c1/scripting/pipe_server.hpp",
+      "pure_virtuals": 32,
+      "implementors": [
+        "WindowsPipeServerRuntime"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "PlaceDialogDataExchange",
+      "file": "src/c1/ui/place_dialog.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "PlaceDialogPlatform",
+      "file": "src/c1/ui/place_dialog.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "PointerAttentionApi",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 8,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "PointerToolArchiveHost",
+      "file": "src/c1/ui/tools.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "PointerToolArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "PointerToolRuntimeHost",
+      "file": "src/c1/ui/tools.hpp",
+      "pure_virtuals": 21,
+      "implementors": [
+        "WindowsPointerToolRuntimeHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 14,
+      "base_only": false
+    },
+    {
+      "interface": "RectangleHitTestApi",
+      "file": "src/c1/platform/mfc_adapters.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 6,
+      "base_only": false
+    },
+    {
+      "interface": "RegistryApi",
+      "file": "src/c1/platform/registry.hpp",
+      "pure_virtuals": 3,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 6,
+      "base_only": false
+    },
+    {
+      "interface": "RemovePlaceDialogPlatform",
+      "file": "src/c1/ui/place_dialog.hpp",
+      "pure_virtuals": 9,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "ResourceFileBackend",
+      "file": "src/c1/application/resource_hosts.hpp",
+      "pure_virtuals": 5,
+      "implementors": [
+        "StandardResourceFileBackend"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 9,
+      "base_only": false
+    },
+    {
+      "interface": "ResourceReadFile",
+      "file": "src/c1/application/resource_hosts.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "StandardReadFile"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 10,
+      "base_only": false
+    },
+    {
+      "interface": "ResourceWriteFile",
+      "file": "src/c1/application/resource_hosts.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "StandardWriteFile"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 6,
+      "base_only": false
+    },
+    {
+      "interface": "SceneryMoveRedrawHost",
+      "file": "src/c1/objects/scenery.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "ScoreArchive",
+      "file": "src/c1/ui/score.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "MfcScoreArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "ScriptArchiveReader",
+      "file": "src/c1/scripting/classifier_scripts.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "MfcObjectArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "ScriptArchiveWriter",
+      "file": "src/c1/scripting/classifier_scripts.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "MfcCreatureArchive",
+        "MfcObjectArchive"
+      ],
+      "implementor_count": 2,
+      "checkpoint_recorded": true,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "ScriptDefinitionInstallHost",
+      "file": "src/c1/scripting/classifier_scripts.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 9,
+      "base_only": false
+    },
+    {
+      "interface": "ScriptExecutionHost",
+      "file": "src/c1/scripting/classifier_scripts.hpp",
+      "pure_virtuals": 6,
+      "implementors": [
+        "WindowsScriptExecutionHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "SecureFormattingApi",
+      "file": "src/c1/platform/formatting.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 6,
+      "base_only": false
+    },
+    {
+      "interface": "SecureStringCopyApi",
+      "file": "src/c1/application/resources.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "SelectedCreatureScriptCommandHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "SelectedCreatureTitleSource",
+      "file": "src/c1/ui/main_window.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "SfcAppSettingsHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 8,
+      "implementors": [
+        "C1SettingsHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "SfcAppShutdownHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "C1ShutdownHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "SfcAppStartupHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 23,
+      "implementors": [
+        "C1StartupHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "SfcViewHost",
+      "file": "src/c1/ui/views.hpp",
+      "pure_virtuals": 58,
+      "implementors": [
+        "C1WindowsView"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 55,
+      "base_only": false
+    },
+    {
+      "interface": "SimpleObjectBubbleHost",
+      "file": "src/c1/objects/simple_object.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "SimpleObjectConstructionHost",
+      "file": "src/c1/objects/simple_object.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "SimpleObjectEditHost",
+      "file": "src/c1/objects/simple_object.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "SimpleObjectInteractionHost",
+      "file": "src/c1/objects/simple_object.hpp",
+      "pure_virtuals": 6,
+      "implementors": [
+        "WindowsPointerToolRuntimeHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 6,
+      "base_only": false
+    },
+    {
+      "interface": "SimpleObjectMoveRedrawHost",
+      "file": "src/c1/objects/simple_object.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "C1WindowsDocument",
+        "PointerToolArchive",
+        "WindowsPointerToolRuntimeHost"
+      ],
+      "implementor_count": 3,
+      "checkpoint_recorded": true,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "SimpleObjectPlacementHost",
+      "file": "src/c1/objects/simple_object.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "C1WindowsDocument",
+        "PointerToolArchive"
+      ],
+      "implementor_count": 2,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "SimpleObjectTickHost",
+      "file": "src/c1/objects/simple_object.hpp",
+      "pure_virtuals": 7,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 6,
+      "base_only": false
+    },
+    {
+      "interface": "SkeletonArchive",
+      "file": "src/c1/creatures/skeleton.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "MfcCreatureArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "SkeletonLifetimeHost",
+      "file": "src/c1/creatures/skeleton.hpp",
+      "pure_virtuals": 5,
+      "implementors": [
+        "WindowsSkeletonLifetimeHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 9,
+      "base_only": false
+    },
+    {
+      "interface": "SkeletonRenderPlaneHost",
+      "file": "src/c1/creatures/skeleton.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "WindowsSkeletonRenderPlaneHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 8,
+      "base_only": false
+    },
+    {
+      "interface": "SkeletonWorldHost",
+      "file": "src/c1/creatures/skeleton.hpp",
+      "pure_virtuals": 2,
+      "implementors": [
+        "SkeletonMoveHost",
+        "SkeletonMoveRedraw"
+      ],
+      "implementor_count": 2,
+      "checkpoint_recorded": false,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "SoundSystemHost",
+      "file": "src/c1/sound/sound.hpp",
+      "pure_virtuals": 29,
+      "implementors": [
+        "WindowsSoundSystemHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 5,
+      "base_only": false
+    },
+    {
+      "interface": "SpriteIndexOutputFile",
+      "file": "src/c1/display/sprite_cache.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "SpriteIndexWriteAdapter"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "SpriteIndexOutputFileSystem",
+      "file": "src/c1/display/sprite_cache.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "C1ResourceHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 1,
+      "base_only": false
+    },
+    {
+      "interface": "StimulusSourceHost",
+      "file": "src/c1/creatures/creature.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "WindowsStimulusSourceHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 18,
+      "base_only": false
+    },
+    {
+      "interface": "StringArchive",
+      "file": "src/c1/archive/string_archive.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "CreatureStringArchive",
+        "MfcFavouritePlaceArchive",
+        "MfcStringArchive"
+      ],
+      "implementor_count": 3,
+      "checkpoint_recorded": true,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "TextInputQueue",
+      "file": "src/c1/ui/views.hpp",
+      "pure_virtuals": 3,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "TextMeasurementApi",
+      "file": "src/c1/platform/gdi.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "TimerScheduler",
+      "file": "src/c1/world/update_timer.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "Scheduler"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "TipDialogPlatform",
+      "file": "src/c1/ui/tip_dialog.hpp",
+      "pure_virtuals": 16,
+      "implementors": [
+        "C1TipDialogPlatform"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 5,
+      "base_only": false
+    },
+    {
+      "interface": "TipFile",
+      "file": "src/c1/ui/tip_dialog.hpp",
+      "pure_virtuals": 5,
+      "implementors": [
+        "C1NativeTipFile"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "ToolbarArchiveApi",
+      "file": "src/c1/ui/toolbars.hpp",
+      "pure_virtuals": 5,
+      "implementors": [
+        "MfcToolbarArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 6,
+      "base_only": false
+    },
+    {
+      "interface": "ToolbarPlatform",
+      "file": "src/c1/ui/toolbars.hpp",
+      "pure_virtuals": 17,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 6,
+      "base_only": false
+    },
+    {
+      "interface": "UpdateTimerStateConsumer",
+      "file": "src/c1/world/update_timer.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "VehicleEventHost",
+      "file": "src/c1/objects/vehicle.hpp",
+      "pure_virtuals": 5,
+      "implementors": [
+        "WindowsVehicleEventHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "VehicleTickHost",
+      "file": "src/c1/objects/vehicle.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": true,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "VersionDialogPlatform",
+      "file": "src/c1/ui/version_dialog.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "C1NativeVersionDialog"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "ViewAnchorObject",
+      "file": "src/c1/objects/lifecycle.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "ObjectViewAnchor"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": true,
+      "used_as_type": 7,
+      "base_only": false
+    },
+    {
+      "interface": "ViewportScroller",
+      "file": "src/c1/world/viewport.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "VoiceArchive",
+      "file": "src/c1/creatures/voice.hpp",
+      "pure_virtuals": 3,
+      "implementors": [
+        "CreatureVoiceArchive"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "VoiceFileStore",
+      "file": "src/c1/creatures/voice.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "C1CreatureResourceHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 7,
+      "base_only": false
+    },
+    {
+      "interface": "VolumeDialogHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 5,
+      "implementors": [
+        "C1NativeVolumeDialogHost"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "VolumePersistenceApi",
+      "file": "src/c1/ui/volume_dialog.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "C1NativeVolumeDialog"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "VolumeSliderApi",
+      "file": "src/c1/ui/volume_dialog.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "C1NativeVolumeDialog"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "WebpageShortcutHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 4,
+      "implementors": [
+        "C1NativeWebpageShortcut"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "WindowCommandApi",
+      "file": "src/c1/application/commands.hpp",
+      "pure_virtuals": 1,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "WindowPlatform",
+      "file": "src/c1/ui/windows.hpp",
+      "pure_virtuals": 3,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 4,
+      "base_only": false
+    },
+    {
+      "interface": "WineVersionExportProbe",
+      "file": "src/c1/platform/environment.hpp",
+      "pure_virtuals": 1,
+      "implementors": [
+        "Probe"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "WorldRendererHost",
+      "file": "src/c1/display/rendering.hpp",
+      "pure_virtuals": 30,
+      "implementors": [
+        "C1WindowsDocument"
+      ],
+      "implementor_count": 1,
+      "checkpoint_recorded": false,
+      "used_as_type": 3,
+      "base_only": false
+    },
+    {
+      "interface": "WorldStatisticsHost",
+      "file": "src/c1/ui/world_statistics.hpp",
+      "pure_virtuals": 11,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 10,
+      "base_only": false
+    },
+    {
+      "interface": "WorldUpdateControl",
+      "file": "src/c1/world/update_timer.hpp",
+      "pure_virtuals": 2,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    },
+    {
+      "interface": "WorldUpdateTimerHost",
+      "file": "src/c1/application/application.hpp",
+      "pure_virtuals": 3,
+      "implementors": [],
+      "implementor_count": 0,
+      "checkpoint_recorded": false,
+      "used_as_type": 2,
+      "base_only": false
+    }
+  ]
+}
