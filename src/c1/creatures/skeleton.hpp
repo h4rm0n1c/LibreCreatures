@@ -293,8 +293,6 @@ public:
     int normal_render_plane = 100;
     int continuous_sound_handle = -1;
     display::Gallery* gallery = nullptr;
-    std::array<std::array<int, kLimbChainCount>, 4>
-        pose_chain_render_plane_offsets{};
 
     // The native record stores Body separately from the Object base and keeps
     // its six Limb chains as linked allocations.  Those ownership facts are

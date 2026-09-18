@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdint>
 #include <cstdlib>
 #include <exception>
 #include <string>
@@ -767,13 +768,33 @@ void Skeleton::update_limb_frames_for_pose() {
     if (body == nullptr) {
         return;
     }
-    const std::size_t facing = static_cast<std::size_t>(facing_direction);
+    // Skeleton::UpdateLimbFramesForPose @0043b8f0 indexes a 24-byte signed
+    // table at 0045ac70 as [facing * 6 + chain].  The chains are, in order,
+    // head, left leg, right leg, left arm, right arm, tail; the head always
+    // sits three planes in front of the body, and facing east or west pushes
+    // that side's far limbs one plane behind it.  This used to be a
+    // zero-initialised Skeleton member that nothing ever wrote, so every
+    // chain drew at the body's own plane: the head never came forward and no
+    // limb ever went behind.
+    static constexpr std::int8_t
+        kPoseChainRenderPlaneOffsets[4][kLimbChainCount] = {
+            { 3,  1,  1,  1,  1,  1},  // north
+            { 3,  1,  1,  1,  1, -1},  // south
+            { 3, -1,  1, -1,  1,  0},  // east  -- left limbs behind
+            { 3,  1, -1,  1, -1,  0},  // west  -- right limbs behind
+        };
+
+    const std::size_t facing =
+        static_cast<std::size_t>(facing_direction) % 4u;
     for (std::size_t chain = 0; chain < kLimbChainCount; ++chain) {
-        int render_offset = pose_chain_render_plane_offsets[facing][chain];
+        int render_offset = kPoseChainRenderPlaneOffsets[facing][chain];
+        // The native fixes the step's direction once, from the initial
+        // offset's sign, rather than re-testing it per limb.
+        const int step = render_offset < 0 ? -1 : 1;
         for (LimbPart* limb = limb_chain_heads[chain]; limb != nullptr;
              limb = limb->next_in_chain) {
             limb->set_render_plane(body->render_plane() + render_offset);
-            render_offset += render_offset < 0 ? -1 : 1;
+            render_offset += step;
         }
     }
 }
