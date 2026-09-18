@@ -217,6 +217,16 @@ public:
     bool references_object(objects::Object* object) const override;
     void clear_references_to(objects::Object* object) override;
 
+    // Skeleton's vtable slot 20 -- Object's MoveBy -- is TranslateBy
+    // (0x0043c0b0), not Object's no-op stub.  Vehicle::Tick @0x0042bd90 calls
+    // that slot on every object whose bounds reference is the vehicle, which
+    // is how a creature riding a lift is carried.  Without the override the
+    // base no-op ran, so a passenger's movement bounds followed the lift (its
+    // x stayed clamped to the cabin) while its position did not: going up the
+    // bounds clamp in UpdateAnchorAndBounds shoved it along, going down the
+    // floor moved away beneath it and nothing pulled it after.
+    void move_by(int delta_x, int delta_y) override;
+
     void translate_by(int delta_x, int delta_y);
     void update_and_invalidate_bounds(int delta_x,
                                       int delta_y,

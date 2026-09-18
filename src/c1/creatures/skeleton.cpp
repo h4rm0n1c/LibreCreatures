@@ -1163,6 +1163,11 @@ int Skeleton::current_visual_height() const {
     return sprite_bounds.max_y - sprite_bounds.min_y;
 }
 
+void Skeleton::move_by(int delta_x, int delta_y) {
+    // Object vtable slot 20 for a Skeleton is TranslateBy @0x0043c0b0.
+    translate_by(delta_x, delta_y);
+}
+
 void Skeleton::translate_by(int delta_x, int delta_y) {
     auto translate_part = [delta_x, delta_y](BodyPart& part) {
         part.set_world_x(wrap_world_x_once(part.world_x() + delta_x));
