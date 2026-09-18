@@ -442,10 +442,13 @@ void Biochemistry::load_genome(
     constexpr std::uint8_t kBiochemistryFamily = static_cast<std::uint8_t>(
         creatures1::creatures::GenomeGeneFamily::biochemistry);
 
+    // CBiochemistry::LoadGenome @ 0x0042e940 matches the genome load stage on
+    // all five biochemistry gene types; C1 chemistry is staged, and loading
+    // every stage at once stacked later stages over the current one.
     genome.set_cursor(0);
     while (genome.find_next_matching_gene(
         kBiochemistryFamily, 0, 5,
-        creatures1::creatures::GenomeStageFilter::ignore)) {
+        creatures1::creatures::GenomeStageFilter::match_genome_load_stage)) {
         if (receptor_gene_count_ == receptor_records_.size()) {
             log_gene_limit(log_host, "ERROR: TOO MANY RECEPTOR GENES!");
             break;
@@ -487,7 +490,7 @@ void Biochemistry::load_genome(
     genome.set_cursor(0);
     while (genome.find_next_matching_gene(
         kBiochemistryFamily, 1, 5,
-        creatures1::creatures::GenomeStageFilter::ignore)) {
+        creatures1::creatures::GenomeStageFilter::match_genome_load_stage)) {
         if (emitter_gene_count_ == emitter_records_.size()) {
             log_gene_limit(log_host, "ERROR: TOO MANY EMITTER GENES!");
             break;
@@ -533,7 +536,7 @@ void Biochemistry::load_genome(
     genome.set_cursor(0);
     while (genome.find_next_matching_gene(
         kBiochemistryFamily, 2, 5,
-        creatures1::creatures::GenomeStageFilter::ignore)) {
+        creatures1::creatures::GenomeStageFilter::match_genome_load_stage)) {
         if (reaction_gene_count_ == reaction_records_.size()) {
             log_gene_limit(log_host, "ERROR: TOO MANY REACTION GENES!");
             break;
@@ -557,7 +560,7 @@ void Biochemistry::load_genome(
     genome.set_cursor(0);
     while (genome.find_next_matching_gene(
         kBiochemistryFamily, 3, 5,
-        creatures1::creatures::GenomeStageFilter::ignore)) {
+        creatures1::creatures::GenomeStageFilter::match_genome_load_stage)) {
         for (ChemicalState& chemical : chemical_states_) {
             chemical.half_life_selector = genome.read_payload_byte();
         }
@@ -566,7 +569,7 @@ void Biochemistry::load_genome(
     genome.set_cursor(0);
     while (genome.find_next_matching_gene(
         kBiochemistryFamily, 4, 5,
-        creatures1::creatures::GenomeStageFilter::ignore)) {
+        creatures1::creatures::GenomeStageFilter::match_genome_load_stage)) {
         const std::uint8_t chemical_index = genome.read_payload_byte();
         const std::uint8_t concentration = genome.read_payload_byte();
         chemical_states_[chemical_index].concentration = concentration;

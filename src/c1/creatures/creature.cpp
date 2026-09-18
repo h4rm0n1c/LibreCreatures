@@ -2378,7 +2378,14 @@ void Creature::initialize_from_genome(GenomeInitializationHost& host) {
 }
 
 void Creature::load_genome(Genome& genome) {
-    constexpr GenomeStageFilter kLoadStage = GenomeStageFilter::ignore;
+    // Native Creature::LoadGenome passes MATCH_GENOME_LOAD_STAGE to every one
+    // of its FindNextMatchingGene calls -- stimulus (0), pose (3), gait (4)
+    // and instinct (5).  Ignoring the stage loaded every life stage's genes
+    // over each other, so a newborn ended up with the last stage's poses and
+    // gaits.  (Skeleton and Body genes really are IGNORE_STAGE in the native;
+    // those calls are left alone.)
+    constexpr GenomeStageFilter kLoadStage =
+        GenomeStageFilter::match_genome_load_stage;
     constexpr std::uint8_t kCreatureFamily =
         static_cast<std::uint8_t>(GenomeGeneFamily::creature);
 

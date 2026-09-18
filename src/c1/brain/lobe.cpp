@@ -866,8 +866,26 @@ std::uint8_t* Lobe::resolve_genome_locus(GenomeLocusKind kind,
         return nullptr;
     }
 
+    // Emitter loci 0..2 are the lobe's own activity counters, not the
+    // receptor-driven token state.  CBrainLocusResolver::ResolveGenomeLocus
+    // @ 0x004043b0 returns lobe+192, +193 and +194, which CLobe's layout makes
+    // active_fraction and the two per-rule loose-dendrite counts.
+    //
+    // Reading token_evaluation_state here broke the pruning homeostat the
+    // standard genome builds out of one emitter and one receptor: lobe 8
+    // emits chemical 52 from loose_dendrite_count[0], and a receptor turns
+    // that chemical back into token_evaluation_state[1], which is the sole
+    // term of the lobe's dendrite decay expression.  With the wrong source the
+    // emitter never fired, the chemical never appeared, the decay gate stayed
+    // at its nominal 4, and every dendrite in the lobe decayed to zero and was
+    // released -- taking the concept lobe, and the creature's ability to
+    // decide, with it.
+    if (locus_index == 0) {
+        return &active_fraction;
+    }
     if (locus_index <= 2) {
-        return &late_phase_runtime_state.token_evaluation_state[locus_index];
+        return &late_phase_runtime_state.per_rule_loose_dendrite_count[
+            locus_index - 1];
     }
     if (locus_index >= 3 && locus_index <= 18) {
         const std::uint32_t neuron_index = locus_index - 3;
