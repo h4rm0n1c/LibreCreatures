@@ -45,6 +45,13 @@ private:
     C1WindowsDocument& document_;
 };
 
+// Rebuilds a creature's generated <moniker>.spr from its genome, which is
+// what native's ValidateBodySprites does when the file no longer matches the
+// gallery.  Only the Skeleton is reloaded; brain, biochemistry and voice keep
+// the state they already hold.
+bool rebuild_creature_body_sprites(C1WindowsDocument& document,
+                                   creatures1::creatures::Creature& creature);
+
 // Concrete CreatureRemovalHost for Creature vtable slot 24, RemoveFromWorld
 // (0040e0d0), which Export runs before writing the creature out.  Every step
 // is an existing document or object service.

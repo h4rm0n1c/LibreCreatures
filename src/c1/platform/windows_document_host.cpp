@@ -470,9 +470,15 @@ void C1WindowsDocument::validate_creature_body_sprites(std::size_t index) {
     }
     auto* creature = dynamic_cast<creatures1::creatures::Creature*>(
         world_runtime_->creature_at(index));
-    if (creature != nullptr) {
-        creature->skeleton().validate_body_sprites(
-            secondary_resource_directory(kImageDirectoryIndex), *this);
+    if (creature == nullptr) {
+        return;
+    }
+    if (creature->skeleton().body_sprites_are_stale(
+            secondary_resource_directory(kImageDirectoryIndex), *this)) {
+        // OnOpenDocument @004309a0 checks every loaded creature, and a
+        // creature whose sprite file disagrees with its gallery gets the file
+        // written again from its genome.
+        (void)rebuild_creature_body_sprites(*this, *creature);
     }
 }
 

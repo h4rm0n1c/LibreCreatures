@@ -322,7 +322,7 @@ void Skeleton::initialize_pose_and_motion_state() {
     caos_object_pointer = nullptr;
     drive_threshold_state = 1;
     eyes_open = true;
-    gallery = nullptr;
+    set_gallery(nullptr);
     continuous_sound_handle = -1;
 
     // Native InitializePoseAndMotionState @0043ad5c: `OR byte ptr [ESI+9],
@@ -542,7 +542,7 @@ bool Skeleton::construct_body_parts(
 
     body_part_image_index_base = services.image_index_base;
     normal_render_plane = services.normal_render_plane;
-    gallery = services.gallery;
+    set_gallery(services.gallery);
     body = std::move(new_body);
     // The chain links are non-owning by design. Transfer every node before
     // the temporary owners leave scope; SkeletonLifetimeHost later walks the
@@ -570,7 +570,7 @@ bool Skeleton::construct_body_parts(
 
 bool Skeleton::build_creature_sprite_gallery(
     Genome& genome, const SkeletonSpriteBuildServices& services) {
-    if (gallery != nullptr || genome_source_filename == 0) {
+    if (this->gallery() != nullptr || genome_source_filename == 0) {
         return false;
     }
 
@@ -686,7 +686,7 @@ bool Skeleton::build_creature_sprite_gallery(
     }
 
     body_part_image_index_base = image_index_base;
-    gallery = final_gallery;
+    set_gallery(final_gallery);
     return true;
 }
 
@@ -712,7 +712,7 @@ bool Skeleton::load_genome(
     const SkeletonBodyBuildServices body_services{
         services.body_resources,
         services.entity_registry,
-        gallery,
+        this->gallery(),
         genome.sex(),
         genome.life_stage(),
         body_part_image_index_base,
@@ -728,9 +728,9 @@ bool Skeleton::load_genome(
     // build_creature_sprite_gallery commits only the final gallery before
     // body construction. Release that reference on the failed transaction;
     // no partially committed limb graph exists here.
-    if (gallery != nullptr) {
-        services.gallery_lifetime_host.release_gallery(*gallery);
-        gallery = nullptr;
+    if (this->gallery() != nullptr) {
+        services.gallery_lifetime_host.release_gallery(*this->gallery());
+        set_gallery(nullptr);
     }
     body_part_image_index_base.fill(0);
     return false;
@@ -812,9 +812,9 @@ void Skeleton::clear_body_parts_and_gallery(
         }
     }
     body.reset();
-    if (gallery != nullptr) {
-        lifetime_host.release_gallery(*gallery);
-        gallery = nullptr;
+    if (this->gallery() != nullptr) {
+        lifetime_host.release_gallery(*this->gallery());
+        set_gallery(nullptr);
     }
 }
 
@@ -858,10 +858,10 @@ std::uint32_t Skeleton::select_target_pose_for_motion_guarded(
     return select_target_pose_for_motion(force_interaction_pose);
 }
 
-void Skeleton::validate_body_sprites(std::string_view image_directory,
-                                     BodySpriteFileHost& file_host) const {
-    if (gallery == nullptr || gallery->image_count == 0) {
-        return;
+bool Skeleton::body_sprites_are_stale(std::string_view image_directory,
+                                      BodySpriteFileHost& file_host) const {
+    if (this->gallery() == nullptr || this->gallery()->image_count == 0) {
+        return false;
     }
     const std::string path = file_host.body_sprite_path(
         image_directory, genome_source_filename);
@@ -869,13 +869,30 @@ void Skeleton::validate_body_sprites(std::string_view image_directory,
     std::uint32_t first_frame_offset = 0;
     std::uint16_t first_frame_width = 0;
     std::uint16_t first_frame_height = 0;
-    if (file_host.read_sprite_header(path, image_count, first_frame_offset,
-                                     first_frame_width, first_frame_height) &&
-        image_count == gallery->image_count) {
-        (void)first_frame_offset;
-        (void)first_frame_width;
-        (void)first_frame_height;
+    if (!file_host.read_sprite_header(path, image_count, first_frame_offset,
+                                      first_frame_width,
+                                      first_frame_height)) {
+        // Deliberate deviation.  Native reaches its landing pad with the
+        // rebuild flag still clear when the file will not open, which leaves
+        // a creature whose generated .spr was deleted with no body sprites at
+        // all -- it loads, walks and breeds, but is invisible, and nothing
+        // ever restores it.  The file is derived from the genome, so rebuild
+        // it here instead.
+        return true;
     }
+    (void)first_frame_offset;
+
+    // The native compares the frame count, then the first frame's width and
+    // height against the gallery's first image, and rebuilds if any differ.
+    if (image_count != this->gallery()->image_count) {
+        return true;
+    }
+    if (this->gallery()->images == nullptr) {
+        return false;
+    }
+    const display::Image& first_image = this->gallery()->images[0];
+    return static_cast<int>(first_frame_width) != first_image.width() ||
+           static_cast<int>(first_frame_height) != first_image.height();
 }
 
 bool Skeleton::references_object(objects::Object* object) const {

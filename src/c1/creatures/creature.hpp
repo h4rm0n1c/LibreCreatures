@@ -1055,6 +1055,12 @@ public:
 
     void initialize_runtime_state(const InitializationHost& host);
     void initialize_from_genome(GenomeInitializationHost& host);
+
+    // The narrow half of the above, for a creature whose generated sprite
+    // file no longer matches its gallery: native's rebuild reconstructs the
+    // genome and runs Skeleton::LoadGenome alone, leaving the brain,
+    // biochemistry and voice it already loaded untouched.
+    bool rebuild_body_sprites(GenomeInitializationHost& host);
     void load_genome(Genome& genome);
     void select_walk_gait();
     objects::ObjectEventId click_event_id_at_world_position(int world_x,

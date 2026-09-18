@@ -274,6 +274,69 @@ bool WindowsCreatureEnvironmentHost::is_selected_creature(
     return document_.selected_creature() == &creature;
 }
 
+namespace {
+
+// The GenomeInitializationHost the document can assemble for any
+// creature: genome and voice stores, sound host, skeleton sprite build
+// services, render-plane host and biochemistry loci.  Both the initial
+// genome load and the sprite-file rebuild below run through it.
+class GenomeInitializationAdapter final
+    : public creatures1::creatures::Creature::GenomeInitializationHost {
+public:
+    GenomeInitializationAdapter(C1WindowsDocument& document,
+         creatures1::biochemistry::Biochemistry& biochemistry)
+        : document_(document),
+          render_plane_(document),
+          locus_(biochemistry),
+          services_(document.skeleton_services(document)) {}
+
+    creatures1::creatures::GenomeFileStore& genome_files() override {
+        return document_.genome_files();
+    }
+    const creatures1::creatures::SkeletonSpriteBuildServices&
+    skeleton_services() const override {
+        return services_;
+    }
+    creatures1::creatures::SkeletonRenderPlaneHost& render_plane_host()
+        override {
+        return render_plane_;
+    }
+    creatures1::objects::ObjectSoundPlaybackHost& sound_host() override {
+        return document_;
+    }
+    creatures1::biochemistry::BiochemistryLocusHost&
+    biochemistry_locus_host(
+        creatures1::biochemistry::Biochemistry& /*value*/) override {
+        // Already bound to this creature's biochemistry at construction.
+        return locus_;
+    }
+    creatures1::creatures::VoiceFileStore& voice_files() override {
+        return document_.voice_files();
+    }
+
+private:
+    C1WindowsDocument& document_;
+    WindowsSkeletonRenderPlaneHost render_plane_;
+    MfcBiochemistryLocusHost locus_;
+    creatures1::creatures::SkeletonSpriteBuildServices services_;
+};
+
+} // namespace
+
+bool rebuild_creature_body_sprites(C1WindowsDocument& document,
+                                   creatures1::creatures::Creature& creature) {
+    // Native's ValidateBodySprites landing pad rebuilds the generated
+    // sprite file by reconstructing the genome and running
+    // Skeleton::LoadGenome again (00408080 -> 004081ce -> 0043c800).
+    creatures1::biochemistry::Biochemistry* biochemistry =
+        creature.biochemistry();
+    if (biochemistry == nullptr) {
+        return false;
+    }
+    GenomeInitializationAdapter host(document, *biochemistry);
+    return creature.rebuild_body_sprites(host);
+}
+
 void WindowsCreatureEnvironmentHost::initialize_from_genome(
     creatures1::creatures::Creature& creature) {
     // Every member of GenomeInitializationHost now has an owner: the document
@@ -282,53 +345,13 @@ void WindowsCreatureEnvironmentHost::initialize_from_genome(
     // host it already builds; and the render-plane and biochemistry locus
     // hosts are constructed here for the call.  Skeleton lifetime operations
     // go through the document, whose lifetime covers the creature.
-    class Host final
-        : public creatures1::creatures::Creature::GenomeInitializationHost {
-    public:
-        Host(C1WindowsDocument& document,
-             creatures1::biochemistry::Biochemistry& biochemistry)
-            : document_(document),
-              render_plane_(document),
-              locus_(biochemistry),
-              services_(document.skeleton_services(document)) {}
-
-        creatures1::creatures::GenomeFileStore& genome_files() override {
-            return document_.genome_files();
-        }
-        const creatures1::creatures::SkeletonSpriteBuildServices&
-        skeleton_services() const override {
-            return services_;
-        }
-        creatures1::creatures::SkeletonRenderPlaneHost& render_plane_host()
-            override {
-            return render_plane_;
-        }
-        creatures1::objects::ObjectSoundPlaybackHost& sound_host() override {
-            return document_;
-        }
-        creatures1::biochemistry::BiochemistryLocusHost&
-        biochemistry_locus_host(
-            creatures1::biochemistry::Biochemistry& /*value*/) override {
-            // Already bound to this creature's biochemistry at construction.
-            return locus_;
-        }
-        creatures1::creatures::VoiceFileStore& voice_files() override {
-            return document_.voice_files();
-        }
-
-    private:
-        C1WindowsDocument& document_;
-        WindowsSkeletonRenderPlaneHost render_plane_;
-        MfcBiochemistryLocusHost locus_;
-        creatures1::creatures::SkeletonSpriteBuildServices services_;
-    } ;
 
     creatures1::biochemistry::Biochemistry* biochemistry =
         creature.biochemistry();
     if (biochemistry == nullptr) {
         return;
     }
-    Host host(document_, *biochemistry);
+    GenomeInitializationAdapter host(document_, *biochemistry);
 
     creature.initialize_from_genome(host);
 }

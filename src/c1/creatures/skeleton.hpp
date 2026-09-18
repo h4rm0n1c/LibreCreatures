@@ -230,8 +230,12 @@ public:
     std::uint32_t select_target_pose_for_motion(bool force_interaction_pose);
     std::uint32_t select_target_pose_for_motion_guarded(
         bool force_interaction_pose);
-    void validate_body_sprites(std::string_view image_directory,
-                              BodySpriteFileHost& file_host) const;
+    // True when the creature's generated <moniker>.spr disagrees with the
+    // gallery built from its genome, which is native's cue to write the file
+    // again (ValidateBodySprites @00408080).  A file that cannot be opened at
+    // all is not a mismatch: native leaves BL clear on that path.
+    bool body_sprites_are_stale(std::string_view image_directory,
+                                BodySpriteFileHost& file_host) const;
 
     bool references_object(objects::Object* object) const override;
     void clear_references_to(objects::Object* object) override;
@@ -330,7 +334,10 @@ public:
     bool boundary_correction_pending = false;
     int normal_render_plane = 100;
     int continuous_sound_handle = -1;
-    display::Gallery* gallery = nullptr;
+    // The creature's composite sprite gallery is the Object one native
+    // keeps at +0x40: the world save restores it there, and
+    // ValidateBodySprites compares the generated .spr against it.  A
+    // second Skeleton-local copy left that restored pointer unread.
 
     // The native record stores Body separately from the Object base and keeps
     // its six Limb chains as linked allocations.  Those ownership facts are

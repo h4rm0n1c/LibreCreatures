@@ -2380,6 +2380,17 @@ void Creature::initialize_from_genome(GenomeInitializationHost& host) {
     voice_.load_voice_file(voice_filename, host.voice_files());
 }
 
+bool Creature::rebuild_body_sprites(GenomeInitializationHost& host) {
+    Genome genome(skeleton_.genome_source_filename,
+                  genome_sex_,
+                  genome_life_stage(),
+                  &host.genome_files());
+    return skeleton_.load_genome(genome,
+                                 host.skeleton_services(),
+                                 host.render_plane_host(),
+                                 host.sound_host());
+}
+
 void Creature::load_genome(Genome& genome) {
     // Native Creature::LoadGenome passes MATCH_GENOME_LOAD_STAGE to every one
     // of its FindNextMatchingGene calls -- stimulus (0), pose (3), gait (4)
