@@ -76,6 +76,68 @@ native's behaviour here depends on its own heap addresses, so there is nothing
 stable to reproduce. Reproducing the *shape* of the bug faithfully would mean
 reproducing an out-of-bounds read, and would still not reproduce its result.
 
+## Creatures in vehicles lost their +/-5 offset
+
+Found from the report that norns in lifts z-order wrongly.
+
+`Creature::HandlePickupEvent @0x004098e0`, the vehicle branch:
+
+```
+MOV    EAX, [ECX + 0x54]      ; vehicle parts[0].entity
+MOV    EDX, [EAX + 0xc]       ; its render_plane            -- the base
+MOV    EAX, [ECX + 0x60]      ; vehicle parts[1].entity
+MOV    ECX, 0x5
+CMP    EDX, [EAX + 0xc]       ; against parts[1] render_plane
+CMOVGE ECX, [ESP + 0x10]      ; -5 when base >= parts[1]
+ADD    ECX, EDX
+MOV    [EAX + 0xc], ECX       ; body->render_plane = base +/- 5
+```
+
+`+0x54` and `+0x60` are `parts[0].entity` and `parts[1].entity` (`parts` is
+`CompoundPart[10]` at `+0x54`, twelve bytes each), and `+0xc` on an Entity is
+its render plane. Vehicle extends CompoundObject, so both are valid.
+
+The creature is placed five planes off the car's own plane, on whichever side
+keeps it between the car and its facing panel. The port's
+`vehicle_attachment_render_plane` returned the vehicle's plane **unchanged**,
+so a creature in a lift sat at exactly the car's plane -- a tie, which a stable
+sort keyed only on plane resolves by entity-registry order. Whether the norn
+drew inside the lift or behind it was arbitrary.
+
+## Correction: the carried-object offset is +1, not -1
+
+The first revision of this note concluded the offset should be `-1`, on the
+grounds that index 0 is the table's only in-bounds entry. That was wrong, and
+it regressed every carried object: cheese dropped into the incubator vanished
+*behind* it.
+
+The incubator's own part planes settle it. From its record in a shipped
+`World.sfc`:
+
+```
+part[0] plane    0   body, and what CompoundObject::GetRenderPlane returns
+part[1] plane    1   the door, animated by its event 1/2 scripts
+part[2] plane 4000   the front cover
+part[3] plane    2   the dial
+```
+
+A carried object's plane is therefore `0 + offset`:
+
+  - `-1` puts it behind the body -- invisible. This is what the bad revision did.
+  - `+1` puts it in front of the body and far behind the front cover, which is
+    where an egg in an incubator belongs.
+
+`+1` is a real entry in the native table (two of its four values are `+1`),
+deterministic, and the only one of the two that leaves the object visible. The
+lesson recorded: picking a constant from the table's *index* semantics without
+checking what the carrier's planes actually are produced a worse bug than the
+one being fixed.
+
+Residual ambiguity worth knowing: at plane 1 a carried object ties the door
+part, so their relative order falls to registry order. Nothing in the table
+offers a value that separates them, and the front cover at 4000 is what
+actually occludes the slot, so this is left alone rather than invented.
+
 ## Not verified end to end
 
 The fix is evidenced by the disassembly, the table contents, and the world

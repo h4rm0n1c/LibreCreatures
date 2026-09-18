@@ -361,13 +361,27 @@ int WindowsSimpleObjectInteractionHost::carried_object_render_plane_offset(
     // parts[3] -- the incubator (classifier 3.4.1, part_count 4, parts[3] an
     // Entity at 1929,680) -- and an egg placed in it is the visible case.
     //
-    // So this returns the table's only defined entry, index 0, which is also
-    // the intended result: a carried object draws one plane behind its
-    // carrier, putting the egg behind the incubator doors.  Masking the
-    // pointer into the table instead (the previous behaviour) picked +1 for
-    // roughly half of all heap addresses and drew the egg in front of them.
+    // The incubator's own part planes decide what is correct here.  From its
+    // record in a shipped World.sfc:
+    //
+    //   part[0] plane    0   body, and what GetRenderPlane returns
+    //   part[1] plane    1   the door, animated by its event 1/2 scripts
+    //   part[2] plane 4000   the front cover
+    //   part[3] plane    2   the dial
+    //
+    // so a carried object's plane is 0 + offset.  The table's two values give
+    // -1, which puts it *behind the body* -- out of sight entirely, and the
+    // reason cheese dropped into the incubator vanished behind it -- or +1,
+    // which puts it in front of the body and far behind the front cover,
+    // which is where an egg belongs.
+    //
+    // +1 it is: a real entry in the native table, deterministic, and the only
+    // one of the two that leaves the carried object visible.  An earlier
+    // revision of this returned -1 on the grounds that index 0 is the table's
+    // only in-bounds entry; that reasoning ignored what the planes actually
+    // are and regressed every carried object into the carrier's body.
     static_cast<void>(reference);
-    return -1;
+    return 1;
 }
 
 int WindowsSimpleObjectInteractionHost::privilege_level() const {
@@ -618,7 +632,43 @@ bool WindowsCreaturePickupDropHost::pointer_pickup_is_privileged(
 
 int WindowsCreaturePickupDropHost::vehicle_attachment_render_plane(
     const creatures1::objects::Object& vehicle) const {
-    return const_cast<creatures1::objects::Object&>(vehicle).render_plane();
+    // Creature::HandlePickupEvent @0x004098e0, the vehicle branch:
+    //
+    //   MOV    EAX, [ECX + 0x54]   ; vehicle parts[0].entity
+    //   MOV    EDX, [EAX + 0xc]    ; its render_plane            -- the base
+    //   MOV    EAX, [ECX + 0x60]   ; vehicle parts[1].entity
+    //   MOV    ECX, 0x5
+    //   CMP    EDX, [EAX + 0xc]    ; against parts[1] render_plane
+    //   CMOVGE ECX, [ESP + 0x10]   ; -5 when base >= parts[1]
+    //   ADD    ECX, EDX
+    //   MOV    [EAX + 0xc], ECX    ; body->render_plane = base +/- 5
+    //
+    // +0x54 and +0x60 are parts[0].entity and parts[1].entity -- `parts` is
+    // CompoundPart[10] at +0x54, twelve bytes each -- and +0xc on an Entity is
+    // its render_plane.  Vehicle extends CompoundObject, so both are valid.
+    //
+    // The creature is placed five planes off the car's own plane, on whichever
+    // side keeps it between the car and its facing panel: behind when part 0
+    // already draws at or in front of part 1, in front otherwise.  This
+    // previously returned the vehicle's plane unchanged, which left a creature
+    // in a lift at exactly the car's plane, where a stable sort keyed only on
+    // plane falls back to entity-registry order -- so whether the norn drew
+    // inside or behind the lift was arbitrary.
+    auto& mutable_vehicle = const_cast<creatures1::objects::Object&>(vehicle);
+    const int base_plane = mutable_vehicle.render_plane();
+
+    const auto* compound =
+        dynamic_cast<const creatures1::objects::CompoundObject*>(&vehicle);
+    if (compound == nullptr) {
+        return base_plane;
+    }
+    const creatures1::objects::Entity* facing_part =
+        compound->part(1).entity.get();
+    if (facing_part == nullptr) {
+        return base_plane;
+    }
+    return base_plane +
+           (base_plane >= facing_part->render_plane() ? -5 : 5);
 }
 
 void WindowsCreaturePickupDropHost::select_creature(
