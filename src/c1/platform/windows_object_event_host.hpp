@@ -297,7 +297,7 @@ public:
     int pointer_mouse_world_y() const override;
     void present_or_queue_dirty_world_rect(
         const creatures1::world::WorldRect& dirty_rect) override;
-    int native_part3_entity_byte_render_plane_offset(
+    int carried_object_render_plane_offset(
         const creatures1::objects::CompoundObject& reference) const override;
 
     // SimpleObjectEditHost adds only this to the four bases already here.

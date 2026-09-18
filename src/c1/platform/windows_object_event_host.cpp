@@ -340,17 +340,34 @@ void WindowsSimpleObjectInteractionHost::present_or_queue_dirty_world_rect(
     document_.queue_renderer_dirty_world_rect(dirty_rect);
 }
 
-int WindowsSimpleObjectInteractionHost::
-    native_part3_entity_byte_render_plane_offset(
-        const creatures1::objects::CompoundObject& reference) const {
-    // The native indexes g_simple_object_render_plane_offsets with the low
-    // byte of parts[3].entity -- a pointer, not a field.  The table has four
-    // entries, so the index is masked to stay inside it rather than reading
-    // past the end the way an unmasked byte would.
-    static constexpr int kRenderPlaneOffsets[4] = {-1, 1, 1, -1};
-    const auto pointer_value = reinterpret_cast<std::uintptr_t>(
-        reference.part(3).entity.get());
-    return kRenderPlaneOffsets[pointer_value & 3u];
+int WindowsSimpleObjectInteractionHost::carried_object_render_plane_offset(
+    const creatures1::objects::CompoundObject& reference) const {
+    // UpdateEntityForExplicitRectBoundsAndRedraw @0x00428d30 computes a
+    // carried object's plane as the carrier's plane plus an offset taken from
+    // a four-entry table at 0x0045abb8, {-1, 1, 1, -1}:
+    //
+    //   MOVZX EAX, byte ptr [ECX + 0x78]          ; low byte of parts[3].entity
+    //   MOV   ESI, dword ptr [EAX*0x4 + 0x45abb8] ; table[that byte]
+    //
+    // +0x78 is `parts[3].entity`, a pointer, and the index is its low byte --
+    // so the native read is only in bounds when that pointer is null, and is
+    // otherwise an out-of-bounds load keyed on a heap address.  Past the four
+    // entries lies unrelated pose-string data, so the offsets it produces
+    // there are arbitrary.
+    //
+    // This is not reproducible: a port's heap addresses differ from the
+    // original's, and the original is not self-consistent between runs either.
+    // Exactly one object in a shipped world takes this path with a non-null
+    // parts[3] -- the incubator (classifier 3.4.1, part_count 4, parts[3] an
+    // Entity at 1929,680) -- and an egg placed in it is the visible case.
+    //
+    // So this returns the table's only defined entry, index 0, which is also
+    // the intended result: a carried object draws one plane behind its
+    // carrier, putting the egg behind the incubator doors.  Masking the
+    // pointer into the table instead (the previous behaviour) picked +1 for
+    // roughly half of all heap addresses and drew the egg in front of them.
+    static_cast<void>(reference);
+    return -1;
 }
 
 int WindowsSimpleObjectInteractionHost::privilege_level() const {

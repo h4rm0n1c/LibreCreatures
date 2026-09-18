@@ -52,7 +52,7 @@ public:
     // index into {-1,1,1,-1}. The field is independently proven to be an
     // EntityPtr, so this is intentionally a named compatibility boundary,
     // not a fabricated byte field or enum.
-    virtual int native_part3_entity_byte_render_plane_offset(
+    virtual int carried_object_render_plane_offset(
         const CompoundObject& reference) const = 0;
 };
 

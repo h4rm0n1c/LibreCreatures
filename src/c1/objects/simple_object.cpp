@@ -236,7 +236,7 @@ void SimpleObject::update_entity_for_explicit_rect_bounds_and_redraw(
     entity_->set_world_y(center_y);
     entity_->set_render_plane(
         reference->render_plane() +
-        host.native_part3_entity_byte_render_plane_offset(*reference));
+        host.carried_object_render_plane_offset(*reference));
 
     world::WorldRect new_bounds{};
     get_bounds(&new_bounds);
