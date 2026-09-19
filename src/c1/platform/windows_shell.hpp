@@ -1005,6 +1005,7 @@ public:
     void publish_periodic_score_to_embedded_control(const creatures1::application::DocumentScore& /*score*/) override;
 
     std::uint32_t current_time_ms() const override;
+    void construct_semantic_document();
 
     std::uint32_t autosave_interval_ms() const override;
 

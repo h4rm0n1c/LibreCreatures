@@ -443,14 +443,40 @@ private:
 } // namespace
 
 
-BOOL C1WindowsDocument::OnOpenDocument(LPCTSTR path) {
-    if (path == nullptr) {
-        return FALSE;
-    }
+// SFCDoc::CreateObject @ 004301f0 reads Mute and InformativeMenu (each with a
+// zero default written back when absent) as the document is constructed, so
+// both a new world and an opened one honour them.  The port only read
+// InformativeMenu, and only on the new-document path, so a world opened at
+// startup -- which is what the launcher does -- ignored both settings.
+// Document::create @ application/document.cpp is the full translation of that
+// constructor but has no caller yet: it also takes an OLE lock whose release
+// (Document::destroy) is likewise unwired, so only the settings half is used
+// here.
+void C1WindowsDocument::construct_semantic_document() {
     if (semantic_document_ == nullptr) {
         semantic_document_ =
             std::make_unique<creatures1::application::Document>();
     }
+    std::uint32_t value = 0;
+    if (read_view_setting("Mute", value, 0)) {
+        semantic_document_->mute_setting = value != 0;
+    } else {
+        write_view_setting("Mute", 0);
+        semantic_document_->mute_setting = false;
+    }
+    if (read_view_setting("InformativeMenu", value, 0)) {
+        semantic_document_->informative_menu_setting = value != 0;
+    } else {
+        write_view_setting("InformativeMenu", 0);
+        semantic_document_->informative_menu_setting = false;
+    }
+}
+
+BOOL C1WindowsDocument::OnOpenDocument(LPCTSTR path) {
+    if (path == nullptr) {
+        return FALSE;
+    }
+    construct_semantic_document();
     const CStringA native_path(path);
     if (!semantic_document_->open_document(
             *this, std::string_view(native_path.GetString(),
@@ -499,14 +525,10 @@ BOOL C1WindowsDocument::OnNewDocument() {
         return FALSE;
     }
 
-    semantic_document_ = std::make_unique<creatures1::application::Document>();
+    construct_semantic_document();
     if (!semantic_document_->on_new_document(*this)) {
         semantic_document_.reset();
         return FALSE;
-    }
-    std::uint32_t informative_menu = 0;
-    if (read_view_setting("InformativeMenu", informative_menu, 0)) {
-        semantic_document_->informative_menu_setting = informative_menu != 0;
     }
     rebuild_creature_selection_menu();
     C1MainFrame* frame = DYNAMIC_DOWNCAST(

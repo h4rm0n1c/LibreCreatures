@@ -452,8 +452,10 @@ std::uint32_t WindowsMacroHost::world_tick_count() const {
 }
 
 std::uint32_t WindowsMacroHost::language_version() const {
-    // The recovered build reports language version 1.
-    return 1;
+    // SFCDoc::CreateObject @ 004301f0 sets g_caos_language_version to
+    // atoi("5"), and `vrsn` reports that value.  Reporting 1 made every
+    // script that gates on the language version take the unsupported path.
+    return 5;
 }
 
 std::uint32_t WindowsMacroHost::sound_settings() const {
