@@ -283,15 +283,16 @@ void WorldRenderer::resize_back_buffer_for_viewport(void* viewport_window,
     if (previous_bitmap != nullptr) {
         host_.delete_object(previous_bitmap);
     }
+    // ResizeBackBufferForViewport @ 00412510 moves only the right and bottom
+    // edges; the stored viewport_width_/viewport_height_ keep the size the
+    // renderer was constructed with (MaxViewSize for the main view).
     viewport_right_ = viewport_left_ + viewport_width;
-    viewport_width_ = viewport_width;
-    viewport_height_ = viewport_height;
 
     // Keep the same two-stage clamp as the original: first move a viewport
     // that runs below the world back up to the bottom edge, then handle a
     // viewport that is taller than the world as the special [0, world_height]
     // case.
-    const int unclamped_bottom = viewport_top_ + viewport_height_;
+    const int unclamped_bottom = viewport_top_ + viewport_height;
     viewport_bottom_ = unclamped_bottom;
     if (unclamped_bottom > world::kWorldHeight) {
         viewport_bottom_ = world::kWorldHeight;
@@ -300,7 +301,7 @@ void WorldRenderer::resize_back_buffer_for_viewport(void* viewport_window,
     }
     if (viewport_top_ < 0) {
         viewport_top_ = 0;
-        viewport_bottom_ = std::min(viewport_height_, world::kWorldHeight);
+        viewport_bottom_ = std::min(viewport_height, world::kWorldHeight);
     }
 }
 
@@ -822,7 +823,7 @@ bool WorldRenderer::is_selected_creature_within_safe_area() const {
 
     int safe_top = viewport_top_;
     int safe_bottom = viewport_bottom_;
-    const int vertical_margin = viewport_height_ / 4;
+    const int vertical_margin = (viewport_bottom_ - viewport_top_) / 4;
     if (safe_bottom < world::kWorldHeight) {
         safe_bottom -= vertical_margin;
     }
@@ -942,13 +943,14 @@ void WorldRenderer::set_viewport_origin(int world_x, int world_y) {
         {viewport_left_, viewport_top_, viewport_right_, viewport_bottom_});
 }
 
-void WorldRenderer::set_viewport_origin_without_world_shift(int world_x,
-                                                             int world_y) {
-    const int height = viewport_bottom_ - viewport_top_;
-    viewport_left_ = wrap_world_x(world_x);
-    viewport_top_ = clamp_vertical_origin(std::max(world_y, 0), height);
-    viewport_right_ = viewport_left_ + viewport_width_;
-    viewport_bottom_ = viewport_top_ + height;
+// CEyeView::UpdateSelectedCreatureFollowViewport @ 004176e0 stores the four
+// viewport edges directly: no wrap, no vertical clamp, no world shift.
+void WorldRenderer::set_viewport_edges(int left, int top, int right,
+                                       int bottom) {
+    viewport_left_ = left;
+    viewport_top_ = top;
+    viewport_right_ = right;
+    viewport_bottom_ = bottom;
 }
 
 void* WorldRenderer::create_back_buffer_dib(int width, int height) {

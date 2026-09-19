@@ -60,6 +60,10 @@ struct WorldViewSettings {
     std::uint32_t application_privilege_level = 0;
     bool world_update_timer_is_running = false;
     bool smooth_scrolling_enabled = false;
+    // SFCView::SFCView @ 00436440: "MaxViewSize", an 8-byte (width, height)
+    // pair defaulting to 700 x 350, seeds the renderer's stored viewport size.
+    int max_view_width = 700;
+    int max_view_height = 0x15e;
 };
 
 // MFC, USER32, GDI, and the concrete WorldRenderer stay behind this host.

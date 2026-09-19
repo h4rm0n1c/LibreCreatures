@@ -217,7 +217,9 @@ public:
     // CEyeView writes its viewport directly after following the selected
     // creature. That secondary view must not shift the document's renderable
     // objects as the main view does when it scrolls.
-    void set_viewport_origin_without_world_shift(int world_x, int world_y);
+    void set_viewport_edges(int left, int top, int right, int bottom);
+    int viewport_width() const { return viewport_width_; }
+    int viewport_height() const { return viewport_height_; }
     void* create_back_buffer_dib(int width, int height);
     void update_dib_palette();
 

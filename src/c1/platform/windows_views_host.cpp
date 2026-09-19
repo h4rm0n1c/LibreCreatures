@@ -111,27 +111,53 @@ void C1WindowsView::reset_world_scrollbars_for_world_tick() {
 }
 
 void C1WindowsView::load_view_settings(creatures1::ui::WorldViewSettings& settings, creatures1::ui::SfcViewState& state) {
-    std::uint32_t value = 0;
+    // SFCView::SFCView @ 00436440 reads each value from the HKCU world key
+    // and writes the default back when it is missing (MaxViewSize through
+    // ReadOrInitializeRegistryDwordPair @ 0042f470, the others inline).
     settings.world_update_timer_is_running =
         document() != nullptr && document()->world_timer_is_armed();
-    if (document() != nullptr &&
-        document()->read_view_setting("SmoothScrolling", value, 0)) {
-        settings.smooth_scrolling_enabled = value != 0;
+    if (document() == nullptr) {
+        return;
     }
-    if (document() != nullptr &&
-        document()->read_view_setting("ShowCoordinates", value, 0)) {
-        state.show_coordinates = value != 0;
+    std::uint32_t max_view_size[2] = {700, 0x15e};
+    if (!document()->read_view_setting_pair("MaxViewSize", max_view_size)) {
+        max_view_size[0] = 700;
+        max_view_size[1] = 0x15e;
+        document()->write_view_setting_pair("MaxViewSize", max_view_size);
     }
-    if (document() != nullptr &&
-        document()->read_view_setting("ShowClassifiers", value, 0)) {
-        state.show_classifiers = value != 0;
+    settings.max_view_width = static_cast<int>(max_view_size[0]);
+    settings.max_view_height = static_cast<int>(max_view_size[1]);
+
+    std::uint32_t value = 0;
+    if (!document()->read_view_setting("SmoothScrolling", value, 0)) {
+        document()->write_view_setting("SmoothScrolling", 0);
     }
+    settings.smooth_scrolling_enabled = value != 0;
+    if (!document()->read_view_setting("ShowCoordinates", value, 0)) {
+        document()->write_view_setting("ShowCoordinates", 0);
+    }
+    state.show_coordinates = value != 0;
+    if (!document()->read_view_setting("ShowClassifiers", value, 0)) {
+        document()->write_view_setting("ShowClassifiers", 0);
+    }
+    state.show_classifiers = value != 0;
 }
 
 void C1WindowsView::persist_view_settings( const creatures1::ui::WorldViewSettings& settings, const creatures1::ui::SfcViewState& state) {
     if (document() == nullptr) {
         return;
     }
+    // ~SFCView @ 00436710 writes the renderer's stored viewport size back
+    // as MaxViewSize.  A resize never changes that size, so this returns the
+    // value that was read unless the renderer was never created.
+    int max_view_width = settings.max_view_width;
+    int max_view_height = settings.max_view_height;
+    document()->renderer_stored_viewport_size(max_view_width,
+                                              max_view_height);
+    const std::uint32_t max_view_size[2] = {
+        static_cast<std::uint32_t>(max_view_width),
+        static_cast<std::uint32_t>(max_view_height)};
+    document()->write_view_setting_pair("MaxViewSize", max_view_size);
     document()->write_view_setting("SmoothScrolling",
                                    settings.smooth_scrolling_enabled ? 1 : 0);
     document()->write_view_setting("ShowCoordinates",
@@ -151,9 +177,10 @@ void C1WindowsView::write_dword_setting(std::string_view name, std::uint32_t val
     }
 }
 
-void C1WindowsView::create_world_renderer(int, int, bool smooth_scrolling_enabled) {
+void C1WindowsView::create_world_renderer(int viewport_width, int viewport_height, bool smooth_scrolling_enabled) {
     if (document() != nullptr) {
-        document()->create_world_renderer_for_view(smooth_scrolling_enabled);
+        document()->create_world_renderer_for_view(
+            viewport_width, viewport_height, smooth_scrolling_enabled);
     }
 }
 
@@ -495,7 +522,33 @@ void C1WindowsView::generate_profiler_report() {
     snapshot.world_save_path = g_active_world_save_path == nullptr
                                    ? std::string()
                                    : *g_active_world_save_path;
-    snapshot.world_name = document->GetTitle().GetString();
+    // Native (00438566..0043868c): the launcher's HKCU
+    // "SOFTWARE\Gameware Development\Creatures 1\Current World" "Name"
+    // when present and non-empty, else the world save path after its last
+    // '\' (or '/'), else empty.
+    {
+        HKEY key = nullptr;
+        if (RegOpenKeyExA(HKEY_CURRENT_USER,
+                          "SOFTWARE\\Gameware Development\\Creatures 1\\"
+                          "Current World",
+                          0, KEY_READ, &key) == ERROR_SUCCESS) {
+            std::string name;
+            if (read_registry_string(key, "Name", name)) {
+                snapshot.world_name = name;
+            }
+            RegCloseKey(key);
+        }
+        if (snapshot.world_name.empty()) {
+            std::size_t separator = snapshot.world_save_path.rfind('\\');
+            if (separator == std::string::npos) {
+                separator = snapshot.world_save_path.rfind('/');
+            }
+            if (separator != std::string::npos) {
+                snapshot.world_name =
+                    snapshot.world_save_path.substr(separator + 1);
+            }
+        }
+    }
     snapshot.tick_count = document->world_tick_count();
     snapshot.creature_count =
         static_cast<std::uint32_t>(document->creature_count());
@@ -1144,8 +1197,8 @@ void C1EyeViewWindow::set_follow_position(int center_x, int center_y,
 void C1EyeViewWindow::publish_follow_viewport(
     const creatures1::world::ViewportBounds& bounds) {
     if (renderer_ != nullptr) {
-        renderer_->set_viewport_origin_without_world_shift(bounds.left,
-                                                            bounds.top);
+        renderer_->set_viewport_edges(bounds.left, bounds.top, bounds.right,
+                                      bounds.bottom);
     }
 }
 

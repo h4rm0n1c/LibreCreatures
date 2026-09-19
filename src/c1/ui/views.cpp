@@ -58,7 +58,8 @@ void initialize_view(SfcViewState& state, WorldViewSettings& settings,
         settings.half_width = kInfiniteWorldHalfWidth;
         settings.half_height = kInfiniteWorldHalfHeight;
     }
-    host.create_world_renderer(settings.half_width, settings.half_height,
+    host.create_world_renderer(settings.max_view_width,
+                               settings.max_view_height,
                                settings.smooth_scrolling_enabled);
 }
 

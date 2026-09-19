@@ -1268,7 +1268,10 @@ public:
 
     void bind_world_view(C1WindowsView* view);
 
-    void create_world_renderer_for_view(bool smooth_scrolling_enabled);
+    void create_world_renderer_for_view(int viewport_width,
+                                        int viewport_height,
+                                        bool smooth_scrolling_enabled);
+    void renderer_stored_viewport_size(int& width, int& height) const;
 
     void destroy_world_renderer();
 
@@ -1320,6 +1323,10 @@ public:
     bool read_view_setting(std::string_view name, std::uint32_t& value, std::uint32_t default_value) const;
 
     void write_view_setting(std::string_view name, std::uint32_t value);
+    bool read_view_setting_pair(std::string_view name,
+                                std::uint32_t (&values)[2]) const;
+    void write_view_setting_pair(std::string_view name,
+                                 const std::uint32_t (&values)[2]);
 
 
     void resize_renderer_for_view(CWnd& view, int client_width, int client_height);
@@ -1456,6 +1463,9 @@ private:
     std::unique_ptr<creatures1::display::WorldRenderer> renderer_;
     // Saved camera origin requested by Serialize before the renderer exists.
     std::optional<std::pair<int, int>> pending_renderer_origin_;
+    // MaxViewSize as read by the view; the renderer's stored viewport size.
+    int renderer_initial_viewport_width_ = 700;
+    int renderer_initial_viewport_height_ = 0x15e;
     CWnd* renderer_view_ = nullptr;
     std::unique_ptr<creatures1::application::Document> semantic_document_;
     creatures1::display::SpriteFileCache sprite_files_;
@@ -2137,7 +2147,7 @@ public:
 
     void write_dword_setting(std::string_view name, std::uint32_t value) override;
 
-    void create_world_renderer(int, int, bool smooth_scrolling_enabled) override;
+    void create_world_renderer(int viewport_width, int viewport_height, bool smooth_scrolling_enabled) override;
 
     void destroy_world_renderer() override;
 

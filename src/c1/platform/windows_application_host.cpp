@@ -152,13 +152,12 @@ bool C1StartupHost::load_resource_directories( bool secondary, SfcAppResourceDir
             if (!read_registry_string(registry_key,
                                       kResourceDirectoryValueNames[index],
                                       directories.paths[index])) {
-                // This is the exact native defaulting boundary: the
-                // original writes a blank REG_SZ when a path is absent,
-                // then continues with the blank in its SFCApp field.
-                // The native binary attempts the same default write for
-                // both keys.  The primary key is opened read-only from
-                // HKLM, so Windows quite correctly rejects that write;
-                // retain the attempt only for the writable HKCU key.
+                // SFCApp::InitInstance @ 0043e1d0 writes a blank REG_SZ
+                // when a path is absent and continues with the blank.  It
+                // does so for both keys, but OpenCreaturesRegistryKeys
+                // @ 0042f360 opens the HKLM key KEY_READ (0x20019), so the
+                // HKLM write always fails, even with administrator rights.
+                // Only the HKCU write can take effect.
                 if (secondary) {
                     write_empty_registry_string(
                         registry_key,
@@ -181,20 +180,17 @@ bool C1StartupHost::load_resource_directories( bool secondary, SfcAppResourceDir
         }
     }
 
-    // SFCApp changes the process current directory after loading each
-    // registry set.  The second pass is intentionally retained because
-    // the original object has primary and secondary directory fields.
-    if (!directories.paths[0].empty() &&
-        SetCurrentDirectoryA(directories.paths[0].c_str()) == FALSE) {
-        return false;
-    }
+    // SFCApp changes the process current directory to each set's Main
+    // Directory, blank or not; a failure shows 0xef32 and startup goes on.
+    // Native stores all eight paths either way, so a bad Main Directory is
+    // kept and still used (World.sfc, the uninstall string).
     if (!secondary) {
         primary_directories_ = directories;
     } else {
         secondary_directories_ = directories;
         g_active_secondary_directories = &secondary_directories_;
     }
-    return true;
+    return SetCurrentDirectoryA(directories.paths[0].c_str()) != FALSE;
 }
 
 void C1StartupHost::report_resource_directory_failure() {

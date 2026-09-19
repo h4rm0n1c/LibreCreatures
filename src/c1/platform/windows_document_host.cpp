@@ -3463,9 +3463,18 @@ void C1WindowsDocument::bind_renderer_view(CWnd& view) { renderer_view_ = &view;
 void C1WindowsDocument::bind_world_view(C1WindowsView* view) { world_view_ = view; }
 
 
-void C1WindowsDocument::create_world_renderer_for_view(bool smooth_scrolling_enabled) {
+void C1WindowsDocument::create_world_renderer_for_view(int viewport_width, int viewport_height, bool smooth_scrolling_enabled) {
+    renderer_initial_viewport_width_ = viewport_width;
+    renderer_initial_viewport_height_ = viewport_height;
     if (renderer_view_ != nullptr) {
         ensure_renderer(*renderer_view_, smooth_scrolling_enabled);
+    }
+}
+
+void C1WindowsDocument::renderer_stored_viewport_size(int& width, int& height) const {
+    if (renderer_ != nullptr) {
+        width = renderer_->viewport_width();
+        height = renderer_->viewport_height();
     }
 }
 
@@ -3705,6 +3714,37 @@ void C1WindowsDocument::write_view_setting(std::string_view name, std::uint32_t 
     if (open_c1_secondary_registry(key, KEY_SET_VALUE)) {
         const std::string value_name(name);
         write_registry_dword(key, value_name.c_str(), value);
+        RegCloseKey(key);
+    }
+}
+
+bool C1WindowsDocument::read_view_setting_pair(std::string_view name, std::uint32_t (&values)[2]) const {
+    HKEY key = nullptr;
+    if (!open_c1_secondary_registry(key, KEY_READ)) {
+        return false;
+    }
+    const std::string value_name(name);
+    std::uint32_t buffer[2] = {};
+    DWORD byte_count = sizeof(buffer);
+    const bool present =
+        RegQueryValueExA(key, value_name.c_str(), nullptr, nullptr,
+                         reinterpret_cast<LPBYTE>(buffer),
+                         &byte_count) == ERROR_SUCCESS;
+    RegCloseKey(key);
+    if (present) {
+        values[0] = buffer[0];
+        values[1] = buffer[1];
+    }
+    return present;
+}
+
+void C1WindowsDocument::write_view_setting_pair(std::string_view name, const std::uint32_t (&values)[2]) {
+    HKEY key = nullptr;
+    if (open_c1_secondary_registry(key, KEY_SET_VALUE)) {
+        const std::string value_name(name);
+        RegSetValueExA(key, value_name.c_str(), 0, REG_BINARY,
+                       reinterpret_cast<const BYTE*>(values),
+                       sizeof(values));
         RegCloseKey(key);
     }
 }
@@ -4120,8 +4160,8 @@ void C1WindowsDocument::ensure_renderer(CWnd& view, bool smooth_scrolling_enable
     renderer_view_ = &view;
     renderer_ = std::make_unique<creatures1::display::WorldRenderer>(
         *this, view.GetSafeHwnd(), view.GetScrollPos(SB_HORZ),
-        view.GetScrollPos(SB_VERT), (std::max)(1, client_rect.Width()),
-        (std::max)(1, client_rect.Height()), nullptr,
+        view.GetScrollPos(SB_VERT), renderer_initial_viewport_width_,
+        renderer_initial_viewport_height_, nullptr,
         smooth_scrolling_enabled, 0);
     renderer_->resize_back_buffer_for_viewport(
         view.GetSafeHwnd(), (std::max)(1, client_rect.Width()),
