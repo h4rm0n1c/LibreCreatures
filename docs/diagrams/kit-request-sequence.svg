@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="650" viewBox="0 0 1200 650" role="img" aria-labelledby="title desc">
+  <title id="title">CAOS kit request sequence</title>
+  <desc id="desc">A kit sends a COM or named-pipe request. The pipe worker posts it to the main document thread, which executes normal macro and world services before returning a response.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,3 L0,6 Z" fill="#304b63"/></marker>
+    <style>
+      .head { fill: #e9effa; stroke: #304b63; stroke-width: 2; rx: 12; }
+      .step { fill: #f5f7fb; stroke: #304b63; stroke-width: 2; rx: 12; }
+      .main { fill: #e8f2ee; }
+      .label { font: 600 17px sans-serif; fill: #17202a; text-anchor: middle; }
+      .small { font: 14px sans-serif; fill: #40505e; text-anchor: middle; }
+      .arrow { stroke: #304b63; stroke-width: 3; fill: none; marker-end: url(#arrow); }
+      .return { stroke: #7a4b2a; stroke-width: 3; stroke-dasharray: 8 7; fill: none; marker-end: url(#arrow); }
+      .lane { stroke: #bdc8d1; stroke-width: 2; }
+    </style>
+  </defs>
+  <rect width="1200" height="650" fill="#fff"/>
+  <text x="600" y="38" class="label">A kit request stays on the document's world thread</text>
+  <text x="600" y="61" class="small">Transport is asynchronous; world mutation follows the normal macro and tick rules.</text>
+
+  <rect x="80" y="100" width="180" height="55" class="head"/><text x="170" y="134" class="label">Kit process</text>
+  <rect x="350" y="100" width="180" height="55" class="head"/><text x="440" y="134" class="label">COM / pipe</text>
+  <rect x="620" y="100" width="180" height="55" class="head"/><text x="710" y="134" class="label">Pipe worker</text>
+  <rect x="890" y="100" width="220" height="55" class="head"/><text x="1000" y="134" class="label">Document main thread</text>
+  <line x1="170" y1="155" x2="170" y2="560" class="lane"/>
+  <line x1="440" y1="155" x2="440" y2="560" class="lane"/>
+  <line x1="710" y1="155" x2="710" y2="560" class="lane"/>
+  <line x1="1000" y1="155" x2="1000" y2="560" class="lane"/>
+
+  <rect x="70" y="205" width="200" height="60" class="step"/><text x="170" y="241" class="label">Send command</text>
+  <rect x="350" y="205" width="180" height="60" class="step"/><text x="440" y="241" class="label">Read request</text>
+  <rect x="620" y="205" width="180" height="60" class="step"/><text x="710" y="241" class="label">Post command</text>
+  <rect x="890" y="205" width="220" height="60" class="step main"/><text x="1000" y="241" class="label">Dispatch safely</text>
+
+  <rect x="890" y="325" width="220" height="75" class="step main"/><text x="1000" y="357" class="label">Execute macro</text><text x="1000" y="379" class="small">world, creature, sound services</text>
+  <rect x="890" y="450" width="220" height="60" class="step main"/><text x="1000" y="486" class="label">Build response</text>
+
+  <path d="M270 235 L350 235" class="arrow"/><path d="M530 235 L620 235" class="arrow"/><path d="M800 235 L890 235" class="arrow"/>
+  <path d="M1000 265 L1000 325" class="arrow"/><path d="M1000 400 L1000 450" class="arrow"/>
+  <path d="M890 480 C720 480 720 540 440 540 C300 540 300 360 170 360 L170 265" class="return"/>
+  <text x="575" y="588" class="small">The response crosses the same transport boundary after execution completes.</text>
+</svg>

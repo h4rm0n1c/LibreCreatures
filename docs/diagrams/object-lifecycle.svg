@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" viewBox="0 0 1200 600" role="img" aria-labelledby="title desc">
+  <title id="title">World object ownership and lifetime</title>
+  <desc id="desc">An object is adopted by the world runtime, registered in borrowed indexes, used by scripts and rendering, then removed from every index before owned storage is released.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,3 L0,6 Z" fill="#304b63"/></marker>
+    <style>
+      .box { stroke: #304b63; stroke-width: 2; rx: 14; }
+      .owner { fill: #e8f2ee; }
+      .view { fill: #e9effa; }
+      .end { fill: #fff1d8; }
+      .label { font: 600 18px sans-serif; fill: #17202a; text-anchor: middle; }
+      .small { font: 14px sans-serif; fill: #40505e; text-anchor: middle; }
+      .arrow { stroke: #304b63; stroke-width: 3; fill: none; marker-end: url(#arrow); }
+      .dashed { stroke-dasharray: 8 7; }
+    </style>
+  </defs>
+  <rect width="1200" height="600" fill="#fff"/>
+  <text x="600" y="38" class="label">Object lifetime and registry ownership</text>
+  <text x="600" y="61" class="small">Borrowed views are removed before owned storage is released.</text>
+
+  <rect x="70" y="190" width="170" height="90" class="box owner"/>
+  <text x="155" y="228" class="label">Create</text><text x="155" y="251" class="small">object or creature</text>
+  <rect x="300" y="190" width="190" height="90" class="box owner"/>
+  <text x="395" y="228" class="label">Adopt</text><text x="395" y="251" class="small">world takes ownership</text>
+  <rect x="550" y="100" width="190" height="90" class="box view"/>
+  <text x="645" y="138" class="label">Registries</text><text x="645" y="161" class="small">entity, object, creature</text>
+  <rect x="550" y="280" width="190" height="90" class="box view"/>
+  <text x="645" y="318" class="label">Runtime use</text><text x="645" y="341" class="small">scripts, attention, render</text>
+  <rect x="800" y="190" width="170" height="90" class="box end"/>
+  <text x="885" y="228" class="label">Destroy request</text><text x="885" y="251" class="small">script or world cleanup</text>
+  <rect x="1010" y="190" width="140" height="90" class="box end"/>
+  <text x="1080" y="228" class="label">Release</text><text x="1080" y="251" class="small">owned memory</text>
+  <rect x="800" y="390" width="170" height="90" class="box end"/>
+  <text x="885" y="428" class="label">Unregister</text><text x="885" y="451" class="small">all borrowed views</text>
+
+  <path d="M240 235 L300 235" class="arrow"/>
+  <path d="M490 220 C520 180 520 155 550 145" class="arrow"/>
+  <path d="M490 250 C520 290 520 315 550 325" class="arrow"/>
+  <path d="M740 145 C780 145 770 215 800 225" class="arrow"/>
+  <path d="M740 325 C790 325 770 250 800 245" class="arrow"/>
+  <path d="M970 235 L1010 235" class="arrow"/>
+  <path d="M885 280 L885 390" class="arrow"/>
+  <path d="M800 435 C700 520 430 520 395 280" class="arrow dashed"/>
+  <text x="610" y="548" class="small">Deletion is complete only after every registry and embedded identity is cleared.</text>
+</svg>

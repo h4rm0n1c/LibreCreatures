@@ -163,6 +163,16 @@ void Macro::reset_execution_state(const MacroExecutionHost& host) {
     capture_output_enabled = false;
 }
 
+// RemoveFromRunningSchedulerAndRelease @ 0041a210: unschedule, then delete
+// unless the Macro is capturing output and is not already marked for
+// destruction.  Inside the interpreter native reaches this only from the
+// script-overrun path; its other four finalization sites use
+// RemoveFromRunningSchedulerAndDestroy @ 0041a3e0, which deletes only when
+// destroy_when_finished is set.  A holder-owned Macro (kit automation, DDE)
+// has that flag clear, so it survives its script ending and the holder frees
+// it exactly once.  The port used release for every finalization, so a kit's
+// Macro deleted itself the moment its script ended and CSfcOLE::DestroyMacro
+// then freed it again -- heap corruption on the second free.
 void Macro::remove_from_running_scheduler_and_release() {
     const auto it = std::find(g_running_macros.begin(), g_running_macros.end(),
                               this);
@@ -4309,7 +4319,14 @@ MacroControlFlowResult Macro::execute_interpreter(
     while (!execution_terminated) {
         const CaosToken token = read_next_token();
         if (execution_terminated) {
-            break;
+            // ExecuteInterpreter @ 0041dc40 (0041dd25..0041dd4b): a cursor
+            // that has run past the script buffer sets execution_terminated
+            // and takes the ONE release path in the interpreter, returning
+            // without going through scheduler finalization.  Release deletes
+            // the Macro unless it is capturing output, so it must not be
+            // reached by an ordinary script ending.
+            remove_from_running_scheduler_and_release();
+            return MacroControlFlowResult::execution_terminated;
         }
 
         const std::size_t command_start =
@@ -4354,7 +4371,7 @@ MacroControlFlowResult Macro::execute_interpreter(
                 bindings.trace->scheduler_action(
                     *this, MacroInterpreterFinalization::return_to_caller);
             }
-            remove_from_running_scheduler_and_release();
+            remove_from_running_scheduler_and_destroy();
             return result;
         }
         if (result == MacroControlFlowResult::scheduler_cleanup_required) {
@@ -4365,7 +4382,7 @@ MacroControlFlowResult Macro::execute_interpreter(
                         ? MacroInterpreterFinalization::remove_from_scheduler_and_destroy
                         : MacroInterpreterFinalization::remove_from_scheduler_and_retain);
             }
-            remove_from_running_scheduler_and_release();
+            remove_from_running_scheduler_and_destroy();
             return result;
         }
 
@@ -4389,7 +4406,7 @@ MacroControlFlowResult Macro::execute_interpreter(
             if (bindings.trace != nullptr) {
                 bindings.trace->scheduler_action(*this, finalization);
             }
-            remove_from_running_scheduler_and_release();
+            remove_from_running_scheduler_and_destroy();
             return MacroControlFlowResult::scheduler_cleanup_required;
         case MacroInterpreterFinalization::remove_from_scheduler_and_destroy:
             if (bindings.trace != nullptr) {
@@ -4409,7 +4426,7 @@ MacroControlFlowResult Macro::execute_interpreter(
                                                 script_cursor_offset);
             bindings.trace->scheduler_action(*this, finalization);
         }
-        remove_from_running_scheduler_and_release();
+        remove_from_running_scheduler_and_destroy();
     } else if (finalization ==
                MacroInterpreterFinalization::remove_from_scheduler_and_destroy) {
         if (bindings.trace != nullptr) {

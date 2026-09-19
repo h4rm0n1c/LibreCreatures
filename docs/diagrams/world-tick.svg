@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">Creatures world tick timeline</title>
+  <desc id="desc">A timeline of the coordinated world update from timer to persistent tick count, with the major simulation phases shown in order.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,3 L0,6 Z" fill="#304b63"/></marker>
+    <style>
+      .box { stroke: #304b63; stroke-width: 2; rx: 12; }
+      .world { fill: #e8f2ee; }
+      .creature { fill: #e9effa; }
+      .output { fill: #fff1d8; }
+      .label { font: 600 18px sans-serif; fill: #17202a; text-anchor: middle; }
+      .small { font: 14px sans-serif; fill: #40505e; text-anchor: middle; }
+      .arrow { stroke: #304b63; stroke-width: 3; fill: none; marker-end: url(#arrow); }
+      .lane { stroke: #bdc8d1; stroke-width: 1; stroke-dasharray: 7 7; }
+    </style>
+  </defs>
+  <rect width="1200" height="720" fill="#fff"/>
+  <text x="600" y="38" class="label">One coordinated world tick</text>
+  <text x="600" y="61" class="small">Later phases see the state produced by earlier phases.</text>
+  <line x1="70" y1="112" x2="1130" y2="112" class="lane"/>
+  <line x1="70" y1="300" x2="1130" y2="300" class="lane"/>
+  <line x1="70" y1="488" x2="1130" y2="488" class="lane"/>
+  <text x="95" y="103" class="small">world</text>
+  <text x="95" y="291" class="small">creatures</text>
+  <text x="95" y="479" class="small">presentation</text>
+
+  <rect x="130" y="125" width="150" height="70" class="box world"/>
+  <text x="205" y="157" class="label">Timer</text><text x="205" y="179" class="small">fires</text>
+  <rect x="330" y="125" width="165" height="70" class="box world"/>
+  <text x="412" y="157" class="label">Objects</text><text x="412" y="179" class="small">tick and dispatch</text>
+  <rect x="545" y="125" width="165" height="70" class="box world"/>
+  <text x="627" y="157" class="label">CAOS</text><text x="627" y="179" class="small">scheduled macros</text>
+  <rect x="760" y="125" width="165" height="70" class="box world"/>
+  <text x="842" y="157" class="label">World phases</text><text x="842" y="179" class="small">16 phase dispatch</text>
+
+  <rect x="330" y="315" width="165" height="70" class="box creature"/>
+  <text x="412" y="347" class="label">Inputs</text><text x="412" y="369" class="small">drives and perception</text>
+  <rect x="545" y="315" width="165" height="70" class="box creature"/>
+  <text x="627" y="347" class="label">Cohort</text><text x="627" y="369" class="small">brain and action</text>
+  <rect x="760" y="315" width="165" height="70" class="box creature"/>
+  <text x="842" y="347" class="label">Dreaming</text><text x="842" y="369" class="small">sleeping creatures</text>
+
+  <rect x="545" y="503" width="165" height="70" class="box output"/>
+  <text x="627" y="535" class="label">Sound</text><text x="627" y="557" class="small">queue and ambient</text>
+  <rect x="760" y="503" width="165" height="70" class="box output"/>
+  <text x="842" y="535" class="label">Render</text><text x="842" y="557" class="small">flush dirty areas</text>
+  <rect x="960" y="503" width="165" height="70" class="box output"/>
+  <text x="1042" y="535" class="label">Commit</text><text x="1042" y="557" class="small">score, autosave, tick</text>
+
+  <path d="M280 160 L330 160" class="arrow"/><path d="M495 160 L545 160" class="arrow"/>
+  <path d="M627 195 L627 315" class="arrow"/><path d="M710 350 L760 350" class="arrow"/>
+  <path d="M842 195 L842 315" class="arrow"/><path d="M842 385 L842 503" class="arrow"/>
+  <path d="M710 538 L760 538" class="arrow"/><path d="M925 538 L960 538" class="arrow"/>
+</svg>

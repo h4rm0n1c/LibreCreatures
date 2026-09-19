@@ -391,9 +391,11 @@ int WindowsSimpleObjectInteractionHost::carried_object_render_plane_offset(
     // a pointer, so the native read is in bounds only when that pointer is
     // null.  Every carrier in a shipped world has three parts or fewer except
     // the incubator (3.4.1), whose parts are body 0, door 1, front cover 4000
-    // and dial 2, and whose GetRenderPlane returns the body's 0.  +1 leaves a
-    // carried object in front of the body and behind the cover, which is
-    // where an egg belongs; -1 would bury it in the body.
+    // and dial 2, and whose GetRenderPlane returns the body's 0.  A null
+    // parts[3] therefore selects the table's index-0 value (-1).  The
+    // incubator's non-null fourth part is the one defined visual case where
+    // +1 leaves a carried object in front of the body and behind the cover;
+    // -1 would bury it in the body.
     static constexpr int kRenderPlaneOffsets[4] = {-1, 1, 1, -1};
     if (const creatures1::creatures::Creature* creature =
             document_.creature_for_object(reference)) {
@@ -401,7 +403,17 @@ int WindowsSimpleObjectInteractionHost::carried_object_render_plane_offset(
             creature->skeleton().facing_direction);
         return kRenderPlaneOffsets[facing & 3u];
     }
-    return 1;
+    if (const auto* compound =
+            dynamic_cast<const creatures1::objects::CompoundObject*>(&reference)) {
+        // The only shipped non-null parts[3] is the incubator's dial.  The
+        // native pointer-byte read is not portable, so preserve the stable
+        // visible placement for that case and the defined null-pointer value
+        // for every other compound carrier.
+        return compound->part(3).entity != nullptr
+                   ? kRenderPlaneOffsets[1]
+                   : kRenderPlaneOffsets[0];
+    }
+    return kRenderPlaneOffsets[1];
 }
 
 int WindowsSimpleObjectInteractionHost::privilege_level() const {

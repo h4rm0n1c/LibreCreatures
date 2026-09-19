@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" role="img" aria-labelledby="title desc">
+  <title id="title">Logical map of the standard Creatures brain lobes</title>
+  <desc id="desc">Nine labeled lobe boxes arranged as a conceptual grid. Arrows show sensory and drive input flowing through perception to attention, verb, noun, decision, and concept.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,3 L0,6 Z" fill="#345"/>
+    </marker>
+    <style>
+      .box { fill: #f5f7fb; stroke: #345; stroke-width: 2; rx: 12; }
+      .input { fill: #e8f2ee; }
+      .decision { fill: #fff1d8; }
+      .label { font: 600 18px sans-serif; fill: #17202a; text-anchor: middle; }
+      .small { font: 14px sans-serif; fill: #40505e; text-anchor: middle; }
+      .arrow { stroke: #345; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect width="960" height="560" fill="#fff"/>
+  <text x="480" y="34" class="label">Standard lobe roles (logical map)</text>
+  <text x="480" y="55" class="small">Genome data chooses the actual grid sizes, offsets, and connections.</text>
+
+  <rect x="40" y="100" width="150" height="70" class="box input"/>
+  <text x="115" y="132" class="label">Stimulus</text><text x="115" y="153" class="small">source</text>
+  <rect x="40" y="220" width="150" height="70" class="box input"/>
+  <text x="115" y="252" class="label">General</text><text x="115" y="273" class="small">sensory</text>
+  <rect x="40" y="340" width="150" height="70" class="box input"/>
+  <text x="115" y="372" class="label">Drive</text><text x="115" y="393" class="small">internal needs</text>
+
+  <rect x="260" y="220" width="170" height="90" class="box"/>
+  <text x="345" y="260" class="label">Perception</text><text x="345" y="282" class="small">shared sensory field</text>
+  <rect x="500" y="100" width="160" height="70" class="box"/>
+  <text x="580" y="132" class="label">Attention</text><text x="580" y="153" class="small">focus and target</text>
+  <rect x="500" y="220" width="160" height="70" class="box"/>
+  <text x="580" y="252" class="label">Verb</text><text x="580" y="273" class="small">action kind</text>
+  <rect x="500" y="340" width="160" height="70" class="box"/>
+  <text x="580" y="372" class="label">Noun</text><text x="580" y="393" class="small">action target</text>
+
+  <rect x="735" y="180" width="170" height="90" class="box decision"/>
+  <text x="820" y="220" class="label">Decision</text><text x="820" y="242" class="small">competing choices</text>
+  <rect x="735" y="340" width="170" height="70" class="box"/>
+  <text x="820" y="372" class="label">Concept</text><text x="820" y="393" class="small">learned association</text>
+
+  <path d="M190 135 C220 135 230 245 260 250" class="arrow"/>
+  <path d="M190 255 L260 255" class="arrow"/>
+  <path d="M190 375 C220 375 230 285 260 280" class="arrow"/>
+  <path d="M430 250 C465 250 465 135 500 135" class="arrow"/>
+  <path d="M430 260 L500 255" class="arrow"/>
+  <path d="M430 280 C465 280 465 375 500 375" class="arrow"/>
+  <path d="M660 135 C700 135 700 210 735 210" class="arrow"/>
+  <path d="M660 255 L735 225" class="arrow"/>
+  <path d="M660 375 C700 375 700 245 735 240" class="arrow"/>
+  <path d="M820 270 L820 340" class="arrow"/>
+  <path d="M735 375 C700 375 700 255 735 230" class="arrow"/>
+</svg>

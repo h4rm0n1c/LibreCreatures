@@ -14,6 +14,11 @@ diffing/build-verification tooling, or any of the process used to recover this
 source. What's here is meant to compile into a working `Creatures.exe` and to be
 read as an implementation in its own right.
 
+The [game systems guide](docs/README.md) explains how the simulation, creatures,
+brains, chemistry, world objects, CAOS and kits, persistence, rendering, and
+sound fit together. It describes the recovered mechanisms for people who want
+to understand or extend the game without starting from the source tree.
+
 ## What "clean room" means here
 
 This was not a formal two-team clean-room process where one side never saw the

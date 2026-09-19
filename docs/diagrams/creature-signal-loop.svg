@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="650" viewBox="0 0 1100 650" role="img" aria-labelledby="title desc">
+  <title id="title">Creature signal loop</title>
+  <desc id="desc">World objects and chemistry feed perception and brain inputs. Action selection produces body actions, CAOS events, and chemical changes that feed back into the world.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,3 L0,6 Z" fill="#304b63"/></marker>
+    <style>
+      .box { fill: #f5f7fb; stroke: #304b63; stroke-width: 2; rx: 14; }
+      .input { fill: #e8f2ee; }
+      .brain { fill: #e9effa; }
+      .action { fill: #fff1d8; }
+      .label { font: 600 19px sans-serif; fill: #17202a; text-anchor: middle; }
+      .small { font: 14px sans-serif; fill: #40505e; text-anchor: middle; }
+      .arrow { stroke: #304b63; stroke-width: 3; fill: none; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect width="1100" height="650" fill="#fff"/>
+  <text x="550" y="38" class="label">A creature turns state into behaviour</text>
+  <text x="550" y="61" class="small">The genome supplies the wiring; the runtime advances the loop.</text>
+
+  <rect x="80" y="130" width="190" height="85" class="box input"/>
+  <text x="175" y="166" class="label">World</text><text x="175" y="188" class="small">objects and boundaries</text>
+  <rect x="80" y="350" width="190" height="85" class="box input"/>
+  <text x="175" y="386" class="label">Chemistry</text><text x="175" y="408" class="small">concentrations and drives</text>
+  <rect x="365" y="130" width="190" height="85" class="box"/>
+  <text x="460" y="166" class="label">Perception</text><text x="460" y="188" class="small">targets and stimuli</text>
+  <rect x="365" y="350" width="190" height="85" class="box brain"/>
+  <text x="460" y="386" class="label">Brain</text><text x="460" y="408" class="small">lobes and connections</text>
+  <rect x="650" y="240" width="190" height="85" class="box brain"/>
+  <text x="745" y="276" class="label">Action choice</text><text x="745" y="298" class="small">eligibility and target</text>
+  <rect x="900" y="130" width="150" height="85" class="box action"/>
+  <text x="975" y="166" class="label">Body</text><text x="975" y="188" class="small">move or pose</text>
+  <rect x="900" y="350" width="150" height="85" class="box action"/>
+  <text x="975" y="386" class="label">CAOS</text><text x="975" y="408" class="small">event or stimulus</text>
+
+  <path d="M270 172 L365 172" class="arrow"/>
+  <path d="M270 392 L365 392" class="arrow"/>
+  <path d="M460 215 L460 350" class="arrow"/>
+  <path d="M555 392 C610 392 610 300 650 285" class="arrow"/>
+  <path d="M555 172 C620 172 610 250 650 270" class="arrow"/>
+  <path d="M840 270 C875 250 875 190 900 175" class="arrow"/>
+  <path d="M840 300 C875 325 875 385 900 392" class="arrow"/>
+  <path d="M975 215 C975 505 175 505 175 435" class="arrow"/>
+  <path d="M900 392 C820 520 350 520 270 392" class="arrow"/>
+  <text x="540" y="600" class="small">Feedback changes the next tick's perception and chemical state.</text>
+</svg>
