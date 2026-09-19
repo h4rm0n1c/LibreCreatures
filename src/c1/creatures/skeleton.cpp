@@ -1233,6 +1233,13 @@ void Skeleton::translate_by(int delta_x, int delta_y) {
         }
     }
 
+    // TranslateBy moves the render pose anchor as well as the body and limb
+    // entities.  Vehicle::Tick uses this virtual for every carried creature;
+    // leaving the down-foot anchor behind makes the next layout update place
+    // the creature at its old Y relative to the vehicle.
+    down_foot_x = wrap_world_x_once(down_foot_x + delta_x);
+    down_foot_y += delta_y;
+
     limb_chain_end_x[0] = wrap_world_x_once(limb_chain_end_x[0] + delta_x);
     for (std::size_t index = 1; index < kLimbChainCount; ++index) {
         limb_chain_end_x[index] =
