@@ -8,8 +8,10 @@
 #include <limits>
 #include <optional>
 #include <cstdio>
+#include <algorithm>
 #include <cstdlib>
 #include <cstring>
+#include <vector>
 
 namespace creatures1::platform {
 
@@ -30,6 +32,141 @@ void log_world_save_failure(const char* path, const char* reason) {
 // on the spot.  Log both sides of it, plus the bounds state that produces the
 // floor, so an unreachable pose, a wrong floor and a stalled macro are
 // distinguishable from one run.  Enable with C1_TRACE_CREATURE=<moniker hex>.
+// Opt-in world-tick timing.  Enabled by C1_TRACE_TICK=1, or by a file named
+// "trace_tick" in the world folder (the lab launches with its environment
+// fixed, so a flag file is the switch it can reach).  For each tick it records
+// the time since the previous tick began, the tick's own duration, and how
+// much of that went on drawing -- the dirty-rectangle flush plus any present
+// a scroll triggers inside the tick.  Every 110 ticks (about ten seconds) it
+// appends one summary line to Creatures.tick.log.  Off, it costs one branch.
+class TickProfiler {
+public:
+    static TickProfiler& instance() {
+        static TickProfiler profiler;
+        return profiler;
+    }
+    bool enabled() const { return enabled_; }
+
+    void begin_tick() {
+        const double now = now_ms();
+        if (last_tick_start_ms_ > 0.0) {
+            intervals_ms_.push_back(now - last_tick_start_ms_);
+        }
+        last_tick_start_ms_ = now;
+        tick_start_ms_ = now;
+        tick_draw_ms_ = 0.0;
+        in_tick_ = true;
+    }
+    void end_tick() {
+        const double duration = now_ms() - tick_start_ms_;
+        in_tick_ = false;
+        ticks_ms_.push_back(duration);
+        draws_ms_.push_back(tick_draw_ms_);
+        if (ticks_ms_.size() >= kWindow) {
+            write_summary();
+        }
+    }
+    void begin_draw() {
+        if (draw_depth_++ == 0) {
+            draw_start_ms_ = now_ms();
+        }
+    }
+    void end_draw() {
+        if (--draw_depth_ == 0 && in_tick_) {
+            tick_draw_ms_ += now_ms() - draw_start_ms_;
+        }
+    }
+
+private:
+    static constexpr std::size_t kWindow = 110;
+
+    TickProfiler() {
+        const char* setting = std::getenv("C1_TRACE_TICK");
+        enabled_ = (setting != nullptr && std::strcmp(setting, "0") != 0 &&
+                    std::strcmp(setting, "off") != 0);
+        if (!enabled_) {
+            if (FILE* flag = std::fopen("trace_tick", "r")) {
+                enabled_ = true;
+                std::fclose(flag);
+            }
+        }
+        LARGE_INTEGER frequency{};
+        QueryPerformanceFrequency(&frequency);
+        ms_per_count_ = 1000.0 / static_cast<double>(frequency.QuadPart);
+    }
+    double now_ms() const {
+        LARGE_INTEGER counter{};
+        QueryPerformanceCounter(&counter);
+        return static_cast<double>(counter.QuadPart) * ms_per_count_;
+    }
+    static double percentile(std::vector<double> values, double fraction) {
+        if (values.empty()) {
+            return 0.0;
+        }
+        std::sort(values.begin(), values.end());
+        const std::size_t index = static_cast<std::size_t>(
+            fraction * static_cast<double>(values.size() - 1) + 0.5);
+        return values[index];
+    }
+    static double mean(const std::vector<double>& values) {
+        double total = 0.0;
+        for (double value : values) {
+            total += value;
+        }
+        return values.empty() ? 0.0 : total / static_cast<double>(values.size());
+    }
+    void write_summary() {
+        if (FILE* log = std::fopen("Creatures.tick.log", "a")) {
+            const double tick_mean = mean(ticks_ms_);
+            std::fprintf(log,
+                "ticks=%zu interval_ms mean=%.2f p5=%.2f p95=%.2f max=%.2f | "
+                "tick_ms mean=%.2f p50=%.2f p95=%.2f max=%.2f | "
+                "draw_ms mean=%.2f p95=%.2f max=%.2f | "
+                "sim_ms mean=%.2f | busy=%.1f%%\n",
+                ticks_ms_.size(), mean(intervals_ms_),
+                percentile(intervals_ms_, 0.05), percentile(intervals_ms_, 0.95),
+                percentile(intervals_ms_, 1.0),
+                tick_mean, percentile(ticks_ms_, 0.5),
+                percentile(ticks_ms_, 0.95), percentile(ticks_ms_, 1.0),
+                mean(draws_ms_), percentile(draws_ms_, 0.95),
+                percentile(draws_ms_, 1.0),
+                tick_mean - mean(draws_ms_),
+                100.0 * tick_mean / 90.0);
+            std::fclose(log);
+        }
+        intervals_ms_.clear();
+        ticks_ms_.clear();
+        draws_ms_.clear();
+    }
+
+    bool enabled_ = false;
+    bool in_tick_ = false;
+    int draw_depth_ = 0;
+    double ms_per_count_ = 0.0;
+    double last_tick_start_ms_ = 0.0;
+    double tick_start_ms_ = 0.0;
+    double tick_draw_ms_ = 0.0;
+    double draw_start_ms_ = 0.0;
+    std::vector<double> intervals_ms_;
+    std::vector<double> ticks_ms_;
+    std::vector<double> draws_ms_;
+};
+
+struct TickDrawScope {
+    TickDrawScope() {
+        if (TickProfiler::instance().enabled()) {
+            TickProfiler::instance().begin_draw();
+            active = true;
+        }
+    }
+    ~TickDrawScope() {
+        if (active) {
+            TickProfiler::instance().end_draw();
+        }
+    }
+    bool active = false;
+};
+
 bool creature_trace_disabled() {
     // Enabled by default.  Setting an environment variable is awkward on
     // Windows, and a diagnostic nobody can switch on is a diagnostic that
@@ -1649,7 +1786,14 @@ void C1WindowsDocument::update_world_tick() {
     if (semantic_document_ == nullptr) {
         return;
     }
+    TickProfiler& profiler = TickProfiler::instance();
+    if (!profiler.enabled()) {
+        semantic_document_->update_world(*this);
+        return;
+    }
+    profiler.begin_tick();
     semantic_document_->update_world(*this);
+    profiler.end_tick();
 }
 
 void C1WindowsDocument::recover_world_update_after_boundary_failure( const std::exception& error) {
@@ -2343,6 +2487,7 @@ void C1WindowsDocument::flush_deferred_dirty_rectangles() {
     // repaint the entire viewport and rendered the dirty-rectangle machinery
     // pointless.  Native presents only the rectangles the tick actually
     // queued.
+    const TickDrawScope draw_timing;
     if (renderer_ != nullptr) {
         renderer_->flush_deferred_dirty_rectangles();
     }
@@ -3738,6 +3883,7 @@ void C1WindowsDocument::present_dirty_world_rect(
 
 void C1WindowsDocument::present_current_view(
     void* owner_window, const creatures1::world::WorldRect& viewport_rect) {
+    const TickDrawScope draw_timing;
     // The eye view owns a second, separate WorldRenderer (windows_views_
     // host.cpp), but it too is constructed with this document as its
     // WorldRendererHost -- the same interface the main view's renderer
