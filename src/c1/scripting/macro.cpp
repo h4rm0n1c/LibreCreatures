@@ -717,6 +717,11 @@ std::uint32_t classifier_species(const objects::Object& object) {
 
 std::uint32_t Macro::parse_rvalue(MacroRuntimeHost& runtime,
                                   MacroCommandHost& diagnostics) {
+    // Rvalues can be nested several levels deep. Revalidate the object
+    // context here as well as at the scheduler boundary so a host that
+    // removes an object during an earlier nested operation cannot leave the
+    // next decode holding a stale pointer.
+    validate_object_context(runtime);
     const std::size_t readable_capacity = std::min<std::size_t>(
         script_capacity_bytes, script_buffer.size());
     if (script_cursor_offset >= readable_capacity) {
@@ -1091,6 +1096,7 @@ void Macro::assign_lvalue(MacroRuntimeHost& runtime,
                           MacroCommandHost& diagnostics,
                           CaosToken destination_token,
                           std::uint32_t value) {
+    validate_object_context(runtime);
     const std::uint32_t token_low = destination_token & 0x00ffffffu;
     const std::uint32_t token_index = destination_token >> 24;
     objects::Object* target = object_context.target_object;
@@ -1185,12 +1191,14 @@ void Macro::assign_lvalue(MacroRuntimeHost& runtime,
     report_syntax_error(diagnostics, "Lvalue");
 }
 
-void Macro::handle_script_execution_exception(MacroExceptionHost& host) {
+void Macro::handle_script_execution_exception(MacroExceptionHost& host,
+                                               MacroRuntimeHost& runtime) {
     censor_script_profanity();
     MacroExecutionExceptionDiagnostic diagnostic;
     diagnostic.offending_token = token_at_cursor(*this);
     diagnostic.script_excerpt = script_excerpt_at_cursor(*this);
-    if (object_context.script_owner != nullptr) {
+    if (object_context.script_owner != nullptr &&
+        runtime.is_live_object(object_context.script_owner)) {
         const std::uint32_t packed_classifier =
             object_context.script_owner->classifier_base();
         diagnostic.owning_classifier.event = static_cast<ScriptEvent>(
@@ -2354,7 +2362,30 @@ objects::Object* Macro::object_from_value(
     if (candidate == nullptr || runtime.is_live_object(candidate)) {
         return candidate;
     }
+    if (!object_reference_fault_reported) {
+        runtime.report_invalid_object_reference(value);
+        object_reference_fault_reported = true;
+    }
     return nullptr;
+}
+
+void Macro::validate_object_context(MacroRuntimeHost& runtime) {
+    const auto validate = [this, &runtime](objects::Object*& reference) {
+        if (reference == nullptr || runtime.is_live_object(reference)) {
+            return;
+        }
+        if (!object_reference_fault_reported) {
+            runtime.report_invalid_object_reference(object_pointer_value(reference));
+            object_reference_fault_reported = true;
+        }
+        reference = nullptr;
+    };
+
+    validate(object_context.script_owner);
+    validate(object_context.from_object);
+    validate(object_context.exec_object);
+    validate(object_context.target_object);
+    validate(object_context.it_object);
 }
 
 MacroControlFlowResult Macro::execute_approach_command(
@@ -3056,6 +3087,14 @@ MacroControlFlowResult Macro::execute_object_enumeration_command(
 
         for (std::size_t index = 0; index < registry_count; ++index) {
             objects::Object* candidate = runtime.non_scenery_object_at(index);
+            if (candidate == nullptr || !runtime.is_live_object(candidate)) {
+                if (!object_reference_fault_reported) {
+                    runtime.report_invalid_object_reference(
+                        object_pointer_value(candidate));
+                    object_reference_fault_reported = true;
+                }
+                continue;
+            }
             if (!is_matching_candidate(*candidate, classifier, mask)) {
                 continue;
             }
@@ -3095,6 +3134,14 @@ MacroControlFlowResult Macro::execute_object_enumeration_command(
     for (std::size_t index = static_cast<std::size_t>(*index_value) + 1;
          index < runtime.non_scenery_object_count(); ++index) {
         objects::Object* candidate = runtime.non_scenery_object_at(index);
+        if (candidate == nullptr || !runtime.is_live_object(candidate)) {
+            if (!object_reference_fault_reported) {
+                runtime.report_invalid_object_reference(
+                    object_pointer_value(candidate));
+                object_reference_fault_reported = true;
+            }
+            continue;
+        }
         if (!is_matching_candidate(*candidate, *classifier_value,
                                    *mask_value)) {
             continue;
@@ -4319,6 +4366,13 @@ MacroControlFlowResult Macro::execute_interpreter(
     // intentionally return through the common finalization join so the
     // scheduler, rather than a hidden callback, decides whether to re-enter.
     while (!execution_terminated) {
+        object_reference_fault_reported = false;
+        if (bindings.runtime != nullptr) {
+            // Deletion normally clears these slots synchronously, but archive
+            // restore and host-owned registries can invalidate one between
+            // scheduler ticks. Validate before any command handler runs.
+            validate_object_context(*bindings.runtime);
+        }
         const CaosToken token = read_next_token();
         if (execution_terminated) {
             // ExecuteInterpreter @ 0041dc40 (0041dd25..0041dd4b): a cursor
@@ -4350,7 +4404,8 @@ MacroControlFlowResult Macro::execute_interpreter(
             // Keep that boundary explicit; host adapters may translate their
             // platform exceptions, but the Macro still owns termination.
             if (bindings.exceptions != nullptr) {
-                handle_script_execution_exception(*bindings.exceptions);
+                handle_script_execution_exception(*bindings.exceptions,
+                                                  *bindings.runtime);
             }
             if (bindings.trace != nullptr) {
                 bindings.trace->execution_exception(*this);

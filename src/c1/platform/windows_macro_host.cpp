@@ -52,7 +52,7 @@ creatures1::objects::Object* WindowsMacroHost::resolve_it_object(
     // attending to; every other owner gets null.  Creature action scripts
     // address the attended object as `_it_` (`mesg writ _it_ ...`), so a null
     // IT silently dropped every push/pull/get/eat message.
-    if (script_owner == nullptr ||
+    if (script_owner == nullptr || !document_.is_live_object(script_owner) ||
         (script_owner->classifier_base() & 0xff000000U) != 0x04000000U) {
         return nullptr;
     }
@@ -302,20 +302,18 @@ creatures1::creatures::Creature* WindowsMacroHost::creature_of(
 
 bool WindowsMacroHost::is_live_object(
     const creatures1::objects::Object* object) const {
-    if (object == nullptr || document_.is_live_object(object)) {
-        return object != nullptr;
+    return object != nullptr && document_.is_live_object(object);
+}
+
+void WindowsMacroHost::report_invalid_object_reference(
+    std::uint32_t value) const {
+    C1DebugConsoleDialog* console = active_debug_console();
+    if (console != nullptr) {
+        creatures1::common::debug_log(
+            *console, kMacroDebugCategory,
+            "CAOS object reference rejected: 0x%08X\n",
+            static_cast<unsigned>(value));
     }
-    // Loud on purpose.  A rejection here is either a script handing the
-    // interpreter a bogus pointer -- which the original would have followed
-    // into a fault -- or this check disagreeing with the world's registries,
-    // which would be a defect in the check itself.  Either way it must be
-    // visible rather than silently changing what a script does.
-    if (FILE* log = std::fopen("Creatures.object.log", "a")) {
-        std::fprintf(log, "rejected object value %p\n",
-                     static_cast<const void*>(object));
-        std::fclose(log);
-    }
-    return false;
 }
 
 bool WindowsMacroHost::is_creature_object(
@@ -501,7 +499,8 @@ creatures1::objects::Object* WindowsMacroHost::topmost_pointer_object() const {
          ++index) {
         creatures1::objects::Object* candidate =
             document_.non_scenery_object_at(index);
-        if (candidate == nullptr || candidate == document_.pointer_tool()) {
+        if (candidate == nullptr || !document_.is_live_object(candidate) ||
+            candidate == document_.pointer_tool()) {
             continue;
         }
         creatures1::world::WorldRect bounds{};
@@ -538,7 +537,7 @@ std::uint32_t WindowsMacroHost::enabled_object_count_matching(
     for (std::size_t index = 0; index < non_scenery_object_count(); ++index) {
         const creatures1::objects::Object* object =
             document_.non_scenery_object_at(index);
-        if (object == nullptr) {
+        if (object == nullptr || !document_.is_live_object(object)) {
             continue;
         }
         const std::uint32_t classifier = object->classifier_base();
@@ -562,7 +561,7 @@ creatures1::objects::Object* WindowsMacroHost::random_non_scenery_object(
     for (std::size_t index = 0; index < non_scenery_object_count(); ++index) {
         creatures1::objects::Object* object =
             document_.non_scenery_object_at(index);
-        if (object == nullptr) {
+        if (object == nullptr || !document_.is_live_object(object)) {
             continue;
         }
         const std::uint32_t classifier = object->classifier_base();
@@ -2239,10 +2238,13 @@ void WindowsNewObjectHost::create_part(
     // ExecuteNewCommand @ 0041d130 reads Object::gallery_ptr, creates the
     // Entity at the origin, stores the requested offsets in CompoundPart,
     // and extends part_count. Movement applies the offsets later.
-    auto* target = dynamic_cast<creatures1::objects::CompoundObject*>(
-        macro.object_context.target_object);
-    if (target == nullptr ||
+    auto* raw_target = macro.object_context.target_object;
+    if (raw_target == nullptr || !document_.is_live_object(raw_target) ||
         request.part_index >= creatures1::objects::CompoundObject::kPartCapacity) {
+        return;
+    }
+    auto* target = dynamic_cast<creatures1::objects::CompoundObject*>(raw_target);
+    if (target == nullptr) {
         return;
     }
 
@@ -2313,9 +2315,9 @@ namespace {
 // not a Blackboard would have the native reading another class's storage as
 // word banks, which is not behaviour worth reproducing.
 creatures1::brain::Blackboard* blackboard_target(
-    const creatures1::scripting::Macro& macro) {
+    const creatures1::scripting::Macro& macro, C1WindowsDocument& document) {
     creatures1::objects::Object* target = macro.object_context.target_object;
-    if (target == nullptr ||
+    if (target == nullptr || !document.is_live_object(target) ||
         ((target->classifier_base() >> 24) & 0xffu) != 3u) {
         return nullptr;
     }
@@ -2326,18 +2328,20 @@ creatures1::brain::Blackboard* blackboard_target(
 
 bool WindowsMacroHost::has_blackboard_target(
     const creatures1::scripting::Macro& macro) const {
-    return blackboard_target(macro) != nullptr;
+    return blackboard_target(macro, document_) != nullptr;
 }
 
 std::uint32_t WindowsMacroHost::current_word_index(
     const creatures1::scripting::Macro& macro) const {
-    creatures1::brain::Blackboard* blackboard = blackboard_target(macro);
+    creatures1::brain::Blackboard* blackboard =
+        blackboard_target(macro, document_);
     return blackboard == nullptr ? 0u : blackboard->object_variable_0();
 }
 
 std::string WindowsMacroHost::current_word_text(
     const creatures1::scripting::Macro& macro) const {
-    creatures1::brain::Blackboard* blackboard = blackboard_target(macro);
+    creatures1::brain::Blackboard* blackboard =
+        blackboard_target(macro, document_);
     if (blackboard == nullptr) {
         return {};
     }
@@ -2356,7 +2360,8 @@ void WindowsMacroHost::announce_blackboard_word(
     creatures1::scripting::Macro& macro, bool spoken,
     std::uint32_t word_index, std::string_view word_text) {
     static_cast<void>(word_index);
-    creatures1::brain::Blackboard* blackboard = blackboard_target(macro);
+    creatures1::brain::Blackboard* blackboard =
+        blackboard_target(macro, document_);
     if (blackboard == nullptr) {
         return;
     }
@@ -2386,7 +2391,8 @@ void WindowsMacroHost::announce_blackboard_word(
 void WindowsMacroHost::write_blackboard_word(
     creatures1::scripting::Macro& macro, std::uint32_t word_index,
     std::uint32_t value, std::string_view word_text) {
-    creatures1::brain::Blackboard* blackboard = blackboard_target(macro);
+    creatures1::brain::Blackboard* blackboard =
+        blackboard_target(macro, document_);
     if (blackboard == nullptr ||
         word_index >= creatures1::brain::Blackboard::kWordCount) {
         return;
@@ -2403,7 +2409,8 @@ void WindowsMacroHost::write_blackboard_word(
 
 void WindowsMacroHost::set_blackboard_edit_mode(
     creatures1::scripting::Macro& macro, std::uint32_t enabled) {
-    creatures1::brain::Blackboard* blackboard = blackboard_target(macro);
+    creatures1::brain::Blackboard* blackboard =
+        blackboard_target(macro, document_);
     if (blackboard == nullptr) {
         return;
     }
@@ -2413,7 +2420,8 @@ void WindowsMacroHost::set_blackboard_edit_mode(
 
 void WindowsMacroHost::redraw_blackboard(creatures1::scripting::Macro& macro,
                                           std::uint32_t mode) {
-    creatures1::brain::Blackboard* blackboard = blackboard_target(macro);
+    creatures1::brain::Blackboard* blackboard =
+        blackboard_target(macro, document_);
     if (blackboard == nullptr) {
         return;
     }
@@ -2534,7 +2542,7 @@ void WindowsMacroHost::follow_macro_target(
     // `sys: camt` centres the viewport on the macro's target, but only when
     // that target's sound source lies inside the navigation world bounds.
     creatures1::objects::Object* target = macro.object_context.target_object;
-    if (target == nullptr) {
+    if (target == nullptr || !document_.is_live_object(target)) {
         // Native clears the renderer's followed creature and returns; the
         // port's renderer has no separate follow slot, so the manual mode set
         // by the caller is the whole effect.
@@ -2789,7 +2797,7 @@ namespace {
 creatures1::creatures::Creature* dde_creature_target(
     creatures1::scripting::Macro& macro, C1WindowsDocument& document) {
     creatures1::objects::Object* target = macro.object_context.target_object;
-    if (target == nullptr ||
+    if (target == nullptr || !document.is_live_object(target) ||
         ((target->classifier_base() >> 24) & 0xffu) != 4u) {
         return nullptr;
     }

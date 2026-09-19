@@ -354,6 +354,14 @@ public:
     // the script instead.
     virtual bool is_live_object(const objects::Object* object) const = 0;
 
+    // Invalid object values are recoverable CAOS faults. Application hosts
+    // report them through the normal game logger; small test/runtime adapters
+    // may keep the default no-op.
+    virtual void report_invalid_object_reference(
+        std::uint32_t value) const {
+        static_cast<void>(value);
+    }
+
     virtual bool is_creature_object(const objects::Object& object) const = 0;
     virtual bool is_simple_object(const objects::Object& object) const = 0;
     virtual bool is_compound_object(const objects::Object& object) const = 0;
@@ -1104,7 +1112,8 @@ public:
     MacroControlFlowResult execute_global_subroutine_command();
     void report_syntax_error(MacroCommandHost& host,
                              std::string_view expected_token_type);
-    void handle_script_execution_exception(MacroExceptionHost& host);
+    void handle_script_execution_exception(MacroExceptionHost& host,
+                                           MacroRuntimeHost& runtime);
     void execute_dde_command(MacroDdeHost& host, MacroRuntimeHost& runtime);
     void execute_blackboard_caos_command(MacroBlackboardHost& host,
                                          MacroRuntimeHost& runtime);
@@ -1207,6 +1216,7 @@ public:
     // not own.  Every command that takes an object rvalue goes through this.
     objects::Object* object_from_value(std::uint32_t value,
                                        const MacroRuntimeHost& runtime) const;
+    void validate_object_context(MacroRuntimeHost& runtime);
 
     MacroControlFlowResult execute_approach_command(MacroCommand command,
                                    MacroRuntimeHost& runtime);
@@ -1306,6 +1316,9 @@ public:
     std::uint32_t wait_ticks_remaining = 0;
     bool execution_terminated = false;
     std::string output_text;
+    // Keep repeated decodes of one malformed operand to one log entry. The
+    // outer interpreter resets this before each command dispatch.
+    mutable bool object_reference_fault_reported = false;
 };
 
 extern std::vector<Macro*> g_running_macros;

@@ -358,6 +358,7 @@ public:
     // silent no-op.
     bool is_live_object(
         const creatures1::objects::Object* object) const override;
+    void report_invalid_object_reference(std::uint32_t value) const override;
     bool is_creature_object(const creatures1::objects::Object& object) const override;
     bool is_simple_object(const creatures1::objects::Object& object) const override;
     bool is_compound_object(const creatures1::objects::Object& object) const override;
