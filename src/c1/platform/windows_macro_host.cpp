@@ -1020,8 +1020,8 @@ void WindowsMacroHost::notify_creature_dependents_on_removal(
 
 void WindowsMacroHost::add_object_to_event_bar(
     creatures1::objects::Object* object) {
-    // CAOS `evnt`: the event bar owns duplicate suppression and eviction, and
-    // the recovered add accepts a null pointer.
+    // CAOS `evnt`: the EventBar owns duplicate suppression, eviction, and the
+    // null-reference invariant before it refreshes the native panes.
     document_.add_to_event_bar(object);
 }
 

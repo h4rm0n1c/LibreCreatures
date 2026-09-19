@@ -704,8 +704,8 @@ void C1MainFrame::refresh_event_bar_status(C1WindowsDocument& document) {
 
 void C1MainFrame::add_event_bar_object(
     C1WindowsDocument& document, creatures1::objects::Object* object) {
-    // The native add routine accepts the raw pointer, including null, and
-    // owns duplicate suppression, capacity eviction and pane refresh.
+    // The EventBar owns duplicate suppression, capacity eviction, pane refresh,
+    // and rejection of null references before touching the native panes.
     C1EventBarObjectAdapter objects(event_bar_, document);
     event_bar_.add_object(object, objects);
 }

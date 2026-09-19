@@ -2250,11 +2250,13 @@ bool Macro::execute_event_command(MacroCommand command,
         return false;
     }
 
-    // Native `evnt` consumes one Object rvalue and passes the raw pointer to
-    // AddObjectToEventBarDisplayList.  That routine deliberately accepts the
-    // null result as a list entry, so do not add the null guard used by `rmev`.
+    // Native `evnt` passes the raw Object pointer to the EventBar.  A null
+    // rvalue is not displayable; the port treats it as a no-op so the EventBar
+    // cannot retain an entry that its refresh path cannot dereference.
     auto* object = object_from_value(parse_rvalue(runtime, diagnostics), runtime);
-    runtime.add_object_to_event_bar(object);
+    if (object != nullptr) {
+        runtime.add_object_to_event_bar(object);
+    }
     return true;
 }
 

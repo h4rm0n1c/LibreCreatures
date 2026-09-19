@@ -108,17 +108,23 @@ void EventBar::serialize(EventBarArchiveApi& archive,
     if (archive.is_loading()) {
         const std::int32_t archived_count =
             archive.read_displayed_object_count();
-        displayed_count_ = static_cast<std::size_t>(std::max(archived_count, 0));
-        const std::size_t stored_count = std::min(
-            displayed_count_, kMaximumDisplayedObjects);
+        const std::size_t archived_size =
+            static_cast<std::size_t>(std::max(archived_count, 0));
+        const std::size_t stored_count =
+            std::min(archived_size, kMaximumDisplayedObjects);
+        displayed_objects_.fill(nullptr);
+        displayed_count_ = 0;
         for (std::size_t index = 0; index < stored_count; ++index) {
-            displayed_objects_[index] = archive.read_object();
+            objects::Object* object = archive.read_object();
+            if (object != nullptr) {
+                displayed_objects_[displayed_count_] = object;
+                ++displayed_count_;
+            }
         }
         for (std::size_t index = stored_count;
-             index < displayed_count_; ++index) {
+             index < archived_size; ++index) {
             static_cast<void>(archive.read_object());
         }
-        displayed_count_ = stored_count;
         legacy_words.first = archive.read_legacy_state_word();
         legacy_words.second = archive.read_legacy_state_word();
         return;
@@ -135,6 +141,15 @@ void EventBar::serialize(EventBarArchiveApi& archive,
 
 void EventBar::add_object(objects::Object* object,
                           EventBarObjectPolicyApi& policy) {
+    // A null CAOS object reference cannot be displayed.  The recovered
+    // routine stores it and then refreshes immediately, where the native
+    // implementation dereferences it unconditionally.  Keep the list's
+    // invariant here so malformed or transient references cannot take down
+    // the UI.
+    if (object == nullptr) {
+        return;
+    }
+
     for (std::size_t index = 0; index < displayed_count_; ++index) {
         if (displayed_objects_[index] == object) {
             policy.refresh_display_panes();
@@ -165,7 +180,7 @@ void EventBar::remove_object(objects::Object* object,
         return;
     }
 
-    if (record_auxiliary_state && policy.is_creature(*object) &&
+    if (object != nullptr && record_auxiliary_state && policy.is_creature(*object) &&
         policy.creature_is_dead(*object)) {
         if (policy.funeral_state_word_count() < 16) {
             policy.append_funeral_state_word(
@@ -190,12 +205,15 @@ void EventBar::refresh_object_display_panes(
     std::uint32_t pane_index = 10;
     for (std::size_t object_index = 0; object_index < displayed_count_;
          ++object_index, --pane_index) {
-        const objects::Object& object = *displayed_objects_[object_index];
+        const objects::Object* object = displayed_objects_[object_index];
+        if (object == nullptr) {
+            continue;
+        }
         const std::uint32_t resource_id =
-            policy.is_creature(object)
-                ? (policy.creature_is_dead(object) ? 0xef1b : 0xef1c)
+            policy.is_creature(*object)
+                ? (policy.creature_is_dead(*object) ? 0xef1b : 0xef1c)
                 : 0xef1d;
-        const std::string text = status.object_pane_text(object, resource_id);
+        const std::string text = status.object_pane_text(*object, resource_id);
         status.set_pane_text(pane_index, text);
         status.set_pane_width(pane_index, status.measure_text(text).width);
     }
@@ -284,12 +302,15 @@ void EventBar::on_left_button_down(
             continue;
         }
 
-        objects::Object& object = *displayed_objects_[object_index];
+        objects::Object* object = displayed_objects_[object_index];
+        if (object == nullptr) {
+            continue;
+        }
         interaction.request_viewport_origin(
-            object.sound_source_x() - interaction.viewport_width() / 2,
-            object.sound_source_y() - interaction.viewport_height() / 2);
+            object->sound_source_x() - interaction.viewport_width() / 2,
+            object->sound_source_y() - interaction.viewport_height() / 2);
 
-        if (!interaction.is_creature(object)) {
+        if (!interaction.is_creature(*object)) {
             if (interaction.viewport_navigation_is_disabled()) {
                 return;
             }
@@ -297,20 +318,20 @@ void EventBar::on_left_button_down(
             return;
         }
 
-        interaction.select_creature(object);
-        if (interaction.creature_is_dead(object)) {
-            interaction.notify_embedded_kit_of_death(object);
+        interaction.select_creature(*object);
+        if (interaction.creature_is_dead(*object)) {
+            interaction.notify_embedded_kit_of_death(*object);
             interaction.flush_funeral_kit_document_state();
-            remove_object(&object, false, policy);
+            remove_object(object, false, policy);
             return;
         }
 
-        const std::string creature_name = interaction.object_display_name(object);
+        const std::string creature_name = interaction.object_display_name(*object);
         if (creature_name == interaction.unnamed_creature_label() &&
             !interaction.embedded_kit_is_connected(2)) {
             interaction.execute_embedded_kit_tool(2);
         }
-        remove_object(&object, false, policy);
+        remove_object(object, false, policy);
         return;
     }
 }
