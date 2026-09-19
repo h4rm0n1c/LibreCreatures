@@ -47,6 +47,10 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 add_compile_options(/EHsc /GS /D_AFXDLL=1)
 add_compile_definitions($<$<CONFIG:Debug>:_DEBUG> $<$<NOT:$<CONFIG:Debug>>:NDEBUG>)
 
+# The reconstructed resource script contains the original RT_MANIFEST. Tell
+# CMake not to generate and embed a second manifest for the WIN32 target.
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /MANIFEST:NO")
+
 set(SOURCE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/src/c1)
 set(INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
