@@ -23,8 +23,9 @@ void initialise_community_edition_version_dialog(
     version_text.append(kVersionMajor);
     version_text.push_back('.');
     version_text.append(kVersionMinor);
-    version_text.append(" (Release)                    Community Release ");
+    version_text.append(" (Release)\r\nCommunity Release ");
     version_text.append(kCommunityEditionVersion);
+    version_text.append("\r\nLibreCreatures Refactor Build");
     platform.set_version_text(version_text);
     platform.update_dialog_data();
 }
