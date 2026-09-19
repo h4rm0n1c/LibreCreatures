@@ -9,7 +9,7 @@ project(LibreCreatures CXX RC)
 
 # --- This is an MSVC/MFC/Win32 project, full stop -----------------------
 #
-# The source is a clean-room reimplementation of Creatures 1, a 1996 32-bit
+# The source is an independent reimplementation of Creatures 1, a 1996 32-bit
 # Windows MFC application. Its object layouts, calling conventions, and COM/
 # DirectSound plumbing are only meaningful on that target. There is no portable
 # or cross-compiler build of this project, and there will not be one: MFC and
@@ -102,3 +102,14 @@ set_target_properties(Creatures PROPERTIES
 # Group sources by their real subdirectory in generated IDEs (Visual Studio,
 # CLion) instead of one flat list -- purely cosmetic, no effect on the build.
 source_group(TREE ${SOURCE_ROOT} FILES ${C1_SOURCES} ${C1_RESOURCE_SCRIPT})
+
+# Keep packaging predictable. The executable and public project material are
+# installed; original game data is intentionally never staged.
+install(TARGETS Creatures RUNTIME DESTINATION .)
+install(FILES
+    README.md
+    LICENSE
+    SOURCE-CODE.txt
+    DESTINATION .
+)
+install(DIRECTORY docs DESTINATION .)

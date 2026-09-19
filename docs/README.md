@@ -27,6 +27,9 @@ same path.
 8. [Rendering and sound](rendering-and-sound.md) explains the visible and
    audible sides of the simulation.
 
+For build prerequisites, packaging, and supplying game data, see
+[Building and packaging](building.md).
+
 ## A few words with precise meanings
 
 | Term | Meaning in this guide |
@@ -50,8 +53,8 @@ That distinction matters when reading the guide. The nine standard lobe roles
 are stable vocabulary. Their exact grid sizes, connection counts, and chemical
 networks belong to a genome and life stage.
 
-The clean-room implementation keeps Windows, MFC, COM, and DirectSound at the
-platform edge. The simulation concepts described here live in the portable
+The implementation keeps Windows, MFC, COM, and DirectSound at the platform
+edge. The simulation concepts described here live in the portable
 parts of [`src/c1`](../src/c1). The original game also depends on external
 resource files such as galleries, sounds, and genome data; those resources are
 described where they affect a system rather than copied into this repository.

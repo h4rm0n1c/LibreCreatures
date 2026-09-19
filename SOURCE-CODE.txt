@@ -1,0 +1,7 @@
+LibreCreatures corresponding source
+
+The source for this project is available at:
+  https://github.com/h4rm0n1c/LibreCreatures
+
+For a release archive, use the tag or commit named by the release. The
+original Creatures game data is not part of this package or repository.
