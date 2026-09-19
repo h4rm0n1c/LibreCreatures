@@ -386,9 +386,10 @@ void Skeleton::load_genus_identity(Genome& genome) {
         father_moniker = payload.father_moniker;
     }
 
-    // Native LoadGenome produces family 4, genus 1..4, and species 0/1 for
-    // male/female. Object stores those four bytes independently, so this is
-    // the source-level equivalent of its packed classifier expression.
+    // Native LoadGenome @ 0043c800: classifier_base =
+    // ((genus + 1) << 16) | ((sex | 0x40000) << 8) -- family 4, genus 1..4,
+    // species = the raw sex, 1 male / 2 female.  Object stores those four
+    // bytes independently, so this is the equivalent of that expression.
     set_classifier_components(
         0, static_cast<std::uint8_t>(genome.sex()),
         static_cast<std::uint8_t>(creature_genus_selector + 1U), 4);

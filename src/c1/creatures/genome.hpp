@@ -13,7 +13,12 @@ using GenomeFilenameId = std::uint32_t;
 using GenomePayloadByteCount = std::uint32_t;
 using GenomeGeneCount = std::uint32_t;
 
-enum class GenomeSex : std::uint32_t { male = 0, female = 1 };
+// Native C1CreatureSex: MALE = 1, FEMALE = 2 (CGenome::FindNextMatchingGene
+// @ 00419040 compares genome_gender with 1).  The value is stored raw in the
+// classifier species byte (Skeleton::LoadGenome @ 0043c800), in CGenome's
+// archive record (CGenome::Serialize @ 004185c0) and in Creature's gender
+// byte, so the enum carries the native numbers.
+enum class GenomeSex : std::uint32_t { male = 1, female = 2 };
 enum class GenomeLifeStage : std::uint8_t {
     stage_zero = 0,
     stage_one = 1,

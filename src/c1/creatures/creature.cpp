@@ -3708,13 +3708,13 @@ void Creature::serialize(
 
         // C1 stores gender as MALE=1 / FEMALE=2 -- FormatStatusForExternalQuery
         // @ 0040e520 tests `byte [this+0x2cc1] == 1` for male and prints the
-        // raw value as the third status field.  GenomeSex is this port's
-        // zero-based application enum (see body.cpp), so the encodings differ
-        // by one and the boundary has to convert.  Casting the archived byte
-        // straight in made every male read back as female.
+        // raw value as the third status field.  GenomeSex uses the same
+        // values; anything other than FEMALE reads as male.
         const std::uint8_t archived_gender = archive.read_byte();
-        genome_sex_ = archived_gender <= 1u ? GenomeSex::male
-                                            : GenomeSex::female;
+        genome_sex_ = archived_gender == static_cast<std::uint8_t>(
+                                             GenomeSex::female)
+                          ? GenomeSex::female
+                          : GenomeSex::male;
         genome_life_stage_ = archive.read_byte();
         biochemistry_tick_ = archive.read_uint32();
         gamete_genome_source_filename_ = archive.read_uint32();
@@ -3794,10 +3794,7 @@ void Creature::serialize(
 
     archive.write_object_reference(brain_.get(), "CBrain");
     archive.write_object_reference(biochemistry_.get(), "CBiochemistry");
-    // Back to C1's MALE=1 / FEMALE=2; writing the zero-based value would have
-    // handed the real game a gender it reads as one lower.
-    archive.write_byte(
-        static_cast<std::uint8_t>(static_cast<std::uint8_t>(genome_sex_) + 1u));
+    archive.write_byte(static_cast<std::uint8_t>(genome_sex_));
     archive.write_byte(genome_life_stage_);
     archive.write_uint32(biochemistry_tick_);
     archive.write_uint32(gamete_genome_source_filename_);

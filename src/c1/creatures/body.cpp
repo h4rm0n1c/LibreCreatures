@@ -237,9 +237,9 @@ BodyPartResourcePath resolve_existing_body_part_filename_with_fallback(
         return {};
     }
 
-    // C1 encodes male/female as one/two in the body filename family, while
-    // GenomeSex is the clean zero-based application enum.
-    const int sex_code = static_cast<int>(sex) + 1;
+    // C1 encodes male/female as one/two in the body filename family, the
+    // same values GenomeSex carries.
+    const int sex_code = static_cast<int>(sex);
     const int requested_life_stage =
         static_cast<int>(static_cast<std::uint8_t>(life_stage));
     const int requested_variant = static_cast<int>(variant);
