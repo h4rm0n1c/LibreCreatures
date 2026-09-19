@@ -83,7 +83,12 @@ bool MainToolbar::create(std::uintptr_t parent_window) {
     platform_.populate_embedded_kit_menu_and_toolbar();
     remove_trailing_empty_buttons(platform_);
 
-    const ToolbarRect selector_rect = platform_.item_rect(0);
+    // MyToolBar::Create @ 00421c00: button 0's item rect supplies left/right
+    // (it is the 0x96-wide placeholder), then top = 0 and bottom = 100 give
+    // the dropped-down list its height.
+    ToolbarRect selector_rect = platform_.item_rect(0);
+    selector_rect.top = 0;
+    selector_rect.bottom = 100;
     if (!platform_.create_creature_selector(selector_rect,
                                              parent_window,
                                              kSelectorControlId)) {

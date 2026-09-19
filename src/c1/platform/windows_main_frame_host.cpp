@@ -381,7 +381,6 @@ BEGIN_MESSAGE_MAP(C1MainFrame, CFrameWnd)
     ON_COMMAND_RANGE(0x8086, 0x8099, OnEmbeddedKitTool)
     ON_UPDATE_COMMAND_UI_RANGE(0x8086, 0x8099, OnUpdateEmbeddedKitTool)
     ON_COMMAND_RANGE(40000, 40099, OnSelectCreature)
-    ON_CONTROL(CBN_SELCHANGE, 0xe803, OnCreatureSelectorChanged)
     ON_COMMAND_RANGE(0x8053, 0x805e, OnFavouritePlace)
     ON_COMMAND(32783, OnCameraTrackSelectedCreature)
     ON_UPDATE_COMMAND_UI(32783, OnUpdateCameraTrackSelectedCreature)
@@ -577,11 +576,20 @@ bool C1MainFrame::create_main_toolbar() {
         }
     }
 
+    // MyToolBar::Create @ 00421c00 (00421d66..00421dab): take button 0's item
+    // rect -- button 0 is the 0x96-wide placeholder reserved for this control
+    // -- then set top = 0 and bottom = 100 so the dropped-down list has room,
+    // and create with style 0x10200002.  That is CBS_DROPDOWN (an editable
+    // combo: this is where the player types what the hand says) plus
+    // WS_VSCROLL and WS_VISIBLE; MFC's CWnd::Create adds WS_CHILD.  The port
+    // had CBS_DROPDOWNLIST, which has no edit field at all, and forced the
+    // width to 100 with the item's height, leaving the list no room to drop.
     CRect selector_rect;
     main_toolbar_.GetItemRect(0, &selector_rect);
-    selector_rect.right = selector_rect.left + 100;
+    selector_rect.top = 0;
+    selector_rect.bottom = 100;
     if (!creature_selector_.Create(
-            WS_CHILD | WS_VISIBLE | WS_BORDER | CBS_DROPDOWNLIST,
+            WS_VISIBLE | WS_VSCROLL | CBS_DROPDOWN,
             selector_rect, &main_toolbar_, 0xe803)) {
         return false;
     }
@@ -881,48 +889,12 @@ void C1MainFrame::OnInitMenuPopup(CMenu* popup_menu, UINT menu_index,
     }
 }
 
-void C1MainFrame::rebuild_creature_selector(
-    const creatures1::creatures::CreatureSelectionState& selection,
-    const creatures1::creatures::CreatureSelectionEntry* selected) {
-    if (creature_selector_.GetSafeHwnd() == nullptr) {
-        return;
-    }
-
-    creature_selector_.SetRedraw(FALSE);
-    creature_selector_.ResetContent();
-    int selected_index = CB_ERR;
-    for (std::size_t index = 0; index < selection.size(); ++index) {
-        const creatures1::creatures::CreatureSelectionEntry* creature =
-            selection.at(index);
-        if (creature == nullptr) {
-            continue;
-        }
-        const int combo_index = creature_selector_.AddString(
-            CStringA(creature->display_name().c_str()));
-        if (creature == selected) {
-            selected_index = combo_index;
-        }
-    }
-    creature_selector_.SetCurSel(selected_index);
-    creature_selector_.SetRedraw(TRUE);
-    creature_selector_.Invalidate(FALSE);
-}
-
 void C1MainFrame::OnSelectCreature(UINT command_id) {
     C1WindowsDocument* document =
         DYNAMIC_DOWNCAST(C1WindowsDocument, GetActiveDocument());
     if (document != nullptr) {
         document->select_creature_by_menu_command(
             static_cast<int>(command_id));
-    }
-}
-
-void C1MainFrame::OnCreatureSelectorChanged() {
-    C1WindowsDocument* document =
-        DYNAMIC_DOWNCAST(C1WindowsDocument, GetActiveDocument());
-    const int selection_index = creature_selector_.GetCurSel();
-    if (document != nullptr && selection_index != CB_ERR) {
-        document->select_creature_by_menu_command(40000 + selection_index);
     }
 }
 

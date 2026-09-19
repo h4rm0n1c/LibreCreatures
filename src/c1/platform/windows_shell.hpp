@@ -311,8 +311,6 @@ public:
     const auto& embedded_kit_definitions() const {
         return embedded_kit_definitions_;
     }
-    void rebuild_creature_selector(const creatures1::creatures::CreatureSelectionState& selection,
-        const creatures1::creatures::CreatureSelectionEntry* selected);
     void bind_pipe_server_boundary(creatures1::platform::WindowsPipeServerBoundary* boundary);
 
     void activate_frame_native(int show_command);
@@ -345,7 +343,6 @@ protected:
 
     afx_msg void OnTipOfDay();
     afx_msg void OnSelectCreature(UINT command_id);
-    afx_msg void OnCreatureSelectorChanged();
     afx_msg void OnFavouritePlace(UINT command_id);
     afx_msg void OnCameraTrackSelectedCreature();
     afx_msg void OnInfiniteWorld();

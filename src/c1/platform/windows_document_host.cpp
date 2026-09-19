@@ -1253,11 +1253,13 @@ creatures1::creatures::CreatureSelectionEntry* C1WindowsDocument::selection_at( 
 }
 
 void C1WindowsDocument::set_selected_creature( creatures1::creatures::CreatureSelectionEntry* creature) {
+    // Native stores the selection and nothing more.  The toolbar combo is not
+    // a creature list: MyToolBar::Create @ 00421c00 makes it an editable
+    // history box, MyToolBar::Serialize @ 00421e80 saves its entries with the
+    // world, and UpdateCreatureNameComboHistory @ 00432360 is the only code
+    // that adds to it.  Refilling it with creature names threw that history
+    // away every time the selection changed.
     selected_creature_entry_ = creature;
-    C1MainFrame* frame = active_main_frame();
-    if (frame != nullptr) {
-        frame->rebuild_creature_selector(selection_, creature);
-    }
 }
 
 void C1WindowsDocument::broadcast_selection_state(std::uint32_t state_code) {
@@ -1459,7 +1461,6 @@ void C1WindowsDocument::rebuild_creature_selection_menu() {
     (void)creatures1::ui::rebuild_creature_selection_menu(
         selection_, *this, platform,
         semantic_document_->informative_menu_setting);
-    frame->rebuild_creature_selector(selection_, selected_creature_entry_);
 }
 
 const creatures1::creatures::StimulusContext* C1WindowsDocument::default_stimulus_context( std::size_t index) const {

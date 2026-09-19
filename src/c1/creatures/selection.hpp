@@ -34,6 +34,7 @@ public:
     virtual std::uint32_t classifier_species_family() const = 0;
     virtual std::uint32_t chemical_concentration(
         std::uint32_t chemical_index) const = 0;
+    virtual std::uint32_t age_in_ticks() const = 0;
     virtual void set_selection_menu_command_id(std::uint32_t command_id) = 0;
 };
 

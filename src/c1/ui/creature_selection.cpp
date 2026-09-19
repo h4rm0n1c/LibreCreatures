@@ -1,6 +1,7 @@
 #include "creature_selection.hpp"
 
 #include <algorithm>
+#include <cstdio>
 #include <array>
 #include <string>
 #include <string_view>
@@ -134,9 +135,20 @@ bool rebuild_creature_selection_menu(
             caption += ")";
 
             if (informative_menu) {
-                const std::uint32_t concentration =
-                    creature->chemical_concentration(kInformativeChemicalIndex);
-                caption += std::to_string(concentration * 100U);
+                // RebuildCreatureSelectionMenu @ 00422250 (004225df..0042263f):
+                // " [%02d:%02d - %d%%]" with hours = age / 36000,
+                // minutes = age / 600 - hours * 60 (age in 0.1 s ticks), and
+                // chemical 0x3b as concentration * 100 / 255.
+                const int age = static_cast<int>(creature->age_in_ticks());
+                const int hours = age / 36000;
+                const int minutes = age / 600 - hours * 60;
+                const int percent = static_cast<int>(
+                    creature->chemical_concentration(kInformativeChemicalIndex) *
+                    100U / 255U);
+                char informative[48];
+                std::snprintf(informative, sizeof(informative),
+                              " [%02d:%02d - %d%%]", hours, minutes, percent);
+                caption += informative;
             }
 
             const bool menu_updated =

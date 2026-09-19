@@ -1234,6 +1234,9 @@ public:
         }
         return biochemistry_->chemical_states()[chemical_index].concentration;
     }
+    std::uint32_t age_in_ticks() const override {
+        return register_state_.age_ticks();
+    }
     void set_selection_menu_command_id(std::uint32_t command_id) override {
         selection_menu_command_id_ = command_id;
     }
