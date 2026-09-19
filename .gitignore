@@ -1,4 +1,5 @@
 # CMake build directories
+/ground_truth/
 /build/
 /out/
 CMakeFiles/
