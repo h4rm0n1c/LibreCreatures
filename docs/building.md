@@ -14,6 +14,11 @@ cmake --build build/windows-msvc-x86 --config Release --parallel
 
 The executable is `build/windows-msvc-x86/Release/Creatures.exe`.
 
+The release build uses the shared x86 MFC/CRT runtime. A machine that does not
+already have the matching Visual C++ and MFC redistributable installed may need
+that Microsoft runtime before `Creatures.exe` will start. The current package
+does not bundle Microsoft runtime DLLs.
+
 To stage a redistributable package containing the executable, licence, README,
 public guide, and a corresponding-source notice:
 
