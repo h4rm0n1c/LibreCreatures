@@ -357,6 +357,9 @@ void import_creature(CreatureImportHost& host) {
             archive->deserialize_creature(*creature);
         }
     }
+    // OnImportCreature @ 00431fb0 closes the file before CFile::Remove; the
+    // delete cannot succeed while the archive still holds it open.
+    archive.reset();
     host.remove_import_file(path);
 }
 

@@ -4626,6 +4626,44 @@ creatures1::platform::MfcObjectArchive* C1WindowsDocument::ArchiveHost::object_a
     return object_archive_.get();
 }
 
+namespace {
+
+// CGenome::Serialize @ 004185c0 speaks the same byte/word protocol as every
+// other record, so the genome's own serializer runs over the object archive.
+class GenomeObjectArchive final : public creatures1::creatures::GenomeArchive {
+public:
+    explicit GenomeObjectArchive(creatures1::platform::MfcObjectArchive& archive)
+        : archive_(archive) {}
+
+    bool is_loading() const override { return archive_.is_loading(); }
+    creatures1::creatures::GenomePayloadByteCount read_u32() override {
+        return archive_.read_uint32();
+    }
+    std::uint8_t read_u8() override { return archive_.read_byte(); }
+    void write_u32(std::uint32_t value) override {
+        archive_.write_uint32(value);
+    }
+    void write_u8(std::uint8_t value) override { archive_.write_byte(value); }
+    std::vector<std::uint8_t> read_bytes(
+        creatures1::creatures::GenomePayloadByteCount count) override {
+        std::vector<std::uint8_t> bytes(count);
+        if (count != 0) {
+            archive_.read_bytes(bytes.data(), count);
+        }
+        return bytes;
+    }
+    void write_bytes(const std::vector<std::uint8_t>& bytes) override {
+        if (!bytes.empty()) {
+            archive_.write_bytes(bytes.data(), bytes.size());
+        }
+    }
+
+private:
+    creatures1::platform::MfcObjectArchive& archive_;
+};
+
+} // namespace
+
 void* C1WindowsDocument::ArchiveHost::create_object(std::string_view name, std::uint16_t schema) {
     if (schema != 1) {
         throw std::logic_error("unsupported C1 MFC runtime-class schema");
@@ -4644,6 +4682,11 @@ void* C1WindowsDocument::ArchiveHost::create_object(std::string_view name, std::
                     ->adopt_creature(
                         std::make_unique<creatures1::creatures::Creature>())
                     .skeleton();
+    }
+    if (name == "CGenome") {
+        // Only an .exp stream carries CGenome records (Creature::Deserialize
+        // @ 0040dda0 reads them with ReadObject).  The reader takes ownership.
+        return new creatures1::creatures::Genome();
     }
     if (name == "CBrain") {
         auto* brain = new (std::nothrow) creatures1::brain::Brain();
@@ -4759,7 +4802,7 @@ std::uint16_t C1WindowsDocument::ArchiveHost::class_schema(std::string_view name
         name == "CompoundObject" || name == "Vehicle" ||
         name == "Lift" || name == "CallButton" || name == "Scenery" ||
         name == "Entity" || name == "CGallery" || name == "Creature" ||
-        name == "CBrain" || name == "CBiochemistry" ||
+        name == "CBrain" || name == "CBiochemistry" || name == "CGenome" ||
         name == "CInstinct" || name == "Blackboard" || name == "COwner" ||
         name == "MapData" || name == "PointerTool" ||
         name == "Bubble" || name == "Macro" || name == "Body" ||
@@ -4816,6 +4859,9 @@ std::string C1WindowsDocument::ArchiveHost::runtime_class(const void* object, st
     }
     if (requested == "CGallery") {
         return "CGallery";
+    }
+    if (requested == "CGenome") {
+        return "CGenome";
     }
     if (requested == "Creature") {
         return "Creature";
@@ -4898,6 +4944,12 @@ void C1WindowsDocument::ArchiveHost::read_object(void* object, std::string_view 
         }
         creatures1::platform::MfcCreatureArchive creature_archive(archive);
         creature->serialize(creature_archive);
+        return;
+    }
+    if (name == "CGenome") {
+        GenomeObjectArchive genome_archive(archive);
+        static_cast<creatures1::creatures::Genome*>(object)->serialize(
+            genome_archive);
         return;
     }
     if (name == "CBrain") {
@@ -4997,6 +5049,13 @@ void C1WindowsDocument::ArchiveHost::write_object(const void* object, std::strin
         }
         creatures1::platform::MfcCreatureArchive creature_archive(archive);
         creature->serialize(creature_archive);
+        return;
+    }
+    if (name == "CGenome") {
+        GenomeObjectArchive genome_archive(archive);
+        const_cast<creatures1::creatures::Genome*>(
+            static_cast<const creatures1::creatures::Genome*>(object))
+            ->serialize(genome_archive);
         return;
     }
     if (name == "CBrain") {

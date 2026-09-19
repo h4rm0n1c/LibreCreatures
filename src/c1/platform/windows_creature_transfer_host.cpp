@@ -39,18 +39,13 @@ public:
                       creatures1::creatures::GenomeSex sex,
                       creatures1::creatures::GenomeLifeStage life_stage)
         override {
-        // The genome travels as its stored file payload; the store owns the
-        // path resolution and the primary/secondary fallback.
+        // OnExportCurrentCreature @ 00431d20 constructs a CGenome from the
+        // stored file and writes it with CArchive::WriteObject: a CGenome
+        // class record, then CGenome::Serialize @ 004185c0 (payload size,
+        // filename, sex, life stage, payload).
         creatures1::creatures::Genome genome(source_filename, sex, life_stage,
                                              &document_.genome_files());
-        const std::vector<std::uint8_t>& payload = genome.payload();
-        const std::uint32_t length =
-            static_cast<std::uint32_t>(payload.size());
-        archive_->Write(&source_filename, sizeof(source_filename));
-        archive_->Write(&length, sizeof(length));
-        if (length != 0) {
-            archive_->Write(payload.data(), length);
-        }
+        host_.dynamic_objects().write_object_reference(&genome, "CGenome");
     }
 
 private:
@@ -157,54 +152,14 @@ void WindowsCreatureExportHost::log_child_genome_export() {
 
 // --- CreatureDeserializationHost -------------------------------------------
 
-namespace {
-
-// Genome::serialize speaks GenomeArchive; the creature stream speaks
-// CreatureArchive.  Both are byte/word protocols over the same MFC archive,
-// so this is a straight adapter rather than a second format.
-class CreatureArchiveGenomeAdapter final
-    : public creatures1::creatures::GenomeArchive {
-public:
-    explicit CreatureArchiveGenomeAdapter(
-        creatures1::creatures::CreatureArchive& archive)
-        : archive_(archive) {}
-
-    bool is_loading() const override { return archive_.is_loading(); }
-    creatures1::creatures::GenomePayloadByteCount read_u32() override {
-        return archive_.read_uint32();
-    }
-    std::uint8_t read_u8() override { return archive_.read_byte(); }
-    void write_u32(std::uint32_t value) override {
-        archive_.write_uint32(value);
-    }
-    void write_u8(std::uint8_t value) override { archive_.write_byte(value); }
-    std::vector<std::uint8_t> read_bytes(
-        creatures1::creatures::GenomePayloadByteCount count) override {
-        std::vector<std::uint8_t> bytes(count);
-        if (count != 0) {
-            archive_.read_bytes(bytes.data(), count);
-        }
-        return bytes;
-    }
-    void write_bytes(const std::vector<std::uint8_t>& bytes) override {
-        if (!bytes.empty()) {
-            archive_.write_bytes(bytes.data(), bytes.size());
-        }
-    }
-
-private:
-    creatures1::creatures::CreatureArchive& archive_;
-};
-
-} // namespace
-
 std::unique_ptr<creatures1::creatures::Genome>
 WindowsCreatureDeserializationHost::read_genome_reference(
     creatures1::creatures::CreatureArchive& archive) {
-    auto genome = std::make_unique<creatures1::creatures::Genome>();
-    CreatureArchiveGenomeAdapter adapter(archive);
-    genome->serialize(adapter);
-    return genome;
+    // Creature::Deserialize @ 0040dda0 reads each genome with
+    // CArchive::ReadObject(CGenome), so the class record comes first.
+    return std::unique_ptr<creatures1::creatures::Genome>(
+        static_cast<creatures1::creatures::Genome*>(
+            archive.read_object_reference("CGenome")));
 }
 
 void WindowsCreatureDeserializationHost::ensure_unique_primary_genome_filename(
