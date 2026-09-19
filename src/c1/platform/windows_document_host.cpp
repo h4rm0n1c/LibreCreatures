@@ -1449,11 +1449,12 @@ void C1WindowsDocument::request_viewport_origin_for_selected_creature() {
 }
 
 void C1WindowsDocument::return_viewport_navigation_to_selection() {
-    const creatures1::creatures::Creature* creature = selected_creature();
-    if (creature != nullptr) {
-        request_renderer_origin(creature->skeleton().down_foot_x,
-                                creature->skeleton().down_foot_y);
-    }
+    // The selection command returns through the same renderer façade as the
+    // camera-follow command.  Passing the down-foot directly treats it as the
+    // viewport's left/top origin, leaving the creature against the left edge;
+    // RequestViewportOriginForSelectedCreature subtracts half the viewport
+    // width and applies the native vertical framing before requesting the move.
+    request_viewport_origin_for_selected_creature();
 }
 
 void C1WindowsDocument::refresh_event_bar() {
