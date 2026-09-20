@@ -2984,7 +2984,8 @@ bool WindowsMacroHost::update_putb(
 
 std::string WindowsMacroHost::render_learned_words(
     creatures1::scripting::Macro& macro, std::uint32_t word_index) {
-    creatures1::brain::Blackboard* blackboard = blackboard_target(macro);
+    creatures1::brain::Blackboard* blackboard =
+        blackboard_target(macro, document_);
     if (blackboard == nullptr ||
         word_index >= creatures1::brain::Blackboard::kWordCount) {
         return {};
