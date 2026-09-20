@@ -366,6 +366,10 @@ std::uint32_t WindowsMacroHost::creature_value(
                        creatures1::creatures::CreatureLifeState::dead
                    ? 1u
                    : 0u;
+    case creatures1::scripting::MacroCreatureValue::asleep:
+        // Native ParseRValue `aslp` reads the byte updated by
+        // SetSleepIndicator, not the high byte of Object sound metadata.
+        return creature->is_asleep() ? 1u : 0u;
     case creatures1::scripting::MacroCreatureValue::drive_level: {
         // GoalDriveLevels is indexable and sized; the instinct runtime state
         // exposes it directly.
@@ -390,6 +394,14 @@ std::uint32_t WindowsMacroHost::creature_value(
         }
         return winner;
     }
+    case creatures1::scripting::MacroCreatureValue::life_stage:
+        // Native CAGE reads Creature+0x2cc0, the one-byte genome life-stage
+        // field. It is not Object::movement_bounds.min_y.
+        return static_cast<std::uint32_t>(creature->genome_life_stage());
+    case creatures1::scripting::MacroCreatureValue::child_genome_source_filename:
+        // Native BABY reads Creature+0x2cc8. A nonzero source filename is the
+        // pregnancy/egg-laying latch; zero means not pregnant.
+        return creature->child_genome_source_filename();
     }
     return 0;
 }
@@ -457,24 +469,30 @@ std::uint32_t WindowsMacroHost::language_version() const {
 }
 
 std::uint32_t WindowsMacroHost::sound_settings() const {
-    return document_.sounds_muted() ? 0u : 1u;
+    // Native ParseRValue (`snds`) returns both SFCView sound-policy bits:
+    // enabled in bit 0 and allowed while unfocused in bit 1.
+    return document_.sound_settings_for_macro();
 }
 
 std::uint32_t WindowsMacroHost::viewport_value(
     creatures1::scripting::MacroViewportValue value) const {
     switch (value) {
     case creatures1::scripting::MacroViewportValue::width:
-        return static_cast<std::uint32_t>(document_.renderer_viewport_width());
+        return static_cast<std::uint32_t>(
+            document_.renderer_caos_viewport_width());
     case creatures1::scripting::MacroViewportValue::height:
-        return static_cast<std::uint32_t>(document_.renderer_viewport_height());
+        return static_cast<std::uint32_t>(
+            document_.renderer_caos_viewport_height());
     case creatures1::scripting::MacroViewportValue::center_x:
         return static_cast<std::uint32_t>(
-            document_.renderer_viewport_left() +
-            document_.renderer_viewport_width() / 2);
+            (document_.renderer_viewport_left() * 2 +
+             document_.renderer_viewport_width()) /
+            2);
     case creatures1::scripting::MacroViewportValue::center_y:
         return static_cast<std::uint32_t>(
-            document_.renderer_viewport_top() +
-            document_.renderer_viewport_height() / 2);
+            (document_.renderer_viewport_top() * 2 +
+             document_.renderer_viewport_height()) /
+            2);
     }
     return 0;
 }
@@ -707,8 +725,8 @@ bool WindowsMacroHost::creature_approach_is_ready(
     if (ready) {
         static const char* setting = std::getenv("C1_TRACE_CREATURE");
         static unsigned rows = 0;
-        const bool disabled = setting != nullptr &&
-            (std::strcmp(setting, "0") == 0 || std::strcmp(setting, "off") == 0);
+        const bool disabled = setting == nullptr || setting[0] == '\0' ||
+            std::strcmp(setting, "0") == 0 || std::strcmp(setting, "off") == 0;
         if (!disabled && rows < 400) {
             ++rows;
             if (FILE* log = std::fopen("Creatures.place.log", "a")) {
@@ -741,8 +759,8 @@ void WindowsMacroHost::reset_creature_animation_sequence(
 void WindowsMacroHost::set_viewport_value(
     creatures1::scripting::MacroViewportValue value,
     std::uint32_t new_value) {
-    // CAOS `cmra` moves the viewport origin; width and height are renderer
-    // geometry the command cannot resize.
+    // Native `winw`/`winh` write the renderer's stored dimensions.  They do
+    // not resize the back buffer or move the current viewport edges.
     const int target = static_cast<int>(new_value);
     switch (value) {
     case creatures1::scripting::MacroViewportValue::center_x:
@@ -756,8 +774,10 @@ void WindowsMacroHost::set_viewport_value(
             target - document_.renderer_viewport_height() / 2);
         return;
     case creatures1::scripting::MacroViewportValue::width:
+        document_.set_renderer_caos_viewport_width(target);
+        return;
     case creatures1::scripting::MacroViewportValue::height:
-        report_unbound_runtime_command("cmra (viewport resize)");
+        document_.set_renderer_caos_viewport_height(target);
         return;
     }
 }
@@ -766,11 +786,15 @@ void WindowsMacroHost::set_creature_value(
     creatures1::objects::Object& object,
     creatures1::scripting::MacroCreatureAssignment field,
     std::uint32_t value) {
-    // CAOS `baby` is the only assignment in this family: it writes the lower
-    // edge of the target's movement bounds, which the matching rvalue reads.
+    // CAOS `baby` writes the pregnant creature's child genome source filename.
+    // The original decompiler rendered this Creature-tail field through an
+    // Object movement-bounds type, but it is Creature+0x2cc8.
     switch (field) {
-    case creatures1::scripting::MacroCreatureAssignment::egg_movement_limit:
-        object.set_movement_bounds_max_y(static_cast<int>(value));
+    case creatures1::scripting::MacroCreatureAssignment::child_genome_source_filename:
+        if (auto* creature = document_.mutable_creature_for_object(object);
+            creature != nullptr) {
+            creature->set_child_genome_source_filename(value);
+        }
         return;
     }
 }
@@ -1542,6 +1566,16 @@ WindowsCreatureInseminationHost::recipient_for_insemination(
     // The recovered partner is the creature this one is motion-linked to.
     const creatures1::objects::Object* link = source.skeleton().motion_link;
     if (link == nullptr) {
+        return nullptr;
+    }
+    // ProcessInsemination @ 0040cbc0 does not merely cast the motion link.
+    // It first requires the link's complete classifier to match the source's
+    // family/genus prefix with the creature-object bit set.  Keeping this
+    // check at the platform object boundary prevents a stale attention link
+    // to another Creature class from entering the recipient state machine.
+    const std::uint32_t expected_classifier =
+        (source.skeleton().classifier_base() & 0xffff0200u) | 0x200u;
+    if (link->classifier_base() != expected_classifier) {
         return nullptr;
     }
     creatures1::creatures::Creature* recipient =
@@ -2539,8 +2573,11 @@ void WindowsMacroHost::report_unsupported_language_version(
 
 void WindowsMacroHost::follow_macro_target(
     creatures1::scripting::Macro& macro) {
-    // `sys: camt` centres the viewport on the macro's target, but only when
-    // that target's sound source lies inside the navigation world bounds.
+    // ExecuteSystemCAOSCommand (SYS: CAMT @ 0x0041cd30) centres the viewport
+    // on the target's sound source, but only when that point lies inside the
+    // navigation world bounds. Passing the target coordinates as a viewport
+    // origin would put the target on the left edge; the renderer owns the
+    // native centre-and-wrap calculation instead.
     creatures1::objects::Object* target = macro.object_context.target_object;
     if (target == nullptr || !document_.is_live_object(target)) {
         // Native clears the renderer's followed creature and returns; the
@@ -2548,11 +2585,8 @@ void WindowsMacroHost::follow_macro_target(
         // by the caller is the whole effect.
         return;
     }
-    // The renderer owns the centring and the clamp; request_viewport_origin
-    // is the same entry the event bar and the creature-follow path use, so
-    // the navigation-bounds test the native performs inline lives there.
-    document_.request_renderer_origin(target->sound_source_x(),
-                                      target->sound_source_y());
+    document_.center_renderer_on_world_point_if_in_navigation_bounds(
+        target->sound_source_x(), target->sound_source_y());
 }
 
 void WindowsMacroHost::set_dirty_world_rect(int left, int top, int right,
@@ -2949,10 +2983,22 @@ bool WindowsMacroHost::update_putb(
 }
 
 std::string WindowsMacroHost::render_learned_words(
-    creatures1::scripting::Macro& macro) {
-    static_cast<void>(macro);
-    report_unrecovered_dde_query("getb/putv learned words");
-    return {};
+    creatures1::scripting::Macro& macro, std::uint32_t word_index) {
+    creatures1::brain::Blackboard* blackboard = blackboard_target(macro);
+    if (blackboard == nullptr ||
+        word_index >= creatures1::brain::Blackboard::kWordCount) {
+        return {};
+    }
+
+    const auto& slot = blackboard->word(word_index).text;
+    const std::string text(slot.data(),
+                           ::strnlen(slot.data(), slot.size()));
+    // Native `dde: word` writes the signed 32-bit value, a separator, the
+    // learned word, and a final separator.  The caller adds the outer field
+    // separator used by ExecuteToOutputBuffer.
+    return std::to_string(static_cast<std::int32_t>(
+               blackboard->word_value(word_index))) +
+           "|" + text;
 }
 
 std::string WindowsMacroHost::render_brain_lobe(
@@ -3117,10 +3163,55 @@ std::string WindowsMacroHost::render_cell_values(
 
 
 bool WindowsMacroHost::capture_picture(creatures1::scripting::Macro& macro,
+                                       std::uint8_t width,
+                                       std::uint8_t height,
                                        std::string& output_path) {
-    static_cast<void>(macro);
-    static_cast<void>(output_path);
-    report_unrecovered_dde_query("pict (screen capture)");
+    output_path.clear();
+    creatures1::objects::Object* target =
+        macro.object_context.target_object;
+    if (target == nullptr ||
+        ((target->classifier_base() >> 24) & 0xffu) != 4u) {
+        return false;
+    }
+
+    creatures1::world::WorldRect bounds{};
+    if (!target->get_bounds(&bounds)) {
+        return false;
+    }
+
+    // Native centres the capture on the inclusive target bounds before
+    // representing it as a half-open rectangle.
+    creatures1::world::WorldRect capture_rect{};
+    capture_rect.min_x = bounds.min_x -
+        ((bounds.min_x - bounds.max_x + 1 + static_cast<int>(width)) >> 1);
+    capture_rect.max_x = capture_rect.min_x + static_cast<int>(width);
+    capture_rect.min_y = bounds.min_y -
+        ((bounds.min_y - bounds.max_y + 1 + static_cast<int>(height)) >> 1);
+    capture_rect.max_y = capture_rect.min_y + static_cast<int>(height);
+
+    const int viewport_left = document_.renderer_viewport_left();
+    const int viewport_top = document_.renderer_viewport_top();
+    const int viewport_right =
+        viewport_left + document_.renderer_viewport_width();
+    const int viewport_bottom =
+        viewport_top + document_.renderer_viewport_height();
+    if (capture_rect.min_x < viewport_left ||
+        capture_rect.min_y < viewport_top ||
+        capture_rect.max_x > viewport_right ||
+        capture_rect.max_y > viewport_bottom) {
+        return false;
+    }
+
+    output_path = document_.primary_main_resource_directory();
+    if (!output_path.empty() && output_path.back() != '\\' &&
+        output_path.back() != '/') {
+        output_path.push_back('\\');
+    }
+    output_path += "temp.spr";
+    if (document_.write_renderer_dib_rect(capture_rect, output_path)) {
+        return true;
+    }
+    output_path.clear();
     return false;
 }
 

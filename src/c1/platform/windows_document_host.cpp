@@ -5,24 +5,104 @@
 #include "windows_shell.hpp"
 #include "windows_embedded_kit_host.hpp"
 
+#include "../display/bitmap.hpp"
+#include "../world/viewport.hpp"
+
 #include <limits>
 #include <optional>
 #include <cstdio>
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>
+#include <string>
 #include <vector>
 
 namespace creatures1::platform {
 
 namespace {
 
-void log_world_save_failure(const char* path, const char* reason) {
-    if (FILE* log = std::fopen("Creatures.save.log", "a")) {
-        std::fprintf(log, "C1 save failed: path=%s reason=%s\n",
-                     path == nullptr ? "(null)" : path, reason);
-        std::fclose(log);
+class WindowsDibOutputFile final : public creatures1::display::DibOutputFile {
+public:
+    explicit WindowsDibOutputFile(std::FILE* file) : file_(file) {}
+    ~WindowsDibOutputFile() override {
+        if (file_ != nullptr) {
+            std::fclose(file_);
+        }
     }
+
+    void write(const std::uint8_t* bytes, std::size_t byte_count) override {
+        if (file_ != nullptr) {
+            (void)std::fwrite(bytes, 1, byte_count, file_);
+        }
+    }
+
+    void close() override {
+        if (file_ != nullptr) {
+            std::fclose(file_);
+            file_ = nullptr;
+        }
+    }
+
+private:
+    std::FILE* file_ = nullptr;
+};
+
+class WindowsDibFileSystem final : public creatures1::display::DibFileSystem {
+public:
+    std::unique_ptr<creatures1::display::DibOutputFile> open_for_write(
+        std::string_view path) override {
+        const std::string native_path(path);
+        std::FILE* file = std::fopen(native_path.c_str(), "wb");
+        if (file == nullptr) {
+            return nullptr;
+        }
+        return std::make_unique<WindowsDibOutputFile>(file);
+    }
+
+    void report_open_failure(std::string_view path) override {
+        C1DebugConsoleDialog* console = active_debug_console();
+        if (console != nullptr) {
+            const std::string native_path(path);
+            creatures1::common::debug_log(
+                *console, 0x2,
+                "DDE pict: could not open output path %s\n",
+                native_path.c_str());
+        }
+    }
+};
+
+void log_world_save_failure(const char* path, const char* reason) {
+    // Save failures belong in the game's existing "Log information" debug
+    // console.  Do not create a parallel file here: the console owns the
+    // native filtering, retention and optional "To Log.txt" mirror path.
+    C1DebugConsoleDialog* console = active_debug_console();
+    if (console != nullptr) {
+        creatures1::common::debug_log(
+            *console, 0x2000,
+            "World save failed: path=%s reason=%s\n",
+            path == nullptr ? "(null)" : path,
+            reason == nullptr ? "(unknown)" : reason);
+    }
+}
+
+std::runtime_error annotate_archive_failure(std::string_view phase,
+                                            std::size_t index,
+                                            std::size_t offset,
+                                            const std::exception& error) {
+    return std::runtime_error(
+        "C1 archive save " + std::string(phase) + " index=" +
+        std::to_string(index) + " offset=" + std::to_string(offset) +
+        ": " + error.what());
+}
+
+std::runtime_error annotate_archive_failure(std::string_view phase,
+                                            std::size_t index,
+                                            std::size_t offset,
+                                            const char* message) {
+    return std::runtime_error(
+        "C1 archive save " + std::string(phase) + " index=" +
+        std::to_string(index) + " offset=" + std::to_string(offset) +
+        ": " + (message == nullptr ? "MFC archive exception" : message));
 }
 
 // Opt-in step probe.  Travel in C1 comes from exactly one comparison in
@@ -168,13 +248,10 @@ struct TickDrawScope {
 };
 
 bool creature_trace_disabled() {
-    // Enabled by default.  Setting an environment variable is awkward on
-    // Windows, and a diagnostic nobody can switch on is a diagnostic that
-    // never gets used.  C1_TRACE_CREATURE=0 (or "off") turns it off; a
-    // moniker in hex narrows the motor trace to one creature.
+    // Disabled by default; set C1_TRACE_CREATURE to a moniker (or "*") to opt in.
     static const char* setting = std::getenv("C1_TRACE_CREATURE");
-    return setting != nullptr &&
-           (std::strcmp(setting, "0") == 0 || std::strcmp(setting, "off") == 0);
+    return setting == nullptr || setting[0] == '\0' ||
+           std::strcmp(setting, "0") == 0 || std::strcmp(setting, "off") == 0;
 }
 
 void log_creature_step_probe(const creatures1::creatures::Creature& creature,
@@ -456,6 +533,11 @@ void C1WindowsDocument::construct_semantic_document() {
     if (semantic_document_ == nullptr) {
         semantic_document_ =
             std::make_unique<creatures1::application::Document>();
+        // The MFC document is constructed at the framework boundary rather
+        // than through Document::create, so seed the autosave clock here.
+        // Otherwise the first world timer callback attempts a save immediately
+        // after opening the world.
+        semantic_document_->last_autosave_time_ms = current_time_ms();
     }
     std::uint32_t value = 0;
     if (read_view_setting("Mute", value, 0)) {
@@ -505,9 +587,13 @@ BOOL C1WindowsDocument::OnSaveDocument(LPCTSTR path) {
         return FALSE;
     } catch (CException* error) {
         char message[512] = {};
-        error->GetErrorMessage(message, sizeof(message));
-        log_world_save_failure(native_path.GetString(), message);
-        error->Delete();
+        if (error != nullptr) {
+            error->GetErrorMessage(message, sizeof(message));
+            error->Delete();
+        }
+        log_world_save_failure(
+            native_path.GetString(),
+            message[0] == '\0' ? "MFC archive exception" : message);
         return FALSE;
     } catch (...) {
         log_world_save_failure(native_path.GetString(), "unknown exception");
@@ -863,7 +949,12 @@ void C1WindowsDocument::promote_temporary_world_backup() {
 void C1WindowsDocument::save_framework_document( creatures1::application::Document& /*document*/, std::string_view path) {
     const CStringA native_path(std::string(path).c_str());
     if (CDocument::OnSaveDocument(native_path) == FALSE) {
-        throw std::runtime_error("C1 MFC document save failed");
+        // SFCDoc::OnSaveDocument calls the MFC hook and still returns success;
+        // MFC owns the archive transaction and its user-facing failure path.
+        // Keep that native boundary here so one failed archive cannot escape
+        // into the world timer and immediately retry every tick.
+        log_world_save_failure(native_path.GetString(),
+                               "C1 MFC document save failed");
     }
 }
 
@@ -934,12 +1025,21 @@ bool C1WindowsDocument::save_for_close( creatures1::application::Document& /*doc
     // SaveModified: that returns success without writing when the modified
     // flag is clear, and nothing in the port ever sets it, so closing the
     // world silently discarded every change made while playing.
-    if (g_active_world_save_path == nullptr ||
-        g_active_world_save_path->empty()) {
+    // SFCDoc::OnCloseDocument passes the process-wide world-save storage
+    // (g_world_save_path_storage), including USER-mode worlds opened through
+    // OpenDocumentFile(nullptr), which have no CDocument path of their own.
+    // GetPathName() is only a fallback for documents opened from a file.
+    CString path;
+    if (g_active_world_save_path != nullptr &&
+        !g_active_world_save_path->empty()) {
+        path = CString(g_active_world_save_path->c_str());
+    } else {
+        path = GetPathName();
+    }
+    if (path.IsEmpty()) {
         return false;
     }
-    return OnSaveDocument(
-               CStringA(g_active_world_save_path->c_str())) != FALSE;
+    return OnSaveDocument(path) != FALSE;
 }
 
 void C1WindowsDocument::report_save_failure() {
@@ -1449,12 +1549,9 @@ void C1WindowsDocument::request_viewport_origin_for_selected_creature() {
 }
 
 void C1WindowsDocument::return_viewport_navigation_to_selection() {
-    // The selection command returns through the same renderer façade as the
-    // camera-follow command.  Passing the down-foot directly treats it as the
-    // viewport's left/top origin, leaving the creature against the left edge;
-    // RequestViewportOriginForSelectedCreature subtracts half the viewport
-    // width and applies the native vertical framing before requesting the move.
-    request_viewport_origin_for_selected_creature();
+    if (world_view_ != nullptr) {
+        world_view_->return_viewport_navigation_to_selected_creature();
+    }
 }
 
 void C1WindowsDocument::refresh_event_bar() {
@@ -2319,6 +2416,15 @@ creatures1::world::ViewportBounds C1WindowsDocument::sound_viewport() const {
 
 bool C1WindowsDocument::sounds_muted() const { return sound_muted(); }
 
+std::uint32_t C1WindowsDocument::sound_settings_for_macro() const {
+    if (world_view_ != nullptr) {
+        return world_view_->sound_settings_for_macro();
+    }
+    // The native SFC view exists before the macro host is used.  Keep a
+    // deterministic fallback for early construction and teardown paths.
+    return (sounds_muted() ? 0u : 1u) | 2u;
+}
+
 
 creatures1::sound::SoundManager& C1WindowsDocument::sound_manager() {
     if (g_active_sound_manager == nullptr) {
@@ -2627,16 +2733,42 @@ void C1WindowsDocument::set_application_busy(bool busy) {
 
 bool C1WindowsDocument::save_for_autosave( creatures1::application::Document& document) {
     if (semantic_document_.get() != &document) {
+        log_world_save_failure(nullptr, "semantic document mismatch");
         return false;
     }
-    const CString path = GetPathName();
+    CString path;
+    if (g_active_world_save_path != nullptr &&
+        !g_active_world_save_path->empty()) {
+        path = CString(g_active_world_save_path->c_str());
+    } else {
+        path = GetPathName();
+    }
     if (path.IsEmpty()) {
+        log_world_save_failure(nullptr, "missing world path");
         return false;
     }
     const CStringA native_path(path);
-    return document.save(
-        *this,
-        std::string_view(native_path.GetString(), native_path.GetLength()));
+    try {
+        return document.save(
+            *this,
+            std::string_view(native_path.GetString(), native_path.GetLength()));
+    } catch (const std::exception& error) {
+        log_world_save_failure(native_path.GetString(), error.what());
+        throw;
+    } catch (CException* error) {
+        char message[512] = {};
+        if (error != nullptr) {
+            error->GetErrorMessage(message, sizeof(message));
+            error->Delete();
+        }
+        const char* reason =
+            message[0] == '\0' ? "MFC archive exception" : message;
+        log_world_save_failure(native_path.GetString(), reason);
+        throw std::runtime_error(reason);
+    } catch (...) {
+        log_world_save_failure(native_path.GetString(), "unknown exception");
+        throw;
+    }
 }
 
 void C1WindowsDocument::restore_main_window_title(std::string_view title) {
@@ -3540,6 +3672,64 @@ int C1WindowsDocument::renderer_viewport_height() const {
                : renderer_->viewport_bottom() - renderer_->viewport_top();
 }
 
+int C1WindowsDocument::renderer_caos_viewport_width() const {
+    return renderer_ == nullptr ? 0 : renderer_->viewport_width();
+}
+
+int C1WindowsDocument::renderer_caos_viewport_height() const {
+    return renderer_ == nullptr ? 0 : renderer_->viewport_height();
+}
+
+void C1WindowsDocument::set_renderer_caos_viewport_width(int width) {
+    if (renderer_ != nullptr) {
+        renderer_->set_caos_viewport_width(width);
+    }
+}
+
+void C1WindowsDocument::set_renderer_caos_viewport_height(int height) {
+    if (renderer_ != nullptr) {
+        renderer_->set_caos_viewport_height(height);
+    }
+}
+
+std::string C1WindowsDocument::primary_main_resource_directory() {
+    ensure_resource_hosts();
+    return resource_paths_[kMainDirectoryIndex];
+}
+
+bool C1WindowsDocument::write_renderer_dib_rect(
+    const creatures1::world::WorldRect& world_rect,
+    std::string_view output_path) {
+    if (renderer_ == nullptr || renderer_->dib_pixels() == nullptr ||
+        renderer_->dib_width() <= 0 || renderer_->dib_height() <= 0) {
+        return false;
+    }
+
+    const creatures1::world::ViewportBounds viewport{
+        renderer_->viewport_left(), renderer_->viewport_top(),
+        renderer_->viewport_right(), renderer_->viewport_bottom()};
+    creatures1::world::WorldRect viewport_rect{};
+    creatures1::world::convert_world_rect_to_viewport_rect(
+        viewport, viewport_rect, world_rect);
+    if (viewport_rect.min_x < 0 || viewport_rect.min_y < 0 ||
+        viewport_rect.max_x > renderer_->dib_width() ||
+        viewport_rect.max_y > renderer_->dib_height() ||
+        viewport_rect.max_x <= viewport_rect.min_x ||
+        viewport_rect.max_y <= viewport_rect.min_y) {
+        return false;
+    }
+
+    const creatures1::display::IndexedDib dib{
+        8, renderer_->dib_width(), renderer_->dib_height(),
+        renderer_->dib_pixels()};
+    const creatures1::display::PixelRect source_rect{
+        viewport_rect.min_x, viewport_rect.min_y, viewport_rect.max_x,
+        viewport_rect.max_y};
+    WindowsDibFileSystem files;
+    return creatures1::display::write_dib_rect_to_file(
+        dib, source_rect, output_path, files);
+}
+
 void C1WindowsDocument::request_renderer_origin(int world_x, int world_y) {
     if (renderer_ != nullptr) {
         renderer_->request_viewport_origin(world_x, world_y);
@@ -3552,6 +3742,14 @@ void C1WindowsDocument::request_renderer_origin(int world_x, int world_y) {
     // request and apply it when the renderer is created instead of dropping it
     // and opening every world at 0,0.
     pending_renderer_origin_ = std::make_pair(world_x, world_y);
+}
+
+void C1WindowsDocument::center_renderer_on_world_point_if_in_navigation_bounds(
+    int world_x, int world_y) {
+    if (renderer_ != nullptr) {
+        renderer_->center_viewport_on_world_point_if_in_navigation_bounds(
+            world_x, world_y);
+    }
 }
 
 void C1WindowsDocument::set_renderer_debug_highlight_rect(int left, int top,
@@ -4306,8 +4504,21 @@ void C1WindowsDocument::ArchiveHost::serialize_non_scenery_object(std::size_t in
         (void)index;
         return;
     }
-    objects_->write_object_reference(
-        document_.world_runtime_->object_at(index), "Object");
+    try {
+        objects_->write_object_reference(
+            document_.world_runtime_->object_at(index), "Object");
+    } catch (const std::exception& error) {
+        throw annotate_archive_failure("non-scenery", index,
+                                       stream_.stream_position(), error);
+    } catch (CException* error) {
+        char message[512] = {};
+        if (error != nullptr) {
+            error->GetErrorMessage(message, sizeof(message));
+            error->Delete();
+        }
+        throw annotate_archive_failure("non-scenery", index,
+                                       stream_.stream_position(), message);
+    }
 }
 
 std::size_t C1WindowsDocument::ArchiveHost::scenery_object_count() const {
@@ -4336,8 +4547,21 @@ void C1WindowsDocument::ArchiveHost::serialize_scenery_object(std::size_t index)
         (void)index;
         return;
     }
-    objects_->write_object_reference(
-        document_.world_runtime_->scenery_at(index), "Object");
+    try {
+        objects_->write_object_reference(
+            document_.world_runtime_->scenery_at(index), "Object");
+    } catch (const std::exception& error) {
+        throw annotate_archive_failure("scenery", index,
+                                       stream_.stream_position(), error);
+    } catch (CException* error) {
+        char message[512] = {};
+        if (error != nullptr) {
+            error->GetErrorMessage(message, sizeof(message));
+            error->Delete();
+        }
+        throw annotate_archive_failure("scenery", index,
+                                       stream_.stream_position(), message);
+    }
 }
 
 void C1WindowsDocument::ArchiveHost::serialize_classifier_scripts() {
@@ -4448,8 +4672,21 @@ void C1WindowsDocument::ArchiveHost::serialize_world_object(std::size_t index) {
         document_.world_runtime_->add_world_object(*object);
         return;
     }
-    objects_->write_object_reference(
-        document_.world_runtime_->world_object_at(index), "Object");
+    try {
+        objects_->write_object_reference(
+            document_.world_runtime_->world_object_at(index), "Object");
+    } catch (const std::exception& error) {
+        throw annotate_archive_failure("world", index,
+                                       stream_.stream_position(), error);
+    } catch (CException* error) {
+        char message[512] = {};
+        if (error != nullptr) {
+            error->GetErrorMessage(message, sizeof(message));
+            error->Delete();
+        }
+        throw annotate_archive_failure("world", index,
+                                       stream_.stream_position(), message);
+    }
 }
 
 void C1WindowsDocument::ArchiveHost::disable_loaded_world_object_ticks(std::size_t index) {

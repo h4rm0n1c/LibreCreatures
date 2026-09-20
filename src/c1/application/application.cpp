@@ -592,8 +592,10 @@ void SFCApp::ExitInstance(SfcAppShutdownHost& host) {
 
 void initialise_sfc_app_state(SfcAppState& state,
                               SfcAppSettingsHost& settings) {
+    constexpr std::uint32_t kDefaultAutosaveIntervalMs = 360000;
+    constexpr std::uint32_t kMaximumAutosaveIntervalMs = 86400000;
     state.max_norns_setting = 0;
-    state.autosave_interval_ms = 360000;
+    state.autosave_interval_ms = kDefaultAutosaveIntervalMs;
     state.burble_enabled = true;
     state.privilege_level = PrivilegeLevel::unknown;
     settings.publish_sfc_app_instance(state);
@@ -608,8 +610,8 @@ void initialise_sfc_app_state(SfcAppState& state,
         state.autosave_interval_ms = persisted_interval;
     }
     if (state.autosave_interval_ms == 0 ||
-        state.autosave_interval_ms > 86400000) {
-        state.autosave_interval_ms = 360000;
+        state.autosave_interval_ms > kMaximumAutosaveIntervalMs) {
+        state.autosave_interval_ms = kDefaultAutosaveIntervalMs;
     }
 
     std::string privilege_name;

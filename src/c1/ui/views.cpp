@@ -450,6 +450,8 @@ namespace {
 
 objects::Object* find_classifier_target(SfcViewHost& host, int world_x,
                                         int world_y) {
+    objects::Object* frontmost = nullptr;
+    int frontmost_plane = -1;
     const std::size_t non_scenery_count = host.non_scenery_object_count();
     for (std::size_t index = 0; index < non_scenery_count; ++index) {
         objects::Object* object = host.non_scenery_object_at(index);
@@ -461,10 +463,18 @@ objects::Object* find_classifier_target(SfcViewHost& host, int world_x,
             continue;
         }
         world::WorldRect bounds{};
-        object->get_bounds(&bounds);
-        if (host.point_in_world_rect(bounds, world_x, world_y)) {
-            return object;
+        if (object->get_bounds(&bounds) &&
+            host.point_in_world_rect(bounds, world_x, world_y)) {
+            const int plane = object->render_plane();
+            if (frontmost == nullptr || plane > frontmost_plane) {
+                frontmost = object;
+                frontmost_plane = plane;
+            }
         }
+    }
+
+    if (frontmost != nullptr) {
+        return frontmost;
     }
 
     const std::size_t scenery_count = host.scenery_object_count();
@@ -475,8 +485,8 @@ objects::Object* find_classifier_target(SfcViewHost& host, int world_x,
             continue;
         }
         world::WorldRect bounds{};
-        object->get_bounds(&bounds);
-        if (host.point_in_world_rect(bounds, world_x, world_y)) {
+        if (object->get_bounds(&bounds) &&
+            host.point_in_world_rect(bounds, world_x, world_y)) {
             return object;
         }
     }

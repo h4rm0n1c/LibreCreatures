@@ -691,6 +691,22 @@ void WorldRenderer::request_viewport_origin_for_selected_creature() {
     request_viewport_origin(origin_x, foot_y + vertical_offset / 8);
 }
 
+void WorldRenderer::center_viewport_on_world_point_if_in_navigation_bounds(
+    int world_x, int world_y) {
+    // ExecuteSystemCAOSCommand (SYS: CAMT @ 0x0041cd30) first rejects a
+    // target outside the navigation bounds, then centres its sound source
+    // on both viewport axes. CAMT calls
+    // SetViewportOrigin directly, so it must not enter the smooth-scroll
+    // request path.
+    if (!host_.contains_point(host_.navigation_bounds(), world_x, world_y)) {
+        return;
+    }
+    const int origin_x = wrap_world_x(
+        world_x - (viewport_right_ - viewport_left_) / 2);
+    const int origin_y = world_y - (viewport_bottom_ - viewport_top_) / 2;
+    set_viewport_origin(origin_x, origin_y);
+}
+
 void WorldRenderer::center_viewport_on_selected_creature_if_in_pan_region() {
     int foot_x = 0;
     int foot_y = 0;
@@ -963,8 +979,12 @@ void* WorldRenderer::create_back_buffer_dib(int width, int height) {
     dib_section_ = bitmap;
     dib_pixels_ = pixels;
     if (bitmap == nullptr) {
+        dib_width_ = 0;
+        dib_height_ = 0;
         return nullptr;
     }
+    dib_width_ = width;
+    dib_height_ = height;
     void* previous_bitmap = host_.select_bitmap(memory_dc_, bitmap);
     update_dib_palette();
     previous_selected_object_ = previous_bitmap;

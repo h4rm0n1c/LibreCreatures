@@ -351,13 +351,12 @@ void SimpleObject::handle_queued_event_5(
 
 namespace {
 
-// Resting-Y probe.  Enabled by default: see log_placement in
-// windows_document_host.cpp for the C1_TRACE_CREATURE contract.
+// Resting-Y probe. Disabled by default; opt in with C1_TRACE_CREATURE.
 void log_object_resting_y(const Object& object, int old_x, int old_y,
                           int target_x, int target_y) {
     static const char* setting = std::getenv("C1_TRACE_CREATURE");
-    if (setting != nullptr &&
-        (std::strcmp(setting, "0") == 0 || std::strcmp(setting, "off") == 0)) {
+    if (setting == nullptr || setting[0] == '\0' ||
+        std::strcmp(setting, "0") == 0 || std::strcmp(setting, "off") == 0) {
         return;
     }
     static std::size_t rows = 0;

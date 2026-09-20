@@ -323,8 +323,11 @@ enum class MacroCreatureValue : std::uint8_t {
     chemical_concentration,
     gender,
     death_state,
+    asleep,
     winning_drive,
     drive_level,
+    life_stage,
+    child_genome_source_filename,
 };
 
 enum class MacroViewportValue : std::uint8_t {
@@ -335,7 +338,7 @@ enum class MacroViewportValue : std::uint8_t {
 };
 
 enum class MacroCreatureAssignment : std::uint8_t {
-    egg_movement_limit,
+    child_genome_source_filename,
 };
 
 // ParseRValue and AssignLValue are Macro-owned CAOS language operations. The
@@ -865,14 +868,17 @@ public:
                                                   DdeGetBQuery query) = 0;
     virtual bool update_putb(Macro& macro, DdePutBCommand command,
                              std::string_view text) = 0;
-    virtual std::string render_learned_words(Macro& macro) = 0;
+    virtual std::string render_learned_words(Macro& macro,
+                                             std::uint32_t word_index) = 0;
     virtual std::string render_brain_lobe(Macro& macro) = 0;
     virtual std::string render_gene_counts(Macro& macro) = 0;
     virtual std::string render_cell_values(Macro& macro,
                                             std::uint32_t cell,
                                             std::uint32_t variable,
                                             std::uint32_t field) = 0;
-    virtual bool capture_picture(Macro& macro, std::string& output_path) = 0;
+    virtual bool capture_picture(Macro& macro, std::uint8_t width,
+                                 std::uint8_t height,
+                                 std::string& output_path) = 0;
 };
 
 class MacroSystemHost : public virtual MacroCommandHost {

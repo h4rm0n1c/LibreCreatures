@@ -308,7 +308,8 @@ public:
                      creatures1::scripting::DdePutBCommand command,
                      std::string_view text) override;
     std::string render_learned_words(
-        creatures1::scripting::Macro& macro) override;
+        creatures1::scripting::Macro& macro,
+        std::uint32_t word_index) override;
     std::string render_brain_lobe(creatures1::scripting::Macro& macro) override;
     std::string render_gene_counts(
         creatures1::scripting::Macro& macro) override;
@@ -316,6 +317,7 @@ public:
                                    std::uint32_t cell, std::uint32_t variable,
                                    std::uint32_t field) override;
     bool capture_picture(creatures1::scripting::Macro& macro,
+                         std::uint8_t width, std::uint8_t height,
                          std::string& output_path) override;
 
     // MacroCommandHost / MacroExceptionHost.

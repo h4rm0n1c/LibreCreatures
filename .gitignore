@@ -1,25 +1,35 @@
-# CMake build directories
-/ground_truth/
-/build/
-/out/
-CMakeFiles/
-CMakeCache.txt
-cmake_install.cmake
-CTestTestfile.cmake
-*.vcxproj*
-*.sln
-.vs/
+# Installed compiler/SDK payload; reproducible locally but too large to track.
+/toolchain/
 
-# Compiler/linker output
+# Reverse-engineering research belongs outside the release repository.
+/ground_truth/
+
+# Generated graph/database views and disposable build output.
+/graphify-out/
+**/graphify-out/
+/build/
+/out-clean-*/
+/src/decompiled/
+
+# Compiler/linker products and temporary probes.
 *.obj
 *.exe
 *.pdb
 *.ilk
-*.map
 *.res
 *.exp
 *.lib
+*.map
+*.log
+*.sha256
+*.tmp
+*.bak
 
-# Editor/OS cruft
+# Python caches.
+__pycache__/
+*.py[cod]
+
+# Local editor/OS noise.
 .DS_Store
-Thumbs.db
+.vscode/
+.idea/

@@ -407,6 +407,10 @@ public:
     std::size_t favourite_place_count = 0;
     DocumentScore score{};
     std::uint32_t last_autosave_time_ms = 0;
+    // A failed autosave must not hammer the world file on every timer pass.
+    // Manual save/close remains available; reopening the world re-enables
+    // autosave after the underlying file problem has been corrected.
+    bool autosave_blocked = false;
     std::uint32_t serialized_document_state_word_count = 0;
     std::vector<std::uint32_t> serialized_document_state_words;
     DocumentAdapter* document_adapter = nullptr;

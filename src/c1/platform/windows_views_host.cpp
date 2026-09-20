@@ -69,6 +69,14 @@ void C1WindowsView::set_navigation_mode(
         mode == creatures1::ui::ViewportNavigationMode::manual);
 }
 
+void C1WindowsView::return_viewport_navigation_to_selected_creature() {
+    // Native SFCView::ReturnViewportNavigationToSelectedCreature resets the
+    // scrollbars, switches to follow mode, and asks the renderer to centre the
+    // selected creature whenever navigation is enabled.
+    creatures1::ui::return_viewport_navigation_to_selected_creature(
+        *this, view_settings_, view_state_.viewport_navigation_mode);
+}
+
 void C1WindowsView::apply_sound_policy(
     creatures1::ui::SfcViewSoundPolicy policy) {
     switch (policy) {
@@ -85,6 +93,13 @@ void C1WindowsView::apply_sound_policy(
         creatures1::ui::disable_sound_and_suspend_if_ready(view_state_, *this);
         return;
     }
+}
+
+std::uint32_t C1WindowsView::sound_settings_for_macro() const {
+    // Native ParseRValue's `snds` returns sound_enabled in bit 0 and
+    // sound_plays_when_unfocused in bit 1.
+    return (view_state_.sound_enabled ? 1u : 0u) |
+           (view_state_.sound_plays_when_unfocused ? 2u : 0u);
 }
 
 void C1WindowsView::update_keyboard_scroll_for_world_tick() {

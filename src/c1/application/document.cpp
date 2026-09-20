@@ -451,18 +451,30 @@ void Document::update_world(DocumentWorldUpdateHost& host) {
 
     const std::uint32_t now = host.current_time_ms();
     const std::uint32_t elapsed = now - last_autosave_time_ms;
-    if ((elapsed >= host.autosave_interval_ms() ||
+    if (!autosave_blocked &&
+        (elapsed >= host.autosave_interval_ms() ||
          now < last_autosave_time_ms) && host.privilege_level() < 2) {
         const std::string old_title = host.capture_main_window_title();
         host.set_temporary_main_window_title();
         host.set_application_busy(true);
-        host.promote_temporary_world_backup();
-        if (host.save_for_autosave(*this)) {
-            host.refresh_temporary_world_backup();
+        bool saved = false;
+        try {
+            host.promote_temporary_world_backup();
+            saved = host.save_for_autosave(*this);
+            if (saved) {
+                host.refresh_temporary_world_backup();
+            }
+        } catch (...) {
+            // The document remains playable. The platform save boundary has
+            // failed; stop autosaving for this session rather than producing a
+            // temp-file storm while an escaped archive exception is diagnosed.
+            autosave_blocked = true;
         }
         host.set_application_busy(false);
         host.restore_main_window_title(old_title);
         host.broadcast_embedded_control_state(kWorldUpdateControlState);
+        // SFCDoc::UpdateWorld refreshes this gate after the save hook returns,
+        // whether the underlying MFC hook reported success or failure.
         last_autosave_time_ms = host.current_time_ms();
     }
 

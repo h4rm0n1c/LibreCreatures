@@ -579,9 +579,13 @@ constexpr CaosToken kNewLift = caos_token('l', 'i', 'f', 't');
 
 constexpr CaosToken kRvalueObjectVariable = caos_token('o', 'b', 'v', 0);
 constexpr CaosToken kRvalueObjectPointer = caos_token('o', 'b', 'j', 'p');
-constexpr CaosToken kRvalueMovementMinYAlias = caos_token('c', 'a', 'g', 'e');
-// YVEC per the SDK guide: the target's y movement vector.  Spelled 'cevy'
-// the token could never match anything the interpreter reads.
+// CAGE is the creature's genome life-stage byte (0..7). The native decompile
+// prints a Creature-tail access through Object's movement-bounds type; the
+// recovered field at Creature+0x2cc0 is the stage byte, not a world Y value.
+constexpr CaosToken kRvalueCreatureAgeStage = caos_token('c', 'a', 'g', 'e');
+// YVEC per the SDK guide: the target's y movement vector.  The generated
+// decompile has historically shown the adjacent bounds-state type here; the
+// raw native access is the vehicle velocity field at +0x148.
 constexpr CaosToken kRvalueVehicleMovementVectorY = caos_token('y', 'v', 'e', 'c');
 constexpr CaosToken kRvalueIt = caos_token('_', 'i', 't', '_');
 // DRV!, the creature's most pressing drive.
@@ -618,7 +622,10 @@ constexpr CaosToken kRvalueAttentionObject = caos_token('a', 't', 't', 'n');
 constexpr CaosToken kRvalueMinutes = caos_token('m', 'i', 'n', 's');
 constexpr CaosToken kRvalueOwnerBounds = caos_token('c', 'a', 'r', 'r');
 constexpr CaosToken kRvalueTargetBounds = caos_token('t', 'c', 'a', 'r');
-constexpr CaosToken kRvalueSoundDescriptor = caos_token('a', 's', 'l', 'p');
+// ASLP is the creature sleep-state rvalue.  The decompiler rendered the
+// native byte as the high byte of a continuous sound descriptor; raw code at
+// ParseRValue+0x11f and SetSleepIndicator prove that interpretation false.
+constexpr CaosToken kRvalueAsleep = caos_token('a', 's', 'l', 'p');
 constexpr CaosToken kRvalueTemperature = caos_token('t', 'e', 'm', 'p');
 constexpr CaosToken kRvalueBump = caos_token('b', 'u', 'm', 'p');
 constexpr CaosToken kRvalueMovementMaxX = caos_token('l', 'i', 'm', 'r');
@@ -643,7 +650,10 @@ constexpr CaosToken kRvalueCameraX = caos_token('c', 'm', 'r', 'x');
 constexpr CaosToken kRvalueActiveEvent = caos_token('a', 'c', 't', 'v');
 constexpr CaosToken kRvalueGroundWidth = caos_token('g', 'n', 'd', 'w');
 constexpr CaosToken kRvalueWindowWidth = caos_token('w', 'i', 'n', 'w');
-constexpr CaosToken kRvalueMovementMaxYAlias = caos_token('b', 'a', 'b', 'y');
+// BABY is the pregnant creature's child genome source filename. The native
+// access decompiles as Object[0x8f].movement_bounds.max_y, but that address is
+// Creature+0x2cc8 (child_genome_source_filename), not Object::movement_bounds.
+constexpr CaosToken kRvalueChildGenomeSource = caos_token('b', 'a', 'b', 'y');
 constexpr CaosToken kRvalueFamily = caos_token('f', 'm', 'l', 'y');
 constexpr CaosToken kRvalueCameraY = caos_token('c', 'm', 'r', 'y');
 
@@ -804,10 +814,11 @@ std::uint32_t Macro::parse_rvalue(MacroRuntimeHost& runtime,
                    : object_pointer_value(
                          object_context.script_owner->caos_object_pointer());
     }
-    if (token == kRvalueMovementMinYAlias) {
-        return target == nullptr ? 0
-                                 : static_cast<std::uint32_t>(
-                                       target->movement_bounds().min_y);
+    if (token == kRvalueCreatureAgeStage) {
+        return target == nullptr || !runtime.is_creature_object(*target)
+                   ? 0
+                   : runtime.creature_value(
+                         *target, MacroCreatureValue::life_stage, 0);
     }
     if (token == kRvalueVehicleMovementVectorY) {
         // YVEC: the vehicle's y movement vector, not a packed bounds state.
@@ -977,9 +988,11 @@ std::uint32_t Macro::parse_rvalue(MacroRuntimeHost& runtime,
                                  : object_pointer_value(
                                        target->bounds_reference_object());
     }
-    if (token == kRvalueSoundDescriptor) {
-        return target == nullptr ? 0
-                                 : target->continuous_sound_descriptor() >> 24;
+    if (token == kRvalueAsleep) {
+        return target == nullptr || !runtime.is_creature_object(*target)
+                   ? 0
+                   : runtime.creature_value(
+                         *target, MacroCreatureValue::asleep, 0);
     }
     if (token == kRvalueTemperature) {
         return target == nullptr ? 0
@@ -1076,10 +1089,12 @@ std::uint32_t Macro::parse_rvalue(MacroRuntimeHost& runtime,
     if (token == kRvalueWindowWidth) {
         return runtime.viewport_value(MacroViewportValue::width);
     }
-    if (token == kRvalueMovementMaxYAlias) {
-        return target == nullptr ? 0
-                                 : static_cast<std::uint32_t>(
-                                       target->movement_bounds().max_y);
+    if (token == kRvalueChildGenomeSource) {
+        return target == nullptr || !runtime.is_creature_object(*target)
+                   ? 0
+                   : runtime.creature_value(
+                         *target,
+                         MacroCreatureValue::child_genome_source_filename, 0);
     }
     if (token == kRvalueFamily) {
         return target == nullptr ? 0 : classifier_family(*target);
@@ -1179,10 +1194,11 @@ void Macro::assign_lvalue(MacroRuntimeHost& runtime,
                                         : 0x2090u;
         runtime.set_viewport_value(MacroViewportValue::width, width);
         return;
-    } else if (destination_token == kRvalueMovementMaxYAlias) {
+    } else if (destination_token == kRvalueChildGenomeSource) {
         if (target != nullptr && classifier_family(*target) == 4u) {
             runtime.set_creature_value(
-                *target, MacroCreatureAssignment::egg_movement_limit, value);
+                *target, MacroCreatureAssignment::child_genome_source_filename,
+                value);
         }
         runtime.note_egg_state_change();
         return;
@@ -2555,8 +2571,10 @@ void Macro::execute_dde_command(MacroDdeHost& host, MacroRuntimeHost& runtime) {
         return;
     }
     case kWord: {
+        const std::uint32_t word_index = parse_rvalue(runtime, host);
         // Trailing separator per the native writers; see kGetB.
-        const std::string rendered = host.render_learned_words(*this);
+        const std::string rendered =
+            host.render_learned_words(*this, word_index);
         output_text.clear();
         if (!rendered.empty()) {
             append_pipe_field(output_text, rendered);
@@ -2680,8 +2698,24 @@ void Macro::execute_dde_command(MacroDdeHost& host, MacroRuntimeHost& runtime) {
         append_pipe_field(output_text, read_bracketed_text_argument());
         return;
     case kPict: {
+        // `pict` is the one DDE subcommand whose dimensions are raw bytes,
+        // not CAOS numerals.  The native reads width, skips the separator
+        // byte, reads height, and consumes the following command separator.
+        const std::size_t readable_capacity = std::min<std::size_t>(
+            script_capacity_bytes, script_buffer.size());
+        if (script_cursor_offset > readable_capacity ||
+            readable_capacity - script_cursor_offset < 4) {
+            execution_terminated = true;
+            report_syntax_error(host, "'dde: pict' command");
+            return;
+        }
+        const std::uint8_t width = static_cast<std::uint8_t>(
+            script_buffer[script_cursor_offset]);
+        const std::uint8_t height = static_cast<std::uint8_t>(
+            script_buffer[script_cursor_offset + 2]);
+        script_cursor_offset += 4;
         std::string output_path;
-        if (host.capture_picture(*this, output_path)) {
+        if (host.capture_picture(*this, width, height, output_path)) {
             output_text = output_path;
         } else {
             output_text.clear();

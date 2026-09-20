@@ -917,6 +917,10 @@ public:
     std::uint8_t action_activation_boost() const {
         return action_activation_boost_;
     }
+    // Native ParseRValue `aslp` reads the sleep-indicator state byte. Keep the
+    // state query on Creature so the scripting host never reaches through the
+    // native-layout Skeleton field or mistakes it for sound metadata.
+    bool is_asleep() const { return skeleton_.sleep_indicator_active; }
     const objects::Object* motion_link() const { return skeleton_.motion_link; }
     // Native TOUC's -1/no-motion path clears only the selected decision-lobe
     // neuron lanes. It deliberately does not cancel the active involuntary

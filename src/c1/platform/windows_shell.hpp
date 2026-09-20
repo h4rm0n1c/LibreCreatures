@@ -936,6 +936,9 @@ public:
 
     bool sounds_muted() const override;
 
+    // CAOS `snds` reads the two sound-policy bits owned by SFCView.
+    std::uint32_t sound_settings_for_macro() const;
+
     creatures1::sound::SoundManager& sound_manager() override;
 
     bool debug_console_available() const override;
@@ -1285,7 +1288,21 @@ public:
 
     int renderer_viewport_height() const;
 
+    // CAOS `winw`/`winh` address the renderer's stored dimensions.  These
+    // fields are separate from the current viewport edges.
+    int renderer_caos_viewport_width() const;
+    int renderer_caos_viewport_height() const;
+    void set_renderer_caos_viewport_width(int width);
+    void set_renderer_caos_viewport_height(int height);
+
+    bool write_renderer_dib_rect(
+        const creatures1::world::WorldRect& world_rect,
+        std::string_view output_path);
+    std::string primary_main_resource_directory();
+
     void request_renderer_origin(int world_x, int world_y);
+    void center_renderer_on_world_point_if_in_navigation_bounds(int world_x,
+                                                                  int world_y);
     void set_renderer_debug_highlight_rect(int left, int top, int right,
                                           int bottom);
     void queue_renderer_dirty_world_rect(
@@ -2126,7 +2143,9 @@ public:
     void initialize_view_base() override;
 
     void apply_sound_policy(creatures1::ui::SfcViewSoundPolicy policy);
+    std::uint32_t sound_settings_for_macro() const;
     void set_navigation_mode(creatures1::ui::ViewportNavigationMode mode);
+    void return_viewport_navigation_to_selected_creature();
     void update_keyboard_scroll_for_world_tick();
 
     bool manual_navigation_for_world_tick() const;

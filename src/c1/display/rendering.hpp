@@ -207,6 +207,9 @@ public:
                                 int world_bottom);
     void request_viewport_origin(int world_x, int world_y);
     void request_viewport_origin_for_selected_creature();
+    // SYS: CAMT centres the viewport on the current target's sound source.
+    void center_viewport_on_world_point_if_in_navigation_bounds(int world_x,
+                                                                  int world_y);
     void center_viewport_on_selected_creature_if_in_pan_region();
     void follow_selected_creature_viewport();
     bool is_selected_creature_within_safe_area() const;
@@ -220,8 +223,14 @@ public:
     void set_viewport_edges(int left, int top, int right, int bottom);
     int viewport_width() const { return viewport_width_; }
     int viewport_height() const { return viewport_height_; }
+    void set_caos_viewport_width(int width) { viewport_width_ = width; }
+    void set_caos_viewport_height(int height) { viewport_height_ = height; }
     void* create_back_buffer_dib(int width, int height);
     void update_dib_palette();
+
+    const std::uint8_t* dib_pixels() const { return dib_pixels_; }
+    int dib_width() const { return dib_width_; }
+    int dib_height() const { return dib_height_; }
 
     int viewport_left() const { return viewport_left_; }
     int viewport_top() const { return viewport_top_; }
@@ -245,6 +254,8 @@ private:
     void* dib_section_ = nullptr;
     void* previous_selected_object_ = nullptr;
     std::uint8_t* dib_pixels_ = nullptr;
+    int dib_width_ = 0;
+    int dib_height_ = 0;
     void* palette_ = nullptr;
     bool smooth_scrolling_enabled_ = false;
     // The main renderer owns the document's screen-space renderable set and
