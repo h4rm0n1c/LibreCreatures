@@ -290,11 +290,21 @@ std::uint8_t* Creature::resolve_genome_locus(
                        ? &controls.floating_loci[locus_index]
                        : &g_unresolved_creature_locus_sentinel;
         case 2:
+            // ResolveGenomeLocus @ 0x408d30, emitter branch: tissue 2 returns
+            // ControlState+6 and +7, which are fertility_signal and
+            // pregnancy_signal -- not +4/+5 (ambient light and crowdedness).
+            // Those two are already reachable as emitter tissue 4 loci 4 and
+            // 5.  The old mapping left fertility_signal and pregnancy_signal
+            // computed every tick but readable by no emitter, so the stock
+            // genome's oestrogen emitter (tissue 2 locus 0) and its
+            // gonadotrophin and progesterone emitters (tissue 2 locus 1) were
+            // driven by ambient light and crowd density instead of by the
+            // creature's reproductive state, and gestation never progressed.
             if (locus_index == 0) {
-                return &controls.ambient_light_signal;
+                return &controls.fertility_signal;
             }
             if (locus_index == 1) {
-                return &controls.crowdedness_signal;
+                return &controls.pregnancy_signal;
             }
             return &g_unresolved_creature_locus_sentinel;
         case 3:
