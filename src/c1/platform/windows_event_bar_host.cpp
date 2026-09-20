@@ -131,10 +131,16 @@ void C1EventBarStatusAdapter::set_pane_disabled(std::uint32_t pane_index, bool d
     const int index = static_cast<int>(pane_index);
     event_bar_.GetPaneInfo(index, command_id, style, width);
     if (disabled) {
-        style |= 0x04000000;
+        // Native hides a pane with SetPaneInfo(index, id, 0x04000100, 0) --
+        // SBPS_DISABLED | SBPS_NOBORDERS, width zero -- assigning the style
+        // rather than merging into whatever was there.
+        style = 0x04000100;
         width = 0;
     } else {
-        style &= ~static_cast<UINT>(0x04000000);
+        // The enable path is native's SetPaneStyle(index, 0): the whole style
+        // is cleared, not just SBPS_DISABLED, so SBPS_NOBORDERS cannot survive
+        // and keep the pane invisible.
+        style = 0;
     }
     event_bar_.SetPaneInfo(index, command_id, style, width);
 }

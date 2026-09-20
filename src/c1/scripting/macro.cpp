@@ -2274,9 +2274,12 @@ bool Macro::execute_event_command(MacroCommand command,
         return false;
     }
 
-    // Native `evnt` passes the raw Object pointer to the EventBar.  A null
-    // rvalue is not displayable; the port treats it as a no-op so the EventBar
-    // cannot retain an entry that its refresh path cannot dereference.
+    // Native `evnt` passes the raw Object pointer to the EventBar.  Native
+    // AddObjectToEventBarDisplayList @0x00416540 stores a null unchecked and
+    // RefreshObjectDisplayPanes @0x004166c0 then dereferences it, so native
+    // faults; this lane hardens against that.  EventBar::add_object holds the
+    // same invariant, so this check is belt-and-braces -- the byte-match lane
+    // deliberately keeps neither.
     auto* object = object_from_value(parse_rvalue(runtime, diagnostics), runtime);
     if (object != nullptr) {
         runtime.add_object_to_event_bar(object);

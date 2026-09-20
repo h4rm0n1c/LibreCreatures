@@ -216,6 +216,13 @@ void EventBar::refresh_object_display_panes(
         const std::string text = status.object_pane_text(*object, resource_id);
         status.set_pane_text(pane_index, text);
         status.set_pane_width(pane_index, status.measure_text(text).width);
+        // RefreshObjectDisplayPanes @0x004166c0 passes style 0 for an object
+        // pane, while UpdateStatusPanes @0x004168b0 preserves the existing
+        // style for panes 0x0b..0x0d.  Every object pane is left disabled by
+        // the hide loop below whenever the list is shorter than ten, which at
+        // startup means all ten, so a pane that is not explicitly re-enabled
+        // here keeps SBPS_DISABLED and renders nothing however wide it is.
+        status.set_pane_disabled(pane_index, false);
     }
 
     for (std::uint32_t hidden_pane =
