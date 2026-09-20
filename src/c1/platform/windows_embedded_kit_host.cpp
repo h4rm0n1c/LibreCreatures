@@ -3,6 +3,7 @@
 #include <array>
 #include <string>
 
+#include "../common/logging.hpp"
 #include "environment.hpp"
 #include "windows_com_host.hpp"
 #include "windows_pipe_dispatch_proxy.hpp"
@@ -40,12 +41,44 @@ bool invoke_kit_communicate(
     payload.vt = VT_I4;
     payload.lVal = static_cast<long>(message.payload);
 
-    BOOL accepted = FALSE;
-    driver.InvokeHelper(
-        1, DISPATCH_METHOD, VT_BOOL, &accepted,
-        reinterpret_cast<const BYTE*>(VTS_PVARIANT VTS_PVARIANT), &header,
-        &payload);
-    return accepted != FALSE;
+    try {
+        BOOL accepted = FALSE;
+        driver.InvokeHelper(
+            1, DISPATCH_METHOD, VT_BOOL, &accepted,
+            reinterpret_cast<const BYTE*>(VTS_PVARIANT VTS_PVARIANT), &header,
+            &payload);
+        return accepted != FALSE;
+    } catch (CException* error) {
+        char detail[512] = {};
+        if (error != nullptr) {
+            error->GetErrorMessage(detail, sizeof(detail));
+            error->Delete();
+        }
+        C1DebugConsoleDialog* console = active_debug_console();
+        if (console != nullptr) {
+            creatures1::common::debug_log(
+                *console, 0x2000,
+                "Embedded kit communication failed: %s\n",
+                detail[0] == '\0' ? "MFC OLE exception" : detail);
+        }
+        return false;
+    } catch (const std::exception& error) {
+        C1DebugConsoleDialog* console = active_debug_console();
+        if (console != nullptr) {
+            creatures1::common::debug_log(
+                *console, 0x2000,
+                "Embedded kit communication failed: %s\n", error.what());
+        }
+        return false;
+    } catch (...) {
+        C1DebugConsoleDialog* console = active_debug_console();
+        if (console != nullptr) {
+            creatures1::common::debug_log(
+                *console, 0x2000,
+                "Embedded kit communication failed: unknown exception\n");
+        }
+        return false;
+    }
 }
 
 bool WindowsEmbeddedKitHost::launch_via_native_com(std::size_t tool_index) {

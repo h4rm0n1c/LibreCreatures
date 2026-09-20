@@ -1770,11 +1770,17 @@ void C1WindowsDocument::OnUpdateSelectCreatureByMenuIndex(CCmdUI* command_ui) {
     }
     const std::size_t index =
         static_cast<std::size_t>(command_ui->m_nID - 0x9c40);
-    if (index >= creature_count()) {
+    // The menu is numbered from the filtered selection array populated by
+    // rebuild_creature_selection_menu().  creature_count()/creature_at() is
+    // the raw registry and may contain entries that are not menu eligible
+    // (for example, objects whose tick gate is disabled), so using it here
+    // can check a different creature from the command caption.  Resolve the
+    // command through the same selection array used by the click handler.
+    if (index >= selection_count()) {
         return;
     }
     auto* creature = dynamic_cast<creatures1::creatures::Creature*>(
-        creature_at(index));
+        selection_at(index));
     bool enabled = false;
     if (creature != nullptr && world_timer_is_armed()) {
         enabled = !object_for_creature(*creature)

@@ -4,6 +4,8 @@
 #include "windows_creature_hosts.hpp"
 #include "windows_shell.hpp"
 
+#include <stdexcept>
+
 namespace creatures1::platform {
 
 // Owns a closed main frame between PostNcDestroy and the end of ExitInstance.
@@ -117,6 +119,19 @@ void C1MainFrame::update_document_world() {
         document->update_world_tick();
     } catch (const std::exception& error) {
         document->recover_world_update_after_boundary_failure(error);
+    } catch (CException* error) {
+        char message[512] = {};
+        if (error != nullptr) {
+            error->GetErrorMessage(message, sizeof(message));
+            error->Delete();
+        }
+        document->recover_world_update_after_boundary_failure(
+            std::runtime_error(message[0] == '\0'
+                                   ? "MFC world-update exception"
+                                   : message));
+    } catch (...) {
+        document->recover_world_update_after_boundary_failure(
+            std::runtime_error("unknown world-update exception"));
     }
     refresh_event_bar_status(*document);
 }
@@ -875,18 +890,19 @@ bool C1MainFrame::window_is_iconic() const {
 
 void C1MainFrame::OnInitMenuPopup(CMenu* popup_menu, UINT menu_index,
                                   BOOL system_menu) {
-    CFrameWnd::OnInitMenuPopup(popup_menu, menu_index, system_menu);
     if (system_menu || popup_menu == nullptr) {
+        CFrameWnd::OnInitMenuPopup(popup_menu, menu_index, system_menu);
         return;
     }
     C1WindowsDocument* document =
         DYNAMIC_DOWNCAST(C1WindowsDocument, GetActiveDocument());
     if (document != nullptr) {
-        // The menu is rebuilt after MFC has prepared the popup.  The
-        // semantic policy owns filtering/caption/command numbering; this
-        // call only supplies live USER32 handles and the game registry.
+        // Rebuild first so MFC's command-update pass sees the same filtered
+        // entries and captions that the popup is about to display.  This
+        // keeps the pregnancy marker and selected-creature checkmark live.
         document->rebuild_creature_selection_menu();
     }
+    CFrameWnd::OnInitMenuPopup(popup_menu, menu_index, system_menu);
 }
 
 void C1MainFrame::OnSelectCreature(UINT command_id) {
