@@ -43,7 +43,18 @@ constexpr std::uint32_t kDefaultWorldUpdateIntervalMs = 90;
 constexpr std::uint32_t kMaximumWorldUpdateIntervalMs = 300;
 constexpr std::uint32_t kDefaultMaxNorns = 10;
 constexpr std::uint32_t kWorldTickPhaseCount = 16;
-constexpr std::uint32_t kCreatureUpdateCohortCount = 5;
+// SFCDoc::UpdateWorld @ 0x004324e0 cycles this counter through five values
+// (0..4) while the cohort walk below steps by four, so residue class 0 mod 4
+// gets a second, redundant brain/biochemistry/action-selection pass every
+// fifth tick that classes 1-3 never get -- a real update-frequency bias, not
+// a deliberate design choice. Confirmed against Creatures 2/3/Docking
+// Station, which all use four cohorts matching their own stride-4 walk: C1's
+// five is the outlier, a genuine off-by-one that shipped in 1996 and was
+// quietly fixed in every later game in the series. This port corrects it
+// rather than preserving it -- LibreCreatures targets correct gameplay, not
+// byte-for-byte native fidelity (that's byte_match's job, and this constant
+// has no equivalent there since it isn't part of the fidelity contract).
+constexpr std::uint32_t kCreatureUpdateCohortCount = 4;
 constexpr std::uint32_t kAmbientSoundCount = 0x1c;
 constexpr std::uint32_t kAmbientSoundCooldownMinimum = 0x32;
 constexpr std::uint32_t kAmbientSoundCooldownRange = 0x32;
