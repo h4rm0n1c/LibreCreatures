@@ -1099,7 +1099,7 @@ void Creature::handle_word_learning_event(
 }
 
 void Creature::update_attention(CreatureAttentionHost& host) {
-    if (dead_) {
+    if (is_dead()) {
         return;
     }
 
@@ -1653,7 +1653,7 @@ void Creature::apply_goal_direction(
     std::uint8_t attention_activation,
     std::uint8_t action_commitment,
     const CreatureGoalDirectionHost& world) {
-    if (dead_) {
+    if (is_dead()) {
         return;
     }
 
@@ -1714,7 +1714,7 @@ void Creature::apply_goal_direction(
 }
 
 void Creature::update_goal_direction(const CreatureGoalDirectionHost& world) {
-    if (dead_ || skeleton_.bounds_reference_object() != nullptr ||
+    if (is_dead() || skeleton_.bounds_reference_object() != nullptr ||
         skeleton_.sleep_indicator_active ||
         instinct_runtime_state_.dream_countdown != 0) {
         return;
@@ -2109,7 +2109,7 @@ void Creature::update(CreatureUpdateHost& world,
         }
     }
 
-    if (dead_) {
+    if (is_dead()) {
         if (sleep_indicator_object_ != nullptr) {
             objects::Object* indicator = sleep_indicator_object_;
             world.dispatch_sleep_indicator_event(
@@ -2341,7 +2341,6 @@ void Creature::initialize_runtime_state(const InitializationHost& host) {
     child_genome_source_filename_ = 0;
     gamete_genome_source_filename_ = 0;
     biochemistry_tick_ = 0;
-    dead_ = false;
     death_state_ = 0;
     register_state_.set_age_ticks(0);
     goal_direction_weight_matrix_ = {};
@@ -2650,7 +2649,7 @@ void Creature::update_perception(
     const CreaturePerceptionHost& world,
     const StimulusSourceHost& source_host,
     BuiltInStimulusDebugHost* debug_host) {
-    if (dead_) {
+    if (is_dead()) {
         return;
     }
 
@@ -2811,7 +2810,7 @@ void Creature::update_perception(
 void Creature::update_drive_threshold_state(
     const std::array<std::int32_t, 16>& lower_thresholds,
     const std::array<std::int32_t, 16>& upper_thresholds) {
-    if (dead_) {
+    if (is_dead()) {
         return;
     }
 
@@ -2854,7 +2853,7 @@ void Creature::apply_stimulus(
     std::uint32_t magnitude,
     const StimulusSourceHost& source_host,
     common::DebugLogHost* log_host) {
-    if (dead_ || source_object == nullptr) {
+    if (is_dead() || source_object == nullptr) {
         return;
     }
 
@@ -3143,7 +3142,7 @@ std::string Creature::format_status_for_external_query(
                    biochemistry_->chemical_states()[0x3b].concentration) *
                100u) /
                   0xffu;
-    if (health == 0 || dead_) {
+    if (health == 0 || is_dead()) {
         field(strings.dead);
     } else {
         field(std::to_string(health) + "%");
@@ -3167,7 +3166,7 @@ std::string Creature::format_status_for_external_query(
             sickness = strings.sick;
         }
     }
-    if (dead_) {
+    if (is_dead()) {
         sickness = strings.dead;
     }
     field(sickness);
@@ -3202,7 +3201,7 @@ void Creature::append_default_response_prefix(
 void Creature::handle_queued_event_slot5(
     const objects::QueuedObjectEvent& event,
     CreatureScriptEventHost& event_host) {
-    if (!dead_) {
+    if (!is_dead()) {
         event_host.dispatch_script_event(*this, event.source, 1, 1);
     }
 }
@@ -3210,7 +3209,7 @@ void Creature::handle_queued_event_slot5(
 void Creature::handle_queued_event_slot6(
     const objects::QueuedObjectEvent& event,
     CreatureScriptEventHost& event_host) {
-    if (!dead_) {
+    if (!is_dead()) {
         event_host.dispatch_script_event(*this, event.source, 2, 1);
     }
 }
@@ -3218,7 +3217,7 @@ void Creature::handle_queued_event_slot6(
 void Creature::handle_queued_event_slot7(
     const objects::QueuedObjectEvent& event,
     CreatureScriptEventHost& event_host) {
-    if (!dead_) {
+    if (!is_dead()) {
         event_host.dispatch_script_event(*this, event.source, 0, 1);
     }
 }
@@ -3730,7 +3729,6 @@ void Creature::serialize(
         gamete_genome_source_filename_ = archive.read_uint32();
         child_genome_source_filename_ = archive.read_uint32();
         death_state_ = archive.read_byte();
-        dead_ = death_state_ != 0;
         register_state_.set_age_ticks(archive.read_uint32());
         const std::uint32_t archived_instinct_count = archive.read_uint32();
         // The dream countdown sits between the instinct count and the instinct

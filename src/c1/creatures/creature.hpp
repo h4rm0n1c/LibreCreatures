@@ -1217,8 +1217,20 @@ public:
     std::string display_name() const override {
         return register_state_.history().display_name;
     }
+    // The only place "is this creature dead" is spelled out.  death_state_
+    // is the one archived, one-byte truth (native's death_state field);
+    // there used to be a second, independently-settable `dead_` bool that
+    // Creature::die() never updated on the live-death path, so a creature
+    // that died during play kept reading as alive to life_state(), update(),
+    // and action-selection eligibility until the world was saved and
+    // reloaded (deserialize was the only place that ever derived it
+    // correctly: `dead_ = death_state_ != 0`).  Removing the second field
+    // makes that class of divergence impossible rather than merely fixed at
+    // one call site.
+    bool is_dead() const { return death_state_ != 0; }
+
     CreatureLifeState life_state() const override {
-        return dead_ ? CreatureLifeState::dead : CreatureLifeState::alive;
+        return is_dead() ? CreatureLifeState::dead : CreatureLifeState::alive;
     }
     CreatureGender gender() const override {
         return genome_sex_ == GenomeSex::female ? CreatureGender::female
@@ -1266,7 +1278,6 @@ private:
     GenomeSex genome_sex_ = GenomeSex::male;
     std::uint8_t genome_life_stage_ = 0;
     std::uint32_t biochemistry_tick_ = 0;
-    bool dead_ = false;
     std::uint8_t death_state_ = 0;
     AttentionClassifier classifier_{};
     std::uint32_t selected_action_id_ = 0;
