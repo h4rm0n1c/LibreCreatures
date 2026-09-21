@@ -359,6 +359,10 @@ public:
     // creature gene records.
     virtual bool load_materialized_genome(Creature& creature,
                                           Genome& genome) = 0;
+    // Same formatting Creature's plain constructor uses to keep the
+    // register's cached moniker strings in step with the identity fields
+    // they describe.
+    virtual std::string format_moniker(std::uint32_t value) const = 0;
 
     virtual void set_unbounded_bounds_and_update(Creature& creature) = 0;
     virtual void move_to_and_redraw(Creature& creature, int world_x,

@@ -58,6 +58,7 @@ public:
     bool load_materialized_genome(
         creatures1::creatures::Creature& creature,
         creatures1::creatures::Genome& genome) override;
+    std::string format_moniker(std::uint32_t value) const override;
     void set_unbounded_bounds_and_update(
         creatures1::creatures::Creature& creature) override;
     void move_to_and_redraw(creatures1::creatures::Creature& creature,

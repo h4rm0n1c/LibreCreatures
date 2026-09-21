@@ -3858,6 +3858,21 @@ void Creature::deserialize(CreatureArchive& archive,
         return;
     }
 
+    // ensure_unique_primary_genome_filename can just have reassigned
+    // skeleton_.genome_source_filename to dodge a local collision -- the same
+    // situation Creature's plain constructor handles by refreshing these
+    // three cached strings right after genome load.  Skipping it here left
+    // an imported creature's register history (what every moniker-reading
+    // query -- MONK, OVVD, the Owner's Kit -- displays) permanently pointing
+    // at the pre-collision identity while her live skeleton identity moved
+    // on, with no later save/load ever re-deriving one from the other.
+    register_state_.history().genome_moniker =
+        host.format_moniker(skeleton_.genome_source_filename);
+    register_state_.history().father_moniker =
+        host.format_moniker(skeleton_.father_moniker);
+    register_state_.history().mother_moniker =
+        host.format_moniker(skeleton_.mother_moniker);
+
     genome.reset();
 
     if (child_genome_source_filename_ != 0) {

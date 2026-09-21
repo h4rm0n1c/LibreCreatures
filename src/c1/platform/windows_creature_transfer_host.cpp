@@ -221,6 +221,11 @@ bool WindowsCreatureDeserializationHost::load_materialized_genome(
     return true;
 }
 
+std::string WindowsCreatureDeserializationHost::format_moniker(
+    std::uint32_t value) const {
+    return document_.format_moniker(value);
+}
+
 void WindowsCreatureDeserializationHost::set_unbounded_bounds_and_update(
     creatures1::creatures::Creature& creature) {
     creatures1::objects::Object& object = creature.skeleton();
