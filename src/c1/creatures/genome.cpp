@@ -28,6 +28,11 @@ bool is_end(const std::vector<std::uint8_t>& bytes, std::size_t offset) {
     return read_tag(bytes, offset) == kGenomeEndTag;
 }
 
+bool is_pigment_extension(const std::vector<std::uint8_t>& bytes,
+                          std::size_t offset) {
+    return read_tag(bytes, offset) == kPigmentExtensionTag;
+}
+
 std::size_t next_record(const std::vector<std::uint8_t>& bytes,
                         std::size_t offset) {
     while (offset + 4 <= bytes.size()) {
@@ -327,6 +332,32 @@ void Genome::copy_gene_with_mutation(Genome& source,
 
     source.cursor_ = start + kGeneHeaderSize;
     while (source.cursor_ < end) {
+        // A structural tag is not genetic data and must survive copying
+        // intact.  "gene" and "gend" are safe already -- gene_end() stops at
+        // them and the header's first eight bytes are copied verbatim -- but
+        // "gext" sits inside a pigment gene's payload, so the byte loop would
+        // roll on each of its four tag bytes like any other.
+        //
+        // Flipping one of them costs the whole extension: the loader compares
+        // the four bytes after the pigment payload against "gext" and, on any
+        // mismatch, silently declines to read the hue-rotation and
+        // colour-swap bytes and leaves them in the stream as junk.  The
+        // pigmentation is then gone from that creature and every descendant,
+        // with no way back -- a mutation that deletes a feature rather than
+        // varying it.  1.04 added the tag without teaching the copier about
+        // it, and the loss has been observed and documented for years.
+        //
+        // The two payload bytes AFTER the tag stay mutable: varying hue
+        // rotation and colour swap is real genetics and is the point of the
+        // extension.  Only the tag is held still.
+        if (source.cursor_ + 4 <= end &&
+            is_pigment_extension(source.payload_, source.cursor_)) {
+            payload_.insert(payload_.end(),
+                            source.payload_.begin() + source.cursor_,
+                            source.payload_.begin() + source.cursor_ + 4);
+            source.cursor_ += 4;
+            continue;
+        }
         copy_byte_with_mutation(source, mutation_allowed, random);
     }
     source.cursor_ = end;

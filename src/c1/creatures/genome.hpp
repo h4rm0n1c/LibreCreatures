@@ -111,6 +111,11 @@ static_assert(sizeof(CreaturePigmentGenePayload) == 2,
 
 constexpr std::uint32_t kGeneTag = 0x656e6567u;       // "gene"
 constexpr std::uint32_t kGenomeEndTag = 0x646e6567u; // "gend"
+// "gext", the undocumented pigment extension tag added in 1.04.  Unlike
+// "gene" and "gend" it sits INSIDE a gene's payload, so gene_end() walks
+// straight over it and the copier would otherwise mutate it.  See
+// Genome::copy_gene_with_mutation.
+constexpr std::uint32_t kPigmentExtensionTag = 0x74786567u; // "gext"
 // The sex-applicability bits are 3 and 4, not 0 and 1.  CGenome's own gene
 // tests read them as `flags & 0x18` for "restricted at all", `& 0x08` for
 // male and `& 0x10` for female (CountMatchingGenes @ 00418f70 and

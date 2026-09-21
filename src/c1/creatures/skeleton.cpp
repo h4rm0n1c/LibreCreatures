@@ -218,7 +218,6 @@ CreaturePaletteControls read_creature_palette_controls(Genome& genome) {
         static_cast<std::uint8_t>(GenomeGeneFamily::creature);
     constexpr std::uint8_t kPigmentSubtype = 6;
     constexpr std::uint8_t kSubtypeModulus = 7;
-    constexpr std::uint32_t kGextTag = 0x74786567U; // little-endian "gext"
 
     CreaturePaletteControls controls{};
     std::array<std::uint32_t, 3> sums{};
@@ -252,7 +251,7 @@ CreaturePaletteControls read_creature_palette_controls(Genome& genome) {
                  << 16) |
                 (static_cast<std::uint32_t>(payload[extension_start + 3])
                  << 24);
-            if (extension_tag == kGextTag) {
+            if (extension_tag == kPigmentExtensionTag) {
                 controls.hue_rotation = average_palette_control(
                     controls.hue_rotation, payload[extension_start + 4]);
                 controls.colour_swap = average_palette_control(
