@@ -454,6 +454,14 @@ void Document::update_world(DocumentWorldUpdateHost& host) {
     if (!autosave_blocked &&
         (elapsed >= host.autosave_interval_ms() ||
          now < last_autosave_time_ms) && host.privilege_level() < 2) {
+        // SFCDoc::UpdateWorld @ 00432be6 broadcasts this same toggle code
+        // here, before the save even starts, and again @ 00432c8b once it's
+        // done -- a matched pair. Kits treat this code as a toggle, not a
+        // set, so sending only the closing half (as this used to) flips
+        // every open kit's running/paused belief once per autosave and
+        // never flips it back, permanently desyncing it from the real
+        // world-update state after the very first autosave.
+        host.broadcast_embedded_control_state(kWorldUpdateControlState);
         const std::string old_title = host.capture_main_window_title();
         host.set_temporary_main_window_title();
         host.set_application_busy(true);
