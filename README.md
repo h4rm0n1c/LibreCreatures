@@ -86,6 +86,33 @@ loading, world ownership, tick ordering, and the platform boundary explicit.
 Small focused changes are easier to test against saved worlds and external
 kits.
 
+## Attribution
+
+**Creatures** and everything in it — the design, the artwork, the sounds, the
+genomes, the name — belong to **Gameware Development Ltd**. The series was
+created by Cyberlife Technology, which became Creature Labs; when that company
+closed in 2003 its assets and intellectual property passed to Gameware Europe,
+Gameware Development's parent. Gameware are the rights holders today.
+
+This project is not affiliated with, endorsed by, or supported by Gameware
+Development. It reimplements the engine only. It ships no original game data,
+and it needs a legally obtained copy of Creatures 1 to run.
+
+The binary this work was derived from is the **Creatures 1 Community Edition**
+maintained by **[lisdude](https://lisdude.com/Creatures/Community/C1/)** — a
+series of patches over the last official Creatures 1 release, adding stability
+fixes and quality-of-life improvements while staying compatible with the Steam
+and GOG editions. The build studied here reports itself as Community Release
+10.3, which is the version LibreCreatures matches its behaviour against. Where
+this project talks about "native" behaviour, it means that executable.
+
+Without lisdude's work there would have been nothing maintained to study, and
+without Gameware's there would have been no Creatures at all.
+
 ## License
 
 GPLv3. See [LICENSE](LICENSE).
+
+The GPL covers this project's own source. It makes no claim over Creatures
+itself, over Gameware's intellectual property, or over the Community Edition
+patches.
