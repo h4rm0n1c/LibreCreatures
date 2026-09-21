@@ -1440,10 +1440,19 @@ public:
     }
 
     std::size_t selected_creature_count() const override {
-        // g_creature_selection_array.m_nSize: the world's creature registry.
+        // g_creature_selection_array.m_nSize, which is NOT the creature
+        // registry.  Native keeps two lists: g_creature_registry holds every
+        // creature, and g_creature_selection_array holds only the
+        // tick-enabled ones, rebuilt by RebuildCreatureSelectionMenu
+        // @0x00422250.  CMainFrame::OnUpdateEmbeddedKitToolCommand
+        // @0x004216d0 reads the selection count at 0x004217a0 -- the same
+        // array SelectCreatureByMenuIndex @0x00433920 and the `getb ovvd`
+        // walk index.  Returning the registry count here over-counts by
+        // every creature that is not tick-enabled, so the hatchery gates
+        // itself off against MaxNorns too early.
         C1WindowsDocument* document =
             DYNAMIC_DOWNCAST(C1WindowsDocument, frame_.GetActiveDocument());
-        return document == nullptr ? 0 : document->creature_count();
+        return document == nullptr ? 0 : document->selected_creature_count();
     }
 
     std::size_t max_norn_count() const override {

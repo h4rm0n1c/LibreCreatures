@@ -696,6 +696,20 @@ bool C1WindowsView::classifier_tip_visible() const {
 }
 
 void C1WindowsView::hide_classifier_tip_window() {
+    // Guarded the same way classifier_tip_visible() and
+    // destroy_classifier_tip() already guard, because the tip window can
+    // already be destroyed when this runs -- opening an embedded kit
+    // reorders windows and gets here after the tip has gone.
+    //
+    // On Windows ::ShowWindow on a stale handle is a silent no-op, so this
+    // guard changes nothing there.  Under Wine the same call is translated
+    // into X_UnmapWindow against an X window that no longer exists, the
+    // server answers BadWindow, and Wine terminates the process on the
+    // unhandled X error -- the game vanishes the moment a kit opens, and
+    // every kit then spins on ConnectToPipe with no game to reach.
+    if (classifier_tip_.GetSafeHwnd() == nullptr) {
+        return;
+    }
     classifier_tip_.ShowWindow(SW_HIDE);
 }
 
@@ -745,6 +759,10 @@ void C1WindowsView::resize_classifier_tip(int screen_x, int screen_y,
 }
 
 void C1WindowsView::show_classifier_tip_if_hidden() {
+    // Same stale-handle guard as hide_classifier_tip_window().
+    if (classifier_tip_.GetSafeHwnd() == nullptr) {
+        return;
+    }
     if (classifier_tip_.IsWindowVisible() == FALSE) {
         classifier_tip_.ShowWindow(SW_SHOWNOACTIVATE);
     }
