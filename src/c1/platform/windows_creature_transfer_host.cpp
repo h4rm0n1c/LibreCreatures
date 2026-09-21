@@ -253,7 +253,15 @@ void WindowsCreatureDeserializationHost::set_default_bounds_and_update(
 
 void WindowsCreatureDeserializationHost::select_loaded_creature(
     creatures1::creatures::Creature& creature) {
-    document_.set_selected_creature(&creature);
+    // Creature::Deserialize @ 0040dda0's own `if (this != g_selected_creature)`
+    // block is the exact selection-change sequence apply_selected_creature
+    // already implements for menu selection and next/previous navigation:
+    // broadcast 6 (or 8 if null), title, eye view, a conditional second
+    // broadcast 8 if the new selection is dead, then viewport/event-bar/
+    // toolbar refresh.  A bare field set skipped every one of those, so an
+    // imported creature never told any open kit it had become selected.
+    creatures1::application::apply_selected_creature(document_, &creature,
+                                                      true);
 }
 
 void WindowsCreatureDeserializationHost::rebuild_creature_selection_menu() {
@@ -265,10 +273,12 @@ void WindowsCreatureDeserializationHost::increment_living_norns() {
 }
 
 void WindowsCreatureDeserializationHost::notify_creature_loaded_to_embedded_kits() {
-    // The same twenty-slot DISPID 1 broadcast the death and selection paths
-    // use.  The native's state code for a load is not established here, so
-    // the selection-changed code is reused rather than inventing one.
-    document_.broadcast_selection_state(0);
+    // Creature::Deserialize's tail pings embedded record slot 8 with the
+    // same "Dummy" VT_I4 OLE dispatch SFCDoc::UpdateWorld's periodic score
+    // notification and Creature::RemoveFromWorld/RemoveObjectFromWorld use --
+    // it is not the twenty-slot BroadcastEmbeddedControlState call at all,
+    // and code 0 is not a real state either path ever sends.
+    document_.publish_periodic_score_to_embedded_control({});
 }
 
 // --- CreatureImportHost -----------------------------------------------------
