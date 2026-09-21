@@ -2367,12 +2367,14 @@ void Creature::initialize_from_genome(GenomeInitializationHost& host) {
         brain_->load_genome(genome);
     }
 
-    if (!skeleton_.load_genome(genome,
-                               host.skeleton_services(),
-                               host.render_plane_host(),
-                               host.sound_host())) {
-        return;
-    }
+    // Native Creature::InitializeFromGenome does not gate the remaining
+    // genome loads on Skeleton::LoadGenome's result.  Body/gallery failure
+    // must not prevent biochemistry (especially the reproductive emitters)
+    // or the creature-state genes from being installed.
+    (void)skeleton_.load_genome(genome,
+                                host.skeleton_services(),
+                                host.render_plane_host(),
+                                host.sound_host());
 
     if (biochemistry_ != nullptr) {
         biochemistry_->load_genome(
