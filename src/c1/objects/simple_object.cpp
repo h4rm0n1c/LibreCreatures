@@ -418,17 +418,16 @@ void SimpleObject::end_interaction_with_source(
             // into it drew far in front of them.  `Creature::HandlePickupEvent`
             // @0x004098e0 carries the identical expression for a creature
             // entering a vehicle.
-            const int carrier_plane = vehicle->render_plane();
-            int plane_offset = 5;
-            if (const auto* compound =
-                    dynamic_cast<const CompoundObject*>(vehicle)) {
-                const Entity* facing_part = compound->part(1).entity.get();
-                if (facing_part != nullptr &&
-                    facing_part->render_plane() <= carrier_plane) {
-                    plane_offset = -5;
-                }
-            }
-            entity_->set_render_plane(carrier_plane + plane_offset);
+            //
+            // LibreCreatures deliberately draws the object in front of every
+            // part of the vehicle instead: at native's +/-5 an item dropped
+            // into a lift or the incubator vanished behind its front panel,
+            // so the player could neither see nor find it again.
+            const auto* compound = dynamic_cast<const CompoundObject*>(vehicle);
+            entity_->set_render_plane(
+                (compound != nullptr ? compound->frontmost_part_render_plane()
+                                     : vehicle->render_plane()) +
+                1);
             update_movement_bounds(host);
 
             target_world_x = movement_bounds().min_x;

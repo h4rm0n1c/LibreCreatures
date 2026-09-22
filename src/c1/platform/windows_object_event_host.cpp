@@ -405,13 +405,13 @@ int WindowsSimpleObjectInteractionHost::carried_object_render_plane_offset(
     }
     if (const auto* compound =
             dynamic_cast<const creatures1::objects::CompoundObject*>(&reference)) {
-        // The only shipped non-null parts[3] is the incubator's dial.  The
-        // native pointer-byte read is not portable, so preserve the stable
-        // visible placement for that case and the defined null-pointer value
-        // for every other compound carrier.
-        return compound->part(3).entity != nullptr
-                   ? kRenderPlaneOffsets[1]
-                   : kRenderPlaneOffsets[0];
+        // LibreCreatures deliberately draws an object a machine is holding in
+        // front of every part of that machine.  Native's -1/+1 from the body
+        // plane left it behind front covers (the incubator's is at 4000),
+        // where the player could not see it.  The caller adds the result to
+        // the machine's own plane.
+        return compound->frontmost_part_render_plane() -
+               compound->render_plane() + 1;
     }
     return kRenderPlaneOffsets[1];
 }
