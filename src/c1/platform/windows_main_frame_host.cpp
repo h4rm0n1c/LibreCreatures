@@ -3,6 +3,7 @@
 #include "windows_macro_host.hpp"
 #include "windows_creature_hosts.hpp"
 #include "windows_shell.hpp"
+#include "windows_com_host.hpp"
 
 #include <stdexcept>
 
@@ -699,6 +700,46 @@ void C1MainFrame::set_embedded_kit_toolbar_button(
     const int button_index = 0x0f + static_cast<int>(tool_index);
     main_toolbar_.SetButtonInfo(button_index, static_cast<UINT>(command_id),
                                  TBBS_BUTTON, image_index);
+}
+
+int C1MainFrame::add_kit_toolbar_bitmap(std::string_view prog_id) {
+    // This was previously a permanent stub returning -1, so every kit --
+    // on every platform, not only under Wine -- fell straight through to
+    // the shared toolbar bitmap's type-code slot, which is a different
+    // image than the kit's own icon. The four-step native sequence below
+    // (resolve the COM local server path, swap its extension for .bmp,
+    // load that file, add it to the toolbar) was already implemented
+    // correctly as creatures1::ui::add_kit_toolbar_bitmap, but nothing
+    // ever called it.
+    WindowsComLocalServer com_resolver;
+    std::string server_path;
+    if (!resolve_com_progid_local_server_path(com_resolver, prog_id,
+                                              server_path)) {
+        return -1;
+    }
+
+    const std::size_t extension = server_path.find_last_of('.');
+    if (extension == std::string::npos) {
+        return -1;
+    }
+    server_path.replace(extension, std::string::npos, ".bmp");
+    if (GetFileAttributesA(server_path.c_str()) == INVALID_FILE_ATTRIBUTES) {
+        return -1;
+    }
+
+    const HBITMAP bitmap = static_cast<HBITMAP>(LoadImageA(
+        nullptr, server_path.c_str(), IMAGE_BITMAP, 0x10, 0x10,
+        LR_LOADFROMFILE));
+    if (bitmap == nullptr) {
+        return -1;
+    }
+
+    const int image_index = main_toolbar_.GetToolBarCtrl().AddBitmap(
+        1, CBitmap::FromHandle(bitmap));
+    if (image_index < 0) {
+        DeleteObject(bitmap);
+    }
+    return image_index;
 }
 
 void C1MainFrame::GetMessageString(UINT command_id, CString& message) const {

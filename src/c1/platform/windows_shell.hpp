@@ -251,6 +251,12 @@ public:
     void set_embedded_kit_toolbar_button(std::size_t tool_index,
                                          std::uint32_t command_id,
                                          int image_index);
+    // AddKitToolbarBitmapFromProgId @ 0x00443ff0: resolve the kit's own COM
+    // local-server path, load the same-named .bmp beside it, and add it to
+    // the main toolbar's image list. Returns the new image's index, or -1
+    // if the kit has no COM registration or no matching .bmp -- the caller
+    // falls back to the shared toolbar bitmap's type-code slot in that case.
+    int add_kit_toolbar_bitmap(std::string_view prog_id);
     void GetMessageString(UINT command_id, CString& message) const override;
     // The native frame carries one COleDispatchDriver per embedded-kit slot;
     // a slot is connected when its driver holds an IDispatch.  Population is

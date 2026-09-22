@@ -83,12 +83,12 @@ void C1NativeEmbeddedKitMenuPlatform::publish_tool_definition( std::size_t tool_
                                             adjusted_type_code);
 }
 
-int C1NativeEmbeddedKitMenuPlatform::add_toolbar_bitmap(std::string_view /*prog_id*/) {
-    // AddKitToolbarBitmapFromProgId is a native kit/icon resource
-    // lookup.  The recovered fallback is the type-code image already in
-    // the stock toolbar bitmap; keep that fallback until the external
-    // kit icon ownership boundary is bound.
-    return -1;
+int C1NativeEmbeddedKitMenuPlatform::add_toolbar_bitmap(std::string_view prog_id) {
+    // AddKitToolbarBitmapFromProgId @ 0x00443ff0: resolve the kit's own COM
+    // registration to find its .bmp and use that as the toolbar image,
+    // falling back to the shared bitmap's type-code slot only when the kit
+    // has no COM registration or no matching .bmp file.
+    return frame_.add_kit_toolbar_bitmap(prog_id);
 }
 
 void C1NativeEmbeddedKitMenuPlatform::set_toolbar_button(std::size_t tool_index, std::uint32_t command_id, int image_index) {
