@@ -256,6 +256,7 @@ MacroCommandFamily Macro::classify_command(CaosToken token) {
     case MacroCommand::script_extended:
     case MacroCommand::endm:
     case MacroCommand::mate:
+    case MacroCommand::hidden_fertilize:
     case MacroCommand::delete_creature:
     case MacroCommand::dream:
     case MacroCommand::sleep:
@@ -337,7 +338,6 @@ MacroCommandFamily Macro::classify_command(CaosToken token) {
     case MacroCommand::approach:
     case MacroCommand::uppercase_approach:
     case MacroCommand::anim:
-    case MacroCommand::hidden_fertilize:
         return MacroCommandFamily::debug_system_and_misc;
     default:
         break;

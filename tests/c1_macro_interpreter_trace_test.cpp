@@ -1,4 +1,5 @@
 #include "scripting/macro.hpp"
+#include "objects/object.hpp"
 
 #include <cassert>
 #include <cstdint>
@@ -25,7 +26,7 @@ namespace {
 // This is deliberately a test-only null adapter. It proves that the outer
 // interpreter and trace seam execute without smuggling a fake application or
 // scheduler implementation into the clean source lane.
-class NullRuntime final : public MacroRuntimeHost {
+class NullRuntime : public MacroRuntimeHost {
 public:
     // The trace host has no world, so every object value is refused; the
     // trace scripts pass objects only through context fields.
@@ -111,7 +112,7 @@ public:
                                           std::int32_t) override {
         return true;
     }
-    char* preload_object_image_sequence(Object&, char*,
+    char* preload_object_image_sequence(Object&, char*, const char*,
                                         std::int32_t) override {
         return nullptr;
     }
@@ -428,9 +429,61 @@ void run_scheduler_adapter_start_probe() {
                 started ? 1u : 0u);
 }
 
+// A runtime whose one target object is a live Creature, counting how many
+// times the interpreter hands it to insemination.
+class InseminationRuntime final : public NullRuntime {
+public:
+    explicit InseminationRuntime(const Object& creature) : creature_(creature) {}
+    bool is_live_object(const Object* object) const override {
+        return object == &creature_;
+    }
+    bool is_creature_object(const Object& object) const override {
+        return &object == &creature_;
+    }
+    void process_creature_insemination(Object& object) override {
+        assert(&object == &creature_);
+        ++inseminations;
+    }
+    std::size_t inseminations = 0;
+
+private:
+    const Object& creature_;
+};
+
+// MATE and its hidden F**K synonym share one native handler
+// (ExecuteInterpreter @ 0x0041f0b6).  This goes through the full interpreter
+// with the literal token, because F**K was once classified into a command
+// family with no handler for it: every world mating script died at F**K
+// before insemination, and a direct execute_mate_command() test could not
+// see that.
+void run_mate_synonym_dispatch_probe(const char* script_text) {
+    Object creature;
+    InseminationRuntime runtime(creature);
+    NullDiagnostics diagnostics;
+    Trace trace;
+    Macro macro;
+    macro.capture_output_enabled = true;
+    macro.load_script_text(script_text);
+    macro.object_context.target_object = &creature;
+
+    c1::scripting::MacroInterpreterBindings bindings;
+    bindings.runtime = &runtime;
+    bindings.diagnostics = &diagnostics;
+    bindings.trace = &trace;
+    const MacroControlFlowResult result = macro.execute_interpreter(bindings);
+
+    assert(result == MacroControlFlowResult::scheduler_cleanup_required);
+    assert(runtime.inseminations == 1);
+    std::printf("trace_probe case=mate_synonym script=%s inseminations=%zu result=%u\n",
+                script_text, runtime.inseminations,
+                static_cast<unsigned>(result));
+}
+
 } // namespace
 
 int main() {
+    run_mate_synonym_dispatch_probe("mate,endm");
+    run_mate_synonym_dispatch_probe("f**k,endm");
     run_endm_trace_probe();
     run_wait_trace_probe();
     run_anim_scheduler_boundary_probe();
