@@ -152,15 +152,31 @@ public:
         return has_current_image() ? current_image().height() : 0;
     }
 
-    char* parse_image_sequence(char* sequence_text) {
+    // sequence_end bounds both the search for the closing ']' and the
+    // 32-byte destination write. Malformed CAOS -- reachable from any
+    // third-party COB, not just a corrupted save -- used to read past
+    // sequence_end looking for a ']' that was never coming, and to write
+    // past image_sequence_'s fixed capacity with no check at all once past
+    // 31 characters. Returns nullptr on either failure instead of scanning
+    // or writing out of bounds; the caller must stop executing the macro
+    // rather than dereference a null cursor.
+    char* parse_image_sequence(char* sequence_text, const char* sequence_end) {
         char* read_cursor = sequence_text + 1;
         if (image_sequence_ == nullptr) {
             image_sequence_ = std::make_unique<ImageSequenceBuffer>();
         }
         char* write_cursor = image_sequence_->data();
-        while (*read_cursor != ']') {
+        const char* write_limit =
+            image_sequence_->data() + (image_sequence_->size() - 1);
+        while (read_cursor < sequence_end && *read_cursor != ']') {
+            if (write_cursor >= write_limit) {
+                return nullptr;
+            }
             *write_cursor++ = *read_cursor;
             ++read_cursor;
+        }
+        if (read_cursor >= sequence_end) {
+            return nullptr;
         }
         *write_cursor = '\0';
         image_sequence_cursor_ = 0;
@@ -200,10 +216,13 @@ public:
                                     std::uint8_t palette_index_1,
                                     std::uint8_t palette_index_2,
                                     EntityRasterHost& raster);
-    char* preload_image_sequence(char* sequence_text,
+    // See parse_image_sequence: sequence_end bounds the search for ']' so a
+    // missing terminator (any third-party COB can send one) can't walk this
+    // read past the script buffer. Returns nullptr on that failure.
+    char* preload_image_sequence(char* sequence_text, const char* sequence_end,
                                  ImagePreloadHost& preload_host) const {
         char* read_cursor = sequence_text + 1;
-        while (*read_cursor != ']') {
+        while (read_cursor < sequence_end && *read_cursor != ']') {
             const int image_index =
                 static_cast<int>(*read_cursor) + image_index_base_ - '0';
             if (gallery_ != nullptr && gallery_->images != nullptr &&
@@ -212,6 +231,9 @@ public:
                 preload_host.preload_image(gallery_->images[image_index]);
             }
             ++read_cursor;
+        }
+        if (read_cursor >= sequence_end) {
+            return nullptr;
         }
         return read_cursor + 2;
     }

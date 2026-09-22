@@ -432,6 +432,7 @@ public:
                                          std::int32_t part_index) override;
     char* preload_object_image_sequence(creatures1::objects::Object& object,
                                         char* sequence_text,
+                                        const char* sequence_end,
                                         std::int32_t part_index) override;
     void teleport_target_and_refresh_selection(
         creatures1::objects::Object* target, std::int32_t world_x,

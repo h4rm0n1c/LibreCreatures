@@ -300,10 +300,14 @@ public:
     virtual int sound_source_y() const;
     virtual int current_visual_width() const;
     virtual int current_visual_height() const;
-    virtual char* parse_image_sequence(char* sequence_text, int part_index);
+    virtual char* parse_image_sequence(char* sequence_text,
+                                       const char* sequence_end,
+                                       int part_index);
     virtual bool set_relative_image_index(CaosValue relative_index,
                                           int part_index);
-    virtual char* preload_image_sequence(char* sequence_text, int part_index);
+    virtual char* preload_image_sequence(char* sequence_text,
+                                         const char* sequence_end,
+                                         int part_index);
 
     virtual ObjectEventId click_event_id_at_world_position(int world_x,
                                                            int world_y) const;

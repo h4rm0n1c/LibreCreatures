@@ -894,20 +894,22 @@ bool WindowsMacroHost::set_object_relative_image_index(
 
 char* WindowsMacroHost::preload_object_image_sequence(
     creatures1::objects::Object& object, char* sequence_text,
-    std::int32_t part_index) {
+    const char* sequence_end, std::int32_t part_index) {
     // CAOS `prld` is the native Object virtual at slot 39; the returned
     // pointer is the interpreter's next script cursor.
     if (auto* compound =
             dynamic_cast<creatures1::objects::CompoundObject*>(&object)) {
         return compound->preload_image_sequence(
-            sequence_text, static_cast<int>(part_index), document_);
+            sequence_text, sequence_end, static_cast<int>(part_index),
+            document_);
     }
     if (auto* simple =
             dynamic_cast<creatures1::objects::SimpleObject*>(&object)) {
         return simple->preload_image_sequence(
-            sequence_text, static_cast<int>(part_index), document_);
+            sequence_text, sequence_end, static_cast<int>(part_index),
+            document_);
     }
-    return object.preload_image_sequence(sequence_text,
+    return object.preload_image_sequence(sequence_text, sequence_end,
                                          static_cast<int>(part_index));
 }
 

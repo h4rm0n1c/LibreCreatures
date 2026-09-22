@@ -497,7 +497,7 @@ public:
     // adapter owns the image-cache/display services used by concrete objects.
     virtual char* preload_object_image_sequence(
         objects::Object& object, char* sequence_text,
-        std::int32_t part_index) = 0;
+        const char* sequence_end, std::int32_t part_index) = 0;
     // `tele` is a Creature-registry operation, not a direct Object movement
     // command.  The application adapter owns the registry scan, the native
     // temporary bounds transition, and the selected-Creature viewport/title

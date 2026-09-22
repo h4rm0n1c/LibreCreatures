@@ -237,7 +237,7 @@ public:
     void get_part_center(int* out_x, int* out_y,
                          std::int32_t part_index) const override;
 
-    char* parse_image_sequence(char* sequence_text,
+    char* parse_image_sequence(char* sequence_text, const char* sequence_end,
                                int part_index) override;
     bool image_sequence_is_empty(int part_index) const override;
     int relative_image_index(int part_index) const override;
@@ -245,7 +245,8 @@ public:
     // The native virtual takes only the text and part index; image-cache
     // ownership is supplied by this clean-room overload so the recovered
     // preload walk has an explicit source-level boundary.
-    char* preload_image_sequence(char* sequence_text, int part_index,
+    char* preload_image_sequence(char* sequence_text, const char* sequence_end,
+                                 int part_index,
                                  ImagePreloadHost& preload_host) const;
 
     // Preserve the native Entity::*AndRedraw side effects without importing

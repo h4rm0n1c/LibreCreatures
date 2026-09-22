@@ -332,6 +332,16 @@ void Biochemistry::serialize(
             emitter.chemical_index = archive.read_byte();
             emitter.threshold = archive.read_byte();
             emitter.emission_period = archive.read_byte();
+            // The genome load path below normalizes a zero period to 1
+            // before it can ever reach `tick % emitter.emission_period`;
+            // the archive is untrusted serialized runtime state and needs
+            // the same normalization, not just the genome's own genes. An
+            // old or hand-edited .sfc restoring a zero period here was a
+            // modulo-by-zero crash the moment this emitter's source locus
+            // next fired.
+            if (emitter.emission_period == 0) {
+                emitter.emission_period = 1;
+            }
             emitter.emission_amount = archive.read_byte();
             emitter.flags = archive.read_byte();
             emitter.source_locus = resolve_locus(
@@ -384,6 +394,23 @@ void Biochemistry::serialize(
             reaction.product_1_chemical = archive.read_byte();
             reaction.product_2_amount = archive.read_byte();
             reaction.product_2_chemical = archive.read_byte();
+
+            // The genome load path below runs every amount through
+            // normalize_reaction_amount() so a zero byte becomes a legal
+            // 1-16 amount before update() ever divides a chemical's
+            // concentration by it. The archive is untrusted serialized
+            // runtime state, not a re-derivation of the genome gene, and
+            // was accepting a raw zero amount straight into that same
+            // division -- a real divide-by-zero from a corrupted or
+            // hand-edited .sfc, not merely a genome-time concern.
+            reaction.reactant_1_amount =
+                normalize_reaction_amount(reaction.reactant_1_amount);
+            reaction.reactant_2_amount =
+                normalize_reaction_amount(reaction.reactant_2_amount);
+            reaction.product_1_amount =
+                normalize_reaction_amount(reaction.product_1_amount);
+            reaction.product_2_amount =
+                normalize_reaction_amount(reaction.product_2_amount);
         }
         return;
     }

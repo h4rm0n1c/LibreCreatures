@@ -199,7 +199,7 @@ public:
     // Reads a bracketed animation sequence such as "[13141516R]".  The
     // returned pointer preserves the executable's caller contract: it points
     // two bytes past the closing bracket.
-    char* parse_animation_sequence(char* sequence_text);
+    char* parse_animation_sequence(char* sequence_text, const char* sequence_end);
     bool is_animation_sequence_complete() const;
     void set_target_pose_from_table_index(std::size_t pose_table_index);
 
@@ -207,7 +207,7 @@ public:
     // are the creature implementations of the native Object vtable slots
     // used by ANIM, OVER, and POSE; the helpers above are the Skeleton-side
     // operations those virtual entry points delegate to.
-    char* parse_image_sequence(char* sequence_text,
+    char* parse_image_sequence(char* sequence_text, const char* sequence_end,
                                int part_index) override;
     bool image_sequence_is_empty(int part_index) const override;
     bool set_relative_image_index(objects::CaosValue relative_index,

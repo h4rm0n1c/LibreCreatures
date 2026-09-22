@@ -184,11 +184,15 @@ int Object::current_visual_height() const {
     return 0;
 }
 
-char* Object::parse_image_sequence(char* sequence_text, int part_index) {
+char* Object::parse_image_sequence(char* sequence_text,
+                                   const char* sequence_end, int part_index) {
     (void)part_index;
     char* closing_bracket = sequence_text;
-    while (*closing_bracket != ']') {
+    while (closing_bracket < sequence_end && *closing_bracket != ']') {
         ++closing_bracket;
+    }
+    if (closing_bracket >= sequence_end) {
+        return nullptr;
     }
     return closing_bracket + 2;
 }
@@ -200,8 +204,9 @@ bool Object::set_relative_image_index(CaosValue relative_index,
     return true;
 }
 
-char* Object::preload_image_sequence(char* sequence_text, int part_index) {
-    return parse_image_sequence(sequence_text, part_index);
+char* Object::preload_image_sequence(char* sequence_text,
+                                     const char* sequence_end, int part_index) {
+    return parse_image_sequence(sequence_text, sequence_end, part_index);
 }
 
 ObjectEventId Object::click_event_id_at_world_position(int world_x,

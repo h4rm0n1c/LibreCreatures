@@ -20,10 +20,13 @@ namespace creatures1::objects {
 namespace {
 constexpr int kWorldWidth = 0x20a0;
 
-char* skip_image_sequence_text(char* sequence_text) {
+char* skip_image_sequence_text(char* sequence_text, const char* sequence_end) {
     char* read_cursor = sequence_text + 1;
-    while (*read_cursor != ']') {
+    while (read_cursor < sequence_end && *read_cursor != ']') {
         ++read_cursor;
+    }
+    if (read_cursor >= sequence_end) {
+        return nullptr;
     }
     return read_cursor + 2;
 }
@@ -775,11 +778,13 @@ void SimpleObject::get_part_center(int* out_x, int* out_y,
 }
 
 char* SimpleObject::parse_image_sequence(char* sequence_text,
+                                          const char* sequence_end,
                                           int part_index) {
     (void)part_index;
     return entity_ == nullptr
-               ? Object::parse_image_sequence(sequence_text, part_index)
-               : entity_->parse_image_sequence(sequence_text);
+               ? Object::parse_image_sequence(sequence_text, sequence_end,
+                                              part_index)
+               : entity_->parse_image_sequence(sequence_text, sequence_end);
 }
 
 bool SimpleObject::image_sequence_is_empty(int part_index) const {
@@ -793,12 +798,13 @@ int SimpleObject::relative_image_index(int part_index) const {
 }
 
 char* SimpleObject::preload_image_sequence(
-    char* sequence_text, int part_index,
+    char* sequence_text, const char* sequence_end, int part_index,
     ImagePreloadHost& preload_host) const {
     (void)part_index;
     return entity_ == nullptr
-               ? skip_image_sequence_text(sequence_text)
-               : entity_->preload_image_sequence(sequence_text, preload_host);
+               ? skip_image_sequence_text(sequence_text, sequence_end)
+               : entity_->preload_image_sequence(sequence_text, sequence_end,
+                                                 preload_host);
 }
 
 bool SimpleObject::set_relative_image_index(

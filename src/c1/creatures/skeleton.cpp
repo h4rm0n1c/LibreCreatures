@@ -924,16 +924,23 @@ void Skeleton::clear_references_to(objects::Object* object) {
     objects::Object::clear_references_to(object);
 }
 
-char* Skeleton::parse_animation_sequence(char* sequence_text) {
+char* Skeleton::parse_animation_sequence(char* sequence_text,
+                                         const char* sequence_end) {
     animation_cursor = 0;
     std::size_t write_index = 0;
     char* read_cursor = sequence_text + 1;
 
     // The original stores at most 31 characters in its 32-byte sequence
-    // buffer.  Valid C1 gait strings terminate with ']' before that limit.
-    while (*read_cursor != ']' &&
+    // buffer.  Valid C1 gait strings terminate with ']' before that limit,
+    // so the write cap alone already kept this from writing out of bounds.
+    // sequence_end additionally rejects a missing ']' explicitly instead of
+    // silently truncating at whatever 31 bytes followed it.
+    while (read_cursor < sequence_end && *read_cursor != ']' &&
            write_index + 1 < animation_sequence.size()) {
         animation_sequence[write_index++] = *read_cursor++;
+    }
+    if (read_cursor >= sequence_end) {
+        return nullptr;
     }
     animation_sequence[write_index] = '\0';
     animation_cursor = 0;
@@ -943,11 +950,13 @@ char* Skeleton::parse_animation_sequence(char* sequence_text) {
     return read_cursor + 2;
 }
 
-char* Skeleton::parse_image_sequence(char* sequence_text, int part_index) {
+char* Skeleton::parse_image_sequence(char* sequence_text,
+                                     const char* sequence_end,
+                                     int part_index) {
     // The native Skeleton override receives the Object part index but does
     // not use it: a creature ANIM sequence belongs to the whole skeleton.
     (void)part_index;
-    return parse_animation_sequence(sequence_text);
+    return parse_animation_sequence(sequence_text, sequence_end);
 }
 
 bool Skeleton::is_animation_sequence_complete() const {

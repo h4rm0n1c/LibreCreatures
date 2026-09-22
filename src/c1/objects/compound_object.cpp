@@ -6,10 +6,13 @@
 namespace creatures1::objects {
 
 namespace {
-char* skip_image_sequence_text(char* sequence_text) {
+char* skip_image_sequence_text(char* sequence_text, const char* sequence_end) {
     char* read_cursor = sequence_text + 1;
-    while (*read_cursor != ']') {
+    while (read_cursor < sequence_end && *read_cursor != ']') {
         ++read_cursor;
+    }
+    if (read_cursor >= sequence_end) {
+        return nullptr;
     }
     return read_cursor + 2;
 }
@@ -462,13 +465,16 @@ void CompoundObject::set_image_index(
 }
 
 char* CompoundObject::parse_image_sequence(char* sequence_text,
+                                            const char* sequence_end,
                                             int part_index) {
     if (part_index < 0 ||
         static_cast<std::size_t>(part_index) >= parts_.size() ||
         parts_[part_index].entity == nullptr) {
-        return Object::parse_image_sequence(sequence_text, part_index);
+        return Object::parse_image_sequence(sequence_text, sequence_end,
+                                            part_index);
     }
-    return parts_[part_index].entity->parse_image_sequence(sequence_text);
+    return parts_[part_index].entity->parse_image_sequence(sequence_text,
+                                                            sequence_end);
 }
 
 bool CompoundObject::image_sequence_is_empty(int part_index) const {
@@ -490,14 +496,15 @@ int CompoundObject::relative_image_index(int part_index) const {
 }
 
 char* CompoundObject::preload_image_sequence(
-    char* sequence_text, int part_index, ImagePreloadHost& preload_host) const {
+    char* sequence_text, const char* sequence_end, int part_index,
+    ImagePreloadHost& preload_host) const {
     if (part_index < 0 ||
         static_cast<std::size_t>(part_index) >= parts_.size() ||
         parts_[part_index].entity == nullptr) {
-        return skip_image_sequence_text(sequence_text);
+        return skip_image_sequence_text(sequence_text, sequence_end);
     }
-    return parts_[part_index].entity->preload_image_sequence(sequence_text,
-                                                              preload_host);
+    return parts_[part_index].entity->preload_image_sequence(
+        sequence_text, sequence_end, preload_host);
 }
 
 } // namespace creatures1::objects

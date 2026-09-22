@@ -2017,9 +2017,10 @@ bool Macro::execute_preload_image_sequence_command(
     objects::Object* target = object_context.target_object;
     if (target != nullptr) {
         char* sequence_cursor = script_buffer.data() + script_cursor_offset;
+        const char* sequence_end = script_buffer.data() + readable_capacity;
         char* next_cursor = runtime.preload_object_image_sequence(
-            *target, sequence_cursor, selected_part_index);
-        if (next_cursor >= script_buffer.data() &&
+            *target, sequence_cursor, sequence_end, selected_part_index);
+        if (next_cursor != nullptr && next_cursor >= script_buffer.data() &&
             next_cursor <= script_buffer.data() + script_buffer.size()) {
             script_cursor_offset = static_cast<std::size_t>(
                 next_cursor - script_buffer.data());
@@ -2165,10 +2166,11 @@ bool Macro::execute_animation_command(MacroCommand command) {
     }
 
     char* sequence_cursor = script_buffer.data() + script_cursor_offset;
+    const char* sequence_end = script_buffer.data() + readable_capacity;
     if (target != nullptr) {
         char* next_cursor = target->parse_image_sequence(
-            sequence_cursor, selected_part_index);
-        if (next_cursor >= script_buffer.data() &&
+            sequence_cursor, sequence_end, selected_part_index);
+        if (next_cursor != nullptr && next_cursor >= script_buffer.data() &&
             next_cursor <= script_buffer.data() + script_buffer.size()) {
             script_cursor_offset = static_cast<std::size_t>(
                 next_cursor - script_buffer.data());
@@ -4163,8 +4165,15 @@ bool Macro::execute_randomize_variable_command(
     // C++ signed-overflow language-level behavior.
     const std::uint32_t inclusive_span =
         static_cast<std::uint32_t>(upper_value - lower_value) + 1u;
+    // A span of exactly 2^32 (lower == INT32_MIN, upper == INT32_MAX) wraps
+    // to 0 here, and native's own modulo would divide by that same zero --
+    // a real crash a COB can trigger, not a hypothetical one.  Every 32-bit
+    // value is a valid result when the span covers the whole range, so no
+    // reduction is needed at all in that one case.
     const std::uint32_t random_offset =
-        static_cast<std::uint32_t>(std::rand()) % inclusive_span;
+        inclusive_span == 0u
+            ? static_cast<std::uint32_t>(std::rand())
+            : static_cast<std::uint32_t>(std::rand()) % inclusive_span;
     assign_lvalue(runtime, diagnostics, destination_token,
                   static_cast<std::uint32_t>(lower_value + random_offset));
     return true;

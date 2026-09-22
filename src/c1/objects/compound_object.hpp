@@ -152,10 +152,12 @@ public:
     void set_image_index(std::uint8_t image_index, int part_index,
                          EntityImageSequenceRenderHost& redraw_host);
 
-    char* parse_image_sequence(char* sequence_text, int part_index) override;
+    char* parse_image_sequence(char* sequence_text, const char* sequence_end,
+                               int part_index) override;
     bool image_sequence_is_empty(int part_index) const override;
     int relative_image_index(int part_index) const override;
-    char* preload_image_sequence(char* sequence_text, int part_index,
+    char* preload_image_sequence(char* sequence_text, const char* sequence_end,
+                                 int part_index,
                                  ImagePreloadHost& preload_host) const;
 
     int part_count() const { return part_count_; }
