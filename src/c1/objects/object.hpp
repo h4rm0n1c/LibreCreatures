@@ -380,6 +380,10 @@ public:
     Object* find_topmost_overlapping_object(
         BoundsFlags bounds_flag_mask, BoundsFlags bounds_flag_value,
         const ObjectOverlapHost& world) const;
+    // The hand's own search: see the deviation note in object.cpp.
+    Object* find_object_under_pointer(
+        BoundsFlags bounds_flag_mask, BoundsFlags bounds_flag_value,
+        const ObjectOverlapHost& world) const;
 
     void unregister_from_non_scenery_object_registry(
         ObjectRegistryHost& registry);

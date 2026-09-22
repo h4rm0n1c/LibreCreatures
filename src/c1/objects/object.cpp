@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <vector>
 
 namespace creatures1::objects {
 
@@ -224,15 +225,26 @@ bool Object::references_object(Object* candidate) const {
            caos_object_pointer_ == candidate;
 }
 
+namespace {
+
+bool encloses(const world::WorldRect& outer, const world::WorldRect& inner) {
+    return outer.min_x <= inner.min_x && outer.min_y <= inner.min_y &&
+           outer.max_x >= inner.max_x && outer.max_y >= inner.max_y &&
+           (outer.min_x != inner.min_x || outer.min_y != inner.min_y ||
+            outer.max_x != inner.max_x || outer.max_y != inner.max_y);
+}
+
+} // namespace
+
 Object* Object::find_topmost_overlapping_object(
     BoundsFlags bounds_flag_mask, BoundsFlags bounds_flag_value,
     const ObjectOverlapHost& world) const {
     world::WorldRect search_bounds{};
     if (world.is_pointer_tool(*this)) {
-        search_bounds = world.pointer_tool_bounds(*this);
-    } else {
-        get_bounds(&search_bounds);
+        return find_object_under_pointer(bounds_flag_mask, bounds_flag_value,
+                                         world);
     }
+    get_bounds(&search_bounds);
 
     Object* topmost_object = nullptr;
     int topmost_render_plane = -1;
@@ -271,6 +283,62 @@ Object* Object::find_topmost_overlapping_object(
         }
         topmost_render_plane = candidate_render_plane;
         topmost_object = candidate;
+    }
+    return topmost_object;
+}
+
+Object* Object::find_object_under_pointer(
+    BoundsFlags bounds_flag_mask, BoundsFlags bounds_flag_value,
+    const ObjectOverlapHost& world) const {
+    // Deliberate deviation from FindTopmostOverlappingObject @0x00425c30.
+    // Native hands the hand's click to the highest render plane, so a lift,
+    // the incubator or the pianola swallowed clicks meant for a creature or
+    // object inside or behind it.  Here any candidate whose bounds strictly
+    // enclose another candidate's is dropped first -- the smaller thing
+    // inside it is what the hand is aimed at -- and the native plane rule
+    // decides among the rest, so partial overlaps behave as before.
+    const world::WorldRect search_bounds = world.pointer_tool_bounds(*this);
+
+    struct Hit {
+        Object* object;
+        world::WorldRect bounds;
+        int render_plane;
+    };
+    std::vector<Hit> hits;
+    for (std::size_t index = 0; index < world.object_count(); ++index) {
+        Object* candidate = world.object_at(index);
+        if (candidate == nullptr) {
+            world.report_invalid_index();
+            break;
+        }
+        if (candidate == this ||
+            (candidate->bounds_flags_ & bounds_flag_mask) !=
+                bounds_flag_value) {
+            continue;
+        }
+        world::WorldRect candidate_bounds{};
+        candidate->get_bounds(&candidate_bounds);
+        if (!world::wrapped_world_rects_overlap(search_bounds,
+                                                candidate_bounds)) {
+            continue;
+        }
+        hits.push_back({candidate, candidate_bounds,
+                        candidate->render_plane()});
+    }
+
+    Object* topmost_object = nullptr;
+    int topmost_render_plane = -1;
+    for (const Hit& hit : hits) {
+        const bool encloses_another_hit = std::any_of(
+            hits.begin(), hits.end(), [&hit](const Hit& other) {
+                return &other != &hit && encloses(hit.bounds, other.bounds);
+            });
+        if (encloses_another_hit ||
+            hit.render_plane <= topmost_render_plane) {
+            continue;
+        }
+        topmost_render_plane = hit.render_plane;
+        topmost_object = hit.object;
     }
     return topmost_object;
 }
