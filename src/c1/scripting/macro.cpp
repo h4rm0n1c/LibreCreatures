@@ -256,7 +256,6 @@ MacroCommandFamily Macro::classify_command(CaosToken token) {
     case MacroCommand::script_extended:
     case MacroCommand::endm:
     case MacroCommand::mate:
-    case MacroCommand::hidden_fertilize:
     case MacroCommand::delete_creature:
     case MacroCommand::dream:
     case MacroCommand::sleep:
@@ -2110,12 +2109,12 @@ bool Macro::execute_room_command(MacroCommand command,
 
 bool Macro::execute_mate_command(MacroCommand command,
                                  MacroRuntimeHost& runtime) {
-    if (command != MacroCommand::mate &&
-        command != MacroCommand::hidden_fertilize) {
+    if (command != MacroCommand::mate) {
         return false;
     }
 
-    // Native `mate` and its hidden `f**k` synonym have no operands.  Both
+    // Native `mate` and its hidden `f**k` synonym have no operands (the
+    // interpreter folds `f**k` into `mate` before dispatch).  Both
     // admit only a Creature-family target and leave motion-link validation,
     // fertility state, probability, genome file creation, and source-gamete
     // clearing to Creature::process_insemination.  `f**k` is a real native
@@ -3570,8 +3569,7 @@ MacroControlFlowResult Macro::dispatch_interpreter_command(
             consume_execute_command_arguments();
             return MacroControlFlowResult::iteration_complete;
         }
-        if (command == MacroCommand::mate ||
-            command == MacroCommand::hidden_fertilize) {
+        if (command == MacroCommand::mate) {
             if (bindings.runtime == nullptr) {
                 return missing_binding();
             }
@@ -4441,9 +4439,15 @@ MacroControlFlowResult Macro::execute_interpreter(
 
         MacroControlFlowResult result =
             MacroControlFlowResult::execution_terminated;
+        // F**K is MATE's hidden synonym: native ExecuteInterpreter sends both
+        // tokens to one handler (0x0041f0b6).  Fold it here, once, so no
+        // classification or dispatch table has to remember the alias.
+        auto command = static_cast<MacroCommand>(token);
+        if (command == MacroCommand::hidden_fertilize) {
+            command = MacroCommand::mate;
+        }
         try {
-            result = dispatch_interpreter_command(
-                static_cast<MacroCommand>(token), bindings);
+            result = dispatch_interpreter_command(command, bindings);
         } catch (...) {
             // The native body has an exception cleanup path which reports the
             // current script context before joining scheduler finalization.
