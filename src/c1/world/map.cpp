@@ -1,6 +1,9 @@
 #include "map.hpp"
 
+#include <algorithm>
+#include <cstdint>
 #include <cstdlib>
+#include <limits>
 
 #include "../platform/mfc_adapters.hpp"
 
@@ -91,6 +94,44 @@ void find_nearest_room_bounds_at_point(const MapRoomTable& room_table,
         const auto best_bottom_distance =
             std::abs(world_y - output_bounds.bottom);
         if (room_bottom_distance < best_bottom_distance) {
+            output_bounds = room_bounds;
+        }
+    }
+
+    if (output_bounds.bottom != kNoRoomBottom || room_table.room_count == 0) {
+        return;
+    }
+
+    // Graceful recovery, not present in native: world_x fell in a genuine
+    // gap between room definitions -- no room's horizontal span covers it at
+    // all. FindNearestMapRoomBoundsAtPoint's native behaviour here is C1's
+    // "Black Hole" bug's structural cause. Object::UpdateMovementBounds
+    // passes this function's caller its own movement_bounds field as both
+    // input and output, so left/top/right silently keep whatever room they
+    // last held while bottom becomes the unreachable sentinel above -- the
+    // object's cage stays horizontally sane but opens vertically to y=9999,
+    // far below any real room, with nothing to stop a fall that far. An
+    // object whose horizontal drift has already decayed to zero (typical for
+    // anything falling rather than walking) never drifts back into a
+    // spanning room's x-range to self-correct, and is lost below the map for
+    // good. Rather than reproduce that, fall back to whichever real room's
+    // rectangle is spatially nearest overall (clamped-distance to the
+    // rectangle, zero when the point already lies inside it), so a gap in
+    // room coverage always finds a real, finite floor instead of an
+    // artificial ever-open one.
+    std::int64_t best_distance_sq = std::numeric_limits<std::int64_t>::max();
+    for (std::size_t room_index = 0; room_index < room_table.room_count;
+         ++room_index) {
+        const MapRectangle& room_bounds = room_table.rooms[room_index].bounds;
+        const std::int32_t clamped_x =
+            std::clamp(world_x, room_bounds.left, room_bounds.right);
+        const std::int32_t clamped_y =
+            std::clamp(world_y, room_bounds.top, room_bounds.bottom);
+        const std::int64_t dx = world_x - clamped_x;
+        const std::int64_t dy = world_y - clamped_y;
+        const std::int64_t distance_sq = dx * dx + dy * dy;
+        if (distance_sq < best_distance_sq) {
+            best_distance_sq = distance_sq;
             output_bounds = room_bounds;
         }
     }
