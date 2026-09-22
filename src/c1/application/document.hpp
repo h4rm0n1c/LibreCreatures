@@ -305,12 +305,14 @@ public:
     virtual void update_keyboard_scroll() = 0;
     virtual bool advance_smooth_scroll() = 0;
     virtual bool manual_viewport_navigation() const = 0;
+    virtual bool follows_selected_creature_viewport() const = 0;
     virtual bool selected_creature_in_safe_area() const = 0;
     virtual void reset_manual_navigation_safe_frame_count() = 0;
     virtual std::uint32_t manual_navigation_safe_frame_count() const = 0;
     virtual void set_manual_navigation_safe_frame_count(
         std::uint32_t frame_count) = 0;
     virtual void reset_world_scrollbars() = 0;
+    virtual void resume_following_selected_creature() = 0;
     virtual void follow_selected_creature_viewport() = 0;
     virtual void invalidate_main_toolbar() = 0;
 

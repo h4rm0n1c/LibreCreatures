@@ -326,9 +326,15 @@ void PointerTool::process_pending_input(
                 }
             }
         } else if (&input_receiver == runtime.pointer_tool()) {
+            // ProcessPendingInput @0x00428a7c pushes 2, 2: only objects the
+            // hand may pick up compete.  A carrier that cannot be picked up
+            // (the incubator, 3.1.3, is attr 0x58) must not shadow what is
+            // inside it.
             objects::Object* selected =
                 input_receiver.find_topmost_overlapping_object(
-                    0x40, 0x40, runtime);
+                    objects::Object::kAllowPointerToolUnboundedPlacement,
+                    objects::Object::kAllowPointerToolUnboundedPlacement,
+                    runtime);
             if (selected != nullptr) {
                 if (runtime.is_creature_object(*selected)) {
                     if (auto* creature = runtime.creature_for_object(*selected);

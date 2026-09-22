@@ -120,6 +120,11 @@ void C1WindowsView::set_manual_navigation_safe_frame_count_for_world_tick( std::
     view_state_.manual_navigation_safe_frame_count = frame_count;
 }
 
+void C1WindowsView::resume_follow_navigation_for_world_tick() {
+    view_state_.viewport_navigation_mode =
+        creatures1::ui::ViewportNavigationMode::follow_selected_creature;
+}
+
 void C1WindowsView::reset_world_scrollbars_for_world_tick() {
     creatures1::ui::reset_world_scrollbars(
         *this, view_settings_.half_width, view_settings_.half_height);

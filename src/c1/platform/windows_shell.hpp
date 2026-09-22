@@ -1032,6 +1032,7 @@ public:
     bool advance_smooth_scroll() override;
 
     bool manual_viewport_navigation() const override;
+    bool follows_selected_creature_viewport() const override;
     bool selected_creature_in_safe_area() const override;
 
     void reset_manual_navigation_safe_frame_count() override;
@@ -1039,6 +1040,7 @@ public:
     void set_manual_navigation_safe_frame_count(std::uint32_t frame_count) override;
 
     void reset_world_scrollbars() override;
+    void resume_following_selected_creature() override;
     void follow_selected_creature_viewport() override;
 
     std::uint32_t world_tick_phase() const override;
@@ -2204,6 +2206,7 @@ public:
     void set_manual_navigation_safe_frame_count_for_world_tick(std::uint32_t frame_count);
 
     void reset_world_scrollbars_for_world_tick();
+    void resume_follow_navigation_for_world_tick();
 
     void load_view_settings(creatures1::ui::WorldViewSettings& settings, creatures1::ui::SfcViewState& state) override;
 

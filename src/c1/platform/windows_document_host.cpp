@@ -5525,6 +5525,17 @@ bool C1WindowsDocument::manual_viewport_navigation() const {
            world_view_->manual_navigation_for_world_tick();
 }
 
+bool C1WindowsDocument::follows_selected_creature_viewport() const {
+    return world_view_ != nullptr &&
+           world_view_->camera_tracks_selected_creature();
+}
+
+void C1WindowsDocument::resume_following_selected_creature() {
+    if (world_view_ != nullptr) {
+        world_view_->resume_follow_navigation_for_world_tick();
+    }
+}
+
 void C1WindowsDocument::reset_manual_navigation_safe_frame_count() {
     manual_navigation_safe_frame_count_ = 0;
     if (world_view_ != nullptr) {

@@ -434,9 +434,13 @@ void Document::update_world(DocumentWorldUpdateHost& host) {
                 host.set_manual_navigation_safe_frame_count(safe_frames);
                 if (safe_frames == 0x14) {
                     host.reset_world_scrollbars();
+                    host.resume_following_selected_creature();
+                    host.invalidate_main_toolbar();
                 }
             }
-        } else {
+        } else if (host.follows_selected_creature_viewport()) {
+            // SFCDoc::UpdateWorld follows only in FOLLOW mode; with Track
+            // Creature turned off (mode 0) the camera stays where it is.
             host.follow_selected_creature_viewport();
         }
     }
