@@ -539,90 +539,139 @@ BOOL C1MainToolBar::OnEraseBkgnd(CDC* dc) {
     return TRUE;
 }
 
-bool C1MainFrame::create_main_toolbar() {
-    // MyToolBar::Create expressed against the real MFC controls: the
-    // semantic policy is now in initialize_main_frame(), while CToolBar
-    // owns the HWND, bitmap, and USER32 messages.
-    if (!main_toolbar_.Create(this, 0x50002830, 0xe800) ||
-        !main_toolbar_.LoadBitmap(128) ||
-        !main_toolbar_.SetButtons(nullptr, 0x23)) {
-        return false;
-    }
-    for (int button_index = 0; button_index < 0x23; ++button_index) {
-        main_toolbar_.SetButtonInfo(button_index, 0, TBBS_SEPARATOR, 10);
-    }
-    main_toolbar_.SetButtonInfo(0, 0xe803, TBBS_SEPARATOR, 0x96);
-    main_toolbar_.SetButtonInfo(2, 0xe802, TBBS_BUTTON, 0);
-    main_toolbar_.SetButtonInfo(4, 0xe145, TBBS_BUTTON, 1);
-    main_toolbar_.SetButtonInfo(6, 0x8040, TBBS_BUTTON, 0x13);
-    main_toolbar_.SetButtonInfo(8, 0x8045, TBBS_BUTTON, 0x14);
-    main_toolbar_.SetButtonInfo(9, 0x8046, TBBS_BUTTON, 0x15);
-    main_toolbar_.SetButtonInfo(0xb, 0x800f, TBBS_BUTTON, 3);
-    main_toolbar_.SetButtonInfo(0xc, 0x71, TBBS_BUTTON, 5);
-    main_toolbar_.SetButtonInfo(0xd, 0x8003, TBBS_CHECKBOX, 4);
+bool C1MainFrame::WindowsToolbarPlatform::create_toolbar(
+    std::uintptr_t parent_window, std::uint32_t window_style,
+    std::uint32_t control_id) {
+    return frame_.main_toolbar_.Create(reinterpret_cast<CWnd*>(parent_window),
+                                       window_style, control_id) != FALSE;
+}
 
-    // The clean embedded-kit registry decoder owns record grammar; this
-    // adapter owns the native menu and toolbar storage.
-    populate_embedded_kit_menu_and_toolbar();
+bool C1MainFrame::WindowsToolbarPlatform::load_toolbar_bitmap(
+    std::uint32_t resource_id) {
+    return frame_.main_toolbar_.LoadBitmap(resource_id) != FALSE;
+}
 
-    // Native (MyToolBar::Create, the code this function is expressed
-    // against) does NOT unconditionally wipe buttons 0xe..0x22 here: it
-    // scans backward from 0x22 for the highest-index button that actually
-    // got a real command id assigned by the kit populate step above, then
-    // deletes only the *unused trailing separator placeholders* above that
-    // point. The previous version of this loop deleted every button from
-    // 0x22 down to 0xe unconditionally, which throws away the kit toolbar
-    // buttons populate_embedded_kit_menu_and_toolbar() just set up one
-    // statement earlier -- kits never had toolbar buttons, matching the
-    // user's report that this isn't just a missing Tools menu, the tray
-    // (toolbar) buttons were missing too.
-    int last_populated_button_index = 0;
-    for (int button_index = 0x22; button_index >= 0; --button_index) {
-        TBBUTTON button_info{};
-        if (main_toolbar_.GetToolBarCtrl().GetButton(button_index, &button_info) &&
-            button_info.idCommand != 0) {
-            last_populated_button_index = button_index;
-            break;
-        }
-    }
-    if (last_populated_button_index <= 0x21) {
-        for (int button_index = 0x22; button_index > last_populated_button_index;
-             --button_index) {
-            main_toolbar_.GetToolBarCtrl().DeleteButton(button_index);
-        }
-    }
+bool C1MainFrame::WindowsToolbarPlatform::set_button_count(
+    std::uint32_t count) {
+    return frame_.main_toolbar_.SetButtons(nullptr,
+                                           static_cast<int>(count)) != FALSE;
+}
 
-    // MyToolBar::Create @ 00421c00 (00421d66..00421dab): take button 0's item
-    // rect -- button 0 is the 0x96-wide placeholder reserved for this control
-    // -- then set top = 0 and bottom = 100 so the dropped-down list has room,
-    // and create with style 0x10200002.  That is CBS_DROPDOWN (an editable
-    // combo: this is where the player types what the hand says) plus
-    // WS_VSCROLL and WS_VISIBLE; MFC's CWnd::Create adds WS_CHILD.  The port
-    // had CBS_DROPDOWNLIST, which has no edit field at all, and forced the
-    // width to 100 with the item's height, leaving the list no room to drop.
-    CRect selector_rect;
-    main_toolbar_.GetItemRect(0, &selector_rect);
-    selector_rect.top = 0;
-    selector_rect.bottom = 100;
-    if (!creature_selector_.Create(
-            WS_VISIBLE | WS_VSCROLL | CBS_DROPDOWN,
-            selector_rect, &main_toolbar_, 0xe803)) {
-        return false;
-    }
-    if (GetSystemMetrics(0x2a) == 0) {
-        selector_font_.CreateFontA(-12, 0, 0, 0, FW_BOLD, FALSE, FALSE, 0,
-                                   ANSI_CHARSET, OUT_DEFAULT_PRECIS,
-                                   CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
-                                   FF_DONTCARE, "Arial");
-        if (selector_font_.GetSafeHandle() != nullptr) {
-            creature_selector_.SetFont(&selector_font_, TRUE);
-        }
-    } else {
-        creature_selector_.SetFont(
-            CFont::FromHandle(static_cast<HFONT>(
-                ::GetStockObject(SYSTEM_FONT))), TRUE);
-    }
+bool C1MainFrame::WindowsToolbarPlatform::set_button(
+    std::uint32_t index, std::uint32_t command_id, std::uint32_t style,
+    std::uint32_t image_index) {
+    frame_.main_toolbar_.SetButtonInfo(
+        static_cast<int>(index), static_cast<UINT>(command_id),
+        static_cast<UINT>(style), static_cast<int>(image_index));
     return true;
+}
+
+std::uint32_t C1MainFrame::WindowsToolbarPlatform::button_command(
+    std::uint32_t index) const {
+    TBBUTTON button_info{};
+    if (!frame_.main_toolbar_.GetToolBarCtrl().GetButton(
+            static_cast<int>(index), &button_info)) {
+        return 0;
+    }
+    return static_cast<std::uint32_t>(button_info.idCommand);
+}
+
+void C1MainFrame::WindowsToolbarPlatform::remove_button(std::uint32_t index) {
+    frame_.main_toolbar_.GetToolBarCtrl().DeleteButton(
+        static_cast<int>(index));
+}
+
+creatures1::ui::ToolbarRect C1MainFrame::WindowsToolbarPlatform::item_rect(
+    std::uint32_t index) const {
+    CRect rect;
+    frame_.main_toolbar_.GetItemRect(static_cast<int>(index), &rect);
+    return {rect.left, rect.top, rect.right, rect.bottom};
+}
+
+bool C1MainFrame::WindowsToolbarPlatform::create_creature_selector(
+    const creatures1::ui::ToolbarRect& rect,
+    std::uintptr_t /*parent_window*/, std::uint32_t control_id) {
+    // MyToolBar::Create parents the selector to the toolbar itself, not to
+    // whatever parent_window the frame passed into create_toolbar -- this
+    // adapter already knows that toolbar, so the generic handle argument
+    // is unused here.
+    CRect selector_rect(rect.left, rect.top, rect.right, rect.bottom);
+    return frame_.creature_selector_.Create(
+               WS_VISIBLE | WS_VSCROLL | CBS_DROPDOWN, selector_rect,
+               &frame_.main_toolbar_,
+               static_cast<UINT>(control_id)) != FALSE;
+}
+
+void C1MainFrame::WindowsToolbarPlatform::
+    populate_embedded_kit_menu_and_toolbar() {
+    frame_.populate_embedded_kit_menu_and_toolbar();
+}
+
+bool C1MainFrame::WindowsToolbarPlatform::uses_system_gui_font() const {
+    return GetSystemMetrics(0x2a) != 0;
+}
+
+bool C1MainFrame::WindowsToolbarPlatform::set_selector_font(
+    const creatures1::ui::ToolbarFontSpec& font) {
+    frame_.selector_font_.CreateFontA(
+        font.height, 0, 0, 0, font.weight, FALSE, FALSE, 0, ANSI_CHARSET,
+        OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
+        FF_DONTCARE, std::string(font.family).c_str());
+    if (frame_.selector_font_.GetSafeHandle() == nullptr) {
+        return false;
+    }
+    frame_.creature_selector_.SetFont(&frame_.selector_font_, TRUE);
+    return true;
+}
+
+void C1MainFrame::WindowsToolbarPlatform::use_default_selector_font() {
+    frame_.creature_selector_.SetFont(
+        CFont::FromHandle(static_cast<HFONT>(::GetStockObject(SYSTEM_FONT))),
+        TRUE);
+}
+
+void C1MainFrame::WindowsToolbarPlatform::apply_selector_font() {
+    // Both branches above already call SetFont at the point they resolve
+    // their font, matching MyToolBar::Create exactly; there is no separate
+    // native step left to perform here.
+}
+
+bool C1MainFrame::WindowsToolbarPlatform::file_exists(
+    std::string_view path) const {
+    return GetFileAttributesA(std::string(path).c_str()) !=
+           INVALID_FILE_ATTRIBUTES;
+}
+
+creatures1::ui::BitmapHandle
+C1MainFrame::WindowsToolbarPlatform::load_bitmap_file(std::string_view path,
+                                                       std::uint32_t width,
+                                                       std::uint32_t height) {
+    const HBITMAP bitmap = static_cast<HBITMAP>(
+        LoadImageA(nullptr, std::string(path).c_str(), IMAGE_BITMAP,
+                  static_cast<int>(width), static_cast<int>(height),
+                  LR_LOADFROMFILE));
+    return reinterpret_cast<creatures1::ui::BitmapHandle>(bitmap);
+}
+
+std::int32_t C1MainFrame::WindowsToolbarPlatform::add_bitmap_to_toolbar(
+    creatures1::ui::BitmapHandle bitmap) {
+    return frame_.main_toolbar_.GetToolBarCtrl().AddBitmap(
+        1, CBitmap::FromHandle(reinterpret_cast<HBITMAP>(bitmap)));
+}
+
+void C1MainFrame::WindowsToolbarPlatform::destroy_bitmap(
+    creatures1::ui::BitmapHandle bitmap) {
+    DeleteObject(reinterpret_cast<HBITMAP>(bitmap));
+}
+
+bool C1MainFrame::create_main_toolbar() {
+    // MyToolBar::Create's button/trim/selector/font policy now lives in
+    // creatures1::ui::MainToolbar (ui/toolbars.cpp), exercised through the
+    // WindowsToolbarPlatform adapter above; this function only supplies the
+    // parent handle the policy needs to create the real CToolBar.
+    WindowsToolbarPlatform platform(*this);
+    return creatures1::ui::MainToolbar(platform).create(
+        reinterpret_cast<std::uintptr_t>(static_cast<CWnd*>(this)));
 }
 
 bool C1MainFrame::set_status_bar_indicators(
@@ -706,40 +755,15 @@ int C1MainFrame::add_kit_toolbar_bitmap(std::string_view prog_id) {
     // This was previously a permanent stub returning -1, so every kit --
     // on every platform, not only under Wine -- fell straight through to
     // the shared toolbar bitmap's type-code slot, which is a different
-    // image than the kit's own icon. The four-step native sequence below
+    // image than the kit's own icon. The four-step native sequence
     // (resolve the COM local server path, swap its extension for .bmp,
-    // load that file, add it to the toolbar) was already implemented
-    // correctly as creatures1::ui::add_kit_toolbar_bitmap, but nothing
-    // ever called it.
+    // load that file, add it to the toolbar) is implemented once as
+    // creatures1::ui::add_kit_toolbar_bitmap (ui/toolbars.cpp); this wires
+    // it to the real toolbar and COM resolver instead of duplicating it.
+    WindowsToolbarPlatform platform(*this);
     WindowsComLocalServer com_resolver;
-    std::string server_path;
-    if (!resolve_com_progid_local_server_path(com_resolver, prog_id,
-                                              server_path)) {
-        return -1;
-    }
-
-    const std::size_t extension = server_path.find_last_of('.');
-    if (extension == std::string::npos) {
-        return -1;
-    }
-    server_path.replace(extension, std::string::npos, ".bmp");
-    if (GetFileAttributesA(server_path.c_str()) == INVALID_FILE_ATTRIBUTES) {
-        return -1;
-    }
-
-    const HBITMAP bitmap = static_cast<HBITMAP>(LoadImageA(
-        nullptr, server_path.c_str(), IMAGE_BITMAP, 0x10, 0x10,
-        LR_LOADFROMFILE));
-    if (bitmap == nullptr) {
-        return -1;
-    }
-
-    const int image_index = main_toolbar_.GetToolBarCtrl().AddBitmap(
-        1, CBitmap::FromHandle(bitmap));
-    if (image_index < 0) {
-        DeleteObject(bitmap);
-    }
-    return image_index;
+    return creatures1::ui::add_kit_toolbar_bitmap(platform, com_resolver,
+                                                  prog_id);
 }
 
 void C1MainFrame::GetMessageString(UINT command_id, CString& message) const {

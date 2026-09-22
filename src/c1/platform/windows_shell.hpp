@@ -51,6 +51,7 @@
 #include "../ui/magic_profiler.hpp"
 #include "../ui/views.hpp"
 #include "../ui/creature_selection.hpp"
+#include "../ui/toolbars.hpp"
 #include "../world/map.hpp"
 #include "../world/runtime.hpp"
 #include "../world/update_timer.hpp"
@@ -478,6 +479,48 @@ private:
     private:
         C1MainFrame& frame_;
         std::uintptr_t taken_process_ = 0;
+    };
+
+    // Adapts CToolBar/CComboBox/CFont to ui::ToolbarPlatform so the button,
+    // trim, selector, and font policy in ui::MainToolbar (ui/toolbars.cpp)
+    // drives the real controls instead of that policy being duplicated
+    // inline here.
+    class WindowsToolbarPlatform final
+        : public creatures1::ui::ToolbarPlatform {
+    public:
+        explicit WindowsToolbarPlatform(C1MainFrame& frame) : frame_(frame) {}
+
+        bool create_toolbar(std::uintptr_t parent_window,
+                            std::uint32_t window_style,
+                            std::uint32_t control_id) override;
+        bool load_toolbar_bitmap(std::uint32_t resource_id) override;
+        bool set_button_count(std::uint32_t count) override;
+        bool set_button(std::uint32_t index, std::uint32_t command_id,
+                        std::uint32_t style,
+                        std::uint32_t image_index) override;
+        std::uint32_t button_command(std::uint32_t index) const override;
+        void remove_button(std::uint32_t index) override;
+        creatures1::ui::ToolbarRect item_rect(
+            std::uint32_t index) const override;
+        bool create_creature_selector(const creatures1::ui::ToolbarRect& rect,
+                                      std::uintptr_t parent_window,
+                                      std::uint32_t control_id) override;
+        void populate_embedded_kit_menu_and_toolbar() override;
+        bool uses_system_gui_font() const override;
+        bool set_selector_font(
+            const creatures1::ui::ToolbarFontSpec& font) override;
+        void use_default_selector_font() override;
+        void apply_selector_font() override;
+        bool file_exists(std::string_view path) const override;
+        creatures1::ui::BitmapHandle load_bitmap_file(
+            std::string_view path, std::uint32_t width,
+            std::uint32_t height) override;
+        std::int32_t add_bitmap_to_toolbar(
+            creatures1::ui::BitmapHandle bitmap) override;
+        void destroy_bitmap(creatures1::ui::BitmapHandle bitmap) override;
+
+    private:
+        C1MainFrame& frame_;
     };
 
     std::unique_ptr<creatures1::application::CMainFrame> frame_policy_;
