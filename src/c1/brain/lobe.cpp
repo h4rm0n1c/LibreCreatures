@@ -391,13 +391,23 @@ void Lobe::update_late_phase(Brain* brain, std::uint32_t tick) {
         registers[9] = neuron.activation;
         registers[10] = neuron.firing_strength;
         registers[11] = activation_threshold;
+        // Native stops at the first rule with no connections rather than
+        // skipping it, so an empty rule 0 left rule 1 unevaluated even when
+        // rule 1 had connections of its own, and either empty rule left its
+        // register pair holding the *previous neuron's* values instead of
+        // zeroes -- one neuron's activation could depend on an unrelated
+        // neuron's leftover connectivity data. Confirmed as a genuine C1
+        // implementation bug, not an intentional neural-net property: reset
+        // both pairs per neuron and evaluate each rule independently of the
+        // other's connection count.
+        registers[12] = 0;
+        registers[13] = 0;
+        registers[14] = 0;
+        registers[15] = 0;
 
         // One input-register pair per connection rule: register 12+i is the
         // gain-scaled weighted sum of that rule's firing targets, and 14+i is
-        // the same value gated on *every* target firing.  The native loop
-        // stops at the first rule with no connections rather than skipping it,
-        // so an empty rule leaves its pair holding the previous neuron's
-        // values instead of zeroes.
+        // the same value gated on *every* target firing.
         for (std::size_t rule_index = 0; rule_index < 2; ++rule_index) {
             LobeConnection* connection_array =
                 rule_index == 0 ? neuron.rule0_connections_begin
@@ -406,7 +416,7 @@ void Lobe::update_late_phase(Brain* brain, std::uint32_t tick) {
                 rule_index == 0 ? neuron.rule0_connection_count
                                 : neuron.rule1_connection_count;
             if (connection_count == 0) {
-                break;
+                continue;
             }
 
             int weighted_sum = 0;
