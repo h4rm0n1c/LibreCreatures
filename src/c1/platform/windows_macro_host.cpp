@@ -1645,12 +1645,26 @@ bool WindowsCreatureInseminationHost::creature_uses_filename(
 
 bool WindowsCreatureInseminationHost::family_four_object_uses_filename(
     creatures1::creatures::GenomeFilenameId id) const {
-    // Family four is the creature classifier family; an egg carries the
-    // genome filename it will hatch.
-    static_cast<void>(id);
-    // Held: eggs store their genome filename in object state the document
-    // does not expose, so only the creature registry is consulted.  A
-    // collision with an unhatched egg remains possible.
+    // GenerateUniqueGenomeFilename @ 0x00418e90's second loop scans every
+    // family-4 (Creature) object in g_world_object_registry and compares a
+    // fixed offset -- the same field a full Creature's Skeleton exposes as
+    // genome_source_filename -- against the candidate. A native C1 egg is a
+    // Creature-shaped object at genome life stage 0, present in the world
+    // registry (and, in this port, the creature registry) with its own
+    // identity already set to the genome it will hatch into; it is not a
+    // separate object type with separately-tracked state. Scanning the same
+    // creature registry creature_uses_filename() already reads, but by each
+    // creature's own identity rather than its child/gamete fields, is that
+    // same check.
+    for (std::size_t index = 0; index < document_.creature_count(); ++index) {
+        const auto* creature =
+            dynamic_cast<const creatures1::creatures::Creature*>(
+                document_.creature_at(index));
+        if (creature != nullptr &&
+            creature->skeleton().genome_source_filename == id) {
+            return true;
+        }
+    }
     return false;
 }
 
