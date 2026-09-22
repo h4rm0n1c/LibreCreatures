@@ -26,6 +26,9 @@ same path.
    live object graph is rebuilt.
 8. [Rendering and sound](rendering-and-sound.md) explains the visible and
    audible sides of the simulation.
+9. [Packed classifiers](packed-classifiers.md) documents the single 32-bit
+   family/genus/species encoding reused for both object identity and CAOS
+   script dispatch, and where its wildcard-matching rules apply.
 
 For build prerequisites, packaging, and supplying game data, see
 [Building and packaging](building.md).
