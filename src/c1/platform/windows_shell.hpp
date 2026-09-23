@@ -52,6 +52,7 @@
 #include "../ui/magic_profiler.hpp"
 #include "../ui/views.hpp"
 #include "../ui/creature_selection.hpp"
+#include "../ui/place_dialog.hpp"
 #include "../ui/toolbars.hpp"
 #include "../world/map.hpp"
 #include "../world/runtime.hpp"
@@ -536,6 +537,7 @@ private:
     LPCREATESTRUCT pending_create_struct_ = nullptr;
     MINMAXINFO* pending_min_max_info_ = nullptr;
     mutable C1NativeMainMenuHandle main_menu_handle_;
+    C1NativeMenuHandle camera_menu_handle_{nullptr};
     mutable std::string main_menu_item_text_;
     creatures1::platform::WindowsPipeServerBoundary* pipe_server_boundary_ =
         nullptr;
@@ -2024,13 +2026,17 @@ public:
     enum : UINT { kNameEdit = 1012 };
 
     C1AddFavouritePlaceDialog() : CDialog(142, nullptr) {}
-    const CString& place_name() const { return place_name_; }
+    CString place_name() const { return CString(policy_.place_name().c_str()); }
 
 protected:
     void DoDataExchange(CDataExchange* exchange) override;
+    BOOL OnInitDialog() override;
+    afx_msg void OnPlaceNameChanged();
+    DECLARE_MESSAGE_MAP()
 
 private:
-    CString place_name_;
+    class Platform;
+    creatures1::ui::PlaceDialog policy_;
 };
 
 // Dialog 143 "Add/Remove Favorite Places": a list of the stored places and a
@@ -2046,12 +2052,14 @@ public:
 
 protected:
     BOOL OnInitDialog() override;
-    afx_msg void OnRemove();
+    afx_msg void OnRemoveSelected();
     DECLARE_MESSAGE_MAP()
 
 private:
+    class Platform;
     C1WindowsDocument& document_;
     CListBox place_list_;
+    creatures1::ui::RemovePlaceDialog policy_;
     int removed_index_ = -1;
 };
 

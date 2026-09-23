@@ -52,9 +52,12 @@ bool RemovePlaceDialog::on_init_dialog(RemovePlaceDialogPlatform& platform) {
             std::min(place_count - 1, kMaximumRemovableFavouritePlaces);
         for (std::size_t place_index = 0; place_index < inserted_count;
              ++place_index) {
+            // CRemovePlaceDlg::OnInitDialog @ 0x0042f5e0 starts at the
+            // second record's name (document offset 300 = places[1]); the
+            // built-in first place is never listed, so row r is place r+1.
             const int inserted_list_index =
                 platform.insert_favourite_name_at_front(
-                    platform.favourite_place_name(place_index));
+                    platform.favourite_place_name(place_index + 1));
 
             for (std::size_t prior_index = 0; prior_index < place_index;
                  ++prior_index) {

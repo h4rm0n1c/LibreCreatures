@@ -301,8 +301,11 @@ bool C1CaosConsoleDialog::default_pre_translate(
 // --- CaosScriptLoadHost ----------------------------------------------------
 
 bool C1CaosConsoleDialog::choose_script_file(std::string& selected_path) {
+    // Native (LoadCaosScriptFromFile @ 0x0040f380) passes 0x1004 and so lets
+    // the dialog change the current directory; LibreCreatures adds
+    // OFN_NOCHANGEDIR so relative paths stay anchored to the Main Directory.
     CFileDialog dialog(TRUE, "cos", nullptr,
-                       OFN_FILEMUSTEXIST | OFN_HIDEREADONLY,
+                       OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_NOCHANGEDIR,
                        "CAOS scripts (*.cos)|*.cos|All files (*.*)|*.*||",
                        this);
     if (dialog.DoModal() != IDOK) {

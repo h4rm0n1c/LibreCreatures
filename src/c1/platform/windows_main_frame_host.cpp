@@ -167,8 +167,19 @@ std::string C1MainFrame::favourite_place_name(std::size_t index) const {
 }
 
 creatures1::ui::MenuHandle* C1MainFrame::favourite_places_menu() {
+    // find_camera_submenu hands back a handle owned by the menu platform, and
+    // the platform dies with this call.  Returning that pointer left every
+    // caller holding a dangling handle that happened to work until the stack
+    // was reused -- removing a middle favourite place relabelled one entry and
+    // then failed to remove the last.  Copy the HMENU into a frame-owned handle.
     C1NativeCreatureSelectionMenuPlatform menu_platform(*this);
-    return creatures1::ui::find_camera_submenu(menu_platform);
+    const auto* found = dynamic_cast<const C1NativeMenuHandle*>(
+        creatures1::ui::find_camera_submenu(menu_platform));
+    if (found == nullptr) {
+        return nullptr;
+    }
+    camera_menu_handle_ = C1NativeMenuHandle(found->native_menu());
+    return &camera_menu_handle_;
 }
 
 void C1MainFrame::show_missing_favourite_places_menu_warning() {

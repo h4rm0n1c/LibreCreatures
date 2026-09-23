@@ -4000,6 +4000,33 @@ void C1WindowsDocument::remove_favourite_place_at(std::size_t index) {
     }
     places[semantic_document_->favourite_place_count - 1] = {};
     --semantic_document_->favourite_place_count;
+
+    // RemoveFavouritePlaceAtIndex @ 0x00435200 also relabels every shifted
+    // Camera-menu entry (command 0x8053 + slot) and removes the last one;
+    // without this the menu kept the removed name and a dead last entry.
+    C1MainFrame* frame = active_main_frame();
+    if (frame == nullptr) {
+        return;
+    }
+    auto& activation =
+        static_cast<creatures1::application::MainFrameActivationPlatform&>(
+            *frame);
+    const auto* menu =
+        dynamic_cast<C1NativeMenuHandle*>(activation.favourite_places_menu());
+    if (menu == nullptr || menu->native_menu() == nullptr) {
+        return;
+    }
+    constexpr UINT kFirstFavouritePlaceCommand = 0x8053;
+    const std::size_t count = semantic_document_->favourite_place_count;
+    for (std::size_t slot = index; slot < count; ++slot) {
+        const UINT command = kFirstFavouritePlaceCommand + static_cast<UINT>(slot);
+        ::ModifyMenuA(menu->native_menu(), command, MF_BYCOMMAND | MF_STRING,
+                      command, places[slot].name.c_str());
+    }
+    ::RemoveMenu(menu->native_menu(),
+                 kFirstFavouritePlaceCommand + static_cast<UINT>(count),
+                 MF_BYCOMMAND);
+    frame->DrawMenuBar();
 }
 
 namespace {

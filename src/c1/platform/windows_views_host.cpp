@@ -1630,32 +1630,112 @@ void C1WindowsView::open_or_activate_world_statistics() {
 
 // --- favourite place dialogs -----------------------------------------------
 
+// CPlaceDlg (dialog 142): the "<Place Name>" default and the 20-character
+// limit are the recovered ui::PlaceDialog policy; MFC supplies DDX/DDV.
+class C1AddFavouritePlaceDialog::Platform final
+    : public creatures1::ui::PlaceDialogPlatform,
+      public creatures1::ui::PlaceDialogDataExchange {
+public:
+    Platform(C1AddFavouritePlaceDialog& dialog, CDataExchange* exchange)
+        : dialog_(dialog), exchange_(exchange) {}
+    bool base_on_init_dialog() override {
+        return dialog_.CDialog::OnInitDialog() != FALSE;
+    }
+    void update_data(bool save_and_validate) override {
+        dialog_.UpdateData(save_and_validate ? TRUE : FALSE);
+    }
+    void bind_text(std::uint32_t control_id, std::string& value) override {
+        CString text(value.c_str());
+        DDX_Text(exchange_, static_cast<int>(control_id), text);
+        value = text.GetString();
+    }
+    void validate_maximum_characters(std::uint32_t /*control_id*/,
+                                     std::string_view value,
+                                     std::size_t maximum) override {
+        CString text(std::string(value).c_str());
+        DDV_MaxChars(exchange_, text, static_cast<int>(maximum));
+    }
+
+private:
+    C1AddFavouritePlaceDialog& dialog_;
+    CDataExchange* exchange_;
+};
+
+BEGIN_MESSAGE_MAP(C1AddFavouritePlaceDialog, CDialog)
+    ON_EN_CHANGE(C1AddFavouritePlaceDialog::kNameEdit, OnPlaceNameChanged)
+END_MESSAGE_MAP()
+
 void C1AddFavouritePlaceDialog::DoDataExchange(CDataExchange* exchange) {
     CDialog::DoDataExchange(exchange);
-    DDX_Text(exchange, kNameEdit, place_name_);
+    Platform platform(*this, exchange);
+    policy_.exchange_data(platform);
 }
 
+BOOL C1AddFavouritePlaceDialog::OnInitDialog() {
+    Platform platform(*this, nullptr);
+    return policy_.on_init_dialog(platform) ? TRUE : FALSE;
+}
+
+void C1AddFavouritePlaceDialog::OnPlaceNameChanged() {
+    Platform platform(*this, nullptr);
+    policy_.on_place_name_changed(platform);
+}
+
+// CRemovePlaceDlg (dialog 143): lists every place except the built-in
+// first one, maps the sorted list's rows back to places, and removes the
+// selected one when Remove is pressed or a row is double-clicked
+// (message map @ 0x00457f88).  The row bookkeeping is ui::RemovePlaceDialog.
+class C1RemoveFavouritePlaceDialog::Platform final
+    : public creatures1::ui::RemovePlaceDialogPlatform {
+public:
+    explicit Platform(C1RemoveFavouritePlaceDialog& dialog) : dialog_(dialog) {}
+    bool base_on_init_dialog() override {
+        const BOOL result = dialog_.CDialog::OnInitDialog();
+        dialog_.place_list_.SubclassDlgItem(kPlaceList, &dialog_);
+        return result != FALSE;
+    }
+    std::size_t favourite_place_count() const override {
+        return dialog_.document_.favourite_place_count();
+    }
+    std::string_view favourite_place_name(std::size_t index) const override {
+        name_ = dialog_.document_.favourite_place_name(index);
+        return name_;
+    }
+    int insert_favourite_name_at_front(std::string_view name) override {
+        return dialog_.place_list_.AddString(std::string(name).c_str());
+    }
+    int selected_favourite_list_index() const override {
+        return dialog_.place_list_.GetCurSel();
+    }
+    void remove_favourite_place_at_index(std::size_t index) override {
+        dialog_.removed_index_ = static_cast<int>(index);
+    }
+    void finish_selection_change() override { dialog_.OnOK(); }
+    void select_first_favourite_name() override {
+        dialog_.place_list_.SetCurSel(0);
+    }
+    void update_data(bool save_and_validate) override {
+        dialog_.UpdateData(save_and_validate ? TRUE : FALSE);
+    }
+
+private:
+    C1RemoveFavouritePlaceDialog& dialog_;
+    mutable std::string name_;
+};
+
 BEGIN_MESSAGE_MAP(C1RemoveFavouritePlaceDialog, CDialog)
-    ON_BN_CLICKED(C1RemoveFavouritePlaceDialog::kRemoveButton, OnRemove)
+    ON_BN_CLICKED(C1RemoveFavouritePlaceDialog::kRemoveButton, OnRemoveSelected)
+    ON_LBN_DBLCLK(C1RemoveFavouritePlaceDialog::kPlaceList, OnRemoveSelected)
 END_MESSAGE_MAP()
 
 BOOL C1RemoveFavouritePlaceDialog::OnInitDialog() {
-    CDialog::OnInitDialog();
-    place_list_.SubclassDlgItem(kPlaceList, this);
-    for (std::size_t index = 0; index < document_.favourite_place_count();
-         ++index) {
-        place_list_.AddString(
-            document_.favourite_place_name(index).c_str());
-    }
-    return TRUE;
+    Platform platform(*this);
+    return policy_.on_init_dialog(platform) ? TRUE : FALSE;
 }
 
-void C1RemoveFavouritePlaceDialog::OnRemove() {
-    const int selection = place_list_.GetCurSel();
-    if (selection != LB_ERR) {
-        removed_index_ = selection;
-    }
-    EndDialog(IDOK);
+void C1RemoveFavouritePlaceDialog::OnRemoveSelected() {
+    Platform platform(*this);
+    policy_.on_remove_place_list_selection_changed(platform);
 }
 
 } // namespace creatures1::platform

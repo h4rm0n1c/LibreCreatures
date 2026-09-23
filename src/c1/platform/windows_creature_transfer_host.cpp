@@ -85,8 +85,12 @@ WindowsCreatureExportHost::selected_creature_for_export() const {
 
 bool WindowsCreatureExportHost::prompt_for_export_path(
     std::string& output_path) {
+    // PromptForExpFilePath @ 0x00417d70 passes 0x2000e: OFN_NOCHANGEDIR keeps
+    // the dialog from moving the process's current directory away from the
+    // Main Directory that relative paths are resolved against.
     CFileDialog dialog(FALSE, "exp", nullptr,
-                       OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT,
+                       OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT | OFN_NOCHANGEDIR |
+                           OFN_NONETWORKBUTTON,
                        "Exported creatures (*.exp)|*.exp|"
                        "All files (*.*)|*.*||");
     if (dialog.DoModal() != IDOK) {
@@ -348,8 +352,12 @@ private:
 } // namespace
 
 bool WindowsCreatureImportHost::prompt_for_import_path(std::string& path) {
+    // PromptForExpFilePath @ 0x00417d70 passes 0x2000e: OFN_NOCHANGEDIR keeps
+    // the dialog from moving the process's current directory away from the
+    // Main Directory that relative paths are resolved against.
     CFileDialog dialog(TRUE, "exp", nullptr,
-                       OFN_FILEMUSTEXIST | OFN_HIDEREADONLY,
+                       OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_NOCHANGEDIR |
+                           OFN_NONETWORKBUTTON,
                        "Exported creatures (*.exp)|*.exp|"
                        "All files (*.*)|*.*||");
     if (dialog.DoModal() != IDOK) {
