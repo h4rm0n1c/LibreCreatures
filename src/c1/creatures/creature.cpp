@@ -387,7 +387,13 @@ Creature::Creature(GenomeFilenameId genome_source_filename,
             const std::size_t selected =
                 static_cast<std::size_t>(std::rand()) %
                 population_gender_count;
-            construction_sex = selected < female_count
+            // Creature::Creature @ 0x0040d76b: sex 2 (female) when
+            // (rand % total) + 1 <= count[sex 1] (males).  The chance of a
+            // female is the share of males, which steers the population
+            // back toward balance.  Comparing against the female count
+            // inverted that, so once males led, every birth was likelier to
+            // be male and the population ran away to all-male.
+            construction_sex = selected < male_count
                                    ? CreatureConstructionSex::female
                                    : CreatureConstructionSex::male;
         }
