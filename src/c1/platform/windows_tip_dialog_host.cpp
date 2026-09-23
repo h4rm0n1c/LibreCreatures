@@ -236,7 +236,7 @@ void C1TipDialogWindow::OnOK() {
 
 BEGIN_MESSAGE_MAP(C1TipDialogWindow, CDialog)
     ON_WM_TIMER()
-    ON_BN_CLICKED(1002, OnNextTip)
+    ON_BN_CLICKED(1002, &C1TipDialogWindow::OnNextTip)
     ON_WM_PAINT()
     ON_WM_CTLCOLOR()
 END_MESSAGE_MAP()

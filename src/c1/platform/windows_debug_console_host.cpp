@@ -28,14 +28,22 @@ constexpr std::size_t kConsoleTextCapacity = 0x8000;
 C1DebugConsoleDialog* active_debug_console() { return g_debug_console_dialog; }
 
 BEGIN_MESSAGE_MAP(C1DebugConsoleDialog, CDialog)
-    ON_BN_CLICKED(C1DebugConsoleDialog::kClearLogButton, OnClearLog)
-    ON_BN_CLICKED(C1DebugConsoleDialog::kPauseCheckBox, OnTogglePause)
-    ON_BN_CLICKED(C1DebugConsoleDialog::kFilterCheckBox, OnToggleFilter)
-    ON_BN_CLICKED(C1DebugConsoleDialog::kWholeLogButton, OnCopyWholeLog)
-    ON_BN_CLICKED(C1DebugConsoleDialog::kThisPageButton, OnCopyThisPage)
-    ON_BN_CLICKED(C1DebugConsoleDialog::kMirrorButton, OnToggleMirror)
-    ON_BN_CLICKED(C1DebugConsoleDialog::kCloseButton, OnCloseConsole)
-    ON_EN_CHANGE(C1DebugConsoleDialog::kFilterTextEdit, OnFilterTextChanged)
+    ON_BN_CLICKED(C1DebugConsoleDialog::kClearLogButton,
+                  &C1DebugConsoleDialog::OnClearLog)
+    ON_BN_CLICKED(C1DebugConsoleDialog::kPauseCheckBox,
+                  &C1DebugConsoleDialog::OnTogglePause)
+    ON_BN_CLICKED(C1DebugConsoleDialog::kFilterCheckBox,
+                  &C1DebugConsoleDialog::OnToggleFilter)
+    ON_BN_CLICKED(C1DebugConsoleDialog::kWholeLogButton,
+                  &C1DebugConsoleDialog::OnCopyWholeLog)
+    ON_BN_CLICKED(C1DebugConsoleDialog::kThisPageButton,
+                  &C1DebugConsoleDialog::OnCopyThisPage)
+    ON_BN_CLICKED(C1DebugConsoleDialog::kMirrorButton,
+                  &C1DebugConsoleDialog::OnToggleMirror)
+    ON_BN_CLICKED(C1DebugConsoleDialog::kCloseButton,
+                  &C1DebugConsoleDialog::OnCloseConsole)
+    ON_EN_CHANGE(C1DebugConsoleDialog::kFilterTextEdit,
+                 &C1DebugConsoleDialog::OnFilterTextChanged)
     ON_WM_ACTIVATE()
 END_MESSAGE_MAP()
 

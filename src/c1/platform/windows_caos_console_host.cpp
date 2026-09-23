@@ -20,11 +20,14 @@ creatures1::ui::CaosRect to_caos_rect(const RECT& rect) {
 } // namespace
 
 BEGIN_MESSAGE_MAP(C1CaosConsoleDialog, CDialog)
-    ON_BN_CLICKED(C1CaosConsoleDialog::kSendButton, OnSend)
-    ON_BN_CLICKED(C1CaosConsoleDialog::kClearButton, OnClear)
-    ON_BN_CLICKED(C1CaosConsoleDialog::kLoadButton, OnLoad)
+    ON_BN_CLICKED(C1CaosConsoleDialog::kSendButton,
+                  &C1CaosConsoleDialog::OnSend)
+    ON_BN_CLICKED(C1CaosConsoleDialog::kClearButton,
+                  &C1CaosConsoleDialog::OnClear)
+    ON_BN_CLICKED(C1CaosConsoleDialog::kLoadButton,
+                  &C1CaosConsoleDialog::OnLoad)
     ON_BN_CLICKED(C1CaosConsoleDialog::kAlwaysOnTopCheckBox,
-                  OnToggleAlwaysOnTop)
+                  &C1CaosConsoleDialog::OnToggleAlwaysOnTop)
     ON_WM_SIZE()
     ON_WM_GETMINMAXINFO()
 END_MESSAGE_MAP()

@@ -1662,7 +1662,8 @@ private:
 };
 
 BEGIN_MESSAGE_MAP(C1AddFavouritePlaceDialog, CDialog)
-    ON_EN_CHANGE(C1AddFavouritePlaceDialog::kNameEdit, OnPlaceNameChanged)
+    ON_EN_CHANGE(C1AddFavouritePlaceDialog::kNameEdit,
+                 &C1AddFavouritePlaceDialog::OnPlaceNameChanged)
 END_MESSAGE_MAP()
 
 void C1AddFavouritePlaceDialog::DoDataExchange(CDataExchange* exchange) {
@@ -1724,8 +1725,10 @@ private:
 };
 
 BEGIN_MESSAGE_MAP(C1RemoveFavouritePlaceDialog, CDialog)
-    ON_BN_CLICKED(C1RemoveFavouritePlaceDialog::kRemoveButton, OnRemoveSelected)
-    ON_LBN_DBLCLK(C1RemoveFavouritePlaceDialog::kPlaceList, OnRemoveSelected)
+    ON_BN_CLICKED(C1RemoveFavouritePlaceDialog::kRemoveButton,
+                  &C1RemoveFavouritePlaceDialog::OnRemoveSelected)
+    ON_LBN_DBLCLK(C1RemoveFavouritePlaceDialog::kPlaceList,
+                  &C1RemoveFavouritePlaceDialog::OnRemoveSelected)
 END_MESSAGE_MAP()
 
 BOOL C1RemoveFavouritePlaceDialog::OnInitDialog() {

@@ -1723,37 +1723,53 @@ private:
 // pair reads as a radio showing which state the world is in and both stay
 // enabled.
 BEGIN_MESSAGE_MAP(C1WindowsDocument, CDocument)
-    ON_COMMAND(0x8045, OnWorldPlay)
-    ON_COMMAND(ID_FILE_SAVE, OnFileSaveResumingWorld)
-    ON_COMMAND(ID_FILE_SAVE_AS, OnFileSaveAsResumingWorld)
-    ON_COMMAND(0x8046, OnWorldPause)
-    ON_UPDATE_COMMAND_UI(0x8045, OnUpdateWorldPlay)
-    ON_UPDATE_COMMAND_UI(0x8046, OnUpdateWorldPause)
-    ON_COMMAND(0x807d, OnSelectNextCreature)
-    ON_COMMAND(0x807f, OnSelectPreviousCreature)
-    ON_COMMAND(0xe802, OnSpeakCreatureName)
+    ON_COMMAND(0x8045, &C1WindowsDocument::OnWorldPlay)
+    ON_COMMAND(ID_FILE_SAVE, &C1WindowsDocument::OnFileSaveResumingWorld)
+    ON_COMMAND(ID_FILE_SAVE_AS, &C1WindowsDocument::OnFileSaveAsResumingWorld)
+    ON_COMMAND(0x8046, &C1WindowsDocument::OnWorldPause)
+    ON_UPDATE_COMMAND_UI(0x8045, &C1WindowsDocument::OnUpdateWorldPlay)
+    ON_UPDATE_COMMAND_UI(0x8046, &C1WindowsDocument::OnUpdateWorldPause)
+    ON_COMMAND(0x807d, &C1WindowsDocument::OnSelectNextCreature)
+    ON_COMMAND(0x807f, &C1WindowsDocument::OnSelectPreviousCreature)
+    ON_COMMAND(0xe802, &C1WindowsDocument::OnSpeakCreatureName)
     // TriggerSelectedCreatureScriptEvent @ 004324c0: the four commands of the
     // "Which is my creature?" family each fire a script on the selected
     // creature, with the command id folded into the classifier. What the game
     // does through a script stays a script -- the port does not reimplement it
     // in C++ and call that equivalent.
-    ON_COMMAND_RANGE(0x0071, 0x0074, OnTriggerSelectedCreatureScriptEvent)
-    ON_UPDATE_COMMAND_UI_RANGE(0x9c40, 0x9c5e, OnUpdateSelectCreatureByMenuIndex)
+    ON_COMMAND_RANGE(0x0071, 0x0074,
+                     &C1WindowsDocument::OnTriggerSelectedCreatureScriptEvent)
+    ON_UPDATE_COMMAND_UI_RANGE(0x9c40, 0x9c5e,
+                               &C1WindowsDocument::OnUpdateSelectCreatureByMenuIndex)
     // The nineteen commands sharing the update handler at 004335d0.
-    ON_UPDATE_COMMAND_UI(0x0071, OnUpdateRequiresRunningWorld)
-    ON_UPDATE_COMMAND_UI(0x8009, OnUpdateRequiresRunningWorld)
-    ON_UPDATE_COMMAND_UI(0x800c, OnUpdateRequiresRunningWorld)
-    ON_UPDATE_COMMAND_UI(0x8024, OnUpdateRequiresRunningWorld)
-    ON_UPDATE_COMMAND_UI(0x8025, OnUpdateRequiresRunningWorld)
-    ON_UPDATE_COMMAND_UI(0x8027, OnUpdateRequiresRunningWorld)
-    ON_UPDATE_COMMAND_UI(0x8040, OnUpdateRequiresRunningWorld)
-    ON_UPDATE_COMMAND_UI(0x8048, OnUpdateRequiresRunningWorld)
-    ON_UPDATE_COMMAND_UI_RANGE(0x8053, 0x8058, OnUpdateRequiresRunningWorld)
-    ON_UPDATE_COMMAND_UI(0x8060, OnUpdateRequiresRunningWorld)
-    ON_UPDATE_COMMAND_UI(0x807e, OnUpdateRequiresRunningWorld)
-    ON_UPDATE_COMMAND_UI(0xe145, OnUpdateRequiresRunningWorld)
-    ON_UPDATE_COMMAND_UI(0xe802, OnUpdateRequiresRunningWorld)
-    ON_UPDATE_COMMAND_UI(0xe803, OnUpdateRequiresRunningWorld)
+    ON_UPDATE_COMMAND_UI(0x0071,
+                         &C1WindowsDocument::OnUpdateRequiresRunningWorld)
+    ON_UPDATE_COMMAND_UI(0x8009,
+                         &C1WindowsDocument::OnUpdateRequiresRunningWorld)
+    ON_UPDATE_COMMAND_UI(0x800c,
+                         &C1WindowsDocument::OnUpdateRequiresRunningWorld)
+    ON_UPDATE_COMMAND_UI(0x8024,
+                         &C1WindowsDocument::OnUpdateRequiresRunningWorld)
+    ON_UPDATE_COMMAND_UI(0x8025,
+                         &C1WindowsDocument::OnUpdateRequiresRunningWorld)
+    ON_UPDATE_COMMAND_UI(0x8027,
+                         &C1WindowsDocument::OnUpdateRequiresRunningWorld)
+    ON_UPDATE_COMMAND_UI(0x8040,
+                         &C1WindowsDocument::OnUpdateRequiresRunningWorld)
+    ON_UPDATE_COMMAND_UI(0x8048,
+                         &C1WindowsDocument::OnUpdateRequiresRunningWorld)
+    ON_UPDATE_COMMAND_UI_RANGE(0x8053, 0x8058,
+                               &C1WindowsDocument::OnUpdateRequiresRunningWorld)
+    ON_UPDATE_COMMAND_UI(0x8060,
+                         &C1WindowsDocument::OnUpdateRequiresRunningWorld)
+    ON_UPDATE_COMMAND_UI(0x807e,
+                         &C1WindowsDocument::OnUpdateRequiresRunningWorld)
+    ON_UPDATE_COMMAND_UI(0xe145,
+                         &C1WindowsDocument::OnUpdateRequiresRunningWorld)
+    ON_UPDATE_COMMAND_UI(0xe802,
+                         &C1WindowsDocument::OnUpdateRequiresRunningWorld)
+    ON_UPDATE_COMMAND_UI(0xe803,
+                         &C1WindowsDocument::OnUpdateRequiresRunningWorld)
 END_MESSAGE_MAP()
 
 void C1WindowsDocument::OnUpdateRequiresRunningWorld(CCmdUI* command_ui) {

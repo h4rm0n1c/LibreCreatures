@@ -30,25 +30,25 @@ void C1SfcOleAutomation::OnFinalRelease() {
 // entry array at 0x00458398 gives every method lDispID -1: MFC therefore
 // assigns DISPIDs by position, so the order below is load bearing.
 BEGIN_DISPATCH_MAP(C1SfcOleAutomation, CCmdTarget)
-    DISP_FUNCTION(C1SfcOleAutomation, "RequestMacro", RequestMacro, VT_BOOL,
+    DISP_FUNCTION(C1SfcOleAutomation, "RequestMacro", C1SfcOleAutomation::RequestMacro, VT_BOOL,
                   VTS_PVARIANT VTS_PVARIANT)
-    DISP_FUNCTION(C1SfcOleAutomation, "ExecuteMacro", ExecuteMacro, VT_BOOL,
+    DISP_FUNCTION(C1SfcOleAutomation, "ExecuteMacro", C1SfcOleAutomation::ExecuteMacro, VT_BOOL,
                   VTS_PVARIANT VTS_PVARIANT)
-    DISP_FUNCTION(C1SfcOleAutomation, "CreateMacro", CreateMacro, VT_BOOL,
+    DISP_FUNCTION(C1SfcOleAutomation, "CreateMacro", C1SfcOleAutomation::CreateMacro, VT_BOOL,
                   VTS_PVARIANT VTS_PVARIANT)
-    DISP_FUNCTION(C1SfcOleAutomation, "DestroyMacro", DestroyMacro, VT_BOOL,
+    DISP_FUNCTION(C1SfcOleAutomation, "DestroyMacro", C1SfcOleAutomation::DestroyMacro, VT_BOOL,
                   VTS_PVARIANT VTS_PVARIANT)
-    DISP_FUNCTION(C1SfcOleAutomation, "LoadMacro", LoadMacro, VT_BOOL,
+    DISP_FUNCTION(C1SfcOleAutomation, "LoadMacro", C1SfcOleAutomation::LoadMacro, VT_BOOL,
                   VTS_PVARIANT VTS_PVARIANT)
-    DISP_FUNCTION(C1SfcOleAutomation, "CreateCommand", CreateCommand, VT_I4,
+    DISP_FUNCTION(C1SfcOleAutomation, "CreateCommand", C1SfcOleAutomation::CreateCommand, VT_I4,
                   VTS_I2)
-    DISP_FUNCTION(C1SfcOleAutomation, "DestroyCommand", DestroyCommand,
+    DISP_FUNCTION(C1SfcOleAutomation, "DestroyCommand", C1SfcOleAutomation::DestroyCommand,
                   VT_BOOL, VTS_I4)
-    DISP_FUNCTION(C1SfcOleAutomation, "LoadCommand", LoadCommand, VT_EMPTY,
+    DISP_FUNCTION(C1SfcOleAutomation, "LoadCommand", C1SfcOleAutomation::LoadCommand, VT_EMPTY,
                   VTS_I4 VTS_BSTR)
-    DISP_FUNCTION(C1SfcOleAutomation, "RequestCommand", RequestCommand,
+    DISP_FUNCTION(C1SfcOleAutomation, "RequestCommand", C1SfcOleAutomation::RequestCommand,
                   VT_BOOL, VTS_I4 VTS_PBSTR)
-    DISP_FUNCTION(C1SfcOleAutomation, "FireCommand", FireCommand, VT_BOOL,
+    DISP_FUNCTION(C1SfcOleAutomation, "FireCommand", C1SfcOleAutomation::FireCommand, VT_BOOL,
                   VTS_I2 VTS_BSTR VTS_PBSTR)
 END_DISPATCH_MAP()
 

@@ -1,8 +1,9 @@
 #include "windows_shell.hpp"
 
-namespace {
-
-using namespace creatures1::platform;
+// Named, not anonymous: MFC's IMPLEMENT_DYNCREATE and dispatch-map macros emit
+// __declspec(selectany) data, which needs external linkage.  MSVC let an
+// anonymous namespace through; clang-cl (the UBSan build) does not.
+namespace creatures1::platform {
 
 class C1Application final : public CWinApp {
     DECLARE_DYNCREATE(C1Application)
@@ -145,8 +146,8 @@ C1Application g_c1_application;
 IMPLEMENT_DYNCREATE(C1Application, CWinApp)
 
 BEGIN_MESSAGE_MAP(C1Application, CWinApp)
-    ON_COMMAND(ID_FILE_NEW, OnFileNewPausingWorld)
-    ON_COMMAND(ID_FILE_OPEN, OnFileOpenPausingWorld)
+    ON_COMMAND(ID_FILE_NEW, &C1Application::OnFileNewPausingWorld)
+    ON_COMMAND(ID_FILE_OPEN, &C1Application::OnFileOpenPausingWorld)
 END_MESSAGE_MAP()
 
 BEGIN_DISPATCH_MAP(C1Application, CWinApp)
@@ -163,8 +164,7 @@ BEGIN_INTERFACE_MAP(C1Application, CWinApp)
     INTERFACE_PART(C1Application, IID_ISfcApplication, Dispatch)
 END_INTERFACE_MAP()
 
-} // namespace
- // namespace
+} // namespace creatures1::platform
 
 // The Windows executable entry point belongs to the MFC/CRT host boundary.
 // C1 application policy starts at SFCApp::InitInstance; it must not be
