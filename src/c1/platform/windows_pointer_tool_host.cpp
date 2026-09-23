@@ -163,10 +163,28 @@ void WindowsPointerToolRuntimeHost::queue_speech_range_event(
 
 void WindowsPointerToolRuntimeHost::synchronize_creature_selector(
     std::string_view text) {
-    static_cast<void>(text);
-    // The selector shows the creature list, which the document rebuilds; the
-    // native refresh is the same one the selection path already drives.
-    document_.rebuild_creature_selection_menu();
+    // PointerTool::SetTextWithToolbarUpdate @ 0x00429860: move the text to
+    // the top of the toolbar combo's history (drop an existing copy, insert
+    // at 0, select it) and keep at most ten entries.  Speak (Ctrl+S) reads
+    // this combo, so without it the hand had nothing to say.
+    C1MainFrame* frame = active_main_frame();
+    if (frame == nullptr || frame->creature_selector().GetSafeHwnd() == nullptr) {
+        return;
+    }
+    const HWND combo = frame->creature_selector().GetSafeHwnd();
+    const std::string value(text);
+    const LPARAM text_param = reinterpret_cast<LPARAM>(value.c_str());
+    const LRESULT existing =
+        ::SendMessageA(combo, CB_FINDSTRINGEXACT, 0, text_param);
+    if (existing != CB_ERR) {
+        ::SendMessageA(combo, CB_DELETESTRING, static_cast<WPARAM>(existing), 0);
+    }
+    ::SendMessageA(combo, CB_INSERTSTRING, 0, text_param);
+    ::SendMessageA(combo, CB_SETCURSEL, 0, 0);
+    const LRESULT count = ::SendMessageA(combo, CB_GETCOUNT, 0, 0);
+    if (count > 10) {
+        ::SendMessageA(combo, CB_DELETESTRING, static_cast<WPARAM>(count - 1), 0);
+    }
 }
 
 // --- SimpleObjectInteractionHost -------------------------------------------

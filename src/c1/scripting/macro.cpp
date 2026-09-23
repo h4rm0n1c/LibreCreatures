@@ -9,6 +9,7 @@
 #include "../creatures/stimulus.hpp"
 #include "../objects/object.hpp"
 #include "classifier_scripts.hpp"
+#include "macro_holder.hpp"
 #include "tables.hpp"
 
 namespace creatures1::scripting {
@@ -49,6 +50,11 @@ void MacroSchedulerHostAdapter::report_too_many_macros(
     interpreter_host_.report_too_many_macros(macro, maximum_macros);
 }
 
+namespace {
+// Macros currently inside dispatch_interpreter_command, innermost last.
+std::vector<Macro*> g_executing_macros;
+} // namespace
+
 void purge_destroy_when_finished_macros_for_owner(
     objects::Object* script_owner) {
     for (std::size_t index = 0; index < g_running_macros.size();) {
@@ -62,6 +68,17 @@ void purge_destroy_when_finished_macros_for_owner(
         // Remove the slot before destruction. Macro destruction can observe
         // the registry, so the live list must already exclude this object.
         g_running_macros.erase(g_running_macros.begin() + index);
+        // A creature that dies inside its own script purges the Macro still
+        // executing that command; deleting it here left the interpreter
+        // running on freed memory.  Mark it and let the interpreter delete it
+        // when the command returns.  (Native deletes it outright.)
+        if (std::find(g_executing_macros.begin(), g_executing_macros.end(),
+                      macro) != g_executing_macros.end()) {
+            macro->purged_while_executing = true;
+            macro->destroy_when_finished = true;
+            macro->execution_terminated = true;
+            continue;
+        }
         delete macro;
     }
 }
@@ -173,6 +190,12 @@ void Macro::reset_execution_state(const MacroExecutionHost& host) {
 // it exactly once.  The port used release for every finalization, so a kit's
 // Macro deleted itself the moment its script ended and CSfcOLE::DestroyMacro
 // then freed it again -- heap corruption on the second free.
+Macro::~Macro() {
+    if (owning_holder != nullptr) {
+        owning_holder->forget_macro(*this);
+    }
+}
+
 void Macro::remove_from_running_scheduler_and_release() {
     const auto it = std::find(g_running_macros.begin(), g_running_macros.end(),
                               this);
@@ -4446,6 +4469,7 @@ MacroControlFlowResult Macro::execute_interpreter(
         if (command == MacroCommand::hidden_fertilize) {
             command = MacroCommand::mate;
         }
+        g_executing_macros.push_back(this);
         try {
             result = dispatch_interpreter_command(command, bindings);
         } catch (...) {
@@ -4463,11 +4487,17 @@ MacroControlFlowResult Macro::execute_interpreter(
             execution_terminated = true;
             result = MacroControlFlowResult::execution_terminated;
         }
+        g_executing_macros.pop_back();
         if (result == MacroControlFlowResult::macro_destroyed) {
             // The handler already performed the scheduler removal and may have
             // deleted this Macro; no member access is valid from here, which
             // includes the trace below.
             return result;
+        }
+        if (purged_while_executing) {
+            // Already out of the scheduler; see the purge above.
+            delete this;
+            return MacroControlFlowResult::macro_destroyed;
         }
         if (bindings.trace != nullptr) {
             bindings.trace->command_result(*this, token, result,

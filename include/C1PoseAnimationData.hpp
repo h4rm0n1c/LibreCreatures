@@ -27,4 +27,4 @@ extern char g_motion_pose_digit_by_vertical_bin_and_distance_bin[10][4];
 // 0x0045abc8: the complete 22-record source table.  AdvancePoseAnimation
 // consumes the indexed records beginning at logical record 2; other C1
 // pose code owns the preceding entries in the same table.
-extern C1InteractionPosePair g_interaction_pose_pairs_ascii_0_to_5[22];
+extern C1InteractionPosePair g_interaction_pose_pairs_ascii_0_to_5[24];

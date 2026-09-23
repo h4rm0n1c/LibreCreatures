@@ -3573,9 +3573,14 @@ void Creature::update_bacterium_and_environment(
                 common::debug_log(*log_host, 0x400, "Bacterium killed!\n");
             }
         } else {
+            // UpdateBacteriumAndEnvironment @ 0x00409190 passes the id
+            // zero-extended.  Bacterial input ids are -8..-1 as signed bytes
+            // (chemicals 248-255); widening them signed indexed up to eight
+            // entries before chemical_states.
             biochemistry.add_chemical_moles(
-                static_cast<int>(bacterium.input_chemical_id()), 0x50,
-                log_host);
+                static_cast<int>(
+                    static_cast<std::uint8_t>(bacterium.input_chemical_id())),
+                0x50, log_host);
             for (const std::int8_t output_chemical_id :
                  bacterium.output_chemical_ids()) {
                 if (output_chemical_id != 0) {

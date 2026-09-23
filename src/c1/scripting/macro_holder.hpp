@@ -76,10 +76,31 @@ public:
     bool format_brain_activity_report(char* output_buffer);
     bool set_zero_callback_result(void* callback_argument);
 
-    Macro* macro() const { return macro_; }
+    // A started script that ends deletes its Macro; a kit that keeps its
+    // holder then gets a fresh one, as native's reuse of the same object
+    // effectively did (native kept a pointer to freed memory).
+    Macro* macro() const {
+        return macro_ != nullptr ? macro_
+                                 : const_cast<MacroHolder*>(this)->adopt_new_macro();
+    }
+
+    // Called by ~Macro when a started script deletes itself.
+    void forget_macro(const Macro& macro) {
+        if (macro_ == &macro) {
+            macro_ = nullptr;
+        }
+    }
+
+    // For a caller whose holder dies straight after starting its script (the
+    // pipe server): pass a still-running Macro to the scheduler, which then
+    // deletes it when the script ends, instead of the holder's destructor
+    // unscheduling and deleting a script it has only just started.
+    void hand_started_macro_to_scheduler();
     std::uint32_t callback_result() const { return callback_result_; }
 
 private:
+    Macro* adopt_new_macro();
+
     MacroExecutionMode execution_mode_;
     MacroHolderHost& host_;
     Macro* macro_ = nullptr;

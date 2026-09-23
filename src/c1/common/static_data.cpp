@@ -43,7 +43,8 @@ char g_motion_pose_digit_by_vertical_bin_and_distance_bin[10][4] = {
     {'0', '1', '1', '2'}, {'0', '0', '1', '1'},
 };
 
-C1InteractionPosePair g_interaction_pose_pairs_ascii_0_to_5[22] = {
+// 24 rows, as at 0x0045abc8: the pair index reaches ('3' - '0') + 5 * 4 = 23.
+C1InteractionPosePair g_interaction_pose_pairs_ascii_0_to_5[24] = {
     {'2', '5', {0, 0}}, {'2', '4', {0, 0}},
     {'2', '1', {0, 0}}, {'2', '4', {0, 0}},
     {'0', '5', {0, 0}}, {'1', '4', {0, 0}},
@@ -55,6 +56,7 @@ C1InteractionPosePair g_interaction_pose_pairs_ascii_0_to_5[22] = {
     {'0', '5', {0, 0}}, {'1', '4', {0, 0}},
     {'2', '1', {0, 0}}, {'3', '1', {0, 0}},
     {'0', '5', {0, 0}}, {'1', '4', {0, 0}},
+    {'2', '1', {0, 0}}, {'3', '1', {0, 0}},
 };
 
 C1GoalDirectionActionCandidateScoreTable

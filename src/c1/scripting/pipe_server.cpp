@@ -677,6 +677,11 @@ std::string PipeServer::execute_fire_command(
     if (!holder->reset_result_and_invoke_result_entry(output.data())) {
         return error_response("Macro execution failed");
     }
+    // This holder is destroyed on return; a started script must outlive it.
+    if (static_cast<MacroExecutionMode>(macro_type) ==
+        MacroExecutionMode::start_execution) {
+        holder->hand_started_macro_to_scheduler();
+    }
 
     const std::uint32_t output_length = holder->callback_result();
     char header[68] = {};

@@ -24,6 +24,7 @@ struct StimulusContext;
 namespace creatures1::scripting {
 
 class Macro;
+class MacroHolder;
 class ScriptDefinitionInstallHost;
 struct MacroInterpreterBindings;
 
@@ -1097,7 +1098,7 @@ struct MacroInterpreterBindings {
 
 class Macro {
 public:
-    virtual ~Macro() = default;
+    virtual ~Macro();
 
     void serialize(MacroArchive& archive);
     void reset_execution_state(const MacroExecutionHost& host);
@@ -1308,6 +1309,13 @@ public:
     }
 
     bool destroy_when_finished = false;
+    // The holder that owns this Macro, if any.  A started script that ends
+    // deletes itself; the destructor then clears the holder's pointer so the
+    // holder cannot free it a second time.
+    MacroHolder* owning_holder = nullptr;
+    // Set when a purge hits this Macro while it is executing a command; the
+    // interpreter deletes it once that command returns.
+    bool purged_while_executing = false;
     bool capture_output_enabled = false;
     std::uint32_t script_capacity_bytes = 0;
     std::string script_buffer;
