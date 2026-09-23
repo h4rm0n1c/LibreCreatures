@@ -22,15 +22,4 @@ void toggle_native_mute(C1WindowsDocument& document) {
     creatures1::application::toggle_mute_and_stop_sounds(control);
 }
 
-bool native_mute_enabled(const C1WindowsDocument& document) {
-    const creatures1::application::Document* semantic =
-        document.semantic_document();
-    return semantic != nullptr && semantic->mute_setting;
-}
-
-bool native_mute_command_enabled(const C1WindowsDocument& document) {
-    return document.semantic_document() != nullptr &&
-           document.world_timer_is_armed();
-}
-
 } // namespace creatures1::platform

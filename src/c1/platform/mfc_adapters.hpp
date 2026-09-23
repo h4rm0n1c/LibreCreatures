@@ -22,22 +22,10 @@ public:
                           std::int32_t y) const = 0;
 };
 
-class EditControlApi {
-public:
-    virtual ~EditControlApi() = default;
-
-    virtual void set_selection(std::intptr_t selection_start,
-                               std::intptr_t selection_end) = 0;
-    virtual void scroll_caret() = 0;
-};
-
 bool point_in_rect_xy(const RectangleHitTestApi& api,
                       const Rectangle& rectangle,
                       std::int32_t x,
                       std::int32_t y);
 
-void set_edit_selection_and_scroll(EditControlApi& api,
-                                   std::intptr_t selection_start,
-                                   std::intptr_t selection_end);
 
 } // namespace creatures1::platform

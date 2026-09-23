@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <vector>
 
@@ -18,6 +19,16 @@ public:
     virtual void submit_state_word(FuneralKitStateWord value) = 0;
 };
 
+// The document persists at most sixteen pending words.
+constexpr std::size_t kMaximumPendingFuneralKitStateWords = 16;
+
+void append_funeral_kit_document_state_word(
+    std::vector<FuneralKitStateWord>& pending_state_words,
+    FuneralKitStateWord value);
+
+// FlushFuneralKitDocumentStateWords @ 00435c10: deliver each pending word to
+// the Funeral Kit and clear them.  While the kit is not connected the words
+// stay queued so the Graveyard still receives them once it connects.
 void flush_funeral_kit_document_state_words(
     FuneralKitGateway& gateway,
     std::vector<FuneralKitStateWord>& pending_state_words);

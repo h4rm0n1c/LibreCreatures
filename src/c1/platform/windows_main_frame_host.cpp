@@ -1104,16 +1104,36 @@ void C1MainFrame::OnUpdateSmoothScrolling(CCmdUI* command_ui) {
     command_ui->Enable(TRUE);
 }
 
+namespace {
+
+class DocumentCommandUi final
+    : public creatures1::application::DocumentCommandUpdateHost {
+public:
+    explicit DocumentCommandUi(CCmdUI& command_ui) : command_ui_(command_ui) {}
+    void set_checked(bool checked) override {
+        command_ui_.SetCheck(checked ? 1 : 0);
+    }
+    void set_enabled(bool enabled) override {
+        command_ui_.Enable(enabled ? TRUE : FALSE);
+    }
+
+private:
+    CCmdUI& command_ui_;
+};
+
+} // namespace
+
 void C1MainFrame::OnUpdateMuteSounds(CCmdUI* command_ui) {
     C1WindowsDocument* document =
         DYNAMIC_DOWNCAST(C1WindowsDocument, GetActiveDocument());
-    if (document == nullptr) {
+    if (document == nullptr || document->semantic_document() == nullptr) {
         command_ui->SetCheck(FALSE);
         command_ui->Enable(FALSE);
         return;
     }
-    command_ui->SetCheck(native_mute_enabled(*document) ? TRUE : FALSE);
-    command_ui->Enable(native_mute_command_enabled(*document) ? TRUE : FALSE);
+    DocumentCommandUi ui(*command_ui);
+    document->semantic_document()->update_mute_menu(
+        ui, document->world_timer_is_armed());
 }
 
 void C1MainFrame::OnUpdateInformativeCreaturesMenu(CCmdUI* command_ui) {
@@ -1124,9 +1144,9 @@ void C1MainFrame::OnUpdateInformativeCreaturesMenu(CCmdUI* command_ui) {
         command_ui->Enable(FALSE);
         return;
     }
-    command_ui->SetCheck(
-        document->semantic_document()->informative_menu_setting ? TRUE : FALSE);
-    command_ui->Enable(document->world_timer_is_armed() ? TRUE : FALSE);
+    DocumentCommandUi ui(*command_ui);
+    document->semantic_document()->update_informative_selection_menu(
+        ui, document->world_timer_is_armed());
 }
 
 void C1MainFrame::OnTimer(UINT_PTR timer_id) {

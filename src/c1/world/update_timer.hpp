@@ -24,25 +24,6 @@ public:
                            std::uint32_t interval_ms) = 0;
 };
 
-class UpdateTimerStateConsumer {
-public:
-    virtual ~UpdateTimerStateConsumer() = default;
-    virtual void dispatch_update_timer(const UpdateTimerState& state) = 0;
-};
-
-void dispatch_world_update_timer_with_state(
-    UpdateTimerStateConsumer& consumer,
-    const UpdateTimerState& state);
-
-class WorldUpdateControl {
-public:
-    virtual ~WorldUpdateControl() = default;
-    virtual void service_document_timer() = 0;
-    virtual void arm_application_timer() = 0;
-};
-
-void set_world_update_paused(WorldUpdateControl& control, bool paused);
-
 void configure_update_timer_interval(UpdateTimerState& state,
                                      std::uint32_t command,
                                      TimerScheduler* scheduler = nullptr,

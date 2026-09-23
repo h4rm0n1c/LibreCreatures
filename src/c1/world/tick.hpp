@@ -18,13 +18,6 @@ enum class BacteriumServicePhase : std::uint8_t {
     creature_update = 7,
 };
 
-class BacteriumUpdateTarget {
-public:
-    virtual ~BacteriumUpdateTarget() = default;
-    virtual bool tick_enabled() const = 0;
-    virtual void update_bacterium_and_environment() = 0;
-};
-
 // Owns the process-wide state touched by the recovered eight-phase service.
 // Registry storage, the MFC random/debug implementations, and MapData's
 // bacterium array remain outside the world policy.
@@ -47,10 +40,6 @@ public:
         std::size_t index) = 0;
     virtual void log_environment_infection() = 0;
 };
-
-void update_creature_bacteria_and_environment(
-    BacteriumUpdateTarget* const* creatures,
-    std::size_t creature_count);
 
 void advance_bacterium_service_phase(BacteriumServiceHost& host);
 

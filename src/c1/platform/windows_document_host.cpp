@@ -7,6 +7,7 @@
 
 #include "../display/bitmap.hpp"
 #include "../world/viewport.hpp"
+#include "../archive/funeral_kit.hpp"
 
 #include <limits>
 #include <optional>
@@ -1288,11 +1289,10 @@ creatures1::creatures::Creature* C1WindowsDocument::mutable_creature_for_object(
 }
 
 void C1WindowsDocument::append_funeral_state_word(std::uint32_t value) {
-    if (semantic_document_ == nullptr ||
-        semantic_document_->serialized_document_state_words.size() >= 16) {
-        return;
+    if (semantic_document_ != nullptr) {
+        creatures1::archive::append_funeral_kit_document_state_word(
+            semantic_document_->serialized_document_state_words, value);
     }
-    semantic_document_->serialized_document_state_words.push_back(value);
 }
 
 std::size_t C1WindowsDocument::funeral_state_word_count() const {
@@ -1301,35 +1301,43 @@ std::size_t C1WindowsDocument::funeral_state_word_count() const {
                : semantic_document_->serialized_document_state_words.size();
 }
 
-void C1WindowsDocument::flush_funeral_state() {
-    // FlushFuneralKitDocumentStateWords @ 00435c10 delivers each persisted
-    // 32-bit state word - the identifier of a Norn that died while still
-    // shown in the Event Bar - to the Funeral Kit, then clears the count.
-    // This is the mechanism behind a dead Norn getting a Graveyard entry.
-    if (semantic_document_ == nullptr) {
-        return;
+namespace {
+
+// The Funeral Kit's COM transport: each state word -- the identifier of a
+// Norn that died while still shown in the Event Bar -- goes out as an
+// embedded-kit data message.  This is what gives a dead Norn its Graveyard
+// entry.
+class FuneralKitDispatch final : public creatures1::archive::FuneralKitGateway {
+public:
+    explicit FuneralKitDispatch(COleDispatchDriver& driver) : driver_(driver) {}
+    bool is_connected() const override {
+        return driver_.m_lpDispatch != nullptr;
     }
-    C1MainFrame* frame = active_main_frame();
-    if (frame == nullptr) {
-        return;
-    }
-    constexpr std::size_t kFuneralKitIndex = 9;
-    COleDispatchDriver& driver = frame->embedded_kit_dispatch(kFuneralKitIndex);
-    if (driver.m_lpDispatch == nullptr) {
-        // The native leaves the words queued when the kit is absent, so the
-        // Graveyard still receives them once it connects.
-        return;
-    }
-    for (const std::uint32_t word :
-         semantic_document_->serialized_document_state_words) {
+    void submit_state_word(
+        creatures1::archive::FuneralKitStateWord value) override {
         invoke_kit_communicate(
-            driver,
+            driver_,
             {creatures1::application::embedded_kit_message_header(
                  creatures1::application::EmbeddedKitMessageKind::data,
                  creatures1::application::kEmbeddedKitDataCode),
-             word});
+             value});
     }
-    semantic_document_->serialized_document_state_words.clear();
+
+private:
+    COleDispatchDriver& driver_;
+};
+
+} // namespace
+
+void C1WindowsDocument::flush_funeral_state() {
+    C1MainFrame* frame = active_main_frame();
+    if (semantic_document_ == nullptr || frame == nullptr) {
+        return;
+    }
+    constexpr std::size_t kFuneralKitIndex = 9;
+    FuneralKitDispatch gateway(frame->embedded_kit_dispatch(kFuneralKitIndex));
+    creatures1::archive::flush_funeral_kit_document_state_words(
+        gateway, semantic_document_->serialized_document_state_words);
 }
 
 

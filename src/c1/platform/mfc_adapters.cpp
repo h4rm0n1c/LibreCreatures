@@ -9,11 +9,4 @@ bool point_in_rect_xy(const RectangleHitTestApi& api,
     return api.contains(rectangle, x, y);
 }
 
-void set_edit_selection_and_scroll(EditControlApi& api,
-                                   std::intptr_t selection_start,
-                                   std::intptr_t selection_end) {
-    api.set_selection(selection_start, selection_end);
-    api.scroll_caret();
-}
-
 } // namespace creatures1::platform

@@ -2,6 +2,14 @@
 
 namespace creatures1::archive {
 
+void append_funeral_kit_document_state_word(
+    std::vector<FuneralKitStateWord>& pending_state_words,
+    FuneralKitStateWord value) {
+    if (pending_state_words.size() < kMaximumPendingFuneralKitStateWords) {
+        pending_state_words.push_back(value);
+    }
+}
+
 void flush_funeral_kit_document_state_words(
     FuneralKitGateway& gateway,
     std::vector<FuneralKitStateWord>& pending_state_words) {

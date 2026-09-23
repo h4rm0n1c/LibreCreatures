@@ -9,20 +9,6 @@ constexpr std::uint32_t kMaximumIntervalMs = 300;
 constexpr std::uint32_t kSlowModeIntervalMs = 90;
 }
 
-void dispatch_world_update_timer_with_state(
-    UpdateTimerStateConsumer& consumer,
-    const UpdateTimerState& state) {
-    consumer.dispatch_update_timer(state);
-}
-
-void set_world_update_paused(WorldUpdateControl& control, bool paused) {
-    if (paused) {
-        control.service_document_timer();
-    } else {
-        control.arm_application_timer();
-    }
-}
-
 void configure_update_timer_interval(UpdateTimerState& state,
                                      std::uint32_t command,
                                      TimerScheduler* scheduler,

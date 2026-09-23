@@ -2,21 +2,6 @@
 
 namespace creatures1::world {
 
-void update_creature_bacteria_and_environment(
-    BacteriumUpdateTarget* const* creatures,
-    std::size_t creature_count) {
-    std::size_t index = 0;
-    std::size_t registry_size_snapshot = creature_count;
-    while (index < registry_size_snapshot) {
-        BacteriumUpdateTarget& creature = *creatures[index];
-        if (creature.tick_enabled()) {
-            creature.update_bacterium_and_environment();
-            registry_size_snapshot = creature_count;
-        }
-        ++index;
-    }
-}
-
 void advance_bacterium_service_phase(BacteriumServiceHost& host) {
     const BacteriumServicePhase previous_phase = host.service_phase();
     const std::size_t initial_creature_count = host.creature_count();

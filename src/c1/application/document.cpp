@@ -634,15 +634,6 @@ void Document::toggle_informative_selection_menu(
     host.rebuild_informative_selection_menu(informative_menu_setting);
 }
 
-DocumentAdapter* Document::get_document_adapter(DocumentAdapterHost& host) {
-    if (document_adapter != nullptr) {
-        host.add_reference(*document_adapter);
-        return document_adapter;
-    }
-    document_adapter = host.create_document_adapter(*this);
-    return document_adapter;
-}
-
 const DocumentRuntimeClass& Document::runtime_class() {
     static const DocumentRuntimeClass descriptor{"SFCDoc"};
     return descriptor;

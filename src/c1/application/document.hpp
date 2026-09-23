@@ -348,13 +348,6 @@ public:
     virtual ~DocumentAdapter() = default;
 };
 
-class DocumentAdapterHost {
-public:
-    virtual ~DocumentAdapterHost() = default;
-    virtual DocumentAdapter* create_document_adapter(Document& document) = 0;
-    virtual void add_reference(DocumentAdapter& adapter) = 0;
-};
-
 struct DocumentRuntimeClass {
     std::string_view name;
 };
@@ -393,7 +386,6 @@ public:
     void update_world(DocumentWorldUpdateHost& host);
     void toggle_informative_selection_menu(
         DocumentInformativeSelectionHost& host);
-    DocumentAdapter* get_document_adapter(DocumentAdapterHost& host);
     static const DocumentRuntimeClass& runtime_class();
 
     void update_informative_selection_menu(

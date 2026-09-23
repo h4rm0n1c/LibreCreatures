@@ -128,8 +128,6 @@ void set_world_view_safe_frame(C1WindowsView* view,
                                std::uint32_t frame_count);
 
 void toggle_native_mute(C1WindowsDocument& document);
-bool native_mute_enabled(const C1WindowsDocument& document);
-bool native_mute_command_enabled(const C1WindowsDocument& document);
 
 inline constexpr CLSID kSfcDocumentClsid = {
     0x380459a0,
@@ -2834,8 +2832,6 @@ void set_world_view_safe_frame(C1WindowsView* view,
                                std::uint32_t frame_count);
 C1WindowsView* active_c1_view(C1MainFrame& frame);
 void toggle_native_mute(C1WindowsDocument& document);
-bool native_mute_enabled(const C1WindowsDocument& document);
-bool native_mute_command_enabled(const C1WindowsDocument& document);
 
 
 // Registry side of the CAOS `tool` command; defined next to the kit menu
