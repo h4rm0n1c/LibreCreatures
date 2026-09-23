@@ -1,4 +1,9 @@
 #include "windows_pipe_server.hpp"
+#include "security.hpp"
+
+#include <sddl.h>
+
+#include <mutex>
 
 #include <algorithm>
 #include <limits>
@@ -15,6 +20,58 @@ bool is_disconnected_error(DWORD error_code) {
     return error_code == ERROR_BROKEN_PIPE || error_code == ERROR_NO_DATA ||
            error_code == ERROR_PIPE_NOT_CONNECTED;
 }
+
+// Win32BuildCurrentUserSecurityDescriptor @ 0x00445b30: once per process,
+// grant GENERIC_ALL to SYSTEM, the built-in Administrators and the user
+// running the game, and nobody else.  The pipe executes arbitrary CAOS, so
+// the default DACL CreateNamedPipe otherwise applies is too open.  As in the
+// native, any failure leaves the pipe on default security rather than
+// refusing to start it.
+class WindowsNamedPipeSecurity final : public NamedPipeSecurityApi {
+public:
+    bool ensure_current_user_security_attributes() override {
+        std::call_once(once_, [] { build(); });
+        return descriptor_ != nullptr;
+    }
+    static SECURITY_ATTRIBUTES* attributes() {
+        return descriptor_ != nullptr ? &attributes_ : nullptr;
+    }
+
+private:
+    static void build() {
+        HANDLE token = nullptr;
+        if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &token)) {
+            return;
+        }
+        DWORD size = 0;
+        GetTokenInformation(token, TokenUser, nullptr, 0, &size);
+        std::string buffer(size, '\0');
+        LPSTR sid_text = nullptr;
+        if (size != 0 &&
+            GetTokenInformation(token, TokenUser, buffer.data(), size, &size) &&
+            ConvertSidToStringSidA(
+                reinterpret_cast<TOKEN_USER*>(buffer.data())->User.Sid,
+                &sid_text)) {
+            char sddl[0x100] = {};
+            _snprintf_s(sddl, sizeof(sddl), _TRUNCATE,
+                        "D:(A;;GA;;;SY)(A;;GA;;;BA)(A;;GA;;;%s)", sid_text);
+            PSECURITY_DESCRIPTOR descriptor = nullptr;
+            if (ConvertStringSecurityDescriptorToSecurityDescriptorA(
+                    sddl, SDDL_REVISION_1, &descriptor, nullptr)) {
+                attributes_.nLength = sizeof(attributes_);
+                attributes_.lpSecurityDescriptor = descriptor;
+                attributes_.bInheritHandle = FALSE;
+                descriptor_ = descriptor;
+            }
+            LocalFree(sid_text);
+        }
+        CloseHandle(token);
+    }
+
+    static inline std::once_flag once_;
+    static inline SECURITY_ATTRIBUTES attributes_{};
+    static inline PSECURITY_DESCRIPTOR descriptor_ = nullptr;
+};
 
 } // namespace
 
@@ -184,11 +241,14 @@ scripting::PipeHandle WindowsPipeServerRuntime::create_named_pipe(
     if (configuration.name == nullptr) {
         return 0;
     }
+    WindowsNamedPipeSecurity security;
+    build_current_user_security_descriptor(security);
     HANDLE pipe = CreateNamedPipeA(
         configuration.name, configuration.open_mode, configuration.pipe_mode,
         configuration.instance_count, configuration.output_buffer_size,
         configuration.input_buffer_size,
-        configuration.default_timeout_milliseconds, nullptr);
+        configuration.default_timeout_milliseconds,
+        WindowsNamedPipeSecurity::attributes());
     return opaque_handle(pipe);
 }
 

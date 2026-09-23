@@ -4002,14 +4002,51 @@ void C1WindowsDocument::remove_favourite_place_at(std::size_t index) {
     --semantic_document_->favourite_place_count;
 }
 
+namespace {
+
+class FavouritePlaceViewport final
+    : public creatures1::application::DocumentViewportHost {
+public:
+    FavouritePlaceViewport(C1WindowsDocument& document, C1WindowsView* view)
+        : document_(document), view_(view) {}
+    void set_viewport_navigation_mode(std::uint32_t mode) override {
+        if (view_ != nullptr) {
+            view_->set_navigation_mode(
+                static_cast<creatures1::ui::ViewportNavigationMode>(mode));
+        }
+    }
+    void request_viewport_origin(std::uint32_t origin_x,
+                                 std::uint32_t origin_y) override {
+        document_.request_renderer_origin(static_cast<int>(origin_x),
+                                          static_cast<int>(origin_y));
+    }
+
+private:
+    C1WindowsDocument& document_;
+    C1WindowsView* view_;
+};
+
+} // namespace
+
 void C1WindowsDocument::request_favourite_place(std::size_t index) {
-    if (!has_favourite_place(index)) {
+    // GoToFirstFavouritePlace @ 0x00432320 and its five siblings switch the
+    // view to manual navigation before moving it.  Without that, Track
+    // Creature pulled the camera straight back to the selected norn.
+    using GoTo = void (*)(creatures1::application::DocumentViewportHost&,
+                          const creatures1::application::FavouritePlace&);
+    static constexpr GoTo kGoTo[] = {
+        creatures1::application::go_to_first_favourite_place,
+        creatures1::application::go_to_second_favourite_place,
+        creatures1::application::go_to_third_favourite_place,
+        creatures1::application::go_to_fourth_favourite_place,
+        creatures1::application::go_to_fifth_favourite_place,
+        creatures1::application::go_to_sixth_favourite_place,
+    };
+    if (!has_favourite_place(index) || index >= std::size(kGoTo)) {
         return;
     }
-    const creatures1::application::FavouritePlace& place =
-        semantic_document_->favourite_places[index];
-    request_renderer_origin(place.viewport_origin_x,
-                            place.viewport_origin_y);
+    FavouritePlaceViewport viewport(*this, world_view_);
+    kGoTo[index](viewport, semantic_document_->favourite_places[index]);
 }
 
 bool C1WindowsDocument::read_view_setting(std::string_view name, std::uint32_t& value, std::uint32_t default_value) const {

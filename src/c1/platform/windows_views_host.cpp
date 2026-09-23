@@ -494,12 +494,26 @@ void C1WindowsView::configure_world_update_timer(std::uint32_t command) {
         }
     } scheduler;
 
+    // Native edits the one world interval, g_world_update_timer_interval_ms,
+    // that pause/resume and save also read.  The view used to keep a private
+    // copy starting at 1 ms, so speed changes started from the wrong value
+    // and any pause, resume or save undid them.
+    C1WindowsDocument* current_document = document();
+    if (current_document == nullptr) {
+        return;
+    }
+    creatures1::world::UpdateTimerState state{
+        current_document->world_update_timer_interval_ms()};
+    // Native sets the timer even while the world is paused, which starts a
+    // paused world ticking behind a toolbar that still shows Pause;
+    // LibreCreatures records the new speed and re-arms only a running world.
     const CWnd* frame = AfxGetMainWnd();
     creatures1::world::configure_update_timer_interval(
-        update_timer_state_, command, &scheduler,
+        state, command, current_document->world_timer_is_armed() ? &scheduler : nullptr,
         frame == nullptr
             ? 0
             : reinterpret_cast<std::uintptr_t>(frame->GetSafeHwnd()));
+    current_document->set_world_update_timer_interval_ms(state.interval_ms);
 }
 
 

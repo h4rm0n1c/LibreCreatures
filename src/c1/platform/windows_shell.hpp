@@ -2263,7 +2263,6 @@ public:
 
     // The native interval lives in a process global; the clean policy takes it
     // as explicit state, so the view owns it.
-    creatures1::world::UpdateTimerState update_timer_state_{};
 
     void create_classifier_tip_window() override;
 

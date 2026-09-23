@@ -72,7 +72,63 @@ public:
         return exit_code;
     }
 
+    // SFCApp::OnFileNew @ 0x0043f550 and OnFileOpen @ 0x0043f4f0 stop world
+    // timer 1 around the CWinApp handler, clamp the interval and set it again.
+    afx_msg void OnFileNewPausingWorld() { run_file_command(false); }
+    afx_msg void OnFileOpenPausingWorld() { run_file_command(true); }
+
 private:
+    class FileCommandAdapter final
+        : public creatures1::application::FileCommandHost {
+    public:
+        FileCommandAdapter(C1Application& app, bool rearm)
+            : app_(app), rearm_(rearm) {}
+        void stop_world_update_timer() override {
+            if (C1MainFrame* frame = active_main_frame();
+                frame != nullptr && frame->GetSafeHwnd() != nullptr) {
+                frame->KillTimer(1);
+            }
+        }
+        void invoke_base_file_open() override { app_.CWinApp::OnFileOpen(); }
+        void invoke_base_file_new() override { app_.CWinApp::OnFileNew(); }
+        void restart_world_update_timer(std::uint32_t interval_ms) override {
+            C1MainFrame* frame = active_main_frame();
+            if (rearm_ && frame != nullptr && frame->GetSafeHwnd() != nullptr) {
+                frame->SetTimer(1, interval_ms, nullptr);
+            }
+        }
+
+    private:
+        C1Application& app_;
+        bool rearm_;
+    };
+
+    static C1WindowsDocument* active_document() {
+        C1MainFrame* frame = active_main_frame();
+        return frame == nullptr
+                   ? nullptr
+                   : DYNAMIC_DOWNCAST(C1WindowsDocument,
+                                      frame->GetActiveDocument());
+    }
+
+    void run_file_command(bool open) {
+        C1WindowsDocument* document = active_document();
+        // Native re-arms unconditionally; LibreCreatures leaves a paused
+        // world paused when the dialog is cancelled.  A world that does get
+        // opened arms its own timer while loading, as before.
+        FileCommandAdapter host(*this, document != nullptr && document->world_timer_is_armed());
+        std::uint32_t interval_ms =
+            document != nullptr ? document->world_update_timer_interval_ms() : 1;
+        if (open) {
+            creatures1::application::handle_file_open(host, interval_ms);
+        } else {
+            creatures1::application::handle_file_new(host, interval_ms);
+        }
+        if (C1WindowsDocument* current = active_document(); current != nullptr) {
+            current->set_world_update_timer_interval_ms(interval_ms);
+        }
+    }
+
     creatures1::application::SfcAppState app_state_;
     C1SettingsHost settings_host_;
     std::unique_ptr<C1StartupHost> startup_host_;
@@ -89,6 +145,8 @@ C1Application g_c1_application;
 IMPLEMENT_DYNCREATE(C1Application, CWinApp)
 
 BEGIN_MESSAGE_MAP(C1Application, CWinApp)
+    ON_COMMAND(ID_FILE_NEW, OnFileNewPausingWorld)
+    ON_COMMAND(ID_FILE_OPEN, OnFileOpenPausingWorld)
 END_MESSAGE_MAP()
 
 BEGIN_DISPATCH_MAP(C1Application, CWinApp)
