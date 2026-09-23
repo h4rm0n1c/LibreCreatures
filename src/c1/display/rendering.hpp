@@ -54,6 +54,10 @@ public:
     virtual const ::creatures1::objects::Entity* entity_at(
         std::size_t index) const = 0;
     virtual void report_invalid_render_registry_index() const = 0;
+    // Diagnostic only: an entity whose current image is missing or out of
+    // its gallery's range is skipped this frame; the host reports it.
+    virtual void report_invalid_sprite_image(
+        const ::creatures1::objects::Entity& entity) const = 0;
     virtual void blit_image_to_dib(
         Image& image,
         std::uint8_t* dib_pixels,

@@ -1428,6 +1428,8 @@ public:
     const creatures1::objects::Entity* entity_at(std::size_t index) const override;
 
     void report_invalid_render_registry_index() const override;
+    void report_invalid_sprite_image(
+        const creatures1::objects::Entity& entity) const override;
 
     void blit_image_to_dib(creatures1::display::Image& image, std::uint8_t* dib_pixels, int world_x, int world_y, const creatures1::world::WorldRect& clip_rect, const creatures1::world::WorldRect& view_rect, bool direct_copy) override;
 

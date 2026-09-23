@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <cstring>
-#include <cstdio>
 #include <iterator>
 #include <limits>
 #include <new>
@@ -12,7 +11,8 @@ namespace creatures1::display {
 
 namespace {
 
-bool valid_sprite_image(const objects::Entity& entity) {
+bool valid_sprite_image(const objects::Entity& entity,
+                        const WorldRendererHost& host) {
     if (entity.has_current_image()) {
         return true;
     }
@@ -20,19 +20,7 @@ bool valid_sprite_image(const objects::Entity& entity) {
     static unsigned reports = 0;
     if (reports < 32) {
         ++reports;
-        const Gallery* gallery = entity.gallery();
-        FILE* log = std::fopen("Creatures.render.log", "a");
-        if (log == nullptr) {
-            return false;
-        }
-        std::fprintf(log,
-                     "C1 invalid render image: entity=%p gallery=%p index=%u count=%u x=%d y=%d\n",
-                     static_cast<const void*>(&entity),
-                     static_cast<const void*>(gallery),
-                     static_cast<unsigned>(entity.current_image_index()),
-                     gallery == nullptr ? 0U : gallery->image_count,
-                     entity.world_x(), entity.world_y());
-        std::fclose(log);
+        host.report_invalid_sprite_image(entity);
     }
     return false;
 }
@@ -369,7 +357,7 @@ void WorldRenderer::render_world_rect_to_dib(
     for (std::size_t registry_index = 0; registry_index < registry_count;
          ++registry_index) {
         const objects::Entity* entity = host_.entity_at(registry_index);
-        if (entity == nullptr || !valid_sprite_image(*entity)) {
+        if (entity == nullptr || !valid_sprite_image(*entity, host_)) {
             continue;
         }
         const Gallery* gallery = entity->gallery();
@@ -434,7 +422,7 @@ void WorldRenderer::render_world_rect_to_dib(
             host_.report_invalid_render_registry_index();
             return;
         }
-        if (!valid_sprite_image(*entity)) {
+        if (!valid_sprite_image(*entity, host_)) {
             continue;
         }
         host_.blit_image_to_dib(

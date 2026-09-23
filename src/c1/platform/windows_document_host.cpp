@@ -4218,6 +4218,25 @@ void C1WindowsDocument::report_invalid_render_registry_index() const {
 }
 
 
+void C1WindowsDocument::report_invalid_sprite_image(
+    const creatures1::objects::Entity& entity) const {
+    // Logged under the Log menu's Graphics category (bit 3), the same console
+    // path as world-save failures, rather than to a file of its own.
+    C1DebugConsoleDialog* console = active_debug_console();
+    if (console == nullptr) {
+        return;
+    }
+    constexpr std::uint32_t kGraphicsLogCategory = 1u << 3;
+    const creatures1::display::Gallery* gallery = entity.gallery();
+    creatures1::common::debug_log(
+        *console, kGraphicsLogCategory,
+        "Invalid render image: entity=%p gallery=%p index=%u count=%u x=%d y=%d\n",
+        static_cast<const void*>(&entity), static_cast<const void*>(gallery),
+        static_cast<unsigned>(entity.current_image_index()),
+        gallery == nullptr ? 0U : static_cast<unsigned>(gallery->image_count),
+        entity.world_x(), entity.world_y());
+}
+
 void C1WindowsDocument::blit_image_to_dib( creatures1::display::Image& image, std::uint8_t* dib_pixels, int world_x, int world_y, const creatures1::world::WorldRect& clip_rect, const creatures1::world::WorldRect& view_rect, bool direct_copy) {
     if (resources_ == nullptr || dib_pixels == nullptr) {
         return;
