@@ -508,24 +508,36 @@ std::string PipeServer::marshal_command_to_main_thread(
         return error_response("Main window not available");
     }
 
-    PipeServerCommandContext context;
-    context.command.assign(command.data(), command.size());
-    if (!host_.post_pipe_command(context)) {
+    // PipeServerMarshalCommandToMainThread @ 0x00446620 posts the address of
+    // a stack local and returns after 30 s whether or not the UI thread has
+    // run the command; a command that outlives the wait then reads freed
+    // stack, and its late completion signal wakes the next command's wait
+    // with an empty reply.  LibreCreatures shares the context instead.
+    auto context = std::make_shared<PipeServerCommandContext>();
+    context->command.assign(command.data(), command.size());
+    auto* posted = new PipeServerCommandHandle(context);
+    if (!host_.post_pipe_command(posted)) {
+        delete posted;
         return error_response("Failed to post command to main thread");
     }
 
-    switch (host_.wait_for_pipe_command(30000)) {
-    case CommandWaitResult::completed:
-        return context.response;
-    case CommandWaitResult::stop_requested:
-        return error_response("Server is shutting down");
-    case CommandWaitResult::timed_out:
-    case CommandWaitResult::failed:
-        log_if_enabled(
-            "PipeServer: MarshalCommand timed out or failed\n");
+    for (;;) {
+        switch (host_.wait_for_pipe_command(30000)) {
+        case CommandWaitResult::completed:
+            if (!context->completed.load(std::memory_order_acquire)) {
+                continue;  // a late signal from an abandoned command
+            }
+            return context->response;
+        case CommandWaitResult::stop_requested:
+            return error_response("Server is shutting down");
+        case CommandWaitResult::timed_out:
+        case CommandWaitResult::failed:
+            log_if_enabled(
+                "PipeServer: MarshalCommand timed out or failed\n");
+            return error_response("Command timed out");
+        }
         return error_response("Command timed out");
     }
-    return error_response("Command timed out");
 }
 
 std::string PipeServer::dispatch_command(std::string_view command) {

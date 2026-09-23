@@ -73,7 +73,7 @@ public:
     bool main_frame_available() const override;
     bool main_window_available() const override;
     bool post_pipe_command(
-        scripting::PipeServerCommandContext& context) override;
+        scripting::PipeServerCommandHandle* posted) override;
     scripting::CommandWaitResult wait_for_pipe_command(
         std::uint32_t timeout_milliseconds) override;
 

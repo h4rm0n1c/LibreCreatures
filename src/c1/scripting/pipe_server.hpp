@@ -1,5 +1,7 @@
 #pragma once
 
+#include <atomic>
+
 #include <cstddef>
 #include <cstdint>
 #include <map>
@@ -79,10 +81,17 @@ struct PipeConnectResult {
 // This is the typed payload carried by the private main-window message.  It
 // deliberately contains source-level strings, not the executable's 24-byte
 // MSVC string representation.
+// Shared between the pipe worker and the UI thread.  The UI thread can reach
+// a command after the worker has given up waiting (a modal box inside the
+// command -- scrp's Duplicate Script prompt -- can hold it past the timeout),
+// so neither side may own it alone; `completed` tells the worker that the
+// completion signal it woke on is this command's and not a late one.
 struct PipeServerCommandContext {
     std::string command;
     std::string response;
+    std::atomic<bool> completed{false};
 };
+using PipeServerCommandHandle = std::shared_ptr<PipeServerCommandContext>;
 
 struct PipeReadResult {
     bool succeeded = false;
@@ -127,7 +136,8 @@ public:
 
     virtual bool main_frame_available() const = 0;
     virtual bool main_window_available() const = 0;
-    virtual bool post_pipe_command(PipeServerCommandContext& context) = 0;
+    // Takes ownership of `posted` when it returns true.
+    virtual bool post_pipe_command(PipeServerCommandHandle* posted) = 0;
     virtual CommandWaitResult wait_for_pipe_command(
         std::uint32_t timeout_milliseconds) = 0;
 

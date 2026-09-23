@@ -1716,6 +1716,8 @@ private:
 // enabled.
 BEGIN_MESSAGE_MAP(C1WindowsDocument, CDocument)
     ON_COMMAND(0x8045, OnWorldPlay)
+    ON_COMMAND(ID_FILE_SAVE, OnFileSaveResumingWorld)
+    ON_COMMAND(ID_FILE_SAVE_AS, OnFileSaveAsResumingWorld)
     ON_COMMAND(0x8046, OnWorldPause)
     ON_UPDATE_COMMAND_UI(0x8045, OnUpdateWorldPlay)
     ON_UPDATE_COMMAND_UI(0x8046, OnUpdateWorldPause)
@@ -1802,6 +1804,68 @@ void C1WindowsDocument::OnSpeakCreatureName() {
     WindowsCreatureNameHistoryUi ui(*this, frame->creature_selector());
     creatures1::application::update_creature_name_combo_history(
         ui, world_tick_count(), pointer_tool_name_update_deadline_);
+}
+
+namespace {
+
+// SaveActiveDocumentAndResumeWorldTimer @ 0x00434950 and its Save As twin
+// @ 0x004349b0 stop CMainFrame timer 1 around CDocument::OnFileSave(As),
+// clamp the world interval to 1..300 ms and set the timer again.
+class FrameWorldTimer final
+    : public creatures1::application::MainFrameTimerHost {
+public:
+    FrameWorldTimer(C1MainFrame& frame, bool rearm)
+        : frame_(frame), rearm_(rearm) {}
+    std::uintptr_t native_handle() const override {
+        return reinterpret_cast<std::uintptr_t>(frame_.GetSafeHwnd());
+    }
+    void kill_timer(std::uint32_t timer_id) override {
+        frame_.KillTimer(timer_id);
+    }
+    void set_timer(std::uint32_t timer_id, std::uint32_t interval_ms) override {
+        if (rearm_) {
+            frame_.SetTimer(timer_id, interval_ms, nullptr);
+        }
+    }
+
+private:
+    C1MainFrame& frame_;
+    bool rearm_;
+};
+
+} // namespace
+
+void C1WindowsDocument::save_document() { CDocument::OnFileSave(); }
+
+void C1WindowsDocument::save_document_as() { CDocument::OnFileSaveAs(); }
+
+void C1WindowsDocument::OnFileSaveResumingWorld() {
+    // Native re-arms the world timer unconditionally, and its timer handler
+    // (CMainFrame::OnTimer @ 0x00421a00) runs UpdateWorld without checking the
+    // paused state -- so saving a paused world set it running again while
+    // the toolbar still showed Pause.  LibreCreatures re-arms only a world
+    // that was running before the save.
+    C1MainFrame* frame = active_main_frame();
+    if (frame == nullptr || frame->GetSafeHwnd() == nullptr) {
+        creatures1::application::save_active_document_and_resume_world_timer(
+            *this, nullptr, world_update_timer_interval_ms_);
+        return;
+    }
+    FrameWorldTimer timer(*frame, world_timer_is_armed());
+    creatures1::application::save_active_document_and_resume_world_timer(
+        *this, &timer, world_update_timer_interval_ms_);
+}
+
+void C1WindowsDocument::OnFileSaveAsResumingWorld() {
+    C1MainFrame* frame = active_main_frame();
+    if (frame == nullptr || frame->GetSafeHwnd() == nullptr) {
+        creatures1::application::save_active_document_as_and_resume_world_timer(
+            *this, nullptr, world_update_timer_interval_ms_);
+        return;
+    }
+    FrameWorldTimer timer(*frame, world_timer_is_armed());
+    creatures1::application::save_active_document_as_and_resume_world_timer(
+        *this, &timer, world_update_timer_interval_ms_);
 }
 
 void C1WindowsDocument::OnWorldPlay() {
@@ -2898,8 +2962,35 @@ void C1WindowsDocument::report_archive_not_loading() {
 }
 
 
-bool C1WindowsDocument::confirm_script_replacement( creatures1::scripting::ScriptClassifier /*classifier*/, std::string_view /*old_text*/, std::string_view /*new_text*/) {
-    return false;
+bool C1WindowsDocument::confirm_script_replacement( creatures1::scripting::ScriptClassifier classifier, std::string_view /*old_text*/, std::string_view /*new_text*/) {
+    // InstallScriptTextForClassifier @ 0x0041a440: a `scrp` that would change
+    // an existing script asks first.  The world is paused while the box is
+    // up if it was running, and put back as it was afterwards; only Yes
+    // replaces.  This used to answer No unconditionally, so re-injecting an
+    // updated COB silently kept the old scripts.
+    CString prompt;
+    prompt.Format(
+        "A script for the classifier %d %d %d %d already exists in the "
+        "Scriptorium. Are you sure you want to replace it?",
+        static_cast<int>(classifier.family), static_cast<int>(classifier.genus),
+        static_cast<int>(classifier.species),
+        static_cast<int>(classifier.event));
+
+    const bool was_running = world_timer_is_armed();
+    if (was_running) {
+        creatures1::application::service_world_update_timer(*this);
+    }
+    CWnd* main_window = AfxGetMainWnd();
+    const int answer =
+        main_window != nullptr
+            ? main_window->MessageBox(prompt, "Duplicate Script",
+                                      MB_YESNO | MB_ICONQUESTION)
+            : ::MessageBoxA(nullptr, prompt, "Duplicate Script",
+                            MB_YESNO | MB_ICONQUESTION);
+    if (was_running && !world_timer_is_armed()) {
+        creatures1::application::arm_world_update_timer(*this);
+    }
+    return answer == IDYES;
 }
 
 void C1WindowsDocument::report_script_table_full() {

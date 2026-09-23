@@ -174,6 +174,8 @@ void WindowsPipeServerRuntime::discard_pipe_messages() {
     MSG message{};
     while (PeekMessageA(&message, nullptr, kPipeServerMessage,
                         kPipeServerMessage, PM_REMOVE) != FALSE) {
+        delete reinterpret_cast<scripting::PipeServerCommandHandle*>(
+            message.wParam);
     }
 }
 
@@ -240,10 +242,10 @@ bool WindowsPipeServerRuntime::main_window_available() const {
 }
 
 bool WindowsPipeServerRuntime::post_pipe_command(
-    scripting::PipeServerCommandContext& context) {
+    scripting::PipeServerCommandHandle* posted) {
     return main_window_available() &&
            PostMessageA(main_window_, kPipeServerMessage,
-                        reinterpret_cast<WPARAM>(&context), 0) != FALSE;
+                        reinterpret_cast<WPARAM>(posted), 0) != FALSE;
 }
 
 scripting::CommandWaitResult WindowsPipeServerRuntime::wait_for_pipe_command(

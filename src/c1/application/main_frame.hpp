@@ -12,6 +12,7 @@
 
 namespace creatures1::scripting {
 struct PipeServerCommandContext;
+using PipeServerCommandHandle = std::shared_ptr<PipeServerCommandContext>;
 }
 
 namespace creatures1::application {
@@ -302,7 +303,7 @@ void update_embedded_kit_tool_command(
     MainFrameEmbeddedKitUpdatePlatform& platform, std::uint32_t command_id);
 long handle_pipe_server_command(
     MainFramePipeServerPlatform& platform,
-    scripting::PipeServerCommandContext* command_context);
+    scripting::PipeServerCommandHandle* posted_command);
 std::uint32_t query_new_main_frame_palette(MainFramePalettePlatform& platform);
 void notify_main_frame_palette_changed(
     MainFramePalettePlatform& platform, const void* palette_focus_window);

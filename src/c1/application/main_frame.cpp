@@ -311,10 +311,13 @@ void update_embedded_kit_tool_command(
 
 long handle_pipe_server_command(
     MainFramePipeServerPlatform& platform,
-    scripting::PipeServerCommandContext* command_context) {
-    if (command_context != nullptr) {
-        command_context->response =
-            platform.dispatch_pipe_command(command_context->command);
+    scripting::PipeServerCommandHandle* posted_command) {
+    const std::unique_ptr<scripting::PipeServerCommandHandle> owned(
+        posted_command);
+    if (owned != nullptr && *owned != nullptr) {
+        scripting::PipeServerCommandContext& context = **owned;
+        context.response = platform.dispatch_pipe_command(context.command);
+        context.completed.store(true, std::memory_order_release);
     }
     platform.signal_pipe_server_command_complete();
     return 0;

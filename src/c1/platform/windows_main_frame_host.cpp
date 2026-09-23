@@ -428,11 +428,11 @@ int C1MainFrame::OnCreate(LPCREATESTRUCT create_struct) {
 }
 
 LRESULT C1MainFrame::OnPipeServerCommand(WPARAM wparam, LPARAM) {
-    auto* command_context =
-        reinterpret_cast<creatures1::scripting::PipeServerCommandContext*>(
+    auto* posted_command =
+        reinterpret_cast<creatures1::scripting::PipeServerCommandHandle*>(
             wparam);
     return creatures1::application::handle_pipe_server_command(
-        *this, command_context);
+        *this, posted_command);
 }
 
 LRESULT C1MainFrame::OnShutdownEmbeddedKitTool(WPARAM tool_index, LPARAM) {

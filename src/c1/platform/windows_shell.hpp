@@ -15,6 +15,7 @@
 
 #include "../application/application.hpp"
 #include "../application/document.hpp"
+#include "../application/file_commands.hpp"
 #include "../application/embedded_kits.hpp"
 #include "../application/kit_processes.hpp"
 #include "../application/main_frame.hpp"
@@ -621,6 +622,7 @@ class C1WindowsDocument final
       public creatures1::application::DocumentContentsHost,
       public creatures1::application::DocumentCloseHost,
       public creatures1::application::DocumentSaveHost,
+      public creatures1::application::DocumentSaveTarget,
       public creatures1::application::DocumentTimerHost,
       public creatures1::creatures::CreatureRegistryMutation,
       public creatures1::creatures::CreatureObjectIdentityHost,
@@ -1118,6 +1120,10 @@ public:
 
     // The two world-timer commands: toolbar Play (0x8045) and Pause (0x8046).
     afx_msg void OnWorldPlay();
+    afx_msg void OnFileSaveResumingWorld();
+    afx_msg void OnFileSaveAsResumingWorld();
+    void save_document() override;
+    void save_document_as() override;
     afx_msg void OnWorldPause();
     afx_msg void OnUpdateWorldPlay(CCmdUI* command_ui);
     afx_msg void OnUpdateWorldPause(CCmdUI* command_ui);
