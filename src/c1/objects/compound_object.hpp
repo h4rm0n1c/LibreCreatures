@@ -161,17 +161,6 @@ public:
                                  ImagePreloadHost& preload_host) const;
 
     int part_count() const { return part_count_; }
-    // The highest render plane among this object's parts, for drawing
-    // something carried inside it in front of every part.
-    int frontmost_part_render_plane() const {
-        int frontmost = render_plane();
-        for (const CompoundPart& part : parts_) {
-            if (part.entity != nullptr && part.entity->render_plane() > frontmost) {
-                frontmost = part.entity->render_plane();
-            }
-        }
-        return frontmost;
-    }
     // Macro::ExecuteNewCommand @ 0041d130 installs NEW: PART and extends
     // the active part range to include its index.
     void install_part(std::size_t index, std::unique_ptr<Entity> entity,
