@@ -1,6 +1,7 @@
 #include "vehicle.hpp"
 
 #include "events.hpp"
+#include "simple_object.hpp"
 
 #include "../world/geometry.hpp"
 
@@ -254,6 +255,28 @@ void Vehicle::tick(VehicleTickHost& host) {
         }
         if (candidate->bounds_reference_object() != this) {
             continue;
+        }
+        // LibreCreatures deviation.  Native moves every object whose bounds
+        // reference is this vehicle, wherever it is.  A script can move a
+        // passenger away with mvto without unlinking it -- the stock lemon
+        // hides and regrows itself that way after being eaten in a lift --
+        // and native then drags it across the world with every vehicle move,
+        // unredrawn: the Flying Lemon.  An object no longer touching the
+        // vehicle is not a passenger; return it to ordinary world bounds.
+        if (auto* simple = dynamic_cast<SimpleObject*>(candidate)) {
+            world::WorldRect vehicle_bounds{};
+            world::WorldRect passenger_bounds{};
+            get_bounds(&vehicle_bounds);
+            simple->get_bounds(&passenger_bounds);
+            if (!world::wrapped_world_rects_overlap(vehicle_bounds,
+                                                    passenger_bounds)) {
+                simple->clear_reference_and_set_default_bounds(host);
+                if (Entity* entity = simple->entity()) {
+                    entity->set_render_plane(simple->saved_entity_render_plane);
+                }
+                simple->update_movement_bounds(host);
+                continue;
+            }
         }
         candidate->move_by(delta_x, delta_y);
         if (index >= host.object_count()) {

@@ -41,7 +41,8 @@ class VehicleTickHost : public virtual ObjectSoundPlaybackHost,
                         public virtual ObjectScriptDispatchHost,
                         public virtual ObjectRegistryHost,
                         public virtual EntityImageSequenceRenderHost,
-                        public virtual CompoundObjectMoveRedrawHost {
+                        public virtual CompoundObjectMoveRedrawHost,
+                        public virtual ObjectRenderableSetHost {
 public:
     ~VehicleTickHost() override = default;
     virtual int ground_height_at_x_block(std::size_t block_index) const = 0;

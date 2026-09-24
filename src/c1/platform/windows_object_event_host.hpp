@@ -109,6 +109,12 @@ public:
     explicit WindowsCallButtonRuntimeHost(C1WindowsDocument& document)
         : document_(document), compound_(document) {}
 
+    // ObjectRenderableSetHost, for VehicleTickHost unlinking a stray
+    // passenger (Vehicle::tick).
+    bool contains(const creatures1::objects::Object& object) const override;
+    void insert(creatures1::objects::Object& object) override;
+    void erase(creatures1::objects::Object& object) override;
+
     // CallButtonRuntimeHost's own queries.
     std::size_t room_count() const override;
     bool room_contains_point(std::size_t room_index, int world_x,

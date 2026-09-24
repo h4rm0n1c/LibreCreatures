@@ -62,6 +62,19 @@ void WindowsCreatureScriptEventHost::dispatch_script_event(
 
 // --- WindowsCallButtonRuntimeHost ------------------------------------------
 
+bool WindowsCallButtonRuntimeHost::contains(
+    const creatures1::objects::Object& object) const {
+    return document_.renderables().contains(object);
+}
+
+void WindowsCallButtonRuntimeHost::insert(creatures1::objects::Object& object) {
+    document_.renderables().insert(object);
+}
+
+void WindowsCallButtonRuntimeHost::erase(creatures1::objects::Object& object) {
+    document_.renderables().erase(object);
+}
+
 std::size_t WindowsCallButtonRuntimeHost::room_count() const {
     return static_cast<std::size_t>(document_.map_room_count());
 }
