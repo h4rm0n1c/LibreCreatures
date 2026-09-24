@@ -2,6 +2,7 @@
 
 #include "../objects/events.hpp"
 #include "../creatures/events.hpp"
+#include "../scripting/classifier_scripts.hpp"
 #include "../scripting/macro.hpp"
 
 #include <algorithm>
@@ -841,6 +842,10 @@ bool Object::can_be_destroyed(const ObjectLifetimeHost& runtime) const {
             context->target_object == const_cast<Object*>(this)) {
             return false;
         }
+    }
+
+    if (scripting::deferred_script_events_reference(this)) {
+        return false;
     }
 
     for (std::size_t index = 0; index < runtime.immediate_event_count();

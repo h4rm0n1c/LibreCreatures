@@ -22,6 +22,7 @@ void clear_running_macros() {
         g_running_macros.pop_back();
         delete macro;
     }
+    clear_deferred_script_events();
 }
 
 MacroSchedulerHostAdapter::MacroSchedulerHostAdapter(
@@ -57,6 +58,7 @@ std::vector<Macro*> g_executing_macros;
 
 void purge_destroy_when_finished_macros_for_owner(
     objects::Object* script_owner) {
+    forget_deferred_script_events(script_owner);
     for (std::size_t index = 0; index < g_running_macros.size();) {
         Macro* macro = g_running_macros[index];
         if (macro->object_context.script_owner != script_owner ||
@@ -84,6 +86,7 @@ void purge_destroy_when_finished_macros_for_owner(
 }
 
 void clear_object_references_from_running_macros(objects::Object* object) {
+    forget_deferred_script_events(object);
     for (Macro* macro : g_running_macros) {
         if (macro->object_context.from_object == object) {
             macro->object_context.from_object = nullptr;
@@ -3975,6 +3978,23 @@ MacroControlFlowResult Macro::dispatch_interpreter_command(
             execute_new_command(*bindings.new_object, *bindings.runtime);
             break;
         }
+        // ExecuteInterpreter @ 0041dc40: bbd: (0x0041e0ee) and aim: finish
+        // through the keep-running join at 0x00420c6f.  app:, dde:
+        // (0x0041e141), sys: (0x0041e1cb) and new: (0x0041e1bf) finish
+        // through 0x00420c74 without setting it, so the script's turn ends
+        // there.  This used to keep running for all six, which hid the
+        // egg-in-the-sky bug by accident and changed script pacing.
+        switch (static_cast<MacroPrefixCommand>(static_cast<CaosToken>(command))) {
+        case MacroPrefixCommand::aim:
+        case MacroPrefixCommand::blackboard:
+            return MacroControlFlowResult::iteration_complete;
+        case MacroPrefixCommand::application:
+        case MacroPrefixCommand::dde:
+        case MacroPrefixCommand::system:
+        case MacroPrefixCommand::new_object:
+            paused_by_prefixed_command = true;
+            return MacroControlFlowResult::cursor_changed;
+        }
         return MacroControlFlowResult::iteration_complete;
 
     case MacroCommandFamily::unknown:
@@ -4434,6 +4454,7 @@ MacroControlFlowResult Macro::execute_interpreter(
     // scheduler, rather than a hidden callback, decides whether to re-enter.
     while (!execution_terminated) {
         object_reference_fault_reported = false;
+        paused_by_prefixed_command = false;
         if (bindings.runtime != nullptr) {
             // Deletion normally clears these slots synchronously, but archive
             // restore and host-owned registries can invalidate one between

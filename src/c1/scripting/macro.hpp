@@ -1316,6 +1316,11 @@ public:
     // Set when a purge hits this Macro while it is executing a command; the
     // interpreter deletes it once that command returns.
     bool purged_while_executing = false;
+    // Set while the script is paused only because a yielding prefixed
+    // command (new:, sys:, dde:, app:) ended its turn, not because it asked
+    // to wait.  Ordinary events arriving then are deferred rather than
+    // overwriting it; see execute_script_for_classifier.
+    bool paused_by_prefixed_command = false;
     bool capture_output_enabled = false;
     std::uint32_t script_capacity_bytes = 0;
     std::string script_buffer;

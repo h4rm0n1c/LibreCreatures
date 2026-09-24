@@ -85,6 +85,19 @@ bool execute_script_for_classifier(objects::Object* script_owner,
                                    bool force_restart,
                                    ScriptExecutionHost& runtime);
 
+// Events held back by execute_script_for_classifier because the owner's
+// script was paused by a yielding prefixed command.  The scheduler applies
+// an owner's held event straight after that owner's script has had its turn.
+void apply_deferred_script_events(objects::Object* script_owner,
+                                  ScriptExecutionHost& runtime);
+// Object deletion and kill: drop events owned by the object and clear it as
+// the FROM of any other held event.
+void forget_deferred_script_events(const objects::Object* object);
+// CanBeDestroyed must not free an object a held event still names.
+bool deferred_script_events_reference(const objects::Object* object);
+// World reset, with the running Macros.
+void clear_deferred_script_events();
+
 // Writes the definitions belonging to one family/genus/species classifier.
 // The event byte selects the script record but is deliberately ignored by
 // the classifier filter, matching the packed four-byte record semantics.

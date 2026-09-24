@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <utility>
+#include <vector>
 
 #include "macro.hpp"
 
@@ -16,6 +17,28 @@ bool classifier_matches(ScriptClassifier entry, ScriptClassifier query) {
 bool classifiers_equal(ScriptClassifier left, ScriptClassifier right) {
     return left.event == right.event && left.species == right.species &&
            left.genus == right.genus && left.family == right.family;
+}
+
+struct DeferredScriptEvent {
+    objects::Object* script_owner = nullptr;
+    objects::Object* from_object = nullptr;
+    ScriptClassifier classifier{};
+};
+
+// At most one per owner: native would have let each later event overwrite
+// the earlier one, so the latest wins.
+std::vector<DeferredScriptEvent> g_deferred_script_events;
+
+void defer_script_event(objects::Object* script_owner,
+                        objects::Object* from_object,
+                        ScriptClassifier classifier) {
+    for (DeferredScriptEvent& event : g_deferred_script_events) {
+        if (event.script_owner == script_owner) {
+            event = {script_owner, from_object, classifier};
+            return;
+        }
+    }
+    g_deferred_script_events.push_back({script_owner, from_object, classifier});
 }
 
 bool matches_species_wildcard(ScriptClassifier entry, ScriptClassifier query) {
@@ -137,6 +160,17 @@ bool execute_script_for_classifier(objects::Object* script_owner,
     if (macro != nullptr && classifier.event == ScriptEvent::timer) {
         return true;
     }
+    if (macro != nullptr && script_owner != nullptr && !force_restart &&
+        macro->paused_by_prefixed_command) {
+        // LibreCreatures deviation.  Native loads the new script into the
+        // owner's running Macro here, whatever point that script has reached.
+        // A script paused only because new:/sys:/dde:/app: ended its turn
+        // loses the commands after it -- which is how an egg-laying norn
+        // leaves her egg at the world origin, the "egg in the sky".  Hold the
+        // event until the paused script has finished that turn instead.
+        defer_script_event(script_owner, from_object, classifier);
+        return true;
+    }
     if (macro == nullptr || force_restart) {
         macro = runtime.create_initialized_macro();
         if (macro == nullptr) {
@@ -230,6 +264,55 @@ void deserialize_all_scripts(ScriptArchiveReader& archive,
         install_script_text_for_classifier(classifier, script_text, false,
                                            policy);
     }
+}
+
+void apply_deferred_script_events(objects::Object* script_owner,
+                                  ScriptExecutionHost& runtime) {
+    if (script_owner == nullptr) {
+        return;
+    }
+    for (std::size_t index = 0; index < g_deferred_script_events.size();
+         ++index) {
+        if (g_deferred_script_events[index].script_owner != script_owner) {
+            continue;
+        }
+        const DeferredScriptEvent event = g_deferred_script_events[index];
+        g_deferred_script_events.erase(g_deferred_script_events.begin() +
+                                       static_cast<std::ptrdiff_t>(index));
+        // If the owner's script paused on another prefixed command this
+        // turn, this defers again and is applied after its next turn.
+        execute_script_for_classifier(event.script_owner, event.from_object,
+                                      event.classifier, false, runtime);
+        return;
+    }
+}
+
+void forget_deferred_script_events(const objects::Object* object) {
+    for (std::size_t index = 0; index < g_deferred_script_events.size();) {
+        DeferredScriptEvent& event = g_deferred_script_events[index];
+        if (event.script_owner == object) {
+            g_deferred_script_events.erase(g_deferred_script_events.begin() +
+                                           static_cast<std::ptrdiff_t>(index));
+            continue;
+        }
+        if (event.from_object == object) {
+            event.from_object = nullptr;
+        }
+        ++index;
+    }
+}
+
+bool deferred_script_events_reference(const objects::Object* object) {
+    for (const DeferredScriptEvent& event : g_deferred_script_events) {
+        if (event.script_owner == object || event.from_object == object) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void clear_deferred_script_events() {
+    g_deferred_script_events.clear();
 }
 
 } // namespace creatures1::scripting

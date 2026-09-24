@@ -2355,7 +2355,15 @@ void C1WindowsDocument::execute_running_macro(std::size_t index) {
         return;
     }
     WindowsMacroHost host(*this);
+    // Read before the turn: the Macro may end and delete itself during it.
+    creatures1::objects::Object* const owner =
+        macro->object_context.script_owner;
     macro->execute_interpreter(host.interpreter_bindings());
+    // An event held back while this script was paused on a prefixed command
+    // (see execute_script_for_classifier) is applied now that the script has
+    // had its turn.
+    WindowsScriptExecutionHost scripts(*this, host);
+    creatures1::scripting::apply_deferred_script_events(owner, scripts);
 }
 
 std::uint32_t C1WindowsDocument::creature_update_cohort() const {
