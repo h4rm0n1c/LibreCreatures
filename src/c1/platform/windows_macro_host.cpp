@@ -583,9 +583,13 @@ creatures1::objects::Object* WindowsMacroHost::random_non_scenery_object(
             continue;
         }
         const std::uint32_t classifier = object->classifier_base();
+        // Native `rtar` (@ 0x0041ffa7), like `enum`/`next`, skips any object
+        // whose sound source is below the world floor -- which is where `kill`
+        // parks ordinary objects until the next save.
         if ((pattern.family == 0 || ((classifier >> 24) & 0xff) == pattern.family) &&
             (pattern.genus == 0 || ((classifier >> 16) & 0xff) == pattern.genus) &&
-            (pattern.species == 0 || ((classifier >> 8) & 0xff) == pattern.species)) {
+            (pattern.species == 0 || ((classifier >> 8) & 0xff) == pattern.species) &&
+            !object->is_sound_source_below_world_y()) {
             matches.push_back(object);
         }
     }
