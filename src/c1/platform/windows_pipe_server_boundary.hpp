@@ -48,4 +48,7 @@ private:
     std::unique_ptr<WindowsPipeServerRuntime> runtime_;
 };
 
+// Appends a line to the opt-in kit traffic log (C1_KIT_TRAFFIC_LOG).
+void log_kit_traffic_line(std::string_view line);
+
 } // namespace creatures1::platform

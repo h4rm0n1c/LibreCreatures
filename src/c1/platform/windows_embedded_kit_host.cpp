@@ -1,4 +1,7 @@
 #include "windows_embedded_kit_host.hpp"
+#include "windows_pipe_server_boundary.hpp"
+
+#include <cstdio>
 
 #include <array>
 #include <string>
@@ -41,19 +44,32 @@ bool invoke_kit_communicate(
     payload.vt = VT_I4;
     payload.lVal = static_cast<long>(message.payload);
 
+    char line[96];
+    std::snprintf(line, sizeof(line), "COMMUNICATE %08lx %08lx",
+                  static_cast<unsigned long>(message.header),
+                  static_cast<unsigned long>(message.payload));
     try {
         BOOL accepted = FALSE;
         driver.InvokeHelper(
             1, DISPATCH_METHOD, VT_BOOL, &accepted,
             reinterpret_cast<const BYTE*>(VTS_PVARIANT VTS_PVARIANT), &header,
             &payload);
+        log_kit_traffic_line(std::string(line) +
+                             (accepted != FALSE ? "  ->  TRUE" : "  ->  FALSE"));
         return accepted != FALSE;
     } catch (CException* error) {
         char detail[512] = {};
         if (error != nullptr) {
             error->GetErrorMessage(detail, sizeof(detail));
+            if (COleException* ole = dynamic_cast<COleException*>(error)) {
+                char code[32];
+                std::snprintf(code, sizeof(code), " (sc %08lx)",
+                              static_cast<unsigned long>(ole->m_sc));
+                strncat_s(detail, code, _TRUNCATE);
+            }
             error->Delete();
         }
+        log_kit_traffic_line(std::string(line) + "  ->  failed: " + detail);
         C1DebugConsoleDialog* console = active_debug_console();
         if (console != nullptr) {
             creatures1::common::debug_log(
