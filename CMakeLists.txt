@@ -169,6 +169,8 @@ add_c1_kit(ObservationKit "observation" ${KITS_ROOT}/observation)
 add_c1_kit(ScoreKit "Score Kit" ${KITS_ROOT}/score)
 # "Owner's Kit.exe": OLE server Owner.OLE, Tools slot 2.
 add_c1_kit(OwnersKit "Owner's Kit" ${KITS_ROOT}/owner)
+# "Funeral Kit.exe": OLE server Funeral.OLE, Tools slot 9.
+add_c1_kit(FuneralKit "Funeral Kit" ${KITS_ROOT}/funeral)
 
 install(TARGETS c1kitlib RUNTIME DESTINATION .)
 
