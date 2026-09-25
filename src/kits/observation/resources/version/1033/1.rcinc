@@ -16,7 +16,7 @@ BEGIN
             VALUE "FileDescription", "Observation Kit (LibreCreatures)"
             VALUE "FileVersion", "1.3.0.0"
             VALUE "InternalName", "Observation Kit"
-            VALUE "OriginalFilename", "Observation Kit.exe"
+            VALUE "OriginalFilename", "observation.exe"
             VALUE "ProductName", "LibreCreatures"
             VALUE "ProductVersion", "1.3.0.0"
         END

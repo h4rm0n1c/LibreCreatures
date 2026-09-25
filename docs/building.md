@@ -13,7 +13,7 @@ cmake --build build/windows-msvc-x86 --config Release --parallel
 ```
 
 The executable is `build/windows-msvc-x86/Release/Creatures.exe`. The same
-build produces the rebuilt kits (currently `Observation Kit.exe`) and the
+build produces the rebuilt kits (currently `observation.exe`) and the
 `c1kitlib.dll` they share; see [`src/kits/README.md`](../src/kits/README.md).
 Run a kit once on its own to register it in the game's Tools menu.
 

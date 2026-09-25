@@ -161,9 +161,10 @@ function(add_c1_kit target output_name kit_dir)
     install(TARGETS ${target} RUNTIME DESTINATION .)
 endfunction()
 
-# Registers as the original's OVERVIEW.OLE server in Tools slot 6: run it
-# once on its own and the game's Tools menu opens it instead of the 1996 kit.
-add_c1_kit(ObservationKit "Observation Kit" ${KITS_ROOT}/observation)
+# observation.exe, as the original is named.  Registers as the original's
+# OVERVIEW.OLE server in Tools slot 6: run it once on its own and the game's
+# Tools menu opens it instead of the 1996 kit.
+add_c1_kit(ObservationKit "observation" ${KITS_ROOT}/observation)
 
 install(TARGETS c1kitlib RUNTIME DESTINATION .)
 
