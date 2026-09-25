@@ -40,24 +40,9 @@ bool KitSheet::connect_to_game(std::size_t buffer_bytes) {
     if (transport_ != nullptr) {
         return true;
     }
-    // CException::ReportError first; its own fallback when it has nothing
-    // to say is MFC's "No error message is available".
-    CString message;
-    LPTSTR system_text = nullptr;
-    if (hresult != 0 &&
-        FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                          FORMAT_MESSAGE_FROM_SYSTEM |
-                          FORMAT_MESSAGE_IGNORE_INSERTS,
-                      nullptr, static_cast<DWORD>(hresult), 0,
-                      reinterpret_cast<LPTSTR>(&system_text), 0, nullptr) &&
-        system_text != nullptr) {
-        message = system_text;
-        LocalFree(system_text);
-    }
-    if (message.IsEmpty()) {
-        message = _T("Can not communicate with application");
-    }
-    AfxMessageBox(message);
+    char message[512];
+    c1kit::describe_connect_failure(result, hresult, message, sizeof(message));
+    AfxMessageBox(CString(message));
     return false;
 }
 
