@@ -8,6 +8,7 @@ menu and talks to over OLE automation.
 | `c1kitlib/` | `c1kitlib.dll`, the data side every kit shares: the game connection (the SFC.OLE macro calls), the kit's own OLE server and `Communicate` entry point, launch arguments, reply parsing and settings. No windows, drawing or sound. |
 | `shell/` | The kit shell, compiled into every kit: the MFC application, the connected property-sheet window (resizable), bitmaps, and control layout for pages. |
 | `observation/` | The Observation Kit (Tools slot 6), `observation.exe`. |
+| `owner/` | The Owner's Kit (Tools slot 2), `Owner's Kit.exe`: register a birth, a photo album, the birth certificate. Keeps `The Register` and `<moniker>.Photo Album` beside the world, in the 1996 format, so the original kits read them too. |
 | `score/` | The Score Kit, titled "Performance Kit" (Tools slot 8), `Score Kit.exe`. Reads its art (`AllNumbers.spr`, `Score.spr`, `Time.spr`, `Scorebgd.bmp`, `Brdscore.bmp`) from the game's main directory. |
 
 Each kit keeps the original's OLE ProgID, CLSID and Tools slot, so the game

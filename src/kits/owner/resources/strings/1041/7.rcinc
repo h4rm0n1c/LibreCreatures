@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    96 ""
+    97 ""
+    98 ""
+    99 ""
+    100 "OLE initialization failed.  Make sure that the OLE libraries are the correct version."
+    101 "出生登録する"
+    102 ""
+    103 "255文字以内でファイル名を入力してください"
+    104 "不明"
+    105 "ノームの名前を10文字以内で付けてください"
+    106 "オーナーキット..."
+    107 "一時停止 - "
+    108 "オーナーキット - "
+    109 "未登録"
+    110 "雄"
+    111 "雌"
+END

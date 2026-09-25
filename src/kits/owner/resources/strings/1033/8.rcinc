@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    112 "Please wait..."
+    113 "Unknown"
+    114 "Unknown"
+    115 "Register the birth"
+    116 "Photo Album"
+    117 "Certificate"
+    118 "Owner's kit"
+    119 "Norn details"
+    120 "Delete photograph"
+    121 ""
+    122 ""
+    123 ""
+    124 ""
+    125 ""
+    126 ""
+    127 ""
+END

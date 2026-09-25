@@ -1,0 +1,68 @@
+// Reconstructed from the C1 PE resource tree; raw PE leaves are the oracle.
+#pragma code_page(65001)
+#include "resource_ids.h"
+
+LANGUAGE 7, 1
+
+#include "dialogs/1031/136.rcinc"
+#include "dialogs/1031/137.rcinc"
+#include "dialogs/1031/141.rcinc"
+#include "strings/1031/7.rcinc"
+#include "strings/1031/8.rcinc"
+LANGUAGE 9, 1
+
+#include "dialogs/1033/136.rcinc"
+#include "dialogs/1033/137.rcinc"
+#include "dialogs/1033/141.rcinc"
+#include "version/1033/1.rcinc"
+#include "strings/1033/7.rcinc"
+#include "strings/1033/8.rcinc"
+LANGUAGE 12, 1
+
+#include "dialogs/1036/136.rcinc"
+#include "dialogs/1036/137.rcinc"
+#include "dialogs/1036/141.rcinc"
+#include "strings/1036/7.rcinc"
+#include "strings/1036/8.rcinc"
+LANGUAGE 17, 1
+
+#include "dialogs/1041/136.rcinc"
+#include "dialogs/1041/137.rcinc"
+#include "dialogs/1041/141.rcinc"
+#include "strings/1041/7.rcinc"
+#include "strings/1041/8.rcinc"
+LANGUAGE 9, 2
+
+#include "strings/2057/2049.rcinc"
+#include "strings/2057/7.rcinc"
+#include "strings/2057/8.rcinc"
+128 ICON "images/icon/128.ico"
+155 ICON "images/icon/155.ico"
+160 ICON "images/icon/160.ico"
+161 ICON "images/icon/161.ico"
+162 ICON "images/icon/162.ico"
+163 ICON "images/icon/163.ico"
+164 ICON "images/icon/164.ico"
+165 ICON "images/icon/165.ico"
+166 ICON "images/icon/166.ico"
+169 ICON "images/icon/169.ico"
+170 ICON "images/icon/170.ico"
+175 BITMAP "images/bitmap/175.bmp"
+175 ICON "images/icon/175.ico"
+176 ICON "images/icon/176.ico"
+177 ICON "images/icon/177.ico"
+CAMERAD BITMAP "images/bitmap/CAMERAD.bmp"
+CAMERAF BITMAP "images/bitmap/CAMERAF.bmp"
+CAMERAU BITMAP "images/bitmap/CAMERAU.bmp"
+DELETED BITMAP "images/bitmap/DELETED.bmp"
+DELETEF BITMAP "images/bitmap/DELETEF.bmp"
+DELETEU BITMAP "images/bitmap/DELETEU.bmp"
+NEXTD BITMAP "images/bitmap/NEXTD.bmp"
+NEXTF BITMAP "images/bitmap/NEXTF.bmp"
+NEXTU BITMAP "images/bitmap/NEXTU.bmp"
+PREVD BITMAP "images/bitmap/PREVD.bmp"
+PREVF BITMAP "images/bitmap/PREVF.bmp"
+PREVU BITMAP "images/bitmap/PREVU.bmp"
+SAVEASD BITMAP "images/bitmap/SAVEASD.bmp"
+SAVEASF BITMAP "images/bitmap/SAVEASF.bmp"
+SAVEASU BITMAP "images/bitmap/SAVEASU.bmp"

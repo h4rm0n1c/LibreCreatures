@@ -190,6 +190,29 @@ void Canvas::draw_frame(const KitSprite& sprite, int frame_index, int x, int y,
     }
 }
 
+void Canvas::draw_indexed(const std::uint8_t* pixels, int width, int height,
+                          int stride, bool bottom_up, int x, int y,
+                          const GamePalette& palette) {
+    if (bits_ == nullptr || pixels == nullptr) {
+        return;
+    }
+    GdiFlush();
+    for (int row = 0; row < height; ++row) {
+        const int dy = y + row;
+        if (dy < 0 || dy >= height_) {
+            continue;
+        }
+        const std::uint8_t* source =
+            pixels + static_cast<std::size_t>(bottom_up ? height - 1 - row : row) * stride;
+        for (int column = 0; column < width; ++column) {
+            const int dx = x + column;
+            if (dx >= 0 && dx < width_) {
+                bits_[dy * width_ + dx] = palette.colour(source[column]);
+            }
+        }
+    }
+}
+
 bool Canvas::tile_bitmap_file(const std::string& path) {
     if (dc_ == nullptr) {
         return false;
@@ -215,6 +238,27 @@ bool Canvas::tile_bitmap_file(const std::string& path) {
     return true;
 }
 
+bool Canvas::draw_bitmap_file(const std::string& path, int x, int y) {
+    if (dc_ == nullptr) {
+        return false;
+    }
+    auto* bitmap = static_cast<HBITMAP>(LoadImageA(
+        nullptr, path.c_str(), IMAGE_BITMAP, 0, 0,
+        LR_LOADFROMFILE | LR_CREATEDIBSECTION));
+    if (bitmap == nullptr) {
+        return false;
+    }
+    BITMAP info = {};
+    GetObject(bitmap, sizeof(info), &info);
+    HDC source = CreateCompatibleDC(dc_);
+    HGDIOBJ previous = SelectObject(source, bitmap);
+    BitBlt(dc_, x, y, info.bmWidth, info.bmHeight, source, 0, 0, SRCCOPY);
+    SelectObject(source, previous);
+    DeleteDC(source);
+    DeleteObject(bitmap);
+    return true;
+}
+
 void Canvas::present(CDC& dc, int dest_x, int dest_y, int width, int height,
                      int source_x, int source_y) const {
     if (dc_ == nullptr) {
@@ -224,24 +268,65 @@ void Canvas::present(CDC& dc, int dest_x, int dest_y, int width, int height,
            source_y, SRCCOPY);
 }
 
+bool save_indexed_bmp(const std::string& path, const std::uint8_t* pixels,
+                      int width, int height, int stride, bool bottom_up,
+                      const GamePalette& palette) {
+    if (pixels == nullptr || width <= 0 || height <= 0) {
+        return false;
+    }
+    const int row_bytes = (width + 3) & ~3;
+    BITMAPFILEHEADER file = {};
+    BITMAPINFOHEADER info = {};
+    info.biSize = sizeof(info);
+    info.biWidth = width;
+    info.biHeight = height;  // bottom-up
+    info.biPlanes = 1;
+    info.biBitCount = 8;
+    info.biCompression = BI_RGB;
+    info.biSizeImage = static_cast<DWORD>(row_bytes) * height;
+    info.biClrUsed = 256;
+    const DWORD header_bytes =
+        sizeof(file) + sizeof(info) + 256 * sizeof(RGBQUAD);
+    file.bfType = 0x4d42;  // "BM"
+    file.bfOffBits = header_bytes;
+    file.bfSize = header_bytes + info.biSizeImage;
+    FILE* out = nullptr;
+    if (fopen_s(&out, path.c_str(), "wb") != 0 || out == nullptr) {
+        return false;
+    }
+    bool ok = std::fwrite(&file, sizeof(file), 1, out) == 1 &&
+              std::fwrite(&info, sizeof(info), 1, out) == 1;
+    for (int index = 0; ok && index < 256; ++index) {
+        const std::uint32_t colour = palette.colour(static_cast<std::uint8_t>(index));
+        const RGBQUAD quad = {static_cast<BYTE>(colour),
+                              static_cast<BYTE>(colour >> 8),
+                              static_cast<BYTE>(colour >> 16), 0};
+        ok = std::fwrite(&quad, sizeof(quad), 1, out) == 1;
+    }
+    std::vector<std::uint8_t> row(static_cast<std::size_t>(row_bytes), 0);
+    for (int y = 0; ok && y < height; ++y) {
+        // The file stores the bottom row first.
+        const int source_row = bottom_up ? y : height - 1 - y;
+        std::memcpy(row.data(), pixels + static_cast<std::size_t>(source_row) * stride,
+                    static_cast<std::size_t>(width));
+        ok = std::fwrite(row.data(), row.size(), 1, out) == 1;
+    }
+    std::fclose(out);
+    return ok;
+}
+
 // ---------------------------------------------------------------------------
 
-CString game_directory_setting(const char* value_name) {
-    CString directory;
-    c1kit::KitSettings* settings = c1kit::open_kit_settings(
-        "Gameware Development", "Creatures 1", "1.0",
-        c1kit::SettingsOpenPolicy::user_key_only);
-    if (settings == nullptr) {
-        return directory;
-    }
+CString game_directory_setting(const char* value_name,
+                               c1kit::GameDirectory which) {
     char buffer[MAX_PATH] = {};
-    if (settings->read_string(c1kit::SettingsScope::machine, value_name, buffer,
-                              sizeof(buffer)) ||
-        settings->read_string(c1kit::SettingsScope::user, value_name, buffer,
-                              sizeof(buffer))) {
-        directory = buffer;
+    if (!c1kit::read_game_directory(value_name, which, buffer, sizeof(buffer))) {
+        return CString();
     }
-    settings->release();
+    CString directory(buffer);
+    if (directory.Right(1) != _T("\\")) {
+        directory += _T("\\");
+    }
     return directory;
 }
 

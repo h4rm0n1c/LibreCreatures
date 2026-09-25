@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    96 ""
+    97 ""
+    98 ""
+    99 ""
+    100 "OLE initialization failed.  Make sure that the OLE libraries are the correct version."
+    101 "Enregistrer la naissance"
+    102 ""
+    103 "Veuillez entrer un nom de fichier de moins de 255 caractères"
+    104 "Inconnu/e"
+    105 "Le nom de la créature ne peut comporter plus de 10 caractères"
+    106 "Kit du propriétaire... "
+    107 "En pause  -  "
+    108 "Kit du propriétaire- "
+    109 "Non enregistré"
+    110 "mâle"
+    111 "femelle"
+END

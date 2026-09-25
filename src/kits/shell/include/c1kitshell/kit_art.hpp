@@ -6,6 +6,8 @@
 
 #include <afxwin.h>
 
+#include "c1kit/c1kit.hpp"
+
 #include <array>
 #include <cstdint>
 #include <string>
@@ -66,8 +68,15 @@ public:
     // own background colour).
     void draw_frame(const KitSprite& sprite, int frame, int x, int y,
                     const GamePalette& palette);
+    // Draws palette-indexed pixels (a photograph), `bottom_up` when rows are
+    // stored bottom row first, as the kits' bitmaps are.
+    void draw_indexed(const std::uint8_t* pixels, int width, int height,
+                      int stride, bool bottom_up, int x, int y,
+                      const GamePalette& palette);
     // Covers the surface with a BMP file, tiled from the top-left.
     bool tile_bitmap_file(const std::string& path);
+    // Draws a BMP file once with its top-left at (x, y).
+    bool draw_bitmap_file(const std::string& path, int x, int y);
     // Copies part of the surface to a device context.
     void present(CDC& dc, int dest_x, int dest_y, int width, int height,
                  int source_x = 0, int source_y = 0) const;
@@ -83,9 +92,16 @@ private:
     int height_ = 0;
 };
 
+// Writes palette-indexed pixels as an 8-bit BMP with the game palette.
+bool save_indexed_bmp(const std::string& path, const std::uint8_t* pixels,
+                      int width, int height, int stride, bool bottom_up,
+                      const GamePalette& palette);
+
 // A directory the game records in its registry ("Palette Directory",
-// "Main Directory", ...): the machine-wide install first, then the per-user
-// key.  Empty when neither has it.
-CString game_directory_setting(const char* value_name);
+// "Main Directory", ...), with a trailing backslash; empty when the game has
+// none.  See c1kit::read_game_directory.
+CString game_directory_setting(
+    const char* value_name,
+    c1kit::GameDirectory which = c1kit::GameDirectory::installation);
 
 } // namespace c1kitshell
