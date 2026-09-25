@@ -19,6 +19,11 @@ bugs. The rebuild keeps the original's protocol traffic, registry settings
 and look, and fixes those bugs; each fix is marked `Fix (bug N)` in the
 source.
 
+Two things are left out of every kit on purpose: cover pages (the kits open
+on their first working page) and sound.  Several originals played WAV
+effects and looping ambience, which players found maddening; the rebuilt
+kits are silent.
+
 ## Building
 
 CMake builds `c1kitlib.dll` and each kit with the game (see
