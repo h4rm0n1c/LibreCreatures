@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdarg>
 #include <cstddef>
 #include <cstdio>
 #include <cstring>
@@ -595,12 +596,30 @@ CachedSound* SoundManager::find_or_load_cache_entry(SoundId sound_id) {
     const std::uint32_t file_length = host_.sound_file_length(sound_id);
     if (ensure_sound_cache_capacity(static_cast<int>(file_length)) !=
         kSoundCacheCapacityOk) {
+        if (host_.trace_enabled()) {
+            int pinned = 0;
+            for (const auto& entry : sound_cache_) {
+                if (entry->backend_reference_count != 0 ||
+                    (entry->directsound_buffer != nullptr &&
+                     host_.audio_buffer_is_playing(entry->directsound_buffer))) {
+                    ++pinned;
+                }
+            }
+            trace("DROP %s: cache full (needs %u bytes; %d of %d used by %u "
+                  "sounds, %d of them playing or referenced)",
+                  sound_name(sound_id).c_str(),
+                  static_cast<unsigned>(file_length), sound_cache_total_bytes_,
+                  sound_cache_capacity_bytes_,
+                  static_cast<unsigned>(sound_cache_.size()), pinned);
+        }
         return nullptr;
     }
 
     CachedSound* loaded_sound = load_cached_sound(sound_id);
     if (loaded_sound != nullptr) {
         sound_cache_total_bytes_ += loaded_sound->byte_size;
+    } else {
+        trace("DROP %s: could not load the file", sound_name(sound_id).c_str());
     }
 
     std::vector<const CachedSound*> inventory;
@@ -612,12 +631,46 @@ CachedSound* SoundManager::find_or_load_cache_entry(SoundId sound_id) {
     return loaded_sound;
 }
 
+void SoundManager::trace(const char* format, ...) {
+    if (!host_.trace_enabled()) {
+        return;
+    }
+    char line[256];
+    va_list arguments;
+    va_start(arguments, format);
+    std::vsnprintf(line, sizeof(line), format, arguments);
+    va_end(arguments);
+    host_.trace(line);
+}
+
+std::string SoundManager::sound_name(SoundId sound_id) {
+    std::string name;
+    bool printable = true;
+    for (int shift = 0; shift < 32; shift += 8) {
+        const char c = static_cast<char>((sound_id >> shift) & 0xff);
+        printable = printable && c >= 0x20 && c < 0x7f;
+        name.push_back(c >= 0x20 && c < 0x7f ? c : '?');
+    }
+    if (!printable) {
+        char hex[16];
+        std::snprintf(hex, sizeof(hex), " (%08x)",
+                      static_cast<unsigned>(sound_id));
+        name += hex;
+    }
+    return name;
+}
+
 SoundChannelHandle SoundManager::start_channel(CachedSound* cached_sound,
                                                 int attenuation,
                                                 int pan,
                                                 bool loop) {
-    if (cached_sound == nullptr || !backend_ready_flag_ ||
-        active_channel_count_ >= static_cast<int>(kSoundChannelCount)) {
+    if (cached_sound == nullptr || !backend_ready_flag_) {
+        return -1;
+    }
+    if (active_channel_count_ >= static_cast<int>(kSoundChannelCount)) {
+        trace("DROP %s: all %u channels busy",
+              sound_name(cached_sound->sound_descriptor).c_str(),
+              static_cast<unsigned>(kSoundChannelCount));
         return -1;
     }
 
@@ -627,6 +680,8 @@ SoundChannelHandle SoundManager::start_channel(CachedSound* cached_sound,
         ++channel_index;
     }
     if (channel_index == channels_.size()) {
+        trace("DROP %s: no free channel",
+              sound_name(cached_sound->sound_descriptor).c_str());
         return -1;
     }
 
@@ -646,14 +701,18 @@ SoundChannelHandle SoundManager::start_channel(CachedSound* cached_sound,
         void* duplicate_buffer = nullptr;
         const int duplicate_status = host_.duplicate_audio_buffer(
             direct_sound_, source_buffer, duplicate_buffer);
+        if (duplicate_status != kSoundSuccess || duplicate_buffer == nullptr) {
+            // The original reported the channel as started here and kept a
+            // reference on the cache entry that nothing released, so the
+            // entry could never be evicted again.
+            trace("DROP %s: duplicating the playing buffer failed (%d)",
+                  sound_name(cached_sound->sound_descriptor).c_str(),
+                  duplicate_status);
+            return -1;
+        }
         channel.backend_voice = duplicate_buffer;
         channel.cached_sound = cached_sound;
         ++cached_sound->backend_reference_count;
-        if (duplicate_status != kSoundSuccess) {
-            channel.continuous_active_flag = 0;
-            channel.fade_attenuation_step = 0;
-            return static_cast<SoundChannelHandle>(channel_index);
-        }
     }
 
     channel.attenuation = attenuation;
@@ -665,10 +724,28 @@ SoundChannelHandle SoundManager::start_channel(CachedSound* cached_sound,
                                   effective_attenuation);
     host_.set_audio_buffer_pan(channel.backend_voice, pan);
 
-    if (host_.play_audio_buffer(channel.backend_voice, loop) ==
-        kSoundSuccess) {
+    const int play_status = host_.play_audio_buffer(channel.backend_voice, loop);
+    if (play_status == kSoundSuccess) {
         channel.active_generation = ++playback_generation_;
         ++active_channel_count_;
+        trace("PLAY %s%s on channel %u (attenuation %d, pan %d)",
+              sound_name(cached_sound->sound_descriptor).c_str(),
+              loop ? " (loop)" : "", static_cast<unsigned>(channel_index),
+              attenuation, pan);
+    } else {
+        // The original left a failed duplicate allocated and its cache entry
+        // referenced (see above); release both.
+        trace("DROP %s: play failed (%d)",
+              sound_name(cached_sound->sound_descriptor).c_str(), play_status);
+        if (channel.cached_sound != nullptr) {
+            host_.release_audio_buffer(channel.backend_voice);
+            --channel.cached_sound->backend_reference_count;
+            channel.cached_sound = nullptr;
+        }
+        channel.backend_voice = nullptr;
+        channel.continuous_active_flag = 0;
+        channel.fade_attenuation_step = 0;
+        return -1;
     }
 
     channel.continuous_active_flag = 0;
