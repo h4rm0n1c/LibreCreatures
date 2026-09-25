@@ -40,12 +40,14 @@ END_MESSAGE_MAP()
 ObservationSheet::ObservationSheet(CFont& default_font)
     : KitSheet(kStringKitName, kStringPausedSuffix),
       default_font_(default_font),
-      cover_(kDialogCover, kBitmapCover, kIconKit),
       overview_(*this),
       options_(*this) {
     m_psh.dwFlags |= PSH_USEHICON;
     m_psh.hIcon = AfxGetApp()->LoadIcon(kIconKit);
-    AddPage(&cover_);
+    // The original opened on a cover page (a picture) and added these two
+    // once connected; this build has no cover and opens on Details.
+    AddPage(&overview_);
+    AddPage(&options_);
 }
 
 ObservationSheet::~ObservationSheet() {
@@ -117,11 +119,13 @@ void ObservationSheet::load_preferences() {
                           settings_.message_box);
     registry_->read_dword(c1kit::SettingsScope::user, "Warn Level",
                           settings_.warn_level);
-    std::uint32_t page = 0;
+    // "Page" counts the original's cover as page 0 (the key is shared with
+    // the 1996 kit), so Details is 1 and Options 2.
+    std::uint32_t page = 1;
     registry_->read_dword(c1kit::SettingsScope::user, "Page", page);
-    // Fix (bug 12): applied once the pages exist (initialize_pages); the
-    // original applied it while only the cover had been added.
-    saved_page_ = static_cast<int>(page);
+    // Fix (bug 12): applied once connected (initialize_pages); the original
+    // applied it while only the cover had been added, so it never worked.
+    saved_page_ = page > 0 ? static_cast<int>(page) - 1 : 0;
 
     const int left = location.left < max_left ? location.left : max_left;
     const int top = location.top < max_top ? location.top : max_top;
@@ -157,7 +161,8 @@ void ObservationSheet::save_preferences() {
     registry_->write_dword("Alert on Birth", settings_.alert_on_birth);
     registry_->write_dword("Message Box", settings_.message_box);
     registry_->write_dword("Warn Level", settings_.warn_level);
-    registry_->write_dword("Page", static_cast<std::uint32_t>(GetActiveIndex()));
+    registry_->write_dword("Page",
+                           static_cast<std::uint32_t>(GetActiveIndex() + 1));
 }
 
 void ObservationSheet::OnTimer(UINT_PTR timer_id) {
@@ -229,15 +234,13 @@ void ObservationSheet::raise_alerts(const std::vector<Alert>& alerts) {
     }
 }
 
-// InitializeSheetPages @ 0x00403660: connect, then add the list and options
-// pages.  With no connection the kit keeps only its cover.
+// InitializeSheetPages @ 0x00403660: connect (the pages already exist).
+// With no connection the list stays empty.
 void ObservationSheet::initialize_pages() {
     if (!connect_to_game(kCommandBufferBytes)) {
         return;
     }
     connected_ = true;
-    AddPage(&overview_);
-    AddPage(&options_);
     if (saved_page_ > 0 && saved_page_ < GetPageCount()) {
         SetActivePage(saved_page_);
     }

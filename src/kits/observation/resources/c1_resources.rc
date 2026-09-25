@@ -5,7 +5,6 @@
 LANGUAGE 7, 1
 
 #include "dialogs/1031/100.rcinc"
-#include "dialogs/1031/129.rcinc"
 #include "dialogs/1031/130.rcinc"
 #include "dialogs/1031/143.rcinc"
 #include "dialogs/1031/144.rcinc"
@@ -15,7 +14,6 @@ LANGUAGE 9, 1
 
 #include "dialogs/1033/100.rcinc"
 #include "dialogs/1033/102.rcinc"
-#include "dialogs/1033/129.rcinc"
 #include "dialogs/1033/130.rcinc"
 #include "dialogs/1033/143.rcinc"
 #include "dialogs/1033/144.rcinc"
@@ -26,7 +24,6 @@ LANGUAGE 9, 1
 LANGUAGE 12, 1
 
 #include "dialogs/1036/100.rcinc"
-#include "dialogs/1036/129.rcinc"
 #include "dialogs/1036/130.rcinc"
 #include "dialogs/1036/143.rcinc"
 #include "dialogs/1036/144.rcinc"
@@ -35,7 +32,6 @@ LANGUAGE 12, 1
 LANGUAGE 17, 1
 
 #include "dialogs/1041/100.rcinc"
-#include "dialogs/1041/129.rcinc"
 #include "dialogs/1041/130.rcinc"
 #include "dialogs/1041/143.rcinc"
 #include "dialogs/1041/144.rcinc"
@@ -43,7 +39,6 @@ LANGUAGE 17, 1
 #include "strings/1041/8.rcinc"
 LANGUAGE 9, 2
 
-136 BITMAP "images/bitmap/136.bmp"
 142 BITMAP "images/bitmap/142.bmp"
 147 BITMAP "images/bitmap/147.bmp"
 148 BITMAP "images/bitmap/148.bmp"

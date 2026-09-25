@@ -168,7 +168,6 @@ private:
     void raise_alerts(const std::vector<Alert>& alerts);
 
     CFont& default_font_;
-    c1kitshell::CoverPage cover_;
     OverviewPage overview_;
     OptionsPage options_;
     c1kit::KitSettings* registry_ = nullptr;
