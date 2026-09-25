@@ -12,7 +12,10 @@ cmake -S . -B build/windows-msvc-x86 -G "Visual Studio 17 2022" -A Win32
 cmake --build build/windows-msvc-x86 --config Release --parallel
 ```
 
-The executable is `build/windows-msvc-x86/Release/Creatures.exe`.
+The executable is `build/windows-msvc-x86/Release/Creatures.exe`. The same
+build produces the rebuilt kits (currently `Observation Kit.exe`) and the
+`c1kitlib.dll` they share; see [`src/kits/README.md`](../src/kits/README.md).
+Run a kit once on its own to register it in the game's Tools menu.
 
 The release build uses the shared x86 MFC/CRT runtime. A machine that does not
 already have the matching Visual C++ and MFC redistributable installed may need

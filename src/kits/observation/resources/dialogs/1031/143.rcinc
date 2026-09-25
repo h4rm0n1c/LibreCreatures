@@ -1,0 +1,17 @@
+143 DIALOG 0, 0, 259, 106
+STYLE 0x80c800c0
+EXSTYLE 0x00000000
+CAPTION "Optionen"
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL "Warnung, wenn die Lebenskraft eines Norns absinkt (%):", 1007, "BUTTON", 0x50010003, 11, 17, 193, 13, 0x00000000
+    CONTROL "Warnung, sobald ein Norn schwanger wird", 1008, "BUTTON", 0x50010003, 11, 32, 155, 14, 0x00000000
+    CONTROL "Warnung, wenn ein Norn kurz vor der Geburt steht", 1009, "BUTTON", 0x50010003, 11, 47, 194, 16, 0x00000000
+    CONTROL "Erscheinen einer Hinweis-Box, um die Warnungen anzuzeignen", 1010, "BUTTON", 0x50010003, 11, 62, 234, 14, 0x00000000
+    CONTROL "", 1012, "EDIT", 0x50810080, 205, 18, 31, 12, 0x00000000
+    CONTROL "Spin1", 1011, "msctls_updown32", 0x50000036, 235, 18, 11, 13, 0x00000000
+    CONTROL "Immer oben", 1006, "BUTTON", 0x50010003, 6, 90, 68, 10, 0x00000000
+    CONTROL "Über", 1013, "BUTTON", 0x50010000, 152, 88, 43, 12, 0x00000000
+    CONTROL "Schließen", 1014, "BUTTON", 0x50010000, 209, 88, 43, 12, 0x00000000
+    CONTROL "Einstellungen", 1015, "BUTTON", 0x50000007, 6, 7, 246, 74, 0x00000000
+END

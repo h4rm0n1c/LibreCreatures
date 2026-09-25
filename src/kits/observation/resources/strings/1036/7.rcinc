@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    96 ""
+    97 ""
+    98 ""
+    99 ""
+    100 "OLE initialization failed.  Make sure that the OLE libraries are the correct version."
+    101 "&A propos de Kit d'observation..."
+    102 "Veuillez patienter..."
+    103 "Kit d'observation"
+    104 "Nom"
+    105 "Age"
+    106 "Enceinte"
+    107 "Santé"
+    108 "Medical"
+    109 "Moniker"
+    110 "Sexe"
+    111 " est enceinte."
+END

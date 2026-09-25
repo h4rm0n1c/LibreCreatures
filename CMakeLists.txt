@@ -107,6 +107,66 @@ set_target_properties(Creatures PROPERTIES
 # CLion) instead of one flat list -- purely cosmetic, no effect on the build.
 source_group(TREE ${SOURCE_ROOT} FILES ${C1_SOURCES} ${C1_RESOURCE_SCRIPT})
 
+# --- Kits ----------------------------------------------------------------
+#
+# c1kitlib.dll is the data side every kit shares (the game connection, the
+# kit's OLE server, settings); it has no UI.  Each kit executable is the kit
+# shell (windows, drawing) plus that kit's own pages and resources.  The shell
+# is compiled into every kit rather than linked from a static library: it
+# holds the MFC application object, which nothing references by name, so a
+# library member would be dropped by the linker.
+set(KITS_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/src/kits)
+
+file(GLOB C1KITLIB_SOURCES CONFIGURE_DEPENDS "${KITS_ROOT}/c1kitlib/src/*.cpp")
+add_library(c1kitlib SHARED ${C1KITLIB_SOURCES})
+target_include_directories(c1kitlib PUBLIC ${KITS_ROOT}/c1kitlib/include)
+target_compile_definitions(c1kitlib PRIVATE C1KITLIB_BUILD)
+target_link_libraries(c1kitlib PRIVATE
+    kernel32.lib user32.lib advapi32.lib ole32.lib oleaut32.lib uuid.lib)
+
+file(GLOB C1KITSHELL_SOURCES CONFIGURE_DEPENDS "${KITS_ROOT}/shell/src/*.cpp")
+
+function(add_c1_kit target output_name kit_dir)
+    file(GLOB kit_sources CONFIGURE_DEPENDS "${kit_dir}/src/*.cpp")
+    add_executable(${target} WIN32
+        ${C1KITSHELL_SOURCES}
+        ${kit_sources}
+        ${kit_dir}/resources/c1_resources.rc
+    )
+    target_include_directories(${target} PRIVATE
+        ${KITS_ROOT}/shell/include
+        ${kit_dir}/src
+        ${kit_dir}/resources
+    )
+    target_link_libraries(${target} PRIVATE
+        c1kitlib
+        mfc140.lib
+        mfcs140.lib
+        kernel32.lib
+        user32.lib
+        gdi32.lib
+        advapi32.lib
+        shell32.lib
+        ole32.lib
+        oleaut32.lib
+        uuid.lib
+        comctl32.lib
+        comdlg32.lib
+        winmm.lib
+    )
+    set_target_properties(${target} PROPERTIES
+        OUTPUT_NAME "${output_name}"
+        LINK_FLAGS "/SUBSYSTEM:WINDOWS,6.00"
+    )
+    install(TARGETS ${target} RUNTIME DESTINATION .)
+endfunction()
+
+# Registers as the original's OVERVIEW.OLE server in Tools slot 6: run it
+# once on its own and the game's Tools menu opens it instead of the 1996 kit.
+add_c1_kit(ObservationKit "Observation Kit" ${KITS_ROOT}/observation)
+
+install(TARGETS c1kitlib RUNTIME DESTINATION .)
+
 # Keep packaging predictable. The executable and public project material are
 # installed; original game data is intentionally never staged.
 install(TARGETS Creatures RUNTIME DESTINATION .)
