@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    96 ""
+    97 ""
+    98 ""
+    99 ""
+    100 "OLE initialization failed.  Make sure that the OLE libraries are the correct version."
+    101 "情報..."
+    102 "お待ちください..."
+    103 "観察キット"
+    104 "名前"
+    105 "年齢"
+    106 "妊娠"
+    107 "生命力"
+    108 "診察"
+    109 "Moniker"
+    110 "性別"
+    111 "は妊娠しました。"
+END

@@ -1,0 +1,17 @@
+143 DIALOG 0, 0, 244, 106
+STYLE 0x80c800c0
+EXSTYLE 0x00000000
+CAPTION "Options"
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL "Warn if a Norn's Life Force falls below (%):", 1007, "BUTTON", 0x50010003, 31, 17, 146, 13, 0x00000000
+    CONTROL "Alert if a Norn has become Pregnant.", 1008, "BUTTON", 0x50010003, 31, 32, 129, 14, 0x00000000
+    CONTROL "Alert if a Norn is about to give birth.", 1009, "BUTTON", 0x50010003, 31, 47, 129, 16, 0x00000000
+    CONTROL "Use a Message Box to signal alert.", 1010, "BUTTON", 0x50010003, 31, 62, 132, 14, 0x00000000
+    CONTROL "", 1012, "EDIT", 0x50810080, 178, 18, 31, 12, 0x00000000
+    CONTROL "Spin1", 1011, "msctls_updown32", 0x50000036, 208, 18, 11, 13, 0x00000000
+    CONTROL "Always On Top", 1006, "BUTTON", 0x50010003, 7, 90, 68, 10, 0x00000000
+    CONTROL "About", 1013, "BUTTON", 0x50010000, 139, 88, 43, 12, 0x00000000
+    CONTROL "Close", 1014, "BUTTON", 0x50010000, 194, 88, 43, 12, 0x00000000
+    CONTROL "Settings", 1015, "BUTTON", 0x50000007, 18, 7, 207, 74, 0x00000000
+END
