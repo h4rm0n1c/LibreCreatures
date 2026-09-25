@@ -23,7 +23,8 @@ source.
 
 CMake builds `c1kitlib.dll` and each kit with the game (see
 [`docs/building.md`](../../docs/building.md)); the Observation Kit installs as
-`Observation Kit.exe`.
+`observation.exe`, the original's file name, so copying it into an original
+installation replaces the 1996 kit's file (keep a copy if you want it).
 
 ## Tests
 
