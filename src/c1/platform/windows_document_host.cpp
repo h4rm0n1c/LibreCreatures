@@ -566,8 +566,24 @@ BOOL C1WindowsDocument::OnOpenDocument(LPCTSTR path) {
                                     native_path.GetLength()))) {
         return FALSE;
     }
+    bind_event_bar();
     SetModifiedFlag(FALSE);
     return TRUE;
+}
+
+// The event bar reaches the world through this document (its click handler,
+// for one, does nothing without it).  Native reads the global SFCDoc; here
+// the document binds itself whenever it becomes the world, new or opened.
+// Opening a saved world only ever unbound it (DeleteContents runs first), so
+// clicking an event-bar entry did nothing -- not even a dead creature's,
+// which is how the Funeral Kit learns of deaths.  AfxGetMainWnd is not yet
+// set during start-up; active_main_frame is (see has_main_frame).
+void C1WindowsDocument::bind_event_bar() {
+    C1MainFrame* frame = active_main_frame();
+    if (frame != nullptr) {
+        frame->bind_event_bar_document(this);
+        frame->refresh_event_bar_status(*this);
+    }
 }
 
 BOOL C1WindowsDocument::OnSaveDocument(LPCTSTR path) {
@@ -618,12 +634,7 @@ BOOL C1WindowsDocument::OnNewDocument() {
         return FALSE;
     }
     rebuild_creature_selection_menu();
-    C1MainFrame* frame = DYNAMIC_DOWNCAST(
-        C1MainFrame, AfxGetMainWnd());
-    if (frame != nullptr) {
-        frame->bind_event_bar_document(this);
-        frame->refresh_event_bar_status(*this);
-    }
+    bind_event_bar();
     SetModifiedFlag(FALSE);
     return TRUE;
 }

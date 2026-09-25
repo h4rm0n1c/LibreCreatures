@@ -671,6 +671,7 @@ public:
     void refresh_temporary_world_backup() override;
 
     void refresh_event_bar_object_display_panes() override;
+    void bind_event_bar();
 
     void update_event_bar_status_panes() override;
 
