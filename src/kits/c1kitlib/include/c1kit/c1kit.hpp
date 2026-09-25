@@ -50,16 +50,26 @@ enum class ConnectResult {
     connected,
     not_registered,   // CLSIDFromProgID("SFC.OLE") failed
     create_failed,    // CoCreateInstance failed; see hresult
+    run_failed,       // OleRun failed; see hresult
+    no_dispatch,      // the object has no IDispatch; see hresult
 };
 
-// Connects to the running game's SFC.OLE automation object with
-// CLSCTX_ALL, as MFC's COleDispatchDriver::CreateDispatch does (under Wine
-// this reaches OLEKitProxy's in-process forwarder).  `buffer_bytes` is the
+// Connects to the running game's SFC.OLE automation object in the same steps
+// as MFC's COleDispatchDriver::CreateDispatch, which the 1996 kits used:
+// CoCreateInstance for IUnknown with CLSCTX_ALL, OleRun, then IDispatch.
+// (Under Wine this reaches OLEKitProxy's in-process forwarder.)  `buffer_bytes` is the
 // size of the byte-length BSTR command buffer (Observation 0x400, Science
 // Kit 0x1000).  Returns nullptr on failure.
 C1KIT_API MacroTransport* connect_sfc_ole(std::size_t buffer_bytes,
                                           ConnectResult* result,
                                           long* hresult);
+
+// Writes the text a kit shows when connect_sfc_ole fails: the system's
+// message for `hresult` (the 1996 kits' CException::ReportError), else "Can
+// not communicate with application", followed by the failing step and the
+// code.  Always NUL-terminates a non-empty buffer.
+C1KIT_API void describe_connect_failure(ConnectResult result, long hresult,
+                                        char* buffer, std::size_t size);
 
 // ---------------------------------------------------------------------------
 // Game -> kit: the kit's own OLE server and its Communicate method

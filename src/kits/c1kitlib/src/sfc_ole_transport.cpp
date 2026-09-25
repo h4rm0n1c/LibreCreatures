@@ -12,8 +12,10 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <objbase.h>
+#include <ole2.h>
 #include <oleauto.h>
 
+#include <cstdio>
 #include <cstring>
 
 namespace c1kit {
@@ -193,18 +195,36 @@ MacroTransport* connect_sfc_ole(std::size_t buffer_bytes,
         }
         return nullptr;
     }
-    IDispatch* dispatch = nullptr;
-    const HRESULT created =
-        CoCreateInstance(clsid, nullptr, CLSCTX_ALL, IID_IDispatch,
-                         reinterpret_cast<void**>(&dispatch));
-    if (FAILED(created) || dispatch == nullptr) {
+    // Asking CoCreateInstance for IDispatch directly failed on Windows with
+    // E_NOINTERFACE where the 1996 kits, which go through IUnknown and
+    // OleRun first, connect; so take their route.
+    const auto fail = [&](ConnectResult why, HRESULT hr) -> MacroTransport* {
         if (result != nullptr) {
-            *result = ConnectResult::create_failed;
+            *result = why;
         }
         if (hresult != nullptr) {
-            *hresult = created;
+            *hresult = hr;
         }
         return nullptr;
+    };
+    IUnknown* unknown = nullptr;
+    const HRESULT created =
+        CoCreateInstance(clsid, nullptr, CLSCTX_ALL, IID_IUnknown,
+                         reinterpret_cast<void**>(&unknown));
+    if (FAILED(created) || unknown == nullptr) {
+        return fail(ConnectResult::create_failed, created);
+    }
+    const HRESULT running = OleRun(unknown);
+    if (FAILED(running)) {
+        unknown->Release();
+        return fail(ConnectResult::run_failed, running);
+    }
+    IDispatch* dispatch = nullptr;
+    const HRESULT queried = unknown->QueryInterface(
+        IID_IDispatch, reinterpret_cast<void**>(&dispatch));
+    unknown->Release();
+    if (FAILED(queried) || dispatch == nullptr) {
+        return fail(ConnectResult::no_dispatch, queried);
     }
     auto* transport = new SfcOleTransport(dispatch, buffer_bytes < 2 ? 2 : buffer_bytes);
     if (!transport->allocate_buffer()) {
@@ -218,6 +238,41 @@ MacroTransport* connect_sfc_ole(std::size_t buffer_bytes,
         *result = ConnectResult::connected;
     }
     return transport;
+}
+
+void describe_connect_failure(ConnectResult result, long hresult,
+                              char* buffer, std::size_t size) {
+    if (buffer == nullptr || size == 0) {
+        return;
+    }
+    char system_text[256] = {};
+    DWORD length = 0;
+    if (hresult != 0) {
+        length = FormatMessageA(
+            FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr,
+            static_cast<DWORD>(hresult), 0, system_text, sizeof(system_text),
+            nullptr);
+    }
+    while (length > 0 && (system_text[length - 1] == '\r' ||
+                          system_text[length - 1] == '\n' ||
+                          system_text[length - 1] == ' ')) {
+        system_text[--length] = '\0';
+    }
+    // Not in the originals: which step failed and its code, so a report
+    // from a machine we cannot test on says where the connection broke.
+    const char* step = result == ConnectResult::not_registered
+                           ? "SFC.OLE is not registered"
+                       : result == ConnectResult::create_failed
+                           ? "creating SFC.OLE"
+                       : result == ConnectResult::run_failed
+                           ? "starting SFC.OLE"
+                       : result == ConnectResult::no_dispatch
+                           ? "asking SFC.OLE for IDispatch"
+                           : "connecting";
+    std::snprintf(buffer, size, "%s\n\n(%s: 0x%08lX)",
+                  length > 0 ? system_text
+                             : "Can not communicate with application",
+                  step, static_cast<unsigned long>(hresult));
 }
 
 } // namespace c1kit
