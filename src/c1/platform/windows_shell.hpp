@@ -2645,8 +2645,13 @@ private:
     std::unique_ptr<creatures1::platform::WindowsSoundSystemHost> sound_host_;
     std::unique_ptr<creatures1::sound::SoundManager> sound_manager_;
     // The macro host outlives each MacroHolder it is handed to; the holder
-    // keeps a reference, so it cannot be a temporary.
+    // keeps a reference, so it cannot be a temporary.  One host serves every
+    // holder on a document.  A host for a document that is no longer active
+    // is retired rather than destroyed, since kits may still hold macros
+    // made against it.
     std::unique_ptr<WindowsMacroHost> macro_host_;
+    C1WindowsDocument* macro_host_document_ = nullptr;
+    std::vector<std::unique_ptr<WindowsMacroHost>> retired_macro_hosts_;
     std::unique_ptr<creatures1::platform::WindowsPipeServerBoundary>
         pipe_server_;
 };

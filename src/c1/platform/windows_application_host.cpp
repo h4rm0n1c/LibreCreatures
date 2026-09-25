@@ -506,7 +506,17 @@ void C1StartupHost::start_pipe_server_if_needed() {
         if (document == nullptr) {
             return nullptr;
         }
-        macro_host_ = std::make_unique<WindowsMacroHost>(*document);
+        // One host per document.  Making a new host for every holder
+        // destroyed the one each earlier holder still referred to, so a kit
+        // that created several holders and then used an older one (the
+        // Science Kit's Genetics page does) called into freed memory.
+        if (macro_host_ == nullptr || macro_host_document_ != document) {
+            if (macro_host_ != nullptr) {
+                retired_macro_hosts_.push_back(std::move(macro_host_));
+            }
+            macro_host_ = std::make_unique<WindowsMacroHost>(*document);
+            macro_host_document_ = document;
+        }
         return std::make_unique<creatures1::scripting::MacroHolder>(
             mode, *macro_host_);
     };
