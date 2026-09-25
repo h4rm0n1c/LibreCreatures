@@ -2746,7 +2746,13 @@ void Macro::execute_dde_command(MacroDdeHost& host, MacroRuntimeHost& runtime) {
         script_cursor_offset += 4;
         std::string output_path;
         if (host.capture_picture(*this, width, height, output_path)) {
-            output_text = output_path;
+            // Native counts the path's own NUL (strcpy then strlen + 1), so
+            // ExecuteToOutputBuffer's terminator overwrites that and the
+            // path arrives whole.  Like the getb writers above, give the
+            // terminator a byte of its own; assigning the path raw cut its
+            // last character ("temp.sp"), so no kit could open the photo.
+            output_text.clear();
+            append_pipe_field(output_text, output_path);
         } else {
             output_text.clear();
         }
