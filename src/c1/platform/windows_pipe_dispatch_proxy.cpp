@@ -68,23 +68,35 @@ HRESULT STDMETHODCALLTYPE WindowsPipeDispatchProxy::GetIDsOfNames(
 
 bool WindowsPipeDispatchProxy::send_to_kit(std::uint32_t first_word,
                                            std::uint32_t second_word) const {
-    // Three connect attempts with a 50ms pause between them, except that a
-    // missing pipe means the kit has closed and is not retried.
+    // Keep trying for up to a second: straight after one message (a new
+    // kit's YOUR_ID_IS, say) the kit's pipe can be missing or busy for a
+    // moment -- in the lab the call right after YOUR_ID_IS failed to find it.
+    // The earlier rule -- three tries,
+    // and a missing pipe taken to mean the kit had closed -- dropped the
+    // message sent right after a kit started: the Funeral Kit, launched by
+    // clicking a dead creature, never heard of the death.
     HANDLE pipe = INVALID_HANDLE_VALUE;
-    for (int attempt = 0; attempt < 3 && pipe == INVALID_HANDLE_VALUE;
-         ++attempt) {
+    const DWORD started = GetTickCount();
+    while (pipe == INVALID_HANDLE_VALUE) {
         pipe = CreateFileA(pipe_name_.data(), GENERIC_WRITE, 0, nullptr,
                            OPEN_EXISTING, 0, nullptr);
-        if (pipe == INVALID_HANDLE_VALUE) {
-            if (GetLastError() == ERROR_FILE_NOT_FOUND) {
+        if (pipe != INVALID_HANDLE_VALUE) {
+            break;
+        }
+        const DWORD error = GetLastError();
+        if (GetTickCount() - started >= 1000) {
+            if (error == ERROR_FILE_NOT_FOUND) {
                 OutputDebugStringA(
                     "CPipeDispatchProxy::SendToKit: Pipe not found - kit has "
                     "closed\n");
                 return false;
             }
-            if (attempt < 2) {
-                Sleep(50);
-            }
+            break;
+        }
+        if (error == ERROR_PIPE_BUSY) {
+            WaitNamedPipeA(pipe_name_.data(), 100);
+        } else {
+            Sleep(20);
         }
     }
     if (pipe == INVALID_HANDLE_VALUE) {
