@@ -99,16 +99,19 @@ public:
         VARIANT request = handle_variant(handle);
         const bool ok = invoke(kSfcRequestMacro, &request, &buffer_);
         reply_length_ = 0;
+        reply_bytes_ = 0;
         reply_ = "";
         if (ok && buffer_.vt == VT_BSTR && buffer_.bstrVal != nullptr) {
             reply_ = reinterpret_cast<const char*>(buffer_.bstrVal);
             reply_length_ = std::strlen(reply_);
+            reply_bytes_ = SysStringByteLen(buffer_.bstrVal);
         }
         return ok;
     }
 
     const char* reply() const override { return reply_; }
     std::size_t reply_length() const override { return reply_length_; }
+    std::size_t reply_bytes() const override { return reply_bytes_; }
     void release() override { delete this; }
 
 private:
@@ -175,6 +178,7 @@ private:
     VARIANT buffer_;
     const char* reply_ = "";
     std::size_t reply_length_ = 0;
+    std::size_t reply_bytes_ = 0;
 };
 
 } // namespace

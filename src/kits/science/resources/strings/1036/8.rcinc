@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    112 "Adrénaline"
+    113 "Analgésique"
+    114 "Sirop contre la toux"
+    115 "Somnifère"
+    116 "Excitant"
+    117 "Antioxydant"
+    118 "AUCUN"
+    119 "Douleur"
+    120 "BDP (Besoin de plaisir)   "
+    121 "Faim     "
+    122 "Froid     "
+    123 "Chaleur     "
+    124 "Épuisement     "
+    125 "Torpeur     "
+    126 "Solitude     "
+    127 "Agoraphobie     "
+END

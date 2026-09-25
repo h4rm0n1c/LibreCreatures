@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    144 "Augmentation de la peur "
+    145 "Augmentation de l'ennui   "
+    146 "Augmentation de la colère "
+    147 "Augmentation des PS"
+    148 "not_allocated2++     "
+    149 "not_allocated3++     "
+    150 "not_allocated4++     "
+    151 "Diminution de la douleur"
+    152 "Diminution du BDP "
+    153 "Diminution de la faim"
+    154 "Diminution du froid  "
+    155 "Diminution de la chaleur "
+    156 "Diminution de l'épuisement "
+    157 "Diminution de la torpeur "
+    158 "Diminution de la solitude  "
+    159 "Diminution de l'agoraphie  "
+END

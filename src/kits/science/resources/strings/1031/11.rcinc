@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    160 "Angst-Reduzierung    "
+    161 "Langeweile-Reduzierung     "
+    162 "Ärger-Reduzierung     "
+    163 "Sexualtrieb-Reduzierung     "
+    164 "not_allocated2--     "
+    165 "not_allocated3--     "
+    166 "not_allocated4--     "
+    167 "BELOHNUNG     "
+    168 "BESTRAFUNG     "
+    169 "Verstärkung     "
+    170 "ConASH  "
+    171 "DecASH "
+    172 "BelohnungsEcho "
+    173 "BestrafungsEcho "
+    174 "Altern     "
+    175 "Stärke     "
+END

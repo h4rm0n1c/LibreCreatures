@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    96 ""
+    97 ""
+    98 ""
+    99 ""
+    100 "OLE initialization failed.  Make sure that the OLE libraries are the correct version."
+    101 "Entscheidungsoutput"
+    102 "Chemikalie"
+    103 "Thema"
+    104 "MAX"
+    105 "Thema"
+    106 "entfernen ?"
+    107 "Forschungs-Set...  "
+    108 " Unterbrochen - "
+    109 "Forschungs-Set - "
+    110 "Thema hinzufügen"
+    111 "Energie"
+END

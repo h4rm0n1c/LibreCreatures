@@ -171,6 +171,8 @@ add_c1_kit(ScoreKit "Score Kit" ${KITS_ROOT}/score)
 add_c1_kit(OwnersKit "Owner's Kit" ${KITS_ROOT}/owner)
 # "Funeral Kit.exe": OLE server Funeral.OLE, Tools slot 9.
 add_c1_kit(FuneralKit "Funeral Kit" ${KITS_ROOT}/funeral)
+# "Science Kit.exe": OLE server Science.OLE, Tools slot 4.
+add_c1_kit(ScienceKit "Science Kit" ${KITS_ROOT}/science)
 
 install(TARGETS c1kitlib RUNTIME DESTINATION .)
 

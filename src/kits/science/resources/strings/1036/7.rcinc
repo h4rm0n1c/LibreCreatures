@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    96 ""
+    97 ""
+    98 ""
+    99 ""
+    100 "OLE initialization failed.  Make sure that the OLE libraries are the correct version."
+    101 "Decision OutPut"
+    102 "Produit chimique"
+    103 "Thème"
+    104 "MAX"
+    105 "Enlever le thème "
+    106 "thème ?"
+    107 "Kit Science...  "
+    108 "En pause - "
+    109 "Kit Science - "
+    110 "Ajouter thème"
+    111 "Energie"
+END

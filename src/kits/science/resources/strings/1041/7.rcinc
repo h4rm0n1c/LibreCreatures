@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    96 ""
+    97 ""
+    98 ""
+    99 ""
+    100 "OLE initialization failed.  Make sure that the OLE libraries are the correct version."
+    101 "決定の出力"
+    102 "化学的"
+    103 "テーマ"
+    104 "MAX"
+    105 "テーマ"
+    106 "を削除しますか？"
+    107 "サイエンスキット..."
+    108 "一時停止"
+    109 "サイエンスキット - "
+    110 "テーマを追加"
+    111 "Energie"
+END

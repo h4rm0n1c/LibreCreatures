@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    128 "Peur     "
+    129 "Ennui     "
+    130 "Colère     "
+    131 "Pulsion sexuelle (PS)   "
+    132 "not_allocated2     "
+    133 "not_allocated3    "
+    134 "not_allocated4    "
+    135 "Augmentation de la douleur  "
+    136 "Augmentation du BDP "
+    137 "Augmentation de la faim  "
+    138 "Augmentation du froid  "
+    139 "Augmentation de la chaleur  "
+    140 "Augmentation de l'épuisement"
+    141 "Augmentation de la torpeur "
+    142 "Augmentation de la solitude "
+    143 "Augmentation de l'agoraphobie"
+END

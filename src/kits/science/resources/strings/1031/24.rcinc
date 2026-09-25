@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    368 "Antigen 2"
+    369 "Antigen 3"
+    370 "Antigen 4"
+    371 "Antigen 5"
+    372 "Antigen 6"
+    373 "Antigen 7"
+    374 "Individuell"
+    375 "Moral"
+    376 "Verdauungssystem"
+    377 "Beschwerden"
+    378 "Giftstoffe"
+    379 "Widerstandskraft 1"
+    380 "Widerstandskraft 2"
+    381 "Widerstandskraft 3"
+    382 "Widerstandskraft 4"
+    383 "Weibliche Hormone"
+END

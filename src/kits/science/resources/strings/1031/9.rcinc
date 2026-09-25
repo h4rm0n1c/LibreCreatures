@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    128 "Angst "
+    129 "Langeweile "
+    130 "Ärger   "
+    131 "Sexualtrieb  "
+    132 "not_allocated2     "
+    133 "not_allocated3    "
+    134 "not_allocated4    "
+    135 "Schmerz-Erhöhung  "
+    136 "GBD-Erhöhung "
+    137 "Hunger-Erhöhung  "
+    138 "Kälte-Erhöhung "
+    139 "Hitze-Erhöhung "
+    140 "Erschöpfungs-Erhöhung   "
+    141 "Schläfrigkeits-Erhöhung "
+    142 "Einsamkeits-Erhöhung "
+    143 "Beengtheits-Erhöhung     "
+END

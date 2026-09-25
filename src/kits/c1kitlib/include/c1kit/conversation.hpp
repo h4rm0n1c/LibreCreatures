@@ -51,8 +51,18 @@ public:
         if (!transport_.request_macro(handle_)) {
             return false;
         }
-        reply.assign(transport_.reply(), transport_.reply_length());
+        reply.assign(transport_.reply(),
+                     binary_ ? transport_.reply_bytes() : transport_.reply_length());
         return true;
+    }
+
+    // query_reusing_holder for a binary reply (`dde: lobe`): the whole reply
+    // BSTR, zero bytes and all.
+    bool query_binary(short mode, const char* script, std::string& reply) {
+        binary_ = true;
+        const bool ok = query_reusing_holder(mode, script, reply);
+        binary_ = false;
+        return ok;
     }
 
     // Query on a holder that is kept between calls.  The 1996 kits replace
@@ -85,6 +95,7 @@ public:
 private:
     MacroTransport& transport_;
     long handle_ = 0;
+    bool binary_ = false;
 };
 
 // ExecuteDdeCommandWithReconnect (Observation @ 0x00403540): a fresh

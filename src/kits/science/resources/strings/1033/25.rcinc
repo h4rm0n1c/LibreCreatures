@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    384 "Hormone mâle"
+    385 "Male"
+    386 "Female"
+    387 "Please wait..."
+    388 "Brain Lobes"
+    389 "Chemical Receptors"
+    390 "Chemical Emitters"
+    391 "Chemical Definitions"
+    392 "Appearance"
+    393 "Pose"
+    394 "Gait"
+    395 "Instincts"
+    396 "Pigmentation"
+    397 "Chemical Reactions"
+    398 "Genetics"
+    399 "Decisions"
+END
