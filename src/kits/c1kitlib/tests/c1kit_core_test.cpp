@@ -51,6 +51,7 @@ public:
     }
     const char* reply() const override { return reply_.c_str(); }
     std::size_t reply_length() const override { return reply_.size(); }
+    std::size_t reply_bytes() const override { return reply_.size(); }
     void release() override {}
 
 private:

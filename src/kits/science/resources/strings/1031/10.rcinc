@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    144 "Angst-Erhöhung  "
+    145 "Langeweile-Erhöhung  "
+    146 "Ärger-Erhöhung     "
+    147 "Sexualtrieb-Erhöhung   "
+    148 "not_allocated2++     "
+    149 "not_allocated3++     "
+    150 "not_allocated4++     "
+    151 "Schmerz-Reduzierung "
+    152 "GBD-Reduzierung   "
+    153 "Hunger-Reduzierung"
+    154 "Kälte-Reduzierung  "
+    155 "Hitze-Reduzierung     "
+    156 "Erschöpfungs-Reduzierung     "
+    157 "Schläfrigkeits-Reduzierung     "
+    158 "Einsamkeits-Reduzierung     "
+    159 "Beengtheits-Reduzierung     "
+END

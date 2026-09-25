@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    160 "Diminution de la solitude "
+    161 "Diminution de l'ennui  "
+    162 "Diminution de la colère   "
+    163 "Diminution de la PS"
+    164 "not_allocated2--     "
+    165 "not_allocated3--     "
+    166 "not_allocated4--     "
+    167 "RECOMPENSE"
+    168 "PUNITION "
+    169 "Renforcement"
+    170 "ConASH  "
+    171 "DecASH "
+    172 "RecompenseEcho "
+    173 "PunitionEcho "
+    174 "Vieillissement "
+    175 "Amidon "
+END

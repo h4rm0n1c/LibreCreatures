@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    352 "Schlaftoxin     "
+    353 "Fiebertoxin     "
+    354 "tox"
+    355 "tox"
+    356 "tox"
+    357 "tox"
+    358 "Antikörper 0"
+    359 "Antikörper 1"
+    360 "Antikörper 2"
+    361 "Antikörper 3"
+    362 "Antikörper 4"
+    363 "Antikörper 5"
+    364 "Antikörper 6"
+    365 "Antikörper 7"
+    366 "Antigen 0"
+    367 "Antigen 1"
+END

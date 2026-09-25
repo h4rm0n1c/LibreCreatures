@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    400 "Injections"
+    401 "Biochimie"
+    402 "Scanner"
+    403 "Heure"
+    404 "Kit de science"
+    405 "Monitorage avancé"
+    406 ""
+    407 ""
+    408 ""
+    409 ""
+    410 ""
+    411 ""
+    412 ""
+    413 ""
+    414 ""
+    415 ""
+END

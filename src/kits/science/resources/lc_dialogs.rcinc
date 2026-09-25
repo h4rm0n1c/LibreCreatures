@@ -1,0 +1,21 @@
+// LibreCreatures dialogs.  The pages lay their controls out in code, so they
+// share one blank template; its size is the smallest a page can be (the 1996
+// kit's pages were all this size, 252 x 188).
+200 DIALOG 0, 0, 252, 188
+STYLE 0x48c00044
+CAPTION "Page"
+FONT 8, "MS Sans Serif"
+BEGIN
+END
+
+// Save theme: the name to save it under (the 1996 "Add Theme", dialog 185,
+// had Cancel but no OK).
+201 DIALOG 0, 0, 170, 46
+STYLE 0x80c800c0
+CAPTION "Save Theme"
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL "", 1114, "EDIT", 0x50810080, 7, 7, 156, 12, 0x00000000
+    CONTROL "OK", 1, "BUTTON", 0x50010001, 57, 26, 50, 14, 0x00000000
+    CONTROL "Cancel", 2, "BUTTON", 0x50010000, 113, 26, 50, 14, 0x00000000
+END

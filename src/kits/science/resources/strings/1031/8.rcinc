@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    112 "Adrenalin"
+    113 "Schmerzmittel"
+    114 "Hustenmittel"
+    115 "Schlafmittel"
+    116 "Aufweckmittel"
+    117 "Anti-Oxydationsmittel"
+    118 "KEINE "
+    119 "Schmerz  "
+    120 "GBD (Genußbedürfnis)"
+    121 "Hunger  "
+    122 "Kälte  "
+    123 "Hitze "
+    124 "Erschöpfung  "
+    125 "Schläfrigkeit "
+    126 "Einsamkeit  "
+    127 "Beengtheit "
+END

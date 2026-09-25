@@ -10,6 +10,7 @@ menu and talks to over OLE automation.
 | `observation/` | The Observation Kit (Tools slot 6), `observation.exe`. |
 | `funeral/` | The Funeral Kit (Tools slot 9), `Funeral Kit.exe`: a memorial page for each creature whose death the game reports, with its photographs from the Owner's Kit album and an epitaph, and a graveyard of the headstones made for them. Reads `The Register` and the albums; keeps its graves in `Funeral Kit Graves` beside the world. |
 | `owner/` | The Owner's Kit (Tools slot 2), `Owner's Kit.exe`: register a birth, a photo album, the birth certificate. Keeps `The Register` and `<moniker>.Photo Album` beside the world, in the 1996 format, so the original kits read them too. |
+| `science/` | The Science Kit (Tools slot 4), `Science Kit.exe`: chemical levels over time (up to 16 at once, with themes), the genome as a property list read from the genome file, a live brain map with every lobe outlined and each neuron named, the decision lobe, and medicine injections. Reads `allchemicals.str`, `decision.str`, `injections.str` and `themes.str`; saves themes to `Science Kit Themes`. |
 | `score/` | The Score Kit, titled "Performance Kit" (Tools slot 8), `Score Kit.exe`. Reads its art (`AllNumbers.spr`, `Score.spr`, `Time.spr`, `Scorebgd.bmp`, `Brdscore.bmp`) from the game's main directory. |
 
 Each kit keeps the original's OLE ProgID, CLSID and Tools slot, so the game

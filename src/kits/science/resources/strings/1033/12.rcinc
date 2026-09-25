@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    176 "Glucose"
+    177 "Glycogène   "
+    178 "Waste Water"
+    179 "Hexokinase  "
+    180 "CO2  "
+    181 "Oestrogène"
+    182 "Testostérone "
+    183 "Gonadotrophine"
+    184 "Progestérone"
+    185 "Glyocotoxine"
+    186 "Alcool "
+    187 "Adrénaline "
+    188 "70"
+    189 "71"
+    190 "72"
+    191 "73"
+END

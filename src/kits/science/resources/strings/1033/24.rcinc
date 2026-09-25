@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    368 "Antigène 2"
+    369 "Antigène 3"
+    370 "Antigène 4"
+    371 "Antigène 5"
+    372 "Antigène 6"
+    373 "Antigène 7"
+    374 "Personnalisé"
+    375 "Moral"
+    376 "Système digestif"
+    377 "Inconfort"
+    378 "Toxines"
+    379 "Lutte contre la maladie 1"
+    380 "Lutte contre la maladie 2"
+    381 "Lutte contre la maladie 3"
+    382 "Lutte contre la maladie 4"
+    383 "Hormone femelle"
+END

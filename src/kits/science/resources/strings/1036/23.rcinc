@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    352 "Toxine de sommeil   "
+    353 "Toxine de fièvre  "
+    354 "tox"
+    355 "tox"
+    356 "tox"
+    357 "tox"
+    358 "Anticorps 0"
+    359 "Anticorps 1"
+    360 "Anticorps 2"
+    361 "Anticorps 3"
+    362 "Anticorps 4"
+    363 "Anticorps 5"
+    364 "Anticorps 6"
+    365 "Anticorps 7"
+    366 "Antigène 0"
+    367 "Antigène 1"
+END

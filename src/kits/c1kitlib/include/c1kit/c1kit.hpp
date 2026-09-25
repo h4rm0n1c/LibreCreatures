@@ -41,7 +41,11 @@ public:
     // until the next call.
     virtual bool request_macro(long handle) = 0;
     virtual const char* reply() const = 0;
+    // The reply up to its terminator (strlen).
     virtual std::size_t reply_length() const = 0;
+    // The reply BSTR's whole byte length, for binary replies (`dde: lobe`)
+    // that hold zero bytes.  It may run past the terminator.
+    virtual std::size_t reply_bytes() const = 0;
 
     virtual void release() = 0;
 };
