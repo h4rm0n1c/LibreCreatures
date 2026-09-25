@@ -46,16 +46,32 @@ bool WindowsPipeServerBoundary::running() const {
     return runtime_ != nullptr && runtime_->running();
 }
 
-namespace {
-
-// Opt-in record of every kit request and the game's answer, for comparing
-// kits against each other: set C1_KIT_TRAFFIC_LOG to a file path.  Field
-// separators (0x1E) are written as '|'.
-void log_kit_traffic(std::string_view request, const std::string& response) {
+// Opt-in record of kit traffic, for comparing kits against each other: set
+// C1_KIT_TRAFFIC_LOG to a file path.  Every kit request on the pipe and every
+// Communicate call the game makes to a kit is appended.
+void log_kit_traffic_line(std::string_view line) {
     char path[MAX_PATH] = {};
     if (GetEnvironmentVariableA("C1_KIT_TRAFFIC_LOG", path, MAX_PATH) == 0) {
         return;
     }
+    const std::string text = std::string(line) + "\n";
+    const HANDLE file = CreateFileA(path, FILE_APPEND_DATA, FILE_SHARE_READ,
+                                    nullptr, OPEN_ALWAYS,
+                                    FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (file == INVALID_HANDLE_VALUE) {
+        return;
+    }
+    DWORD written = 0;
+    WriteFile(file, text.data(), static_cast<DWORD>(text.size()), &written,
+              nullptr);
+    CloseHandle(file);
+}
+
+namespace {
+
+// A request and the game's answer; field separators (0x1E) are written as
+// '|'.
+void log_kit_traffic(std::string_view request, const std::string& response) {
     const auto printable = [](std::string_view text) {
         std::string out;
         for (const char c : text) {
@@ -71,18 +87,7 @@ void log_kit_traffic(std::string_view request, const std::string& response) {
         }
         return out;
     };
-    const std::string line = printable(request) + "  ->  " +
-                             printable(response) + "\n";
-    const HANDLE file = CreateFileA(path, FILE_APPEND_DATA, FILE_SHARE_READ,
-                                    nullptr, OPEN_ALWAYS,
-                                    FILE_ATTRIBUTE_NORMAL, nullptr);
-    if (file == INVALID_HANDLE_VALUE) {
-        return;
-    }
-    DWORD written = 0;
-    WriteFile(file, line.data(), static_cast<DWORD>(line.size()), &written,
-              nullptr);
-    CloseHandle(file);
+    log_kit_traffic_line(printable(request) + "  ->  " + printable(response));
 }
 
 } // namespace
