@@ -60,6 +60,9 @@ public:
     void log_cache_inventory(
         const std::vector<const sound::CachedSound*>& entries,
         int total_bytes) override;
+    // C1_SOUND_LOG names a file that receives the manager's trace lines.
+    bool trace_enabled() const override { return !trace_path_.empty(); }
+    void trace(std::string_view line) override;
 
 private:
     std::string sound_path(sound::SoundId id) const;
@@ -67,6 +70,7 @@ private:
 
     HWND owner_window_ = nullptr;
     std::string sound_directory_;
+    std::string trace_path_;
 };
 
 } // namespace creatures1::platform

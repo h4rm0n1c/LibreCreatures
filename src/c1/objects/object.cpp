@@ -456,6 +456,19 @@ void Object::play_sound_effect(sound::SoundId sound_id,
     }
     if (sound_audibility_state(playback) ==
         SoundAudibilityState::out_of_range) {
+        if (playback.sound_manager().trace_enabled()) {
+            world::WorldRect bounds{};
+            get_bounds(&bounds);
+            const world::ViewportBounds view = playback.sound_viewport();
+            playback.sound_manager().trace(
+                "SKIP %s: source too far from the view (object %d,%d-%d,%d "
+                "source %d,%d; view %d,%d-%d,%d; classifier %08x)",
+                sound::SoundManager::sound_name(sound_id).c_str(),
+                bounds.min_x, bounds.min_y, bounds.max_x, bounds.max_y,
+                sound_source_x(), sound_source_y(), view.left, view.top,
+                view.right, view.bottom,
+                static_cast<unsigned>(classifier_base()));
+        }
         return;
     }
 

@@ -24,7 +24,11 @@ constexpr int kSoundNoAvailableChannel = 2;
 constexpr int kSoundInvalidChannelHandle = 3;
 constexpr int kSoundOk = 0;
 constexpr std::uint32_t kSoundChannelCount = 32;
-constexpr std::uint32_t kSoundCacheCapacityBytes = 0x80000;
+// The original cached at most 0x80000 bytes (512 KB) of sound.  Looping
+// sounds pin their cache entries while they play, and one of them alone can
+// be 370 KB (juke.wav), so new sounds found no room and were silently
+// dropped.  The whole stock Sounds folder is about 9 MB.
+constexpr std::uint32_t kSoundCacheCapacityBytes = 32 * 1024 * 1024;
 
 struct SoundFormat {
     std::uint16_t format_tag = 0;
@@ -123,6 +127,11 @@ public:
     virtual void log_cache_inventory(
         const std::vector<const CachedSound*>& entries,
         int total_bytes) = 0;
+
+    // Opt-in diagnostics (not in the original): one line per sound played
+    // or dropped, with the reason.  Off unless the platform enables it.
+    virtual bool trace_enabled() const { return false; }
+    virtual void trace(std::string_view) {}
 };
 
 class SoundManager {
@@ -170,6 +179,12 @@ public:
     void set_cache_capacity(int capacity_bytes) {
         sound_cache_capacity_bytes_ = capacity_bytes;
     }
+
+    // Writes a formatted line through SoundSystemHost::trace when enabled.
+    void trace(const char* format, ...);
+    bool trace_enabled() const { return host_.trace_enabled(); }
+    // The four-character name of a sound (its file name), for traces.
+    static std::string sound_name(SoundId sound_id);
 
     bool backend_ready() const { return backend_ready_flag_; }
     SoundId sound_descriptor_override() const {

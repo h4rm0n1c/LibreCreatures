@@ -50,6 +50,29 @@ WindowsSoundSystemHost::WindowsSoundSystemHost(
     if (!sound_directory_.empty() && sound_directory_.back() != '\\') {
         sound_directory_.push_back('\\');
     }
+    char path[MAX_PATH] = {};
+    if (GetEnvironmentVariableA("C1_SOUND_LOG", path, MAX_PATH) != 0) {
+        trace_path_ = path;
+    }
+}
+
+void WindowsSoundSystemHost::trace(std::string_view line) {
+    if (trace_path_.empty()) {
+        return;
+    }
+    char stamp[24];
+    wsprintfA(stamp, "%10lu ", static_cast<unsigned long>(GetTickCount()));
+    const std::string text = stamp + std::string(line) + "\n";
+    const HANDLE file = CreateFileA(trace_path_.c_str(), FILE_APPEND_DATA,
+                                    FILE_SHARE_READ, nullptr, OPEN_ALWAYS,
+                                    FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (file == INVALID_HANDLE_VALUE) {
+        return;
+    }
+    DWORD written = 0;
+    WriteFile(file, text.data(), static_cast<DWORD>(text.size()), &written,
+              nullptr);
+    CloseHandle(file);
 }
 
 int WindowsSoundSystemHost::create_direct_sound(void*& device) {
