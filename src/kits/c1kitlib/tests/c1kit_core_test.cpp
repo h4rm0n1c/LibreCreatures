@@ -119,6 +119,25 @@ void test_parse_overview() {
     assert(parse_overview("", 13).empty());
 }
 
+void test_scores() {
+    // A reply captured from the game: hatchery 2, natural 0, previous 0,
+    // current 2, points 8 (putv writes "%d|" per value).
+    ScoreValues values;
+    assert(parse_score_values("2|0|0|2|8|", values));
+    assert(values.hatchery_eggs == 2 && values.natural_eggs == 0 &&
+           values.previous_norns == 0 && values.current_norns == 2 &&
+           values.breeding_points == 8);
+    assert(breeders_score(values) == 8);
+    values.natural_eggs = 3;
+    assert(breeders_score(values) == 3 * 256 + 8);
+    values.natural_eggs = 1000;
+    assert(breeders_score(values) == 99999);
+    assert(!parse_score_values("2|0|0|", values));
+    int value = -1;
+    assert(parse_first_value("12|", value) && value == 12);
+    assert(!parse_first_value("", value));
+}
+
 void test_life_force() {
     assert(life_force_percent("47%") == 47);
     assert(life_force_percent("100%") == 100);
@@ -207,6 +226,7 @@ int main() {
     test_take_field();
     test_parse_overview();
     test_life_force();
+    test_scores();
     test_poll_sequence();
     test_quit_keeps_holder();
     test_reused_holder();

@@ -165,6 +165,8 @@ endfunction()
 # OVERVIEW.OLE server in Tools slot 6: run it once on its own and the game's
 # Tools menu opens it instead of the 1996 kit.
 add_c1_kit(ObservationKit "observation" ${KITS_ROOT}/observation)
+# "Score Kit.exe", the Performance Kit: OLE server Score.OLE, Tools slot 8.
+add_c1_kit(ScoreKit "Score Kit" ${KITS_ROOT}/score)
 
 install(TARGETS c1kitlib RUNTIME DESTINATION .)
 

@@ -213,4 +213,65 @@ inline int life_force_percent(const std::string& field) {
     return std::atoi(field.substr(0, field.size() - 1).c_str());
 }
 
+// ---------------------------------------------------------------------------
+// Score Kit
+// ---------------------------------------------------------------------------
+
+// The game's five persistent score counters, `dde: putv scor 0` .. `4`.
+struct ScoreValues {
+    int hatchery_eggs = 0;    // scor 0: eggs taken from the hatchery
+    int natural_eggs = 0;     // scor 1: eggs laid by norns in the world
+    int previous_norns = 0;   // scor 2: norns that have died
+    int current_norns = 0;    // scor 3: norns alive now
+    int breeding_points = 0;  // scor 4: the game's running score
+};
+
+// The Score Kit's queries (RefreshDisplay @ 0x004084e0): all five counters in
+// one script, then the world clock's hours and minutes.
+constexpr char kScoreQuery[] =
+    "inst,dde: putv scor 0,dde: putv scor 1,dde: putv scor 2,"
+    "dde: putv scor 3,dde: putv scor 4,endm";
+constexpr char kHourQuery[] = "dde: putv hour,endm";
+constexpr char kMinuteQuery[] = "dde: putv mins,endm";
+
+// `putv` writes "%d|" per value.  False unless all five are present.
+inline bool parse_score_values(std::string reply, ScoreValues& out) {
+    int values[5] = {};
+    for (int& value : values) {
+        const std::string field = take_field(reply, '|');
+        if (field.empty()) {
+            return false;
+        }
+        value = std::atoi(field.c_str());
+    }
+    out.hatchery_eggs = values[0];
+    out.natural_eggs = values[1];
+    out.previous_norns = values[2];
+    out.current_norns = values[3];
+    out.breeding_points = values[4];
+    return true;
+}
+
+// The first "%d|" value of a reply; false when there is none.
+inline bool parse_first_value(std::string reply, int& out) {
+    const std::string field = take_field(reply, '|');
+    if (field.empty()) {
+        return false;
+    }
+    out = std::atoi(field.c_str());
+    return true;
+}
+
+// The kit's "Breeders Score" (ClampScoreForDisplay @ 0x00408a60): each
+// natural egg is worth 256 points on top of the game's running score, capped
+// at 99999.  So it differs from the game's own "Score"; the weighting of
+// eggs the norns laid themselves looks deliberate, and is kept.
+inline int breeders_score(const ScoreValues& values) {
+    const long long score =
+        static_cast<long long>(values.natural_eggs) * 256 +
+        values.breeding_points;
+    return score > 99999 ? 99999 : score < 0 ? 0 : static_cast<int>(score);
+}
+
 } // namespace c1kit
+
