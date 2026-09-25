@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    96 ""
+    97 ""
+    98 ""
+    99 ""
+    100 "OLE initialization failed.  Make sure that the OLE libraries are the correct version."
+    101 "Performance Kit"
+    102 "Hatchery Eggs"
+    103 "Natural Eggs"
+    104 "Previous Norns"
+    105 "Current Norns"
+    106 "Breeders Score"
+    107 "Time Elapsed"
+    108 " - Paused"
+    109 "Please wait..."
+    110 "Performance page"
+    111 "Performance Kit"
+END

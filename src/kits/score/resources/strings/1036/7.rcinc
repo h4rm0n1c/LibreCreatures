@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    96 ""
+    97 ""
+    98 ""
+    99 ""
+    100 "OLE initialization failed.  Make sure that the OLE libraries are the correct version."
+    101 "Kit d'évaluation"
+    102 "Œufs de l'incubateur"
+    103 "Œufs naturels"
+    104 "Norns précédents"
+    105 "Norns actuels"
+    106 "Score des éleveurs"
+    107 "Temps écoulé"
+    108 " - en pause"
+    109 "Veuillez patienter..."
+    110 "Page de performance"
+    111 "Kit d'évaluation"
+END

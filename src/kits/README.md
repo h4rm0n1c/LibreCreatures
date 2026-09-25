@@ -7,7 +7,8 @@ menu and talks to over OLE automation.
 | --- | --- |
 | `c1kitlib/` | `c1kitlib.dll`, the data side every kit shares: the game connection (the SFC.OLE macro calls), the kit's own OLE server and `Communicate` entry point, launch arguments, reply parsing and settings. No windows, drawing or sound. |
 | `shell/` | The kit shell, compiled into every kit: the MFC application, the connected property-sheet window (resizable), bitmaps, and control layout for pages. |
-| `observation/` | The Observation Kit (Tools slot 6). |
+| `observation/` | The Observation Kit (Tools slot 6), `observation.exe`. |
+| `score/` | The Score Kit, titled "Performance Kit" (Tools slot 8), `Score Kit.exe`. Reads its art (`AllNumbers.spr`, `Score.spr`, `Time.spr`, `Scorebgd.bmp`, `Brdscore.bmp`) from the game's main directory. |
 
 Each kit keeps the original's OLE ProgID, CLSID and Tools slot, so the game
 opens it in the original's place. Run a kit once on its own (no arguments)
@@ -27,9 +28,9 @@ kits are silent.
 ## Building
 
 CMake builds `c1kitlib.dll` and each kit with the game (see
-[`docs/building.md`](../../docs/building.md)); the Observation Kit installs as
-`observation.exe`, the original's file name, so copying it into an original
-installation replaces the 1996 kit's file (keep a copy if you want it).
+[`docs/building.md`](../../docs/building.md)).  Each kit installs under the
+original's file name, so copying the package into an original installation
+replaces the 1996 kits' files (keep copies if you want them).
 
 ## Tests
 

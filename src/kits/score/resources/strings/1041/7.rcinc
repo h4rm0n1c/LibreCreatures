@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    96 ""
+    97 ""
+    98 ""
+    99 ""
+    100 "OLE initialization failed.  Make sure that the OLE libraries are the correct version."
+    101 "パフォーマンスキット"
+    102 "ディスクの卵"
+    103 "自然の卵"
+    104 "前のノーム"
+    105 "今のノーム"
+    106 "飼育者のスコア"
+    107 "経過時間"
+    108 "一時停止"
+    109 "お待ちください..."
+    110 "Performance page"
+    111 "パフォーマンスキット"
+END

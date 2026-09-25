@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    96 ""
+    97 ""
+    98 ""
+    99 ""
+    100 "OLE initialization failed.  Make sure that the OLE libraries are the correct version."
+    101 "Leistungs-Set"
+    102 "Nest-Eier"
+    103 "Natürliche Eier"
+    104 "Vorige Norns"
+    105 "Aktuelle Norns"
+    106 "Punkte des Züchters"
+    107 "Abgelaufene Zeit"
+    108 " - Unterbrochen"
+    109 "Bitte warten..."
+    110 "Leistungs-Seite"
+    111 "Leistungs-Set"
+END

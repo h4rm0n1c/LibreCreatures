@@ -3,46 +3,22 @@
 // application constructor @ 0x00401a90.
 
 #include "c1kitshell/kit_shell.hpp"
+#include "c1kitshell/kit_art.hpp"
 
 namespace c1kitshell {
-namespace {
-
-// The game's Main Directory (LoadOverviewMainDirectory @ 0x00402040 reads
-// only HKLM ...\Creatures 1\1.0, and only when the HKCU key opens as well).
-// Here the machine-wide install is tried first, then the per-user key the
-// game and its launcher also keep; empty when neither has one.
-CString load_main_directory() {
-    CString directory;
-    c1kit::KitSettings* settings = c1kit::open_kit_settings(
-        "Gameware Development", "Creatures 1", "1.0",
-        c1kit::SettingsOpenPolicy::user_key_only);
-    if (settings == nullptr) {
-        return directory;
-    }
-    char buffer[MAX_PATH] = {};
-    if (settings->read_string(c1kit::SettingsScope::machine, "Main Directory",
-                              buffer, sizeof(buffer)) ||
-        settings->read_string(c1kit::SettingsScope::user, "Main Directory",
-                              buffer, sizeof(buffer))) {
-        directory = buffer;
-    }
-    settings->release();
-    return directory;
-}
-
-} // namespace
 
 KitApp::KitApp() = default;
 
 BOOL KitApp::InitInstance() {
     const KitDefinition& kit = kit_definition();
 
-    // The originals do this during static construction of the app object
-    // and warn when it fails.  Nothing the kits read depends on it being
-    // found, so a missing directory keeps the current one without a
-    // message box.
+    // The game's Main Directory becomes the working directory, where kits
+    // find their art (LoadOverviewMainDirectory @ 0x00402040, which read
+    // only HKLM, and only when the HKCU key opened as well).  The originals
+    // warned when it was missing; here the current directory is kept, and a
+    // kit that then cannot find a file says which one.
     if (kit.use_main_directory) {
-        const CString directory = load_main_directory();
+        const CString directory = game_directory_setting("Main Directory");
         if (!directory.IsEmpty()) {
             SetCurrentDirectoryA(directory);
         }
