@@ -167,6 +167,8 @@ endfunction()
 add_c1_kit(ObservationKit "observation" ${KITS_ROOT}/observation)
 # "Score Kit.exe", the Performance Kit: OLE server Score.OLE, Tools slot 8.
 add_c1_kit(ScoreKit "Score Kit" ${KITS_ROOT}/score)
+# "Owner's Kit.exe": OLE server Owner.OLE, Tools slot 2.
+add_c1_kit(OwnersKit "Owner's Kit" ${KITS_ROOT}/owner)
 
 install(TARGETS c1kitlib RUNTIME DESTINATION .)
 

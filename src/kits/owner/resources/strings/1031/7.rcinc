@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    96 ""
+    97 ""
+    98 ""
+    99 ""
+    100 "OLE initialization failed.  Make sure that the OLE libraries are the correct version."
+    101 "Geburt eintragen lassen"
+    102 ""
+    103 "Bitte Dateinamen von höchstens 255 Zeichen Länge eintragen"
+    104 "Unbekannt"
+    105 "Name des Norns darf höchstens 10 Zeichen haben"
+    106 "Besitzer-Set... "
+    107 " Unterbrochen  -  "
+    108 "Besitzer-Set - "
+    109 "Nicht eingetragen"
+    110 "Män"
+    111 "Weibl"
+END

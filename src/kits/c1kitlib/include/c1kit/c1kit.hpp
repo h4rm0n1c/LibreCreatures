@@ -158,4 +158,18 @@ C1KIT_API KitSettings* open_kit_settings(const char* company,
                                          const char* version,
                                          SettingsOpenPolicy policy);
 
+// A directory the game records under SOFTWARE\Gameware Development\
+// Creatures 1\1.0 ("Main Directory", "Palette Directory", ...).  The
+// machine-wide key describes the installation; the per-user key follows the
+// world being played (the launcher and the game switch it with the world).
+// `prefer_world` reads the per-user key first; otherwise the machine key
+// first.  Writes the path, NUL-terminated, and returns false when neither
+// key has the value.
+enum class GameDirectory {
+    installation,  // art and data shipped with the game
+    world,         // files that belong to the world being played
+};
+C1KIT_API bool read_game_directory(const char* value_name, GameDirectory which,
+                                   char* buffer, std::size_t size);
+
 } // namespace c1kit

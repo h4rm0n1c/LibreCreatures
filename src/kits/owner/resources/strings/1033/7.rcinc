@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    96 ""
+    97 ""
+    98 ""
+    99 ""
+    100 "OLE initialization failed.  Make sure that the OLE libraries are the correct version."
+    101 "Register Birth"
+    102 ""
+    103 "Please enter a filename of no more than 255 characters"
+    104 "Unknown"
+    105 "Creature name must have 10 characters or less"
+    106 "Owner's Kit... "
+    107 " Paused  -  "
+    108 "Owner's Kit - "
+    109 "Unregistered"
+    110 "Male"
+    111 "Female"
+END

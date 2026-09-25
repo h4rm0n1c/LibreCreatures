@@ -143,6 +143,33 @@ KitSettings* open_kit_settings(const char* company, const char* product,
     return new RegistrySettings(company, product, version, policy);
 }
 
+bool read_game_directory(const char* value_name, GameDirectory which,
+                         char* buffer, std::size_t size) {
+    if (value_name == nullptr || buffer == nullptr || size == 0) {
+        return false;
+    }
+    buffer[0] = '\0';
+    KitSettings* settings = open_kit_settings(
+        "Gameware Development", "Creatures 1", "1.0",
+        SettingsOpenPolicy::user_key_only);
+    if (settings == nullptr) {
+        return false;
+    }
+    const SettingsScope first = which == GameDirectory::world
+                                    ? SettingsScope::user
+                                    : SettingsScope::machine;
+    const SettingsScope second = which == GameDirectory::world
+                                     ? SettingsScope::machine
+                                     : SettingsScope::user;
+    const bool found = settings->read_string(first, value_name, buffer, size) ||
+                       settings->read_string(second, value_name, buffer, size);
+    settings->release();
+    if (!found) {
+        buffer[0] = '\0';
+    }
+    return found && buffer[0] != '\0';
+}
+
 // Writes Tool<slot> as "%s|%s|%s|%d" (Observation
 // InitializeOverviewOleRegistration @ 0x00401f10).  The game reads it from
 // HKCU.  The 1996 kits opened the key through a handler that also required
