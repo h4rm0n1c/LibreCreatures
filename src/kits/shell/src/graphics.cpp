@@ -76,44 +76,6 @@ void PaletteBitmap::draw(CDC& dc, int x, int y) {
     }
 }
 
-BEGIN_MESSAGE_MAP(CoverPage, CPropertyPage)
-    ON_WM_PAINT()
-    ON_WM_SIZE()
-END_MESSAGE_MAP()
-
-CoverPage::CoverPage(UINT dialog_id, UINT bitmap_id, UINT tab_icon_id)
-    : CPropertyPage(dialog_id), bitmap_id_(bitmap_id) {
-    m_psp.dwFlags |= PSP_USEHICON;
-    m_psp.hIcon = AfxGetApp()->LoadIcon(tab_icon_id);
-}
-
-BOOL CoverPage::OnInitDialog() {
-    CPropertyPage::OnInitDialog();
-    bitmap_.load(bitmap_id_);
-    bitmap_.realize(*this);
-    return TRUE;
-}
-
-// The 1996 kits blit at (7, 7).  In a resizable sheet the page can be
-// larger than the picture, so it is centred once there is room.
-void CoverPage::OnPaint() {
-    CPaintDC dc(this);
-    CRect client;
-    GetClientRect(&client);
-    const int x = client.Width() > bitmap_.width() + 14
-                      ? (client.Width() - bitmap_.width()) / 2
-                      : 7;
-    const int y = client.Height() > bitmap_.height() + 14
-                      ? (client.Height() - bitmap_.height()) / 2
-                      : 7;
-    bitmap_.draw(dc, x, y);
-}
-
-void CoverPage::OnSize(UINT type, int cx, int cy) {
-    CPropertyPage::OnSize(type, cx, cy);
-    Invalidate();
-}
-
 // ---------------------------------------------------------------------------
 // ControlAnchors
 // ---------------------------------------------------------------------------

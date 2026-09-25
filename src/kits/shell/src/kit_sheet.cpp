@@ -101,9 +101,15 @@ void KitSheet::enable_resizing(CSize default_page_dlu) {
     CRect tab_rect;
     tab->GetWindowRect(&tab_rect);
     ScreenToClient(&tab_rect);
-    tab_margins_ = CRect(tab_rect.left - client.left, tab_rect.top - client.top,
-                         client.right - tab_rect.right,
-                         client.bottom - tab_rect.bottom);
+    // The left and top insets are taken as laid out; the right and bottom
+    // repeat the left one.  MFC trims a modeless sheet at the top of its
+    // hidden OK button, and on Windows the tab control can end below that
+    // line, so copying the bottom inset would leave the page hanging off
+    // the window.
+    const int inset = tab_rect.left > client.left ? tab_rect.left - client.left
+                                                  : 0;
+    const int top = tab_rect.top > client.top ? tab_rect.top - client.top : 0;
+    tab_margins_ = CRect(inset, top, inset, inset);
     resizable_ = true;
 
     CRect current;

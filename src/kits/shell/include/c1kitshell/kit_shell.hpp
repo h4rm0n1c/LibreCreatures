@@ -157,23 +157,6 @@ private:
     int height_ = 0;
 };
 
-// The cover page: a property page showing one bitmap at (7, 7), with the
-// kit icon on its tab (CCoverPage @ 0x00402c50, OnPaint @ 0x00402ed0).
-class CoverPage : public CPropertyPage {
-public:
-    CoverPage(UINT dialog_id, UINT bitmap_id, UINT tab_icon_id);
-
-protected:
-    BOOL OnInitDialog() override;
-    afx_msg void OnPaint();
-    afx_msg void OnSize(UINT type, int cx, int cy);
-    DECLARE_MESSAGE_MAP()
-
-private:
-    UINT bitmap_id_ = 0;
-    PaletteBitmap bitmap_;
-};
-
 // Keeps a page's controls placed as the page grows: each control keeps its
 // template position and size, then moves and/or stretches by however much
 // the page is larger than its template.  (Not in the 1996 kits, whose

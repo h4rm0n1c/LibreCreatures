@@ -7,14 +7,12 @@ namespace observation {
 
 // Dialogs
 constexpr unsigned kDialogAbout = 100;
-constexpr unsigned kDialogCover = 129;
 constexpr unsigned kDialogOverview = 130;  // caption "Details"
 constexpr unsigned kDialogOptions = 143;
 constexpr unsigned kDialogAlert = 144;
 
 // Bitmaps and icon
 constexpr unsigned kIconKit = 128;
-constexpr unsigned kBitmapCover = 136;
 constexpr unsigned kBitmapListIcons = 142;       // blank, egg, grave, sex symbol
 constexpr unsigned kBitmapAlertPregnancy = 147;  // 0x93
 constexpr unsigned kBitmapAlertDeath = 148;      // 0x94
