@@ -176,8 +176,8 @@ private:
     // grid cell (view_x_, view_y_) at view_origin_, scale_ pixels a cell.
     int view_x_ = 0;
     int view_y_ = 0;
-    int view_width_ = c1kit::kBrainGridSize;
-    int view_height_ = c1kit::kBrainGridSize;
+    int view_width_ = c1kit::kStandardBrainGrid;
+    int view_height_ = c1kit::kStandardBrainGrid;
     CPoint view_origin_;
     double scale_ = 0;
     int hover_lobe_ = -1;

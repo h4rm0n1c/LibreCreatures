@@ -376,7 +376,7 @@ int BrainPage::cell_value(int lobe, int x, int y, bool& exact) const {
 }
 
 void BrainPage::subject_changed() {
-    activity_ = c1kit::BrainActivity();
+    activity_.clear();
     followed_lobe_ = followed_neuron_ = -1;
     hover_lobe_ = hover_neuron_ = -1;
     followed_valid_ = false;
@@ -384,7 +384,7 @@ void BrainPage::subject_changed() {
     exact_.clear();
     wiring_.clear();
     wiring_loaded_ = wiring_valid_ = false;
-    firing_ = c1kit::BrainActivity();
+    firing_.clear();
     if (created_) {
         fill_lobe_list();
         show_neuron_info();
@@ -410,10 +410,16 @@ void BrainPage::load_wiring() {
     if (!sheet_.read_genome(genes, bytes)) {
         return;
     }
-    wiring_ = c1kit::brain_wiring(genes, sheet_.subject().sex == 1);
     // The plan is only drawn if it is this brain's: the same lobes, where
-    // the game says they are.
+    // the game says they are, laid out on C1's grid or, failing that, on
+    // LibreCreatures' extended one.
+    const bool male = sheet_.subject().sex == 1;
+    wiring_ = c1kit::brain_wiring(genes, male);
     wiring_valid_ = c1kit::wiring_matches(wiring_, lobes);
+    if (!wiring_valid_) {
+        wiring_ = c1kit::brain_wiring(genes, male, true);
+        wiring_valid_ = c1kit::wiring_matches(wiring_, lobes, true);
+    }
 }
 
 bool BrainPage::wiring_shown() const {
@@ -700,7 +706,7 @@ void BrainPage::poll() {
         }
     }
     if (!report_covers_measure()) {
-        activity_ = c1kit::BrainActivity();
+        activity_.clear();
     } else if (sheet_.brain_report(report_mode(), report_rule(), reply)) {
         c1kit::parse_activity_report(reply, activity_);
     }
@@ -739,7 +745,7 @@ void BrainPage::fit_view(const CRect& rect) {
     }
     if (lobes.empty() || right <= left || bottom <= top) {
         left = top = 0;
-        right = bottom = c1kit::kBrainGridSize;
+        right = bottom = c1kit::kStandardBrainGrid;
     }
     view_x_ = left;
     view_y_ = top;

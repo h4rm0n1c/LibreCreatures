@@ -22,12 +22,20 @@
 
 #include <cstdint>
 #include <cstdlib>
+#include <cstring>
 #include <string>
 #include <vector>
 
 namespace c1kit {
 
-constexpr int kBrainGridSize = 64;
+// C1's brain grid is 64 x 64.  LibreCreatures can lay lobes out on a 208 x
+// 208 grid (its "ExtendedBrainGrid" setting), and tells a kit about lobes
+// and neurons beyond 64 only if the kit's script sets work value 2 to 1
+// first, as this library's queries do (the 1996 kits index 64 x 64 arrays
+// with those coordinates unchecked).  The arrays here are sized for either.
+constexpr int kStandardBrainGrid = 64;
+constexpr int kBrainGridSize = 208;
+constexpr char kWholeGrid[] = "setv var2 1,";
 
 enum StandardLobe : int {
     kLobePerception = 0,
@@ -113,7 +121,7 @@ inline bool parse_lobe_reply(const std::string& reply,
     return true;
 }
 
-constexpr char kLobeQuery[] = "dde: lobe,endm";
+constexpr char kLobeQuery[] = "setv var2 1,dde: lobe,endm";
 
 // The brain grid from a brain report.  The report lists every neuron whose
 // value is not zero, but as value/16, so a neuron at 1..15 comes through as
@@ -121,10 +129,15 @@ constexpr char kLobeQuery[] = "dde: lobe,endm";
 struct BrainActivity {
     std::uint8_t level[kBrainGridSize][kBrainGridSize] = {};
     bool reported[kBrainGridSize][kBrainGridSize] = {};
+    // In place: the arrays are too big for a temporary on the stack.
+    void clear() {
+        std::memset(level, 0, sizeof(level));
+        std::memset(reported, 0, sizeof(reported));
+    }
 };
 
 inline void parse_activity_report(const std::string& reply, BrainActivity& out) {
-    out = BrainActivity();
+    out.clear();
     for (std::size_t at = 0; at + 3 <= reply.size(); at += 3) {
         const int x = static_cast<std::uint8_t>(reply[at]) - '0';
         const int y = static_cast<std::uint8_t>(reply[at + 1]) - '0';
@@ -166,7 +179,7 @@ enum BrainReportMode : int {
 
 inline std::string brain_report_script(int mode, int rule) {
     return "inst,setv var0 " + std::to_string(mode) + ",setv var1 " +
-           std::to_string(rule) + ",endm";
+           std::to_string(rule) + "," + kWholeGrid + "endm";
 }
 
 // Whether the game honours a report's measure: average target weight over a
