@@ -159,6 +159,27 @@ void test_brain_map() {
     parse_activity_report(report, activity);
     assert(activity.level[3][1] == 9 && activity.level[63][0] == 15 &&
            activity.level[0][0] == 0);
+    // Level 0 is still listed: a neuron at 1..15.
+    report += static_cast<char>('0' + 5);
+    report += static_cast<char>('0' + 6);
+    report += static_cast<char>('0' + 0);
+    parse_activity_report(report, activity);
+    assert(activity.reported[5][6] && activity.level[5][6] == 0 && !activity.reported[0][0]);
+    assert(estimated_value(activity, 5, 6) == 8 && estimated_value(activity, 0, 0) == 0 &&
+           estimated_value(activity, 63, 0) == 248 && estimated_value(activity, 3, 1) == 152);
+
+    assert(lobe_cells_query(8, 10, 2, 1) == "inst,dde: cell 8 10 1,dde: cell 8 11 1,endm");
+    std::vector<NeuronValues> batch;
+    assert(parse_cell_batch("200|7|4|40|80|120|12|0|0|0|0|0|0|0|", 2, batch));
+    assert(batch.size() == 2 && batch[0].firing_strength == 200 && batch[0].activation == 7 &&
+           batch[1].dendrites == 0);
+    assert(!parse_cell_batch("1|2|3|", 1, batch));
+    assert(exact_report_value(batch[0], kReportFiringStrength) == 200);
+    assert(exact_report_value(batch[0], kReportActivation) == 7);
+    assert(exact_report_value(batch[0], kReportAverageTargetWeight) == 20);
+    assert(exact_report_value(batch[0], kReportAverageDendriteState) == 3);
+    assert(exact_report_value(batch[0], kReportStrongestWeight) == -1);
+    assert(exact_report_value(batch[1], kReportAverageTargetWeight) == 0);
 
     NeuronValues values[2];
     assert(parse_neuron_values("5|120|3|30|40|50|60|0|120|0|0|0|0|0", values));
