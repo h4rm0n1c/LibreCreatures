@@ -254,6 +254,26 @@ bool ScienceSheet::brain_report(int mode, int rule, std::string& reply) {
                reply);
 }
 
+bool ScienceSheet::read_genome(std::vector<c1kit::Gene>& genes, std::size_t& file_bytes) const {
+    genes.clear();
+    file_bytes = 0;
+    if (!subject_.present) {
+        return false;
+    }
+    const CString genetics = c1kitshell::game_directory_setting(
+        "Genetics Directory", c1kit::GameDirectory::world);
+    const std::string path =
+        std::string(CStringA(genetics)) + c1kit::genome_file_name(subject_.moniker);
+    std::ifstream in(path, std::ios::binary);
+    if (!in) {
+        return false;
+    }
+    const std::vector<std::uint8_t> bytes((std::istreambuf_iterator<char>(in)),
+                                          std::istreambuf_iterator<char>());
+    file_bytes = bytes.size();
+    return !bytes.empty() && c1kit::parse_genome(bytes, genes);
+}
+
 bool ScienceSheet::run(const std::string& script) {
     std::string reply;
     return query(script, reply);

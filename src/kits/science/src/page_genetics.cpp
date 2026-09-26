@@ -97,19 +97,10 @@ void GeneticsPage::fill() {
 
     // The genome file and the game's counts of genes switched on now.
     const std::string genome_name = c1kit::genome_file_name(subject.moniker);
-    const CString genetics = c1kitshell::game_directory_setting(
-        "Genetics Directory", c1kit::GameDirectory::world);
-    const std::string genome_path = std::string(CStringA(genetics)) + genome_name;
-    std::vector<std::uint8_t> bytes;
-    {
-        std::ifstream in(genome_path, std::ios::binary);
-        if (in) {
-            bytes.assign(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
-        }
-    }
     std::vector<c1kit::Gene> genes;
-    const bool have_genome = !bytes.empty() && c1kit::parse_genome(bytes, genes);
-    const c1kit::GenomeSummary summary = c1kit::summarize_genome(genes, bytes.size());
+    std::size_t genome_bytes = 0;
+    const bool have_genome = sheet_.read_genome(genes, genome_bytes);
+    const c1kit::GenomeSummary summary = c1kit::summarize_genome(genes, genome_bytes);
     std::vector<int> active;
     std::string reply;
     if (sheet_.query("dde: gene,endm", reply)) {
@@ -165,7 +156,7 @@ void GeneticsPage::fill() {
 
     add_heading(_T("Genome"));
     if (!have_genome) {
-        add_row(_T("Genome file"), CString(genome_path.c_str()) + _T(" could not be read"));
+        add_row(_T("Genome file"), CString(genome_name.c_str()) + _T(" could not be read"));
         details_.SetRedraw(TRUE);
         return;
     }
