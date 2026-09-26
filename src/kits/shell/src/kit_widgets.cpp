@@ -13,13 +13,14 @@ BEGIN_MESSAGE_MAP(PaintedView, CWnd)
     ON_WM_ERASEBKGND()
     ON_WM_MOUSEMOVE()
     ON_WM_LBUTTONDOWN()
+    ON_WM_LBUTTONDBLCLK()
     ON_WM_MOUSELEAVE()
 END_MESSAGE_MAP()
 
 bool PaintedView::create(CWnd& parent, UINT id, Painter painter) {
     painter_ = std::move(painter);
     const CString window_class = AfxRegisterWndClass(
-        CS_HREDRAW | CS_VREDRAW, ::LoadCursor(nullptr, IDC_ARROW), nullptr);
+        CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS, ::LoadCursor(nullptr, IDC_ARROW), nullptr);
     return CreateEx(0, window_class, _T(""), WS_CHILD | WS_VISIBLE,
                     CRect(0, 0, 10, 10), &parent, id) != FALSE;
 }
@@ -61,6 +62,13 @@ void PaintedView::OnLButtonDown(UINT flags, CPoint point) {
         mouse_(point, true);
     }
     CWnd::OnLButtonDown(flags, point);
+}
+
+void PaintedView::OnLButtonDblClk(UINT flags, CPoint point) {
+    if (double_click_) {
+        double_click_(point);
+    }
+    CWnd::OnLButtonDblClk(flags, point);
 }
 
 void PaintedView::OnMouseLeave() {

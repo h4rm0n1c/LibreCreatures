@@ -21,6 +21,9 @@ public:
 
     bool create(CWnd& parent, UINT id, Painter painter);
     void set_mouse_handler(MouseHandler handler) { mouse_ = std::move(handler); }
+    void set_double_click_handler(std::function<void(CPoint)> handler) {
+        double_click_ = std::move(handler);
+    }
     void redraw() { if (GetSafeHwnd() != nullptr) Invalidate(FALSE); }
 
 protected:
@@ -28,12 +31,14 @@ protected:
     afx_msg BOOL OnEraseBkgnd(CDC*) { return TRUE; }
     afx_msg void OnMouseMove(UINT flags, CPoint point);
     afx_msg void OnLButtonDown(UINT flags, CPoint point);
+    afx_msg void OnLButtonDblClk(UINT flags, CPoint point);
     afx_msg void OnMouseLeave();
     DECLARE_MESSAGE_MAP()
 
 private:
     Painter painter_;
     MouseHandler mouse_;
+    std::function<void(CPoint)> double_click_;
     bool tracking_ = false;
 };
 
