@@ -1,9 +1,12 @@
 #pragma once
 
 // A graph of chemical levels over time, which the Science Kit and the
-// Biochemistry Kit share: 0-255 up the side, the newest sample at the right,
-// each chemical in its own colour with a legend, and, where the pointer is,
-// a line and every chemical's level at that moment.
+// Biochemistry Kit share.  It is drawn as the Biochemistry Kit v1.2's graph
+// was (CMonitorPage, DrawGraphAxesAndLabels @ 0x00403c00 and friends): a
+// light-grey 16-pixel grid that scrolls with the samples, black axes with
+// ticks every 16 pixels, 0/64/128/192/255 up the side, how long ago along
+// the bottom every 16 samples, and four pixels a sample.  On top of that, a
+// legend, and where the pointer is, a line and every level at that moment.
 
 #include <afxwin.h>
 
@@ -45,6 +48,7 @@ private:
     std::size_t max_samples_;
     int milliseconds_per_sample_;
     int pointer_x_ = -1;
+    long long total_samples_ = 0;  // keeps the grid moving with the samples
 };
 
 // "Hunger" or "Chemical 73".
