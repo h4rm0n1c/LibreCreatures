@@ -286,6 +286,72 @@ inline int exact_report_value(const NeuronValues& v, int mode) {
     }
 }
 
+// LibreCreatures' additions, asked for only when the game says it has them:
+// `dde: dcap` takes no arguments (C1 ignores an unknown DDE subcommand, and
+// would read one's arguments as commands), and answers bits, 1 being
+// `dde: dend`.  The query puts a 1 first so an empty answer still parses.
+constexpr int kCapabilityDendrites = 1;
+constexpr char kCapabilitiesQuery[] = "dde: putv 1,dde: dcap,endm";
+
+inline int parse_capabilities(std::string reply) {
+    if (take_field(reply, '|') != "1") return 0;
+    const std::string bits = take_field(reply, '|');
+    return bits.empty() ? 0 : std::atoi(bits.c_str());
+}
+
+// `dde: dend L N R`: a neuron's dendrites under a rule -- the source neuron
+// in the lobe the rule reads (-1 if none), then C1's susceptibility,
+// short-term weight (what the neuron's input sums), long-term weight, and
+// strength (0: broken, the dendrite free to move).
+struct Dendrite {
+    int source = -1;
+    int susceptibility = 0;
+    int stw = 0;
+    int ltw = 0;
+    int strength = 0;
+};
+
+// Neurons `first`.. of a lobe, one rule, in one query.  An entry is at most
+// 20 characters, and the reply comes back in the kit's 4096-byte buffer.
+constexpr int kDendriteReplyBudget = 3200;
+
+inline int neurons_per_dendrite_query(int dendrites_per_neuron) {
+    const int per_neuron = 4 + 20 * (dendrites_per_neuron > 0 ? dendrites_per_neuron : 1);
+    const int n = kDendriteReplyBudget / per_neuron;
+    return n > 0 ? n : 1;
+}
+
+inline std::string dendrites_query(int lobe, int first, int count, int rule) {
+    std::string script = "inst";
+    for (int neuron = first; neuron < first + count; ++neuron) {
+        script += ",dde: dend " + std::to_string(lobe) + " " + std::to_string(neuron) + " " +
+                  std::to_string(rule);
+    }
+    return script + ",endm";
+}
+
+inline bool parse_dendrite_batch(std::string reply, int count,
+                                 std::vector<std::vector<Dendrite>>& out) {
+    out.clear();
+    for (int n = 0; n < count; ++n) {
+        const std::string counted = take_field(reply, '|');
+        if (counted.empty()) return false;
+        const int dendrites = std::atoi(counted.c_str());
+        std::vector<Dendrite> list;
+        for (int d = 0; d < dendrites; ++d) {
+            int values[5] = {};
+            for (int& value : values) {
+                const std::string field = take_field(reply, '|');
+                if (field.empty()) return false;
+                value = std::atoi(field.c_str());
+            }
+            list.push_back({values[0], values[1], values[2], values[3], values[4]});
+        }
+        out.push_back(std::move(list));
+    }
+    return true;
+}
+
 // The decision lobe, one "%d|" per decision neuron plus the attention target
 // and the two learning chemicals (the Decisions page;
 // CDecisionPage::RunScienceExperimentCaosScript @ 0x00407840 asks for 16

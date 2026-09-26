@@ -5,6 +5,7 @@
 #include "science.hpp"
 #include "science_ids.hpp"
 
+#include <algorithm>
 #include <fstream>
 #include <iterator>
 
@@ -187,12 +188,16 @@ CString ScienceSheet::name_for_moniker(const std::string& moniker) const {
 }
 
 void ScienceSheet::load_preferences() {
+    // The saved size, but never smaller than the default (an older, smaller
+    // layout saved one; the brain map needs the room).
+    CRect window;
+    GetWindowRect(&window);
     WindowSize size = {};
     if (registry_->read_binary(c1kit::SettingsScope::user, "Size", &size, sizeof(size)) &&
         size.width > 0 && size.height > 0) {
-        set_window_size(CSize(size.width, size.height));
+        set_window_size(CSize((std::max)(static_cast<int>(size.width), window.Width()),
+                              (std::max)(static_cast<int>(size.height), window.Height())));
     }
-    CRect window;
     GetWindowRect(&window);
     const int max_left = GetSystemMetrics(SM_CXSCREEN) - window.Width();
     const int max_top = GetSystemMetrics(SM_CYSCREEN) - window.Height();

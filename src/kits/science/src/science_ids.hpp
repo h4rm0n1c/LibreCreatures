@@ -39,8 +39,8 @@ constexpr unsigned kCommandBufferBytes = 0x1000;
 
 // The page area the kit opens at; the 1996 pages' 252 x 188 dialog units are
 // the smallest it can be.
-constexpr int kDefaultPageWidthDlu = 430;
-constexpr int kDefaultPageHeightDlu = 300;
+constexpr int kDefaultPageWidthDlu = 520;
+constexpr int kDefaultPageHeightDlu = 320;
 
 // System menu item: Always on top (the original's menu 143, never loaded).
 constexpr unsigned kSysCommandOnTop = 0x0020;
@@ -60,6 +60,8 @@ enum : unsigned {
     kControlLobeList,
     kControlNeuronInfo,
     kControlWiring,
+    kControlWiringLabel,
+    kControlGridPositions,
     kControlDecisionBars,
     kControlDecisionValue,
     kControlMedicineList,

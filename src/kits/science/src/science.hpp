@@ -131,14 +131,28 @@ protected:
     void layout(int width, int height) override;
     BOOL OnNotify(WPARAM wparam, LPARAM lparam, LRESULT* result) override;
     afx_msg void OnModeChanged();
-    afx_msg void OnWiringToggled();
+    afx_msg void OnWiringChanged();
+    afx_msg void OnLayoutToggled();
     DECLARE_MESSAGE_MAP()
 
 private:
     void draw_grid(CDC& dc, const CRect& rect);
+    // Where the lobes are drawn: arranged by how they feed each other
+    // (c1kit::arrange_lobes), or where the genome puts them on the grid.
+    // Values are always read at the real grid positions.
+    void arrange();
+    const std::vector<c1kit::LobeLayout>& shown() const;
+    bool grid_positions() const;
     // The genome's wiring for the subject (brain_wiring), once per subject.
     void load_wiring();
     bool wiring_shown() const;
+    // The Lines choice: 0 none, 1 between lobes, 2 dendrites.
+    int lines_mode() const;
+    // Each neuron's dendrites from the game (LibreCreatures' `dde: dend`),
+    // when it has them and Lines asks for them.
+    bool dendrites_shown() const;
+    void refresh_dendrites();
+    const std::vector<c1kit::Dendrite>* dendrites_of(int lobe, int neuron, int rule) const;
     void draw_wiring(CDC& dc, const std::vector<CRect>& outlines);
     // "Fed by ... / Feeds ..." for a lobe.
     CString wiring_text(int lobe) const;
@@ -198,7 +212,15 @@ private:
     bool updating_list_ = false;
     // Whether the game honours a report's measure: -1 not known yet.
     int report_honours_measure_ = -1;
-    CButton wiring_check_;
+    CComboBox lines_;
+    CStatic lines_label_;
+    int capabilities_ = -1;  // the game's (c1kit::parse_capabilities), -1 not asked
+    // By lobe, neuron and rule; refreshed a few queries a poll.
+    std::vector<std::vector<std::array<std::vector<c1kit::Dendrite>, 2>>> dendrites_;
+    std::size_t dendrite_pair_ = 0;
+    int dendrite_next_ = 0;
+    CButton layout_check_;
+    std::vector<c1kit::LobeLayout> shown_;
     std::vector<c1kit::LobeWiring> wiring_;
     bool wiring_loaded_ = false;
     bool wiring_valid_ = false;

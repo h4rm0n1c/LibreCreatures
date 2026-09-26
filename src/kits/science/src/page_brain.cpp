@@ -22,6 +22,10 @@
 // lobe (in the list, or by clicking in it) reads its neurons' exact values
 // with `cell`, a few dozen a query, and shades it with those instead.
 //
+// The lobes are drawn arranged by how they feed each other
+// (c1kit::arrange_lobes) unless "Grid positions" asks for where the genome
+// puts them; values are always read at the real positions.
+//
 // Under the lobes run the genome's connections (c1kit::brain_wiring): which
 // lobe each lobe's dendrites read, and which lobes copy their firing into
 // Perception, lit and pulsing with the source lobe's firing.  The game does
@@ -37,8 +41,12 @@
 #include "science.hpp"
 #include "science_ids.hpp"
 
+#include "c1kit/brain_layout.hpp"
+
 #include <algorithm>
 #include <cmath>
+#include <map>
+#include <tuple>
 
 namespace science {
 namespace {
@@ -125,13 +133,16 @@ long overlap_area(const CRect& box, const std::vector<CRect>& others) {
 }
 
 constexpr COLORREF kBackground = RGB(18, 20, 28);
+constexpr COLORREF kExcite = RGB(110, 220, 130);
+constexpr COLORREF kInhibit = RGB(240, 100, 90);
 
 } // namespace
 
 BEGIN_MESSAGE_MAP(BrainPage, SciencePage)
     ON_CBN_SELCHANGE(kControlReportMode, &BrainPage::OnModeChanged)
     ON_CBN_SELCHANGE(kControlReportRule, &BrainPage::OnModeChanged)
-    ON_BN_CLICKED(kControlWiring, &BrainPage::OnWiringToggled)
+    ON_CBN_SELCHANGE(kControlWiring, &BrainPage::OnWiringChanged)
+    ON_BN_CLICKED(kControlGridPositions, &BrainPage::OnLayoutToggled)
 END_MESSAGE_MAP()
 
 BrainPage::BrainPage(ScienceSheet& sheet) : SciencePage(sheet, kStringBrainTab) {}
@@ -163,13 +174,29 @@ void BrainPage::create_controls() {
     mode_.SetCurSel(selection);
     rule_.SetCurSel(rule <= 1 ? static_cast<int>(rule) : 0);
     rule_.EnableWindow(measure_at(selection).uses_rule);
-    make(wiring_check_, _T("BUTTON"), _T("Connections"), BS_AUTOCHECKBOX | WS_TABSTOP,
+    make(lines_label_, _T("STATIC"), _T("Lines:"), SS_LEFT, kControlWiringLabel);
+    make(lines_, _T("COMBOBOX"), _T(""), CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP,
          kControlWiring);
-    std::uint32_t wiring = 1;
+    lines_.AddString(_T("None"));
+    lines_.AddString(_T("Between lobes"));
+    lines_.AddString(_T("Dendrites"));
+    // "Scanner Lines"; before it, "Scanner Wiring" was on (1) or off.
+    std::uint32_t lines = 2;
     if (c1kit::KitSettings* settings = sheet_.settings()) {
-        settings->read_dword(c1kit::SettingsScope::user, "Scanner Wiring", wiring);
+        std::uint32_t wiring = 1;
+        if (!settings->read_dword(c1kit::SettingsScope::user, "Scanner Lines", lines) &&
+            settings->read_dword(c1kit::SettingsScope::user, "Scanner Wiring", wiring)) {
+            lines = wiring != 0 ? 1u : 0u;
+        }
     }
-    wiring_check_.SetCheck(wiring != 0 ? BST_CHECKED : BST_UNCHECKED);
+    lines_.SetCurSel(lines <= 2 ? static_cast<int>(lines) : 2);
+    make(layout_check_, _T("BUTTON"), _T("Grid positions"), BS_AUTOCHECKBOX | WS_TABSTOP,
+         kControlGridPositions);
+    std::uint32_t grid = 0;
+    if (c1kit::KitSettings* settings = sheet_.settings()) {
+        settings->read_dword(c1kit::SettingsScope::user, "Scanner Grid", grid);
+    }
+    layout_check_.SetCheck(grid != 0 ? BST_CHECKED : BST_UNCHECKED);
 
     make(lobes_, WC_LISTVIEW, _T(""),
          LVS_REPORT | LVS_NOSORTHEADER | LVS_SINGLESEL | LVS_SHOWSELALWAYS | WS_BORDER,
@@ -194,6 +221,7 @@ void BrainPage::layout(int width, int height) {
     place(mode_label_, margin, margin + 4, 36, text_height());
     place(mode_, margin + 38, margin, 190, 200);
     place(rule_, margin + 38 + 196, margin, 130, 200);
+    place(layout_check_, margin + 38 + 196 + 142, margin + 2, 120, text_height() + 4);
 
     const int grid_top = margin + row + 4;
     place(grid_, margin, grid_top, grid_width, height - margin - grid_top);
@@ -205,8 +233,9 @@ void BrainPage::layout(int width, int height) {
     place(info_, left, info_top, side, height - 2 * margin - button_height() - margin - info_top);
     place_close(width, height);
     // Beside Close, at the foot of the column.
-    place(wiring_check_, left, height - margin - button_height() + 4, side - 84 - margin,
-          text_height() + 4);
+    place(lines_label_, left, height - margin - button_height() + 6, 34, text_height());
+    place(lines_, left + 36, height - margin - button_height() + 2, side - 84 - 2 * margin - 36,
+          200);
 }
 
 void BrainPage::fill_lobe_list() {
@@ -384,6 +413,7 @@ void BrainPage::subject_changed() {
     exact_.clear();
     wiring_.clear();
     wiring_loaded_ = wiring_valid_ = false;
+    dendrites_.clear();
     firing_.clear();
     if (created_) {
         fill_lobe_list();
@@ -392,9 +422,29 @@ void BrainPage::subject_changed() {
     }
 }
 
-void BrainPage::OnWiringToggled() {
+void BrainPage::OnLayoutToggled() {
     if (c1kit::KitSettings* settings = sheet_.settings()) {
-        settings->write_dword("Scanner Wiring", wiring_check_.GetCheck() == BST_CHECKED ? 1u : 0u);
+        settings->write_dword("Scanner Grid", grid_positions() ? 1u : 0u);
+    }
+    arrange();
+    grid_.redraw();
+}
+
+bool BrainPage::grid_positions() const {
+    return layout_check_.GetSafeHwnd() != nullptr && layout_check_.GetCheck() == BST_CHECKED;
+}
+
+void BrainPage::arrange() {
+    shown_ = c1kit::arrange_lobes(sheet_.lobes(), wiring_valid_ ? &wiring_ : nullptr);
+}
+
+const std::vector<c1kit::LobeLayout>& BrainPage::shown() const {
+    return grid_positions() || shown_.size() != sheet_.lobes().size() ? sheet_.lobes() : shown_;
+}
+
+void BrainPage::OnWiringChanged() {
+    if (c1kit::KitSettings* settings = sheet_.settings()) {
+        settings->write_dword("Scanner Lines", static_cast<std::uint32_t>(lines_mode()));
     }
     poll();
 }
@@ -420,11 +470,76 @@ void BrainPage::load_wiring() {
         wiring_ = c1kit::brain_wiring(genes, male, true);
         wiring_valid_ = c1kit::wiring_matches(wiring_, lobes, true);
     }
+    arrange();
+}
+
+int BrainPage::lines_mode() const {
+    return lines_.GetSafeHwnd() != nullptr ? lines_.GetCurSel() : 0;
 }
 
 bool BrainPage::wiring_shown() const {
-    return wiring_valid_ && wiring_check_.GetSafeHwnd() != nullptr &&
-           wiring_check_.GetCheck() == BST_CHECKED;
+    return wiring_valid_ && lines_mode() >= 1;
+}
+
+bool BrainPage::dendrites_shown() const {
+    return wiring_shown() && lines_mode() == 2 && capabilities_ > 0 &&
+           (capabilities_ & c1kit::kCapabilityDendrites) != 0;
+}
+
+const std::vector<c1kit::Dendrite>* BrainPage::dendrites_of(int lobe, int neuron, int rule) const {
+    if (lobe < 0 || lobe >= static_cast<int>(dendrites_.size()) || neuron < 0 ||
+        neuron >= static_cast<int>(dendrites_[static_cast<std::size_t>(lobe)].size()) ||
+        rule < 0 || rule > 1) {
+        return nullptr;
+    }
+    return &dendrites_[static_cast<std::size_t>(lobe)][static_cast<std::size_t>(neuron)]
+                      [static_cast<std::size_t>(rule)];
+}
+
+// A few queries a poll, round every lobe and rule that has dendrites; the
+// wiring changes slowly (dendrites move as the creature learns), the firing
+// comes from the report.
+void BrainPage::refresh_dendrites() {
+    const std::vector<c1kit::LobeLayout>& lobes = sheet_.lobes();
+    if (dendrites_.size() != lobes.size()) {
+        dendrites_.assign(lobes.size(), {});
+        for (std::size_t i = 0; i < lobes.size(); ++i) {
+            dendrites_[i].resize(static_cast<std::size_t>((std::max)(0, lobes[i].neurons())));
+        }
+        dendrite_pair_ = 0;
+        dendrite_next_ = 0;
+    }
+    std::vector<std::pair<int, int>> pairs;  // lobe, rule
+    for (std::size_t i = 0; i < wiring_.size() && i < lobes.size(); ++i) {
+        for (int r = 0; r < 2; ++r) {
+            if (wiring_[i].rules[r].most > 0) pairs.emplace_back(static_cast<int>(i), r);
+        }
+    }
+    if (pairs.empty()) return;
+    for (int query = 0; query < 4; ++query) {
+        dendrite_pair_ %= pairs.size();
+        const int lobe = pairs[dendrite_pair_].first, rule = pairs[dendrite_pair_].second;
+        const int neurons = lobes[static_cast<std::size_t>(lobe)].neurons();
+        if (dendrite_next_ >= neurons) {
+            dendrite_next_ = 0;
+            ++dendrite_pair_;
+            continue;
+        }
+        const int count = (std::min)(
+            c1kit::neurons_per_dendrite_query(wiring_[static_cast<std::size_t>(lobe)].rules[rule].most),
+            neurons - dendrite_next_);
+        std::string reply;
+        std::vector<std::vector<c1kit::Dendrite>> batch;
+        if (!sheet_.query(c1kit::dendrites_query(lobe, dendrite_next_, count, rule), reply) ||
+            !c1kit::parse_dendrite_batch(reply, count, batch)) {
+            return;
+        }
+        for (int n = 0; n < count; ++n) {
+            dendrites_[static_cast<std::size_t>(lobe)][static_cast<std::size_t>(dendrite_next_ + n)]
+                      [static_cast<std::size_t>(rule)] = std::move(batch[static_cast<std::size_t>(n)]);
+        }
+        dendrite_next_ += count;
+    }
 }
 
 void BrainPage::lobe_firing(int lobe, int& share_percent, int& mean) const {
@@ -455,6 +570,59 @@ CString BrainPage::reach_text(int lobe, int neuron) const {
     if (!wiring_valid_ || lobe < 0 || lobe >= static_cast<int>(wiring_.size()) ||
         lobe >= static_cast<int>(lobes.size())) {
         return CString();
+    }
+    // From the game itself, where it reports dendrites: each rule's count,
+    // what it does, how many of their sources fire, their average weights
+    // and strength, and how many are broken.
+    if (dendrites_shown()) {
+        CString real;
+        for (int r = 0; r < 2; ++r) {
+            const c1kit::DendriteRule& rule = wiring_[static_cast<std::size_t>(lobe)].rules[r];
+            const std::vector<c1kit::Dendrite>* list = dendrites_of(lobe, neuron, r);
+            if (rule.most == 0 || list == nullptr || list->empty() ||
+                rule.source >= static_cast<int>(lobes.size())) {
+                continue;
+            }
+            const c1kit::LobeLayout& source = lobes[static_cast<std::size_t>(rule.source)];
+            int firing = 0, broken = 0;
+            long stw = 0, ltw = 0, strength = 0;
+            for (const c1kit::Dendrite& d : *list) {
+                if (d.strength == 0 || d.source < 0) {
+                    ++broken;
+                    continue;
+                }
+                stw += d.stw;
+                ltw += d.ltw;
+                strength += d.strength;
+                const int width = (std::max)(1, source.width);
+                const int x = source.x + d.source % width, y = source.y + d.source / width;
+                if (x < c1kit::kBrainGridSize && y < c1kit::kBrainGridSize && firing_.reported[x][y]) {
+                    ++firing;
+                }
+            }
+            const int whole = static_cast<int>(list->size()) - broken;
+            const int effect = wiring_[static_cast<std::size_t>(lobe)].rule_effect[r];
+            CString line;
+            line.Format(_T("  Rule %d%s: %d dendrite%s from %s, %d of their sources firing"), r,
+                        effect < 0 ? _T(" (inhibits)") : effect > 0 ? _T(" (excites)") : _T(""),
+                        static_cast<int>(list->size()), list->size() == 1 ? _T("") : _T("s"),
+                        CString(c1kit::lobe_name(rule.source)).GetString(), firing);
+            if (whole > 0) {
+                CString weights;
+                weights.Format(_T("; average STW %ld, LTW %ld, strength %ld"), stw / whole,
+                               ltw / whole, strength / whole);
+                line += weights;
+            }
+            if (broken > 0) {
+                CString loose;
+                loose.Format(_T("; %d broken"), broken);
+                line += loose;
+            }
+            real += line + _T("\r\n");
+        }
+        if (!real.IsEmpty()) {
+            return _T("Its dendrites (from the game):\r\n") + real;
+        }
     }
     const bool counted = lobe == followed_lobe_ && neuron == followed_neuron_ && followed_valid_;
     CString text;
@@ -713,6 +881,16 @@ void BrainPage::poll() {
     if (!wiring_loaded_) {
         load_wiring();
     }
+    if (shown_.size() != sheet_.lobes().size()) {
+        arrange();
+    }
+    if (capabilities_ < 0 && sheet_.subject().present &&
+        sheet_.query(c1kit::kCapabilitiesQuery, reply)) {
+        capabilities_ = c1kit::parse_capabilities(reply);
+    }
+    if (dendrites_shown()) {
+        refresh_dendrites();
+    }
     if (wiring_shown()) {
         if (report_mode() == c1kit::kReportFiringStrength) {
             firing_ = activity_;
@@ -735,7 +913,7 @@ void BrainPage::poll() {
 // large as the view allows (not a whole number of pixels a cell, so that it
 // fills the view), with room around it for the lobes' names.
 void BrainPage::fit_view(const CRect& rect) {
-    const std::vector<c1kit::LobeLayout>& lobes = sheet_.lobes();
+    const std::vector<c1kit::LobeLayout>& lobes = shown();
     int left = c1kit::kBrainGridSize, top = c1kit::kBrainGridSize, right = 0, bottom = 0;
     for (const c1kit::LobeLayout& lobe : lobes) {
         left = (std::min)(left, lobe.x);
@@ -771,7 +949,7 @@ bool BrainPage::cell_at(CPoint point, int& x, int& y) const {
 void BrainPage::on_mouse(CPoint point, bool clicked) {
     int x = 0, y = 0, lobe = -1, neuron = -1;
     if (cell_at(point, x, y)) {
-        c1kit::neuron_at(sheet_.lobes(), x, y, lobe, neuron);
+        c1kit::neuron_at(shown(), x, y, lobe, neuron);
     }
     if (clicked) {
         followed_lobe_ = lobe;
@@ -851,10 +1029,24 @@ void BrainPage::show_neuron_info() {
             text += _T(" Select a lobe to shade it with exact values.");
         }
         text += _T("\r\n\r\n") + CString(measure_at(mode_.GetCurSel()).about) + _T("\r\n\r\n");
-        if (wiring_loaded_ && !wiring_valid_ && wiring_check_.GetCheck() == BST_CHECKED) {
+        text += grid_positions()
+                    ? _T("Lobes are where the genome puts them on the brain grid.\r\n\r\n")
+                    : _T("Lobes are arranged by how they feed each other, inputs first; tick ")
+                      _T("Grid positions to see where the genome puts them.\r\n\r\n");
+        if (wiring_loaded_ && !wiring_valid_ && lines_mode() >= 1) {
             text += _T("The connections cannot be shown: the creature's genome file does not ")
                     _T("match its brain.\r\n\r\n");
+        } else if (dendrites_shown()) {
+            text += _T("The lines are the dendrites: each firing neuron's leave it as one path ")
+                    _T("that splits to the neurons they reach. Green excites, red inhibits; the ")
+                    _T("core is the long-term weight, the pale edge adds the short-term weight, ")
+                    _T("and the fainter a line the weaker the dendrite. Point at a neuron to see ")
+                    _T("all of its dendrites.\r\n\r\n");
         } else if (wiring_shown()) {
+            if (lines_mode() == 2 && capabilities_ >= 0) {
+                text += _T("This game does not report dendrites, so the lines are between ")
+                        _T("lobes.\r\n\r\n");
+            }
             text += _T("The lines are the genome's wiring: each runs from the lobe a set of ")
                     _T("dendrites reads to the lobe that grows them, thicker the more ")
                     _T("dendrites, brighter and busier the more of its source is firing. ")
@@ -903,20 +1095,24 @@ void BrainPage::draw_grid(CDC& dc, const CRect& rect) {
     const auto cell_y = [this](int y) { return view_origin_.y + int(std::lround((y - view_y_) * scale_)); };
     const CRect area(cell_x(view_x_), cell_y(view_y_), cell_x(view_x_ + view_width_),
                      cell_y(view_y_ + view_height_));
-    // Lines every cell when there is room for them, stronger every eight.
-    for (int x = view_x_; x <= view_x_ + view_width_; ++x) {
-        if (x % 8 == 0 || scale_ >= 5) {
-            dc.FillSolidRect(cell_x(x), area.top, 1, area.Height(),
-                             x % 8 == 0 ? RGB(55, 60, 75) : RGB(32, 35, 46));
+    // On the grid, its lines: every cell when there is room for them,
+    // stronger every eight.  Arranged, there is no grid to show.
+    if (grid_positions()) {
+        for (int x = view_x_; x <= view_x_ + view_width_; ++x) {
+            if (x % 8 == 0 || scale_ >= 5) {
+                dc.FillSolidRect(cell_x(x), area.top, 1, area.Height(),
+                                 x % 8 == 0 ? RGB(55, 60, 75) : RGB(32, 35, 46));
+            }
+        }
+        for (int y = view_y_; y <= view_y_ + view_height_; ++y) {
+            if (y % 8 == 0 || scale_ >= 5) {
+                dc.FillSolidRect(area.left, cell_y(y), area.Width(), 1,
+                                 y % 8 == 0 ? RGB(55, 60, 75) : RGB(32, 35, 46));
+            }
         }
     }
-    for (int y = view_y_; y <= view_y_ + view_height_; ++y) {
-        if (y % 8 == 0 || scale_ >= 5) {
-            dc.FillSolidRect(area.left, cell_y(y), area.Width(), 1,
-                             y % 8 == 0 ? RGB(55, 60, 75) : RGB(32, 35, 46));
-        }
-    }
-    const std::vector<c1kit::LobeLayout>& lobes = sheet_.lobes();
+    const std::vector<c1kit::LobeLayout>& lobes = shown();
+    const std::vector<c1kit::LobeLayout>& real = sheet_.lobes();
     dc.SetBkMode(TRANSPARENT);
     std::vector<CRect> outlines;
     for (const c1kit::LobeLayout& lobe : lobes) {
@@ -933,10 +1129,12 @@ void BrainPage::draw_grid(CDC& dc, const CRect& rect) {
         const COLORREF colour = lobe_colour(lobe_index);
         const COLORREF dim = blend(kBackground, colour, 18);
         const COLORREF bright = blend(colour, RGB(255, 255, 255), 35);
-        for (int y = lobe.y; y < lobe.y + lobe.height && y < c1kit::kBrainGridSize; ++y) {
-            for (int x = lobe.x; x < lobe.x + lobe.width && x < c1kit::kBrainGridSize; ++x) {
+        for (int row = 0; row < lobe.height; ++row) {
+            for (int column = 0; column < lobe.width; ++column) {
+                const int x = lobe.x + column, y = lobe.y + row;  // where it is drawn
                 bool exact = false;
-                const int value = cell_value(lobe_index, x, y, exact);
+                const int value = cell_value(lobe_index, real[index].x + column,
+                                             real[index].y + row, exact);
                 // Rising with the square root, from a quarter of the way up,
                 // so that 1..15 is plainly not zero and 16..63 spans a third.
                 const COLORREF shade =
@@ -962,6 +1160,117 @@ void BrainPage::draw_grid(CDC& dc, const CRect& rect) {
             }
         }
     }
+    // The dendrites themselves, where the game reports them (`dde: dend`):
+    // from each firing neuron, one path towards each lobe it feeds, splitting
+    // to every neuron whose dendrites reach it.  A branch is green where that
+    // lobe's expression adds the input, red where it subtracts it; its core
+    // is as thick as the long-term weight and a pale edge adds the
+    // short-term weight; it is fainter the weaker the dendrite (a fifth at
+    // strength 1; a broken one, strength 0, is not drawn).  Pointing at or
+    // following a neuron shows only its own dendrites, firing or not.
+    if (dendrites_shown()) {
+        const int focus_lobe = hover_lobe_ >= 0 ? hover_lobe_ : followed_lobe_;
+        const int focus_neuron = hover_lobe_ >= 0 ? hover_neuron_ : followed_neuron_;
+        const auto centre = [&](int lobe, int neuron) {
+            const c1kit::LobeLayout& l = lobes[static_cast<std::size_t>(lobe)];
+            const int width = (std::max)(1, l.width);
+            const int x = l.x + neuron % width, y = l.y + neuron / width;
+            return CPoint((cell_x(x) + cell_x(x + 1)) / 2, (cell_y(y) + cell_y(y + 1)) / 2);
+        };
+        const auto is_firing = [&](int lobe, int neuron) {
+            const c1kit::LobeLayout& l = real[static_cast<std::size_t>(lobe)];
+            const int width = (std::max)(1, l.width);
+            const int x = l.x + neuron % width, y = l.y + neuron / width;
+            return x < c1kit::kBrainGridSize && y < c1kit::kBrainGridSize &&
+                   firing_.reported[x][y];
+        };
+        struct Branch {
+            int lobe, neuron, rule;
+            const c1kit::Dendrite* dendrite;
+        };
+        std::map<std::tuple<int, int, int>, std::vector<Branch>> bundles;  // source lobe, neuron, lobe fed
+        for (std::size_t lobe = 0; lobe < wiring_.size() && lobe < lobes.size(); ++lobe) {
+            const int d_lobe = static_cast<int>(lobe);
+            for (int neuron = 0; neuron < lobes[lobe].neurons(); ++neuron) {
+                for (int r = 0; r < 2; ++r) {
+                    const c1kit::DendriteRule& rule = wiring_[lobe].rules[r];
+                    const std::vector<c1kit::Dendrite>* list = dendrites_of(d_lobe, neuron, r);
+                    if (rule.most == 0 || list == nullptr ||
+                        rule.source >= static_cast<int>(lobes.size())) {
+                        continue;
+                    }
+                    for (const c1kit::Dendrite& d : *list) {
+                        if (d.strength == 0 || d.source < 0 ||
+                            d.source >= lobes[static_cast<std::size_t>(rule.source)].neurons()) {
+                            continue;
+                        }
+                        const bool mine = (d_lobe == focus_lobe && neuron == focus_neuron) ||
+                                          (rule.source == focus_lobe && d.source == focus_neuron);
+                        if (focus_lobe >= 0 ? !mine : !is_firing(rule.source, d.source)) {
+                            continue;
+                        }
+                        bundles[std::make_tuple(rule.source, d.source, d_lobe)].push_back(
+                            {d_lobe, neuron, r, &d});
+                    }
+                }
+            }
+        }
+        for (const auto& bundle : bundles) {
+            const int s_lobe = std::get<0>(bundle.first), s_neuron = std::get<1>(bundle.first);
+            const bool live = is_firing(s_lobe, s_neuron);
+            const CPoint from = centre(s_lobe, s_neuron);
+            double cx = 0, cy = 0;
+            for (const Branch& b : bundle.second) {
+                const CPoint to = centre(b.lobe, b.neuron);
+                cx += to.x;
+                cy += to.y;
+            }
+            cx /= bundle.second.size();
+            cy /= bundle.second.size();
+            // Where it splits: a third of the way back from the neurons fed.
+            const double qx = cx + (from.x - cx) * 0.35, qy = cy + (from.y - cy) * 0.35;
+            const double dx = qx - from.x, dy = qy - from.y;
+            const double length = (std::max)(1.0, std::sqrt(dx * dx + dy * dy));
+            const double bow = 0.18 * length;
+            const double mx = from.x + dx / 2 - dy / length * bow, my = from.y + dy / 2 + dx / length * bow;
+            POINT trunk[4] = {
+                from,
+                {LONG(from.x + (mx - from.x) * 2 / 3), LONG(from.y + (my - from.y) * 2 / 3)},
+                {LONG(qx + (mx - qx) * 2 / 3), LONG(qy + (my - qy) * 2 / 3)},
+                {LONG(qx), LONG(qy)},
+            };
+            const COLORREF trunk_colour =
+                blend(kBackground, blend(lobe_colour(s_lobe), RGB(255, 255, 255), 30), live ? 85 : 35);
+            CPen trunk_pen(PS_SOLID, 2, trunk_colour);
+            CPen* previous_pen = dc.SelectObject(&trunk_pen);
+            dc.PolyBezier(trunk, 4);
+            dc.SelectObject(previous_pen);
+            for (const Branch& b : bundle.second) {
+                const c1kit::Dendrite& d = *b.dendrite;
+                const int effect = wiring_[static_cast<std::size_t>(b.lobe)].rule_effect[b.rule];
+                const COLORREF colour =
+                    effect < 0 ? kInhibit : effect > 0 ? kExcite : lobe_colour(b.lobe);
+                double opacity = 0.2 + 0.8 * ((std::min)(d.strength, 255) - 1) / 254.0;
+                if (!live) opacity *= 0.5;
+                const int core = 1 + (std::min)(d.ltw, 255) * 3 / 255;
+                const int edge = core + (std::min)(d.stw, 255) * 4 / 255;
+                const CPoint to = centre(b.lobe, b.neuron);
+                if (edge > core) {
+                    CPen pale(PS_SOLID, edge, blend(kBackground, colour, int(opacity * 35)));
+                    previous_pen = dc.SelectObject(&pale);
+                    dc.MoveTo(LONG(qx), LONG(qy));
+                    dc.LineTo(to);
+                    dc.SelectObject(previous_pen);
+                }
+                CPen pen(PS_SOLID, core, blend(kBackground, colour, int(opacity * 100)));
+                previous_pen = dc.SelectObject(&pen);
+                dc.MoveTo(LONG(qx), LONG(qy));
+                dc.LineTo(to);
+                dc.SelectObject(previous_pen);
+            }
+        }
+    }
+
     // The names: each in the first place clear of every other lobe and name
     // (above, below, then running down beside it, beside, inside), within
     // the view, or failing that the place least in the way.  Down the side
@@ -1056,8 +1365,16 @@ void BrainPage::draw_grid(CDC& dc, const CRect& rect) {
     // now framed, and a dot running in along the line while the spot fires.
     const int reach_lobe = hover_lobe_ >= 0 ? hover_lobe_ : followed_lobe_;
     const int reach_neuron = hover_lobe_ >= 0 ? hover_neuron_ : followed_neuron_;
+    const auto reported = [&](int lobe, int neuron) {
+        for (int r = 0; r < 2; ++r) {
+            const std::vector<c1kit::Dendrite>* list = dendrites_of(lobe, neuron, r);
+            if (list != nullptr && !list->empty()) return true;
+        }
+        return false;
+    };
     if (wiring_shown() && reach_lobe >= 0 && reach_lobe < static_cast<int>(wiring_.size()) &&
-        reach_lobe < static_cast<int>(lobes.size())) {
+        reach_lobe < static_cast<int>(lobes.size()) &&
+        !(dendrites_shown() && reported(reach_lobe, reach_neuron))) {
         const c1kit::LobeLayout& own = lobes[static_cast<std::size_t>(reach_lobe)];
         const bool counted =
             reach_lobe == followed_lobe_ && reach_neuron == followed_neuron_ && followed_valid_;
@@ -1090,9 +1407,12 @@ void BrainPage::draw_grid(CDC& dc, const CRect& rect) {
                 dc.Rectangle(region);
                 dc.SelectObject(previous_brush);
                 dc.SelectObject(previous_pen);
+                const c1kit::LobeLayout& source_real = real[static_cast<std::size_t>(rule.source)];
                 for (int y = reach.top; y <= reach.bottom; ++y) {
                     for (int x = reach.left; x <= reach.right; ++x) {
-                        if (firing_.reported[source.x + x][source.y + y]) {
+                        const int rx = source_real.x + x, ry = source_real.y + y;
+                        if (rx < c1kit::kBrainGridSize && ry < c1kit::kBrainGridSize &&
+                            firing_.reported[rx][ry]) {
                             CBrush firing(blend(kBackground, colour, 80));
                             dc.FrameRect(CRect(cell_x(source.x + x), cell_y(source.y + y),
                                                cell_x(source.x + x + 1), cell_y(source.y + y + 1)),
@@ -1114,7 +1434,10 @@ void BrainPage::draw_grid(CDC& dc, const CRect& rect) {
             dc.MoveTo(to);
             dc.LineTo(from);
             dc.SelectObject(previous_pen);
-            if (firing_.reported[sx][sy]) {
+            const int rsx = real[static_cast<std::size_t>(rule.source)].x + reach.spot_x;
+            const int rsy = real[static_cast<std::size_t>(rule.source)].y + reach.spot_y;
+            if (rsx < c1kit::kBrainGridSize && rsy < c1kit::kBrainGridSize &&
+                firing_.reported[rsx][rsy]) {
                 double t = pulse_frame_ * 0.1;
                 t -= std::floor(t);
                 const int x = to.x + int((from.x - to.x) * t);

@@ -5,6 +5,7 @@
 // themes.str, decision.str, injections.str and a genome file there:
 //   ./a.out <install dir> <genome file>
 
+#include "c1kit/brain_layout.hpp"
 #include "c1kit/brain_map.hpp"
 #include "c1kit/genome.hpp"
 #include "c1kit/science_files.hpp"
@@ -328,11 +329,72 @@ void test_brain_wiring() {
     assert(!wiring_matches(extended, std::vector<Layout>{{200 % 64, 120 % 64, 8, 2}}, true));
 }
 
+void test_brain_layout() {
+    // A stock norn's lobes (from the lab's dde: lobe) and wiring.
+    const int shapes[9][2] = {{7, 16}, {8, 2}, {8, 5}, {8, 2}, {20, 2}, {8, 4}, {1, 16}, {5, 8}, {40, 16}};
+    std::vector<LobeLayout> lobes;
+    for (const auto& s : shapes) {
+        LobeLayout lobe;
+        lobe.width = s[0];
+        lobe.height = s[1];
+        lobes.push_back(lobe);
+    }
+    std::vector<LobeWiring> wiring(9);
+    wiring[8].rules[0] = {0, 1, 3, 2, 2};     // Concept <- Perception
+    wiring[6].rules[0] = {8, 128, 128, 8, 1}; // Decision <- Concept
+    wiring[7].rules[0] = {2, 1, 1, 0, 0};     // Attention <- Stimulus source
+    wiring[7].rules[1] = {4, 1, 1, 0, 0};     // Attention <- Noun
+    for (int i : {1, 3, 5, 7}) wiring[static_cast<std::size_t>(i)].perception_copy = 1;
+    const std::vector<int> rank = lobe_ranks(9, &wiring);
+    assert(rank[1] == 0 && rank[2] == 0 && rank[7] == 1 && rank[0] == 2 && rank[8] == 3 &&
+           rank[6] == 4);
+    assert(lobe_ranks(9, nullptr) == rank);  // the standard roles agree
+
+    const std::vector<LobeLayout> shown = arrange_lobes(lobes, &wiring);
+    // Row one: the five inputs (8+8+8+20+8 + 4 gaps = 68 wide), by lobe order.
+    assert(shown[1].x == 0 && shown[2].x == 12 && shown[3].x == 24 && shown[4].x == 36 &&
+           shown[5].x == 60);
+    assert(shown[2].y == 0 && shown[1].y == 1);  // centred in a row 5 high
+    // Row two: Attention, Perception, Concept, Decision (5+7+40+1 + 12 = 65).
+    const int row_two = 5 + kArrangedRowGap;
+    assert(shown[7].x == 1 && shown[0].x == 10 && shown[8].x == 21 && shown[6].x == 65);
+    assert(shown[0].y == row_two && shown[7].y == row_two + 4 && shown[6].y == row_two);
+    assert(shown[8].width == 40 && shown[8].height == 16);  // shapes kept
+    // Capabilities and dendrites.
+    assert(parse_capabilities("1|1") == 1 && parse_capabilities("1") == 0 &&
+           parse_capabilities("") == 0);
+    assert(dendrites_query(6, 3, 2, 1) == "inst,dde: dend 6 3 1,dde: dend 6 4 1,endm");
+    assert(neurons_per_dendrite_query(128) == 1 && neurons_per_dendrite_query(3) == 50);
+    std::vector<std::vector<Dendrite>> batch;
+    assert(parse_dendrite_batch("2|57|10|200|90|3|-1|0|0|0|0|0", 2, batch));
+    assert(batch.size() == 2 && batch[0].size() == 2 && batch[0][0].source == 57 &&
+           batch[0][0].stw == 200 && batch[0][0].ltw == 90 && batch[0][0].strength == 3 &&
+           batch[0][1].source == -1 && batch[1].empty());
+    assert(!parse_dendrite_batch("2|57|10|200|90", 1, batch));
+    // Rule effects: a norn's Decision (state + rule 0 - rule 1), Attention
+    // (+ both), Concept (rule 0 only when all its sources fire).
+    const std::uint8_t decision[8] = {9, 23, 12, 24, 13, 0, 0, 0};
+    const std::uint8_t attention[8] = {9, 23, 12, 23, 13, 0, 0, 0};
+    const std::uint8_t concept_lobe[8] = {14, 0, 0, 0, 0, 0, 0, 0};
+    LobeWiring d, a, c;
+    read_rule_effects(decision, d);
+    read_rule_effects(attention, a);
+    read_rule_effects(concept_lobe, c);
+    assert(d.rule_effect[0] == 1 && d.rule_effect[1] == -1 && !d.rule_needs_all[0]);
+    assert(a.rule_effect[0] == 1 && a.rule_effect[1] == 1);
+    assert(c.rule_effect[0] == 1 && c.rule_needs_all[0] && c.rule_effect[1] == 0);
+
+    // A cycle does not hang.
+    wiring[0].rules[0] = {8, 1, 1, 0, 0};
+    (void)lobe_ranks(9, &wiring);
+}
+
 int main(int argc, char** argv) {
     test_strings_and_themes();
     test_genome();
     test_brain_map();
     test_brain_wiring();
+    test_brain_layout();
     if (argc > 2) {
         test_real_files(argv[1], argv[2]);
     }

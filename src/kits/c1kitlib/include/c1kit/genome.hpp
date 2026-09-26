@@ -226,7 +226,34 @@ struct LobeWiring {
     int y = 0;
     DendriteRule rules[2];
     int perception_copy = 0;  // 0 none, 1 copies, 2 copies (mutually exclusive)
+    // What the lobe's expression does with each rule's input, from its
+    // tokens (register 12/14 is rule 0's input, 13/15 rule 1's; 14 and 15
+    // count only when every source is firing): +1 adds it (excites), -1
+    // subtracts it (inhibits), 0 does not use it.
+    int rule_effect[2] = {0, 0};
+    bool rule_needs_all[2] = {false, false};
 };
+
+// Reads a lobe expression's eight tokens (Lobe::load_genome folds each
+// modulo 30): a register token (< 22) loads or is an operand; 23 adds the
+// next token's register, 24 subtracts it, 25 multiplies by it.
+inline void read_rule_effects(const std::uint8_t tokens[8], LobeWiring& lobe) {
+    int previous = 23;  // a register at the start is taken as it is
+    for (int i = 0; i < 8; ++i) {
+        const int token = tokens[i] % 30;
+        if (token == 0) break;
+        if (token >= 22) {
+            previous = token;
+            continue;
+        }
+        const int rule = token == 12 || token == 14 ? 0 : token == 13 || token == 15 ? 1 : -1;
+        if (rule >= 0) {
+            lobe.rule_effect[rule] = previous == 24 ? -1 : 1;
+            lobe.rule_needs_all[rule] = token >= 14;
+        }
+        previous = 23;
+    }
+}
 
 constexpr std::size_t kLobeGeneWiringBytes = kLobeRuleOffset + 2 * kLobeRuleBytes;
 constexpr std::size_t kMaximumLobes = 32;
@@ -260,6 +287,7 @@ inline std::vector<LobeWiring> brain_wiring(const std::vector<Gene>& genes, bool
                 if (lobe.y + height > 0x40) lobe.y = 0x40 - height;
             }
             lobe.perception_copy = p[4] > 2 ? p[4] % 3 : p[4];
+            read_rule_effects(&p[9], lobe);
             for (int r = 0; r < 2; ++r) {
                 const std::size_t at = kLobeRuleOffset + kLobeRuleBytes * static_cast<std::size_t>(r);
                 DendriteRule& rule = lobe.rules[r];
