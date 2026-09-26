@@ -168,6 +168,7 @@ void test_brain_map() {
     assert(estimated_value(activity, 5, 6) == 8 && estimated_value(activity, 0, 0) == 0 &&
            estimated_value(activity, 63, 0) == 248 && estimated_value(activity, 3, 1) == 152);
 
+    assert(report_probe_script() == "inst,setv var0 3,setv var1 7,endm");
     assert(lobe_cells_query(8, 10, 2, 1) == "inst,dde: cell 8 10 1,dde: cell 8 11 1,endm");
     std::vector<NeuronValues> batch;
     assert(parse_cell_batch("200|7|4|40|80|120|12|0|0|0|0|0|0|0|", 2, batch));

@@ -55,12 +55,13 @@ ctim`. Control state 6 is a new selection.
   dots over a bitmap of a human brain.
   *This build:* the brain on its own 64 x 64 grid, zoomed to fill the view,
   each lobe outlined, coloured and named clear of the others; every neuron
-  shaded by its firing strength (the report, keeping the neurons at 1..15
-  it lists as level 0, on a square-root scale), or exactly by its
-  activation, average target weight or average dendrite state (`dde:
-  cell`, 64 neurons a query, the whole brain about once a second); a list
+  shaded by any of the report's five measures (keeping the neurons at 1..15
+  it lists as level 0, on a square-root scale); on the original game, where
+  the report is only ever of firing strength (bug 5), exactly by activation,
+  average target weight or average dendrite state from `dde: cell` (64
+  neurons a query, the whole brain about once a second); a list
   of each lobe's share of active neurons and average, where selecting a
-  lobe shades it with exact firing strengths; pointing at a neuron names
+  lobe shades it with exact values; pointing at a neuron names
   its lobe, what it stands for (drives, actions, verbs and kinds of object
   from the game's own tables and files) and its value; clicking it follows
   it with `dde: cell` (exact firing strength, activation and both dendrite
@@ -105,9 +106,13 @@ A sound player like the other kits'. **Not in this build.**
    template text, and is neither data-bound nor set.
 5. The brain scanner asks for activation (`setv var0 1`), but the report
    always measures firing strength: the game reads the report holder's
-   work values, and LoadMacro only stores the script
-   (Macro::LoadScriptText @ 0x0041a280), so it never runs. This build
-   takes the report as firing strength and reads the rest with `cell`.
+   work values, and over SFC.OLE nothing runs the script that sets them
+   (LoadMacro only stores it, Macro::LoadScriptText @ 0x0041a280; over DDE
+   the execute step did). A game bug rather than a kit one, fixed in the
+   LibreCreatures game, which runs a report holder's script before the
+   report, so the original kit gets activation there. This build asks the
+   game which it is (`report_probe_script`) and, on the original game,
+   reads the other measures with `cell`.
 
 Not a kit bug: under LibreCreatures, opening the Genetics page crashed the
 game. Every CREATEMACRO replaced the game's one macro host, freeing the host
