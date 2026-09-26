@@ -318,7 +318,8 @@ void BrainPage::subject_changed() {
 
 void BrainPage::poll() {
     std::string reply;
-    // The report only ever measures firing strength (see brain_map.hpp).
+    // Firing strength: what the original game's report always measured, so
+    // the page reads the same on either game (see brain_map.hpp).
     if (sheet_.brain_report(c1kit::kReportFiringStrength, reply)) {
         c1kit::parse_activity_report(reply, activity_);
         have_report_ = true;

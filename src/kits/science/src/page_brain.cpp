@@ -31,12 +31,13 @@
 namespace science {
 namespace {
 
-// What the map can show.  The brain report only ever measures firing
-// strength: it reads its holder's first two work values, and nothing a kit
-// can send runs a script on a report holder to set them (LoadMacro only
-// stores the text, Macro::LoadScriptText @ 0x0041a280), so the 1996 page's
-// `setv var0 1` never took.  The rest come exactly from `cell`, which cannot
-// give the strongest dendrite weight (it sums them), so that is not offered.
+// What the map can show.  The brain report measures what its holder's first
+// two work values say, but the original game never runs a report holder's
+// script, so there it is always firing strength and the 1996 page's
+// `setv var0 1` never took (see brain_map.hpp).  LibreCreatures runs it.
+// The page asks the game which it is (report_probe_script); where the report
+// cannot give a measure, `cell` gives it exactly, bar the strongest dendrite
+// weight, which `cell` sums rather than reporting the largest.
 struct Measure {
     const TCHAR* name;
     int mode;
@@ -45,6 +46,7 @@ struct Measure {
 const Measure kMeasures[] = {
     {_T("Firing strength"), c1kit::kReportFiringStrength, false},
     {_T("Activation"), c1kit::kReportActivation, false},
+    {_T("Strongest dendrite weight"), c1kit::kReportStrongestWeight, true},
     {_T("Average target weight"), c1kit::kReportAverageTargetWeight, true},
     {_T("Average dendrite state"), c1kit::kReportAverageDendriteState, true},
 };
@@ -247,9 +249,12 @@ int BrainPage::report_rule() const {
     return measure_at(mode_.GetCurSel()).uses_rule ? rule_.GetCurSel() : 0;
 }
 
+bool BrainPage::report_covers_measure() const {
+    return report_mode() == c1kit::kReportFiringStrength || report_honours_measure_ == 1;
+}
+
 // Reads the next few dozen neurons exactly: of the selected lobe while the
-// map shows firing strength (the report covers the rest), else of every
-// lobe, the selected one first.
+// report gives the measure (it covers the rest), else of every lobe.
 void BrainPage::refresh_exact() {
     const std::vector<c1kit::LobeLayout>& lobes = sheet_.lobes();
     const int mode = report_mode();
@@ -267,9 +272,9 @@ void BrainPage::refresh_exact() {
     if (lobes.empty()) {
         return;
     }
-    const bool all_lobes = mode != c1kit::kReportFiringStrength;
-    if (!all_lobes && selected_lobe_ < 0) {
-        return;
+    const bool all_lobes = !report_covers_measure();
+    if ((!all_lobes && selected_lobe_ < 0) || mode == c1kit::kReportStrongestWeight) {
+        return;  // (`cell` cannot give the strongest weight)
     }
     // Up to four queries a poll: a whole Concept lobe in under a second, the
     // whole brain in about a second.
@@ -320,7 +325,7 @@ int BrainPage::cell_value(int lobe, int x, int y, bool& exact) const {
             return values[static_cast<std::size_t>(neuron)];
         }
     }
-    if (report_mode() != c1kit::kReportFiringStrength || x < 0 ||
+    if (!report_covers_measure() || x < 0 ||
         x >= c1kit::kBrainGridSize || y < 0 || y >= c1kit::kBrainGridSize ||
         !activity_.reported[x][y]) {
         return -1;
@@ -353,8 +358,16 @@ void BrainPage::OnModeChanged() {
 
 void BrainPage::poll() {
     std::string reply;
-    if (report_mode() == c1kit::kReportFiringStrength &&
-        sheet_.brain_report(c1kit::kReportFiringStrength, 0, reply)) {
+    if (report_honours_measure_ < 0 && sheet_.subject().present) {
+        std::string probe;
+        if (sheet_.brain_report(c1kit::kReportFiringStrength, 0, reply) && !reply.empty() &&
+            sheet_.brain_report(c1kit::kReportAverageTargetWeight, 7, probe)) {
+            report_honours_measure_ = probe.empty() ? 1 : 0;
+        }
+    }
+    if (!report_covers_measure()) {
+        activity_ = c1kit::BrainActivity();
+    } else if (sheet_.brain_report(report_mode(), report_rule(), reply)) {
         c1kit::parse_activity_report(reply, activity_);
     }
     if (followed_lobe_ >= 0 &&
@@ -447,7 +460,8 @@ void BrainPage::show_neuron_info() {
         text = neuron_title(names, hover_lobe_, hover_neuron_) + _T("\r\n") +
                CString(c1kit::lobe_description(hover_lobe_)) + _T("\r\n") + measure + _T(": ") +
                value_text(value, exact) + _T("\r\n");
-        if (!exact && report_mode() == c1kit::kReportFiringStrength) {
+        if (!exact && report_covers_measure() &&
+            report_mode() != c1kit::kReportStrongestWeight) {
             text += _T("Click to follow it and read its lobe exactly.\r\n");
         }
         text += _T("\r\n");
@@ -457,12 +471,20 @@ void BrainPage::show_neuron_info() {
                     CString(c1kit::lobe_name(selected_lobe_)).GetString(),
                     lobes[static_cast<std::size_t>(selected_lobe_)].neurons());
         text = lobe + CString(c1kit::lobe_description(selected_lobe_)) + _T("\r\n");
-        text += _T("Shaded with exact values.\r\n");
+        if (report_mode() == c1kit::kReportStrongestWeight) {
+            text += _T("The strongest weight comes only from the report.\r\n");
+        } else {
+            text += _T("Shaded with exact values.\r\n");
+        }
         text += _T("\r\n");
     } else {
         text = _T("Each square is a neuron, brighter the stronger it is; dark ones are at ")
                _T("zero. Point at one to see what it is; click it to follow it.");
-        if (report_mode() == c1kit::kReportFiringStrength) {
+        if (!report_covers_measure() && report_mode() == c1kit::kReportStrongestWeight) {
+            text = _T("This game cannot report the strongest dendrite weight: it only ")
+                   _T("reports firing strength. LibreCreatures can.");
+        } else if (report_covers_measure() &&
+                   report_mode() != c1kit::kReportStrongestWeight) {
             text += _T(" Select a lobe to shade it with exact values.");
         }
         text += _T("\r\n\r\n");

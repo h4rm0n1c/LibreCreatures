@@ -149,6 +149,10 @@ private:
     int cell_value(int lobe, int x, int y, bool& exact) const;
     int report_mode() const;
     int report_rule() const;
+    // Whether the brain report gives the chosen measure (always so for
+    // firing strength; for the rest, only where the game runs the report's
+    // script).
+    bool report_covers_measure() const;
 
     PaintedView grid_;
     CComboBox mode_;
@@ -181,6 +185,8 @@ private:
     int exact_lobe_ = 0;
     int exact_next_ = 0;
     bool updating_list_ = false;
+    // Whether the game honours a report's measure: -1 not known yet.
+    int report_honours_measure_ = -1;
 };
 
 // Decisions: the decision lobe, one bar per action, the strongest marked,

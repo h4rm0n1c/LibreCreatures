@@ -154,6 +154,8 @@ inline int estimated_value(const BrainActivity& activity, int x, int y) {
 // report (CMacroHolder::DispatchFormatBrainActivityReport @ 0x00419400), so
 // they stay 0 and a report is always of firing strength.  The other measures
 // are had exactly from `cell` (exact_report_value), bar the strongest weight.
+// LibreCreatures fixes the game (it runs a report holder's script first),
+// which report_probe_script tells apart.
 enum BrainReportMode : int {
     kReportFiringStrength = 0,
     kReportActivation = 1,
@@ -165,6 +167,15 @@ enum BrainReportMode : int {
 inline std::string brain_report_script(int mode, int rule) {
     return "inst,setv var0 " + std::to_string(mode) + ",setv var1 " +
            std::to_string(rule) + ",endm";
+}
+
+// Whether the game honours a report's measure: average target weight over a
+// dendrite rule there is none of (7) is zero for every neuron, so a game
+// that honours it answers an empty report, and one that does not answers
+// firing strength.  Decisive only when a firing-strength report taken just
+// before was not empty (a living brain always has something firing).
+inline std::string report_probe_script() {
+    return brain_report_script(kReportAverageTargetWeight, 7);
 }
 
 // `cell`: one neuron.
