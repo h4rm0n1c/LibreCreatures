@@ -70,8 +70,13 @@ ctim`. Control state 6 is a new selection.
   lobe a dendrite rule reads to the lobe that grows the dendrites, and a
   dotted one for each input lobe copying its firing into Perception, lit and
   pulsing with the source's firing; pointing at a lobe says what feeds it
-  and what it feeds. Lobe to lobe only: the game reports no dendrites (its
-  DDE item "BrainWiring" answers nothing).
+  and what it feeds. The game reports no dendrites (its DDE item
+  "BrainWiring" answers nothing), but where the brain placed them follows
+  from the genome: for the neuron pointed at or followed, a line to the
+  spot each rule's first dendrite was placed on, the cells the others could
+  land on, and those of them firing, with the exact dendrite counts from
+  `cell` for a followed neuron. Rules whose dendrites move as the creature
+  learns (connection modes 1 and 2) are marked as where they started.
 - **Decisions** (CDecisionPage, 135): a bar per action in `decision.str`
   and for the reward and punishment echo chemicals (54, 55; icons 181, 182),
   from `inst,dde: putv _it_,dde: putv chem 54,dde: putv chem 55,setv var0
