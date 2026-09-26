@@ -316,6 +316,9 @@ public:
     std::string render_cell_values(creatures1::scripting::Macro& macro,
                                    std::uint32_t cell, std::uint32_t variable,
                                    std::uint32_t field) override;
+    std::string render_dendrites(creatures1::scripting::Macro& macro,
+                                 std::uint32_t lobe, std::uint32_t neuron,
+                                 std::uint32_t rule) override;
     bool capture_picture(creatures1::scripting::Macro& macro,
                          std::uint8_t width, std::uint8_t height,
                          std::string& output_path) override;

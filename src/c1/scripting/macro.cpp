@@ -568,6 +568,10 @@ constexpr CaosToken kLobe = caos_token('l', 'o', 'b', 'e');
 constexpr CaosToken kGene = caos_token('g', 'e', 'n', 'e');
 constexpr CaosToken kGids = caos_token('g', 'i', 'd', 's');
 constexpr CaosToken kCell = caos_token('c', 'e', 'l', 'l');
+// LibreCreatures additions to the kit protocol (see case kDcap).
+constexpr CaosToken kDcap = caos_token('d', 'c', 'a', 'p');
+constexpr CaosToken kDend = caos_token('d', 'e', 'n', 'd');
+constexpr int kDdeCapabilityDendrites = 1;
 constexpr CaosToken kScrp = caos_token('s', 'c', 'r', 'p');
 // `gids` granularities, in the order ExecuteDDECommand tests them.
 constexpr CaosToken kRoot = caos_token('r', 'o', 'o', 't');
@@ -2689,6 +2693,25 @@ void Macro::execute_dde_command(MacroDdeHost& host, MacroRuntimeHost& runtime) {
         const std::uint32_t variable = parse_rvalue(runtime, host);
         const std::uint32_t field = parse_rvalue(runtime, host);
         append_output(host.render_cell_values(*this, cell, variable, field));
+        return;
+    }
+    case kDcap:
+        // LibreCreatures: what this game adds to the kit protocol, as bits
+        // (1: `dde: dend`).  It takes no arguments, so a kit can ask any
+        // game: C1 leaves an unknown DDE subcommand without output, and one
+        // with arguments would have them read as commands.
+        append_output(std::to_string(kDdeCapabilityDendrites) + "|");
+        return;
+    case kDend: {
+        // LibreCreatures: `dde: dend lobe neuron rule` -- the dendrite count,
+        // then each dendrite's source neuron (in the lobe the rule reads),
+        // susceptibility, STW, LTW and strength (0 is a broken dendrite).
+        // C1 only ever summed them (`cell`); its "BrainWiring" DDE item
+        // answers nothing.
+        const std::uint32_t lobe = parse_rvalue(runtime, host);
+        const std::uint32_t neuron = parse_rvalue(runtime, host);
+        const std::uint32_t rule = parse_rvalue(runtime, host);
+        append_output(host.render_dendrites(*this, lobe, neuron, rule));
         return;
     }
     case kScrp: {

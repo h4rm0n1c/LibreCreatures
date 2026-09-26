@@ -3199,6 +3199,67 @@ std::string WindowsMacroHost::render_cell_values(
 }
 
 
+std::string WindowsMacroHost::render_dendrites(
+    creatures1::scripting::Macro& macro, std::uint32_t lobe_index,
+    std::uint32_t neuron_index, std::uint32_t rule_index) {
+    // LibreCreatures `dde: dend`, beside `cell`: the same neuron and rule, but
+    // every dendrite rather than their sums, "%d|" each -- the count, then
+    // per dendrite its source neuron's index in the lobe the rule reads,
+    // then C1's susceptibility, short-term weight (STW, what the activation
+    // sums), long-term weight (LTW) and strength (0: broken) -- in the
+    // port's names current, target and baseline weight and dendrite state,
+    // matched against openc2e's C1 dendrite and the genome's rule fields.  The index comes from the
+    // dendrite's neuron pointer, not its stored grid position, which a loose
+    // dendrite re-attaching does not update (Lobe::update_late_phase).
+    creatures1::creatures::Creature* creature =
+        dde_creature_target(macro, document_);
+    if (creature == nullptr) {
+        return {};
+    }
+    creatures1::brain::Brain* brain = creature->brain();
+    if (brain == nullptr || lobe_index >= brain->lobe_count() ||
+        rule_index > 1u) {
+        return {};
+    }
+    const creatures1::brain::Lobe& lobe = brain->lobe(lobe_index);
+    if (neuron_index >= lobe.neuron_count_value()) {
+        return {};
+    }
+    const std::uint32_t source_lobe_index =
+        lobe.connection_rule(rule_index).target_lobe_index;
+    if (source_lobe_index >= brain->lobe_count()) {
+        return {};
+    }
+    const creatures1::brain::Lobe& source_lobe = brain->lobe(source_lobe_index);
+    const std::uint32_t source_count = source_lobe.neuron_count_value();
+    const creatures1::brain::LobeNeuron* first =
+        source_count == 0 ? nullptr : &source_lobe.neuron(0);
+    const creatures1::brain::LobeNeuron& neuron = lobe.neuron(neuron_index);
+    const std::uint8_t count = rule_index == 0 ? neuron.rule0_connection_count
+                                               : neuron.rule1_connection_count;
+    const creatures1::brain::LobeConnection* dendrites =
+        rule_index == 0 ? neuron.rule0_connections_begin
+                        : neuron.rule1_connections_begin;
+    std::string out = std::to_string(dendrites == nullptr ? 0 : count) + "|";
+    for (std::uint8_t index = 0; dendrites != nullptr && index < count; ++index) {
+        const creatures1::brain::LobeConnection& d = dendrites[index];
+        const std::ptrdiff_t offset =
+            d.target_neuron == nullptr || first == nullptr ? -1
+                                                           : d.target_neuron - first;
+        const long long source =
+            offset >= 0 && offset < static_cast<std::ptrdiff_t>(source_count) ? offset : -1;
+        char formatted[80] = {0};
+        std::snprintf(formatted, sizeof(formatted), "%lld|%d|%d|%d|%d|", source,
+                      static_cast<int>(d.current_weight),
+                      static_cast<int>(d.target_weight),
+                      static_cast<int>(d.baseline_weight),
+                      static_cast<int>(d.dendrite_state));
+        out += formatted;
+    }
+    return out;
+}
+
+
 bool WindowsMacroHost::capture_picture(creatures1::scripting::Macro& macro,
                                        std::uint8_t width,
                                        std::uint8_t height,
