@@ -1,0 +1,18 @@
+// LibreCreatures resources.  The 1996 Hatchery was a document window, not a
+// property sheet; its Tools-menu name and help were literals in the code
+// ("The Hatchery", "Hatch a new norn"), kept here as strings.
+STRINGTABLE
+BEGIN
+    200 "The Hatchery"
+    201 "Hatch a new norn"
+    202 "Nest"
+END
+
+// The page is laid out in code; this blank template's size is the smallest
+// it can be (the 1996 window showed a 320 x 240 picture).
+300 DIALOG 0, 0, 220, 170
+STYLE 0x48c00044
+CAPTION "Page"
+FONT 8, "MS Sans Serif"
+BEGIN
+END

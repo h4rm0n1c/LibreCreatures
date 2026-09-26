@@ -7,6 +7,7 @@ menu and talks to over OLE automation.
 | --- | --- |
 | `c1kitlib/` | `c1kitlib.dll`, the data side every kit shares: the game connection (the SFC.OLE macro calls), the kit's own OLE server and `Communicate` entry point, launch arguments, reply parsing and settings. No windows, drawing or sound. |
 | `shell/` | The kit shell, compiled into every kit: the MFC application, the connected property-sheet window (resizable), bitmaps, and control layout for pages. |
+| `hatchery/` | The Hatchery (Tools slot 0), `Hatchery.exe`: the nest's six eggs with their sex and parents; double-click or "Hatch this egg" sends the 1996 script; refills the nest when it is empty instead of asking for an Egg Disk. |
 | `health/` | The Health Kit (Tools slot 3), `Health Kit.exe`: labelled vital signs (life force, temperature, breathing, energy stores), every drive, each lobe's activity, and the Doctor's page shop, whose stock it keeps in `Health` (the 1996 format). |
 | `observation/` | The Observation Kit (Tools slot 6), `observation.exe`. |
 | `breeder/` | The Breeder's Kit (Tools slot 5), `Breeder's Kit.exe`: the sex hormones for the creature's sex as labelled bars and a graph, pregnancy from the game's overview, and the Aphrodisiac shop, whose stock it keeps in `Aphro` (the 1996 format). |

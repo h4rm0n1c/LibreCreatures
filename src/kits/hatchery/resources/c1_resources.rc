@@ -1,0 +1,14 @@
+// Reconstructed from the C1 PE resource tree; raw PE leaves are the oracle.
+// The LibreCreatures build keeps the string tables it uses and the icon; the
+// About box, disk error dialog and menu are left out.
+#pragma code_page(65001)
+#include "resource_ids.h"
+
+LANGUAGE 9, 1
+
+#include "strings/1033/3585.rcinc"
+#include "strings/1033/3826.rcinc"
+#include "strings/1033/7.rcinc"
+#include "version/1033/1.rcinc"
+#include "lc_resources.rcinc"
+128 ICON "images/icon/128.ico"
