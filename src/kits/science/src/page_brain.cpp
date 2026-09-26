@@ -1185,10 +1185,56 @@ void BrainPage::draw_grid(CDC& dc, const CRect& rect) {
                    firing_.reported[x][y];
         };
         struct Branch {
-            int lobe, neuron, rule;
+            int lobe, neuron, rule;  // the other end: fed (fan-out) or feeding (fan-in)
             const c1kit::Dendrite* dendrite;
         };
+        // One dendrite's line: core width the LTW, a pale edge adding the
+        // STW, opacity the strength (halved when its source is not firing).
+        const auto draw_branch = [&](CPoint a, CPoint b, const c1kit::Dendrite& d, COLORREF colour,
+                                     bool live) {
+            double opacity = 0.2 + 0.8 * ((std::min)(d.strength, 255) - 1) / 254.0;
+            if (!live) opacity *= 0.5;
+            const int core = 1 + (std::min)(d.ltw, 255) * 3 / 255;
+            const int edge = core + (std::min)(d.stw, 255) * 4 / 255;
+            if (edge > core) {
+                CPen pale(PS_SOLID, edge, blend(kBackground, colour, int(opacity * 35)));
+                CPen* previous = dc.SelectObject(&pale);
+                dc.MoveTo(a);
+                dc.LineTo(b);
+                dc.SelectObject(previous);
+            }
+            CPen pen(PS_SOLID, core, blend(kBackground, colour, int(opacity * 100)));
+            CPen* previous = dc.SelectObject(&pen);
+            dc.MoveTo(a);
+            dc.LineTo(b);
+            dc.SelectObject(previous);
+        };
+        // A merged path, bowed to one side.
+        const auto draw_trunk = [&](CPoint a, CPoint b, COLORREF colour, int width, double side) {
+            const double dx = b.x - a.x, dy = b.y - a.y;
+            const double length = (std::max)(1.0, std::sqrt(dx * dx + dy * dy));
+            const double bow = side * 0.18 * length;
+            const double mx = a.x + dx / 2 - dy / length * bow, my = a.y + dy / 2 + dx / length * bow;
+            POINT curve[4] = {
+                a,
+                {LONG(a.x + (mx - a.x) * 2 / 3), LONG(a.y + (my - a.y) * 2 / 3)},
+                {LONG(b.x + (mx - b.x) * 2 / 3), LONG(b.y + (my - b.y) * 2 / 3)},
+                b,
+            };
+            CPen pen(PS_SOLID, width, colour);
+            CPen* previous = dc.SelectObject(&pen);
+            dc.PolyBezier(curve, 4);
+            dc.SelectObject(previous);
+        };
+        const auto effect_colour = [&](int lobe, int rule) {
+            const int effect = wiring_[static_cast<std::size_t>(lobe)].rule_effect[rule];
+            return effect < 0 ? kInhibit : effect > 0 ? kExcite : lobe_colour(lobe);
+        };
+
+        // Fan-out: from a source neuron, one path per lobe it feeds.
         std::map<std::tuple<int, int, int>, std::vector<Branch>> bundles;  // source lobe, neuron, lobe fed
+        // Fan-in: into the neuron pointed at, one path per lobe and rule.
+        std::map<std::pair<int, int>, std::vector<Branch>> incoming;  // source lobe, rule
         for (std::size_t lobe = 0; lobe < wiring_.size() && lobe < lobes.size(); ++lobe) {
             const int d_lobe = static_cast<int>(lobe);
             for (int neuron = 0; neuron < lobes[lobe].neurons(); ++neuron) {
@@ -1199,14 +1245,19 @@ void BrainPage::draw_grid(CDC& dc, const CRect& rect) {
                         rule.source >= static_cast<int>(lobes.size())) {
                         continue;
                     }
+                    const bool into_focus = d_lobe == focus_lobe && neuron == focus_neuron;
                     for (const c1kit::Dendrite& d : *list) {
                         if (d.strength == 0 || d.source < 0 ||
                             d.source >= lobes[static_cast<std::size_t>(rule.source)].neurons()) {
                             continue;
                         }
-                        const bool mine = (d_lobe == focus_lobe && neuron == focus_neuron) ||
-                                          (rule.source == focus_lobe && d.source == focus_neuron);
-                        if (focus_lobe >= 0 ? !mine : !is_firing(rule.source, d.source)) {
+                        if (into_focus) {
+                            incoming[std::make_pair(rule.source, r)].push_back(
+                                {rule.source, d.source, r, &d});
+                            continue;
+                        }
+                        const bool from_focus = rule.source == focus_lobe && d.source == focus_neuron;
+                        if (focus_lobe >= 0 ? !from_focus : !is_firing(rule.source, d.source)) {
                             continue;
                         }
                         bundles[std::make_tuple(rule.source, d.source, d_lobe)].push_back(
@@ -1228,45 +1279,43 @@ void BrainPage::draw_grid(CDC& dc, const CRect& rect) {
             cx /= bundle.second.size();
             cy /= bundle.second.size();
             // Where it splits: a third of the way back from the neurons fed.
-            const double qx = cx + (from.x - cx) * 0.35, qy = cy + (from.y - cy) * 0.35;
-            const double dx = qx - from.x, dy = qy - from.y;
-            const double length = (std::max)(1.0, std::sqrt(dx * dx + dy * dy));
-            const double bow = 0.18 * length;
-            const double mx = from.x + dx / 2 - dy / length * bow, my = from.y + dy / 2 + dx / length * bow;
-            POINT trunk[4] = {
-                from,
-                {LONG(from.x + (mx - from.x) * 2 / 3), LONG(from.y + (my - from.y) * 2 / 3)},
-                {LONG(qx + (mx - qx) * 2 / 3), LONG(qy + (my - qy) * 2 / 3)},
-                {LONG(qx), LONG(qy)},
-            };
-            const COLORREF trunk_colour =
-                blend(kBackground, blend(lobe_colour(s_lobe), RGB(255, 255, 255), 30), live ? 85 : 35);
-            CPen trunk_pen(PS_SOLID, 2, trunk_colour);
-            CPen* previous_pen = dc.SelectObject(&trunk_pen);
-            dc.PolyBezier(trunk, 4);
-            dc.SelectObject(previous_pen);
+            const CPoint split(LONG(cx + (from.x - cx) * 0.35), LONG(cy + (from.y - cy) * 0.35));
+            draw_trunk(from, split,
+                       blend(kBackground, blend(lobe_colour(s_lobe), RGB(255, 255, 255), 30),
+                             live ? 85 : 35),
+                       2, 1.0);
             for (const Branch& b : bundle.second) {
-                const c1kit::Dendrite& d = *b.dendrite;
-                const int effect = wiring_[static_cast<std::size_t>(b.lobe)].rule_effect[b.rule];
-                const COLORREF colour =
-                    effect < 0 ? kInhibit : effect > 0 ? kExcite : lobe_colour(b.lobe);
-                double opacity = 0.2 + 0.8 * ((std::min)(d.strength, 255) - 1) / 254.0;
-                if (!live) opacity *= 0.5;
-                const int core = 1 + (std::min)(d.ltw, 255) * 3 / 255;
-                const int edge = core + (std::min)(d.stw, 255) * 4 / 255;
-                const CPoint to = centre(b.lobe, b.neuron);
-                if (edge > core) {
-                    CPen pale(PS_SOLID, edge, blend(kBackground, colour, int(opacity * 35)));
-                    previous_pen = dc.SelectObject(&pale);
-                    dc.MoveTo(LONG(qx), LONG(qy));
-                    dc.LineTo(to);
-                    dc.SelectObject(previous_pen);
+                draw_branch(split, centre(b.lobe, b.neuron), *b.dendrite,
+                            effect_colour(b.lobe, b.rule), live);
+            }
+        }
+        // Into the neuron pointed at: each lobe and rule's dendrites gather
+        // from their sources into one path, excitation and inhibition apart
+        // (bowed to opposite sides), which then runs into the neuron.
+        if (!incoming.empty()) {
+            const CPoint into = centre(focus_lobe, focus_neuron);
+            for (const auto& group : incoming) {
+                const int rule = group.first.second;
+                double cx = 0, cy = 0;
+                int firing = 0;
+                for (const Branch& b : group.second) {
+                    const CPoint at = centre(b.lobe, b.neuron);
+                    cx += at.x;
+                    cy += at.y;
+                    if (is_firing(b.lobe, b.neuron)) ++firing;
                 }
-                CPen pen(PS_SOLID, core, blend(kBackground, colour, int(opacity * 100)));
-                previous_pen = dc.SelectObject(&pen);
-                dc.MoveTo(LONG(qx), LONG(qy));
-                dc.LineTo(to);
-                dc.SelectObject(previous_pen);
+                cx /= group.second.size();
+                cy /= group.second.size();
+                // Where they meet: a third of the way from the sources.
+                const CPoint meet(LONG(cx + (into.x - cx) * 0.35), LONG(cy + (into.y - cy) * 0.35));
+                const COLORREF colour = effect_colour(focus_lobe, rule);
+                for (const Branch& b : group.second) {
+                    draw_branch(centre(b.lobe, b.neuron), meet, *b.dendrite, colour,
+                                is_firing(b.lobe, b.neuron));
+                }
+                // The merged path: thicker the more of its sources fire.
+                draw_trunk(meet, into, blend(kBackground, colour, firing > 0 ? 90 : 45),
+                           2 + (std::min)(3, firing), rule == 0 ? 1.0 : -1.0);
             }
         }
     }
