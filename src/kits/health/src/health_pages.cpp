@@ -318,7 +318,8 @@ void BrainPage::subject_changed() {
 
 void BrainPage::poll() {
     std::string reply;
-    if (sheet_.brain_report(c1kit::kReportActivation, reply)) {
+    // The report only ever measures firing strength (see brain_map.hpp).
+    if (sheet_.brain_report(c1kit::kReportFiringStrength, reply)) {
         c1kit::parse_activity_report(reply, activity_);
         have_report_ = true;
     }
@@ -333,18 +334,15 @@ void BrainPage::draw(CDC& dc, const CRect& rect) {
         no_creature(dc, rect);
         return;
     }
-    // How active each lobe is: the share of its neurons the report shows, and
-    // how strongly.
+    // How active each lobe is: the share of its neurons the report lists
+    // (every one not at zero, level 0 included).
     std::vector<int> active(lobes.size(), 0);
-    std::vector<int> strength(lobes.size(), 0);
     for (std::size_t i = 0; i < lobes.size(); ++i) {
         const c1kit::LobeLayout& lobe = lobes[i];
         for (int y = lobe.y; y < lobe.y + lobe.height && y < c1kit::kBrainGridSize; ++y) {
             for (int x = lobe.x; x < lobe.x + lobe.width && x < c1kit::kBrainGridSize; ++x) {
-                const int level = activity_.level[x][y];
-                if (level > 0) {
+                if (activity_.reported[x][y]) {
                     ++active[i];
-                    strength[i] += level;
                 }
             }
         }

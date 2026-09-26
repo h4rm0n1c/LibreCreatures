@@ -129,6 +129,7 @@ public:
 protected:
     void create_controls() override;
     void layout(int width, int height) override;
+    BOOL OnNotify(WPARAM wparam, LPARAM lparam, LRESULT* result) override;
     afx_msg void OnModeChanged();
     DECLARE_MESSAGE_MAP()
 
@@ -139,6 +140,15 @@ private:
     void on_mouse(CPoint point, bool clicked);
     void show_neuron_info();
     void fill_lobe_list();
+    void update_lobe_list();
+    void select_lobe(int lobe);
+    void refresh_exact();
+    // Grid cell (x, y) of lobe `lobe`: its exact value if the lobe is
+    // selected and it has been read, else the report's estimate; `exact`
+    // says which.  -1 if the report does not list it (it is at zero).
+    int cell_value(int lobe, int x, int y, bool& exact) const;
+    int report_mode() const;
+    int report_rule() const;
 
     PaintedView grid_;
     CComboBox mode_;
@@ -147,21 +157,30 @@ private:
     CListCtrl lobes_;
     CEdit info_;
     c1kit::BrainActivity activity_;
-    // The part of the 64 x 64 grid drawn (the lobes' extent, plus a cell),
-    // and where: grid cell (view_x_, view_y_) at view_origin_, cell_ pixels
-    // square.
+    // The part of the 64 x 64 grid drawn (the lobes' extent), and where:
+    // grid cell (view_x_, view_y_) at view_origin_, scale_ pixels a cell.
     int view_x_ = 0;
     int view_y_ = 0;
     int view_width_ = c1kit::kBrainGridSize;
     int view_height_ = c1kit::kBrainGridSize;
     CPoint view_origin_;
-    int cell_ = 0;
+    double scale_ = 0;
     int hover_lobe_ = -1;
     int hover_neuron_ = -1;
     int followed_lobe_ = -1;
     int followed_neuron_ = -1;
     c1kit::NeuronValues followed_values_[2];
     bool followed_valid_ = false;
+    // Exact values (`dde: cell`, a few dozen a query, round and round) by
+    // lobe and neuron, -1 where not read yet: the selected lobe's for firing
+    // strength, every lobe's for the other measures.
+    int selected_lobe_ = -1;
+    std::vector<std::vector<int>> exact_;
+    int exact_mode_ = -1;
+    int exact_rule_ = -1;
+    int exact_lobe_ = 0;
+    int exact_next_ = 0;
+    bool updating_list_ = false;
 };
 
 // Decisions: the decision lobe, one bar per action, the strongest marked,

@@ -37,9 +37,10 @@ This build adds `Size`.
   named.
 - **Brain activity** (CScannerPage, 134): a cartoon brain (`Lobes.bmp`) whose
   busiest part lights up (`Lobe_<n>.spr`), from the brain report (a mode 2
-  holder, `inst,setv var0 1,endm`) and `dde: lobe`.
+  holder, `inst,setv var0 1,endm`, which asks for activation but gets
+  firing strength: nothing runs a report holder's script) and `dde: lobe`.
   *This build:* a row per lobe: its name, what it does, and the share of its
-  neurons active.
+  neurons firing (every neuron the report lists, level 0 included).
 - **Doctor's page** (CAddObjectPage, 142): one shop item at a time in a
   frame (`Shop.bmp`), with arrows, its name, how many are left and what it
   does; the middle button runs the item's CAOS and takes one off

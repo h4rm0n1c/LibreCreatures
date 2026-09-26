@@ -53,14 +53,18 @@ ctim`. Control state 6 is a new selection.
   `inst,setv var0 1,endm`: three bytes per active neuron, '0' + grid x,
   grid y and value / 16; ParseScannerDdeResponse @ 0x00401880) painted as
   dots over a bitmap of a human brain.
-  *This build:* the brain on its own 64 x 64 grid, zoomed to the lobes,
-  each lobe outlined, coloured and named; every neuron shaded by the report,
-  which can measure any of its five quantities (firing strength,
-  activation, strongest weight, average target weight, average dendrite
-  state); pointing at a neuron names its lobe and what it stands for
-  (drives, actions, verbs and kinds of object from the game's own tables
-  and files); clicking it follows it with `dde: cell` (exact firing
-  strength, activation and both dendrite rules' weights).
+  *This build:* the brain on its own 64 x 64 grid, zoomed to fill the view,
+  each lobe outlined, coloured and named clear of the others; every neuron
+  shaded by its firing strength (the report, keeping the neurons at 1..15
+  it lists as level 0, on a square-root scale), or exactly by its
+  activation, average target weight or average dendrite state (`dde:
+  cell`, 64 neurons a query, the whole brain about once a second); a list
+  of each lobe's share of active neurons and average, where selecting a
+  lobe shades it with exact firing strengths; pointing at a neuron names
+  its lobe, what it stands for (drives, actions, verbs and kinds of object
+  from the game's own tables and files) and its value; clicking it follows
+  it with `dde: cell` (exact firing strength, activation and both dendrite
+  rules' weights).
 - **Decisions** (CDecisionPage, 135): a bar per action in `decision.str`
   and for the reward and punishment echo chemicals (54, 55; icons 181, 182),
   from `inst,dde: putv _it_,dde: putv chem 54,dde: putv chem 55,setv var0
@@ -99,6 +103,11 @@ A sound player like the other kits'. **Not in this build.**
    menu for it (menu 143).
 4. The Genetics page's Species always says "NORN": control 1161 keeps its
    template text, and is neither data-bound nor set.
+5. The brain scanner asks for activation (`setv var0 1`), but the report
+   always measures firing strength: the game reads the report holder's
+   work values, and LoadMacro only stores the script
+   (Macro::LoadScriptText @ 0x0041a280), so it never runs. This build
+   takes the report as firing strength and reads the rest with `cell`.
 
 Not a kit bug: under LibreCreatures, opening the Genetics page crashed the
 game. Every CREATEMACRO replaced the game's one macro host, freeing the host

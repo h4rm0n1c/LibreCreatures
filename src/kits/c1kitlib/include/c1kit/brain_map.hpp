@@ -115,9 +115,12 @@ inline bool parse_lobe_reply(const std::string& reply,
 
 constexpr char kLobeQuery[] = "dde: lobe,endm";
 
-// The brain grid, one value (0..15) per cell, from a brain report.
+// The brain grid from a brain report.  The report lists every neuron whose
+// value is not zero, but as value/16, so a neuron at 1..15 comes through as
+// level 0: `reported` tells it apart from a neuron at 0, which is not listed.
 struct BrainActivity {
     std::uint8_t level[kBrainGridSize][kBrainGridSize] = {};
+    bool reported[kBrainGridSize][kBrainGridSize] = {};
 };
 
 inline void parse_activity_report(const std::string& reply, BrainActivity& out) {
@@ -129,13 +132,28 @@ inline void parse_activity_report(const std::string& reply, BrainActivity& out) 
         if (x >= 0 && x < kBrainGridSize && y >= 0 && y < kBrainGridSize &&
             value >= 0) {
             out.level[x][y] = static_cast<std::uint8_t>(value > 15 ? 15 : value);
+            out.reported[x][y] = true;
         }
     }
 }
 
+// The middle of the range a report can mean for a cell: 0 if not listed,
+// otherwise level * 16 + 8 (so 8 for 1..15, 248 for 240..255).
+inline int estimated_value(const BrainActivity& activity, int x, int y) {
+    if (x < 0 || x >= kBrainGridSize || y < 0 || y >= kBrainGridSize ||
+        !activity.reported[x][y]) {
+        return 0;
+    }
+    return activity.level[x][y] * 16 + 8;
+}
+
 // What the brain report measures: the first work value (var0) of the
 // holder's macro.  Rules 0 and 1 (var1) pick the dendrites for the weight
-// modes.
+// modes.  But a kit cannot set them: LoadMacro only stores the script
+// (Macro::LoadScriptText @ 0x0041a280) and RequestMacro goes straight to the
+// report (CMacroHolder::DispatchFormatBrainActivityReport @ 0x00419400), so
+// they stay 0 and a report is always of firing strength.  The other measures
+// are had exactly from `cell` (exact_report_value), bar the strongest weight.
 enum BrainReportMode : int {
     kReportFiringStrength = 0,
     kReportActivation = 1,
@@ -186,6 +204,62 @@ inline bool parse_neuron_values(std::string reply, NeuronValues out[2]) {
         out[rule].dendrite_state_sum = values[6];
     }
     return true;
+}
+
+// `cell` for `count` neurons of a lobe from `first`, under one rule, in one
+// query.  The reply comes back in the kit's command buffer (4096 bytes); a
+// cell is at most about 36 characters, so 64 fit with room to spare.
+constexpr int kCellsPerQuery = 64;
+
+inline std::string lobe_cells_query(int lobe, int first, int count, int rule) {
+    std::string script = "inst";
+    for (int neuron = first; neuron < first + count; ++neuron) {
+        script += ",dde: cell " + std::to_string(lobe) + " " + std::to_string(neuron) + " " +
+                  std::to_string(rule);
+    }
+    return script + ",endm";
+}
+
+inline bool parse_cell_batch(std::string reply, int count, std::vector<NeuronValues>& out) {
+    out.clear();
+    for (int cell = 0; cell < count; ++cell) {
+        int values[7] = {};
+        for (int& value : values) {
+            const std::string field = take_field(reply, '|');
+            if (field.empty()) {
+                return false;
+            }
+            value = std::atoi(field.c_str());
+        }
+        NeuronValues v;
+        v.firing_strength = values[0];
+        v.activation = values[1];
+        v.dendrites = values[2];
+        v.current_weight_sum = values[3];
+        v.target_weight_sum = values[4];
+        v.baseline_weight_sum = values[5];
+        v.dendrite_state_sum = values[6];
+        out.push_back(v);
+    }
+    return true;
+}
+
+// What a brain report in `mode` would have measured, exactly, from a
+// neuron's `cell` values; -1 for the strongest dendrite weight, which `cell`
+// sums rather than reporting the largest.
+inline int exact_report_value(const NeuronValues& v, int mode) {
+    switch (mode) {
+    case kReportFiringStrength:
+        return v.firing_strength;
+    case kReportActivation:
+        return v.activation;
+    case kReportAverageTargetWeight:
+        return v.dendrites > 0 ? v.target_weight_sum / v.dendrites : 0;
+    case kReportAverageDendriteState:
+        return v.dendrites > 0 ? v.dendrite_state_sum / v.dendrites : 0;
+    default:
+        return -1;
+    }
 }
 
 // The decision lobe, one "%d|" per decision neuron plus the attention target
