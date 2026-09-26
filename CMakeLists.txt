@@ -179,6 +179,9 @@ add_c1_kit(HealthKit "Health Kit" ${KITS_ROOT}/health)
 add_c1_kit(BreedersKit "Breeder's Kit" ${KITS_ROOT}/breeder)
 # "Hatchery.exe": OLE server Hatchery.OLE, Tools slot 0.
 add_c1_kit(Hatchery "Hatchery" ${KITS_ROOT}/hatchery)
+# "Injector.exe", the Injector Kit 2.0 (Object Injector): OLE server
+# ObjectInjector.OLE, Tools slot 7.
+add_c1_kit(Injector "Injector" ${KITS_ROOT}/injector)
 
 install(TARGETS c1kitlib RUNTIME DESTINATION .)
 
