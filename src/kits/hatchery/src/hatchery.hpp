@@ -7,14 +7,19 @@
 // original's behaviour and numbers its bugs.  The 1996 kit was a window
 // showing the incubator machine with the eggs in its nest, animated fans
 // and a scanner; a double-click on an egg hatched it and closed the kit.
-// This build shows the nest with each egg's sex and parents, hatches on a
-// double-click or a button, and stays open.  No sound.
+// This build shows the six eggs in a lamp-lit nest, drawn from the game's
+// own egg sprites (Images\eggs.spr) at a whole-number scale, each with its
+// sex; it hatches on a double-click or a button, and stays open.  No sound.
 
 #include "c1kitshell/kit_art.hpp"
 #include "c1kitshell/kit_shell.hpp"
 #include "c1kitshell/kit_widgets.hpp"
 #include "c1kit/conversation.hpp"
+#include "c1kit/game_sprite.hpp"
 #include "c1kit/hatchery.hpp"
+
+#include <cstdint>
+#include <vector>
 
 namespace hatchery {
 
@@ -34,20 +39,33 @@ protected:
     DECLARE_MESSAGE_MAP()
 
 private:
+    // The eggs' three looks: whole, incubating (selected), cracked (taken).
+    enum Look { kWhole, kIncubating, kCracked, kLooks };
+
     void draw(CDC& dc, const CRect& rect);
-    CRect egg_rect(const CRect& view, int slot) const;
+    // Lays the nest out in `view`: the scale, the eggs' baseline, and each
+    // slot's egg.
+    void fit(const CRect& view);
+    CRect egg_rect(int slot) const;
     int egg_at(CPoint point) const;
     void load_art();
+    // The panel behind the eggs and their labels -- gradient, lamp glow,
+    // ground, shadows, the selection and the sex symbols -- drawn pixel by
+    // pixel so that it can be soft and anti-aliased.
+    void render_panel(const CRect& view);
+    void describe_selection();
 
     HatcherySheet& sheet_;
     c1kitshell::PaintedView nest_;
     CButton hatch_;
     CButton refill_;
     CStatic status_;
-    HBITMAP eggs_[c1kit::kEggCount] = {};
-    HBITMAP female_ = nullptr;
-    HBITMAP male_ = nullptr;
+    HBITMAP egg_art_[c1kit::kEggCount][kLooks] = {};
+    CSize egg_size_;  // one frame, unscaled
     CRect view_rect_;
+    int scale_ = 1;
+    int baseline_ = 0;
+    std::vector<std::uint32_t> panel_;  // BGRA, view_rect_'s size
     int selected_ = -1;
     int hover_ = -1;
 };

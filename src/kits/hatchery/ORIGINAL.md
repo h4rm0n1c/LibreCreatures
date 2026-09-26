@@ -44,9 +44,12 @@ then copies new genomes from `a:\eggx\` into the Genetics folder
 @ 0x004042d0), with the errors "Egg Disk has been write protected", "You
 have no more eggs!" and "The egg could not be moved from the disk!".
 
-*This build:* the six eggs drawn from the same pictures, each with its sex
-and parents; click to pick, double-click or "Hatch this egg" to hatch; the
-same script and `Eggstra` value.
+*This build:* the six eggs in a lamp-lit nest, drawn from the game's own
+egg sprites (`Images\eggs.spr` in `Palettes\palette.dta`, read from the
+install) at a whole-number scale: the whole egg, the incubating frame (the
+norn showing through) for the one picked, and the cracked shell once
+hatched; each labelled with its sex; click to pick, double-click or "Hatch
+this egg" to hatch; the same script and `Eggstra` value.
 
 ## Bugs in the original
 

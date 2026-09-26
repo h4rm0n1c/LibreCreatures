@@ -17,8 +17,8 @@ constexpr unsigned kTimerStartup = 1;
 constexpr unsigned kStartupDelayMs = 30;
 constexpr unsigned kCommandBufferBytes = 0x1000;
 
-constexpr int kDefaultPageWidthDlu = 330;
-constexpr int kDefaultPageHeightDlu = 190;
+constexpr int kDefaultPageWidthDlu = 440;
+constexpr int kDefaultPageHeightDlu = 220;
 
 constexpr unsigned kSysCommandOnTop = 0x0020;
 
