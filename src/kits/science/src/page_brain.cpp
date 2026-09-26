@@ -38,17 +38,35 @@ namespace {
 // The page asks the game which it is (report_probe_script); where the report
 // cannot give a measure, `cell` gives it exactly, bar the strongest dendrite
 // weight, which `cell` sums rather than reporting the largest.
+//
+// Firing strength is the default: it is what a neuron passes on (Lobe
+// ::update_late_phase: activation less the lobe's threshold), what other
+// neurons' dendrites read and what the decision lobe's winner is picked by.
+// Activation is read after it has relaxed towards the lobe's resting level
+// for the tick, so fast-relaxing lobes read near zero while they fire.
 struct Measure {
     const TCHAR* name;
     int mode;
     bool uses_rule;
+    const TCHAR* about;
 };
 const Measure kMeasures[] = {
-    {_T("Firing strength"), c1kit::kReportFiringStrength, false},
-    {_T("Activation"), c1kit::kReportActivation, false},
-    {_T("Strongest dendrite weight"), c1kit::kReportStrongestWeight, true},
-    {_T("Average target weight"), c1kit::kReportAverageTargetWeight, true},
-    {_T("Average dendrite state"), c1kit::kReportAverageDendriteState, true},
+    {_T("Firing strength"), c1kit::kReportFiringStrength, false,
+     _T("Firing strength is what each neuron passes on: how far its activation is above ")
+     _T("its lobe's threshold. Other neurons respond to it, and the creature's decision ")
+     _T("is the strongest-firing decision neuron.")},
+    {_T("Activation"), c1kit::kReportActivation, false,
+     _T("Activation is each neuron's inner level, which drifts back to its lobe's resting ")
+     _T("level every moment. Lobes that settle fast, such as Perception and Drive, read ")
+     _T("near zero here even while firing hard.")},
+    {_T("Strongest dendrite weight"), c1kit::kReportStrongestWeight, true,
+     _T("The strongest current weight among each neuron's dendrites under the chosen ")
+     _T("dendrite rule.")},
+    {_T("Average target weight"), c1kit::kReportAverageTargetWeight, true,
+     _T("The average target weight of each neuron's dendrites under the chosen rule: ")
+     _T("how much the neuron weighs what those inputs fire.")},
+    {_T("Average dendrite state"), c1kit::kReportAverageDendriteState, true,
+     _T("The average state of each neuron's dendrites under the chosen rule.")},
 };
 constexpr int kMeasureCount = sizeof(kMeasures) / sizeof(kMeasures[0]);
 
@@ -487,7 +505,7 @@ void BrainPage::show_neuron_info() {
                    report_mode() != c1kit::kReportStrongestWeight) {
             text += _T(" Select a lobe to shade it with exact values.");
         }
-        text += _T("\r\n\r\n");
+        text += _T("\r\n\r\n") + CString(measure_at(mode_.GetCurSel()).about) + _T("\r\n\r\n");
     }
     if (followed_lobe_ >= 0) {
         text += _T("Following ") + neuron_title(names, followed_lobe_, followed_neuron_) + _T("\r\n");
