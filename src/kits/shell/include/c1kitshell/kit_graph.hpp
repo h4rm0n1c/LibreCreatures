@@ -5,8 +5,9 @@
 // was (CMonitorPage, DrawGraphAxesAndLabels @ 0x00403c00 and friends): a
 // light-grey 16-pixel grid that scrolls with the samples, black axes with
 // ticks every 16 pixels, 0/64/128/192/255 up the side, how long ago along
-// the bottom every 16 samples, and four pixels a sample.  On top of that, a
-// legend, and where the pointer is, a line and every level at that moment.
+// the bottom every 16 samples, and four pixels a sample.  Beyond that, a
+// legend in a strip below the plot, and where the pointer is, a line and
+// every level at that moment.
 
 #include <afxwin.h>
 

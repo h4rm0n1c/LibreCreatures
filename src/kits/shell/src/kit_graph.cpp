@@ -84,13 +84,39 @@ void ChemicalGraph::clear() {
 void ChemicalGraph::draw(CDC& dc, const CRect& rect, const std::vector<std::string>& names,
                          const CString& empty_message) const {
     dc.FillSolidRect(rect, RGB(255, 255, 255));
-    // The plot: the view less 28 left, 6 top, 6 right and 32 below.
+    dc.SetBkMode(TRANSPARENT);
+
+    // The legend goes in a strip under the time labels, wrapping onto more
+    // rows as needed, so it never covers a line.  Each entry is laid out for
+    // its widest value so that nothing jumps about as the pointer moves.
+    const int row_height = (std::max)(14, static_cast<int>(dc.GetTextExtent(_T("0")).cy) + 2);
+    const int legend_left = rect.left + 0x1c;
+    // Room on the right of the strip for how long ago the pointer is.
+    const int legend_right = rect.right - 6 - dc.GetTextExtent(_T("00:00 ago")).cx - 8;
+    std::vector<CPoint> entry_at;
+    int legend_rows = 0;
+    if (!series_.empty()) {
+        int x = legend_left;
+        legend_rows = 1;
+        for (std::size_t s = 0; s < series_.size(); ++s) {
+            CString label(chemical_display_name(names, series_[s].chemical).c_str());
+            const int width = 16 + dc.GetTextExtent(label + _T("  255")).cx + 14;
+            if (x > legend_left && x + width > legend_right) {
+                x = legend_left;
+                ++legend_rows;
+            }
+            entry_at.emplace_back(x, legend_rows - 1);
+            x += width;
+        }
+    }
+
+    // The plot: the view less 28 left, 6 top, 6 right and 32 below, and the
+    // legend under that.
     const int left = rect.left + 0x1c;
     const int top = rect.top + 6;
     const int right = rect.right - 6;
-    const int bottom = rect.bottom - 0x20;
+    const int bottom = rect.bottom - 0x20 - legend_rows * row_height;
     if (right - left < kGrid || bottom - top < kGrid) return;
-    dc.SetBkMode(TRANSPARENT);
 
     // The grid: rows up from the axis, columns that move left with the
     // samples (the original scrolled its bitmap, grid and all).
@@ -153,14 +179,11 @@ void ChemicalGraph::draw(CDC& dc, const CRect& rect, const std::vector<std::stri
         back = (right - pointer_x_ + kStep / 2) / kStep;
         dc.FillSolidRect(right - back * kStep, top, 1, bottom - top, RGB(120, 120, 120));
     }
-    int legend_y = top + 2;
-    if (back > 0 && !series_.empty()) {
-        dc.SetTextColor(RGB(60, 60, 60));
-        dc.TextOut(left + 8, legend_y, elapsed(back * milliseconds_per_sample_ / 1000) + _T(" ago"));
-        legend_y += 14;
-    }
+    const int legend_top = bottom + 0x20 - 4;
     for (std::size_t s = 0; s < series_.size(); ++s) {
-        dc.FillSolidRect(left + 8, legend_y + 5, 12, 4, series_colour(static_cast<int>(s)));
+        const int x = entry_at[s].x;
+        const int y = legend_top + entry_at[s].y * row_height;
+        dc.FillSolidRect(x, y + row_height / 2 - 2, 12, 4, series_colour(static_cast<int>(s)));
         CString label(chemical_display_name(names, series_[s].chemical).c_str());
         const std::deque<int>& values = series_[s].values;
         if (static_cast<int>(values.size()) > back) {
@@ -169,8 +192,14 @@ void ChemicalGraph::draw(CDC& dc, const CRect& rect, const std::vector<std::stri
             label += value;
         }
         dc.SetTextColor(RGB(40, 40, 40));
-        dc.TextOut(left + 24, legend_y, label);
-        legend_y += 14;
+        dc.TextOut(x + 16, y, label);
+    }
+    // How long ago the pointer is, at the right of the legend's first row.
+    if (back > 0 && !series_.empty()) {
+        dc.SetTextColor(RGB(60, 60, 60));
+        const UINT align = dc.SetTextAlign(TA_RIGHT | TA_TOP);
+        dc.TextOut(right, legend_top, elapsed(back * milliseconds_per_sample_ / 1000) + _T(" ago"));
+        dc.SetTextAlign(align);
     }
     if (series_.empty() && !empty_message.IsEmpty()) {
         dc.SetTextColor(RGB(120, 120, 120));
