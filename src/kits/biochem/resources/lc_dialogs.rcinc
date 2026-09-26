@@ -1,0 +1,9 @@
+// LibreCreatures dialogs.  The pages lay their controls out in code, so they
+// share one blank template; its size is the smallest a page can be (the
+// original's pages were all this size, 380 x 200).
+300 DIALOG 0, 0, 380, 200
+STYLE 0x48c00044
+CAPTION "Page"
+FONT 8, "MS Sans Serif"
+BEGIN
+END

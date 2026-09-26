@@ -14,7 +14,6 @@
 namespace science {
 namespace {
 
-constexpr int kMaxSamples = 2000;  // history kept per chemical
 constexpr int kSwatchSize = 12;
 
 // The Save Theme dialog (201).
@@ -46,6 +45,10 @@ BiochemistryPage::BiochemistryPage(ScienceSheet& sheet)
 void BiochemistryPage::create_controls() {
     graph_.create(*this, kControlGraph,
                   [this](CDC& dc, const CRect& rect) { draw_graph(dc, rect); });
+    graph_.set_mouse_handler([this](CPoint point, bool) {
+        plot_.set_pointer(point.x);
+        graph_.redraw();
+    });
     make(chemicals_, WC_LISTVIEW, _T(""),
          LVS_REPORT | LVS_SHOWSELALWAYS | LVS_SINGLESEL | WS_BORDER | WS_TABSTOP,
          kControlChemicalList);
@@ -148,31 +151,16 @@ void BiochemistryPage::fill_themes() {
 }
 
 int BiochemistryPage::series_index(int chemical) const {
-    for (std::size_t i = 0; i < series_.size(); ++i) {
-        if (series_[i].chemical == chemical) {
-            return static_cast<int>(i);
-        }
-    }
-    return -1;
+    return plot_.index_of(chemical);
 }
 
 // Follows exactly these chemicals, keeping the history of those already
 // followed, and ticks them in the list.
 void BiochemistryPage::set_tracked(const std::vector<int>& chemicals) {
-    std::vector<Series> kept;
-    for (const int chemical : chemicals) {
-        if (static_cast<int>(kept.size()) >= kMaxTrackedChemicals) {
-            break;
-        }
-        const int existing = series_index(chemical);
-        Series series;
-        series.chemical = chemical;
-        if (existing >= 0) {
-            series.values = std::move(series_[static_cast<std::size_t>(existing)].values);
-        }
-        kept.push_back(std::move(series));
-    }
-    series_ = std::move(kept);
+    std::vector<int> kept(chemicals.begin(),
+                          chemicals.begin() + (std::min)(chemicals.size(),
+                                                         static_cast<std::size_t>(kMaxTrackedChemicals)));
+    plot_.set_chemicals(kept);
     updating_list_ = true;
     for (int row = 0; row < chemicals_.GetItemCount(); ++row) {
         const int index = series_index(list_chemicals_[static_cast<std::size_t>(row)]);
@@ -187,11 +175,10 @@ void BiochemistryPage::set_tracked(const std::vector<int>& chemicals) {
 void BiochemistryPage::tracked_from_list() {
     std::vector<int> chemicals;
     // Keep the order they were ticked in, so colours stay put.
-    for (const Series& series : series_) {
+    for (const int followed : plot_.chemicals()) {
         for (int row = 0; row < chemicals_.GetItemCount(); ++row) {
-            if (list_chemicals_[static_cast<std::size_t>(row)] == series.chemical &&
-                chemicals_.GetCheck(row)) {
-                chemicals.push_back(series.chemical);
+            if (list_chemicals_[static_cast<std::size_t>(row)] == followed && chemicals_.GetCheck(row)) {
+                chemicals.push_back(followed);
             }
         }
     }
@@ -226,9 +213,10 @@ BOOL BiochemistryPage::OnNotify(WPARAM wparam, LPARAM lparam, LRESULT* result) {
 void BiochemistryPage::save_selection() {
     if (c1kit::KitSettings* settings = sheet_.settings()) {
         std::uint8_t saved[kMaxTrackedChemicals + 1] = {};
-        saved[0] = static_cast<std::uint8_t>(series_.size());
-        for (std::size_t i = 0; i < series_.size(); ++i) {
-            saved[i + 1] = static_cast<std::uint8_t>(series_[i].chemical);
+        const std::vector<int> followed = plot_.chemicals();
+        saved[0] = static_cast<std::uint8_t>(followed.size());
+        for (std::size_t i = 0; i < followed.size(); ++i) {
+            saved[i + 1] = static_cast<std::uint8_t>(followed[i]);
         }
         settings->write_binary("Chemicals", saved, sizeof(saved));
     }
@@ -248,7 +236,7 @@ void BiochemistryPage::OnThemeChanged() {
 
 // Saves what is ticked, under a new name or over a theme of the same name.
 void BiochemistryPage::OnSaveTheme() {
-    if (series_.empty()) {
+    if (plot_.series().empty()) {
         AfxMessageBox(_T("Tick the chemicals to put in the theme first."));
         return;
     }
@@ -262,8 +250,8 @@ void BiochemistryPage::OnSaveTheme() {
     }
     c1kit::ChemicalTheme theme;
     theme.name = std::string(CStringA(dialog.name));
-    for (const Series& series : series_) {
-        theme.chemicals.push_back(static_cast<std::uint8_t>(series.chemical));
+    for (const int followed : plot_.chemicals()) {
+        theme.chemicals.push_back(static_cast<std::uint8_t>(followed));
     }
     std::vector<c1kit::ChemicalTheme>& themes = sheet_.themes();
     int index = -1;
@@ -300,9 +288,7 @@ void BiochemistryPage::OnDeleteTheme() {
 }
 
 void BiochemistryPage::OnClearGraph() {
-    for (Series& series : series_) {
-        series.values.clear();
-    }
+    plot_.clear();
     graph_.redraw();
 }
 
@@ -312,12 +298,9 @@ void BiochemistryPage::subject_changed() {
 
 // Every chemical followed, in one query.
 void BiochemistryPage::sample() {
-    if (series_.empty()) {
+    const std::vector<int> chemicals = plot_.chemicals();
+    if (chemicals.empty()) {
         return;
-    }
-    std::vector<int> chemicals;
-    for (const Series& series : series_) {
-        chemicals.push_back(series.chemical);
     }
     std::string reply;
     std::vector<int> values;
@@ -325,12 +308,7 @@ void BiochemistryPage::sample() {
         !c1kit::parse_values(reply, chemicals.size(), values)) {
         return;
     }
-    for (std::size_t i = 0; i < series_.size(); ++i) {
-        series_[i].values.push_back(values[i]);
-        if (static_cast<int>(series_[i].values.size()) > kMaxSamples) {
-            series_[i].values.pop_front();
-        }
-    }
+    plot_.add_sample(values);
     if (GetSafeHwnd() != nullptr && IsWindowVisible()) {
         refresh_levels_column();
         graph_.redraw();
@@ -341,8 +319,8 @@ void BiochemistryPage::refresh_levels_column() {
     for (int row = 0; row < chemicals_.GetItemCount(); ++row) {
         const int index = series_index(list_chemicals_[static_cast<std::size_t>(row)]);
         CString level;
-        if (index >= 0 && !series_[static_cast<std::size_t>(index)].values.empty()) {
-            level.Format(_T("%d"), series_[static_cast<std::size_t>(index)].values.back());
+        if (index >= 0 && !plot_.series()[static_cast<std::size_t>(index)].values.empty()) {
+            level.Format(_T("%d"), plot_.series()[static_cast<std::size_t>(index)].values.back());
         }
         CString shown = chemicals_.GetItemText(row, 2);
         if (shown != level) {
@@ -351,81 +329,12 @@ void BiochemistryPage::refresh_levels_column() {
     }
 }
 
-// Levels 0-255 up the side, newest sample at the right, a sample every
-// half second (two pixels each).
+// The shared graph (c1kitshell::ChemicalGraph): a sample every half second;
+// pointing at it shows every level at that moment.
 void BiochemistryPage::draw_graph(CDC& dc, const CRect& rect) {
-    dc.FillSolidRect(rect, RGB(255, 255, 255));
-    const int left = rect.left + 34;
-    const int top = rect.top + 8;
-    const int right = rect.right - 8;
-    const int bottom = rect.bottom - 22;
-    if (right <= left || bottom <= top) {
-        return;
-    }
-    dc.SetBkMode(TRANSPARENT);
-    CPen grid(PS_SOLID, 1, RGB(225, 225, 225));
-    CPen axis(PS_SOLID, 1, RGB(90, 90, 90));
-    CPen* previous = dc.SelectObject(&grid);
-    dc.SetTextColor(RGB(90, 90, 90));
-    for (int level = 0; level <= 256; level += 32) {
-        const int y = bottom - (bottom - top) * (level > 255 ? 255 : level) / 255;
-        dc.MoveTo(left, y);
-        dc.LineTo(right, y);
-        CString label;
-        label.Format(_T("%d"), level > 255 ? 255 : level);
-        dc.TextOut(rect.left + 2, y - 7, label);
-    }
-    dc.SelectObject(&axis);
-    dc.MoveTo(left, top);
-    dc.LineTo(left, bottom);
-    dc.LineTo(right, bottom);
-    const CString time = c1kitshell::load_string(kStringTime);
-    dc.TextOut((left + right) / 2 - 12, bottom + 4, time);
-    dc.TextOut(right - 22, bottom + 4, _T("now"));
-
-    const int step = 2;
-    for (std::size_t s = 0; s < series_.size(); ++s) {
-        const std::deque<int>& values = series_[s].values;
-        if (values.empty()) {
-            continue;
-        }
-        CPen line(PS_SOLID, 2, series_colour(static_cast<int>(s)));
-        dc.SelectObject(&line);
-        const int visible = (std::min)(static_cast<int>(values.size()), (right - left) / step + 1);
-        for (int i = 0; i < visible; ++i) {
-            const int value = values[values.size() - 1 - static_cast<std::size_t>(i)];
-            const int x = right - i * step;
-            const int y = bottom - (bottom - top) * (std::min)(255, (std::max)(0, value)) / 255;
-            if (i == 0) {
-                dc.MoveTo(x, y);
-            } else {
-                dc.LineTo(x, y);
-            }
-        }
-        dc.SelectObject(&axis);
-    }
-    // Legend, top left inside the plot.
-    int legend_y = top + 2;
-    for (std::size_t s = 0; s < series_.size(); ++s) {
-        dc.FillSolidRect(left + 6, legend_y + 5, 12, 4, series_colour(static_cast<int>(s)));
-        CString label(c1kit::chemical_label(sheet_.chemical_names(), series_[s].chemical).c_str());
-        if (!series_[s].values.empty()) {
-            CString value;
-            value.Format(_T("  %d"), series_[s].values.back());
-            label += value;
-        }
-        dc.SetTextColor(RGB(40, 40, 40));
-        dc.TextOut(left + 22, legend_y, label);
-        legend_y += 14;
-    }
-    if (!sheet_.subject().present) {
-        dc.SetTextColor(RGB(120, 120, 120));
-        dc.TextOut(left + 12, (top + bottom) / 2, _T("Select a creature in the game to follow its chemistry."));
-    } else if (series_.empty()) {
-        dc.SetTextColor(RGB(120, 120, 120));
-        dc.TextOut(left + 12, (top + bottom) / 2, _T("Tick chemicals in the list, or pick a theme."));
-    }
-    dc.SelectObject(previous);
+    plot_.draw(dc, rect, sheet_.chemical_names(),
+               !sheet_.subject().present ? CString(_T("Select a creature in the game to follow its chemistry."))
+                                         : CString(_T("Tick chemicals in the list, or pick a theme.")));
 }
 
 } // namespace science

@@ -11,6 +11,7 @@
 // "Fix (bug N)".
 
 #include "c1kitshell/kit_art.hpp"
+#include "c1kitshell/kit_graph.hpp"
 #include "c1kitshell/kit_shell.hpp"
 #include "c1kitshell/kit_widgets.hpp"
 #include "c1kit/brain_map.hpp"
@@ -72,11 +73,6 @@ protected:
     DECLARE_MESSAGE_MAP()
 
 private:
-    struct Series {
-        int chemical = 0;
-        std::deque<int> values;  // newest last
-    };
-
     void fill_chemical_list();
     void fill_themes();
     void set_tracked(const std::vector<int>& chemicals);
@@ -94,7 +90,7 @@ private:
     CStatic theme_label_;
     PaintedView graph_;
     CImageList swatches_;
-    std::vector<Series> series_;
+    c1kitshell::ChemicalGraph plot_{2000, 500};
     std::vector<int> list_chemicals_;  // chemical per list row
     bool updating_list_ = false;
 };

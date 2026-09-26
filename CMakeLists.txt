@@ -182,6 +182,9 @@ add_c1_kit(Hatchery "Hatchery" ${KITS_ROOT}/hatchery)
 # "Injector.exe", the Injector Kit 2.0 (Object Injector): OLE server
 # ObjectInjector.OLE, Tools slot 7.
 add_c1_kit(Injector "Injector" ${KITS_ROOT}/injector)
+# "BiochemKit.exe", the Biochemistry Kit (v1.2): OLE server BiochemKit.OLE,
+# Tools slot 1.
+add_c1_kit(BiochemKit "BiochemKit" ${KITS_ROOT}/biochem)
 
 install(TARGETS c1kitlib RUNTIME DESTINATION .)
 
