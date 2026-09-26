@@ -74,6 +74,8 @@ public:
     bool start_macro_execution(void* callback_context);
     bool execute_macro_to_output_buffer(char* output_buffer);
     bool format_brain_activity_report(char* output_buffer);
+    // Runs the loaded script so that its work values pick the report.
+    void run_report_script();
     bool set_zero_callback_result(void* callback_argument);
 
     // A started script that ends deletes its Macro; a kit that keeps its
