@@ -17,6 +17,21 @@ enum class GenomeLocusKind : std::uint32_t {
 
 struct LobeNeuron;
 
+// The brain grid.  C1 lays every lobe out on a 64 x 64 grid: a genome's
+// offsets fold into 0..63 and a lobe that runs off the edge is pulled back.
+// LibreCreatures deviation, off unless the "ExtendedBrainGrid" setting is on:
+// the extended grid lets offsets use the whole byte, placing lobes anywhere
+// on a 208 x 208 grid.  Lobe sizes keep their caps (63 a side, 1024 neurons),
+// so no brain grows; lobes only get room.  208 because the brain report sends
+// a neuron's grid x and y as '0' + coordinate, which runs out of byte at 207.
+// Positions are behaviour (CAOS `fire x y` addresses neurons by grid
+// position), and a brain keeps the layout it was built with, so the setting
+// affects brains built after it changes.
+constexpr std::uint32_t kStandardBrainGridExtent = 0x40;
+constexpr std::uint32_t kExtendedBrainGridExtent = 208;
+void set_extended_brain_grid(bool enabled);
+bool extended_brain_grid();
+
 struct LobeConnection {
     LobeNeuron* target_neuron = nullptr;
     std::uint8_t target_grid_x = 0;

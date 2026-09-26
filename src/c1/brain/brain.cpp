@@ -13,12 +13,24 @@ void append_activity_entry(char*& output,
                            std::uint32_t lobe_x,
                            std::uint32_t lobe_y,
                            const LobeNeuron& neuron,
-                           std::uint8_t value) {
+                           std::uint8_t value,
+                           bool whole_grid) {
     if (value == 0) {
         return;
     }
-    *output++ = static_cast<char>('0' + lobe_x + neuron.grid_x);
-    *output++ = static_cast<char>('0' + lobe_y + neuron.grid_y);
+    const std::uint32_t global_x = lobe_x + neuron.grid_x;
+    const std::uint32_t global_y = lobe_y + neuron.grid_y;
+    // LibreCreatures deviation: a neuron off the standard grid is left out
+    // unless the kit asked for the whole grid.  C1 sent it regardless and a
+    // 1996 kit wrote it outside its 64 x 64 array (Science Kit
+    // ParseScannerDdeResponse @ 0x00401880); only odd genomes put neurons
+    // there on the standard grid, but the extended grid does it by design.
+    if (!whole_grid && (global_x >= kStandardBrainGridExtent ||
+                        global_y >= kStandardBrainGridExtent)) {
+        return;
+    }
+    *output++ = static_cast<char>('0' + global_x);
+    *output++ = static_cast<char>('0' + global_y);
     *output++ = static_cast<char>('0' + (value >> 4));
 }
 
@@ -711,7 +723,8 @@ void Brain::normalize_dream_connection_weights() {
 
 std::size_t Brain::format_activity_report(char* output,
                                           ActivityReportMode mode,
-                                          int rule_index) const {
+                                          int rule_index,
+                                          bool whole_grid) const {
     char* cursor = output;
     const std::size_t count = lobe_count_ < lobes_.size()
                                   ? static_cast<std::size_t>(lobe_count_)
@@ -744,7 +757,7 @@ std::size_t Brain::format_activity_report(char* output,
             }
             append_activity_entry(cursor, current_lobe.grid_x_offset_value(),
                                   current_lobe.grid_y_offset_value(), neuron,
-                                  report_value);
+                                  report_value, whole_grid);
         }
     }
     *cursor = '\0';

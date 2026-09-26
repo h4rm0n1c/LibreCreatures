@@ -5,6 +5,7 @@
 #include "windows_shell.hpp"
 #include "windows_embedded_kit_host.hpp"
 
+#include "../brain/lobe.hpp"
 #include "../display/bitmap.hpp"
 #include "../world/viewport.hpp"
 #include "../archive/funeral_kit.hpp"
@@ -553,6 +554,10 @@ void C1WindowsDocument::construct_semantic_document() {
         write_view_setting("InformativeMenu", 0);
         semantic_document_->informative_menu_setting = false;
     }
+    // LibreCreatures: lobes on the extended brain grid (see
+    // brain::set_extended_brain_grid).  Off unless set.
+    creatures1::brain::set_extended_brain_grid(
+        read_view_setting("ExtendedBrainGrid", value, 0) && value != 0);
 }
 
 BOOL C1WindowsDocument::OnOpenDocument(LPCTSTR path) {

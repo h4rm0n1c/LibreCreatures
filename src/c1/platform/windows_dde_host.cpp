@@ -252,7 +252,8 @@ std::string WindowsDdeCallbackHost::render_brain_activity(
     // those before it requests the item.
     const char* report = WindowsMacroHost::format_brain_activity_report(
         macro.object_context.target_object, buffer.data(),
-        macro.caos_work_values[0], macro.caos_work_values[1]);
+        macro.caos_work_values[0], macro.caos_work_values[1],
+        macro.caos_work_values[2] == 1);
     if (report == nullptr) {
         return std::string();
     }

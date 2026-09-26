@@ -8,6 +8,7 @@
 #include "windows_creature_hosts.hpp"
 
 #include "../application/sfc_ole.hpp"
+#include "../brain/lobe.hpp"
 #include "../common/logging.hpp"
 #include "../scripting/classifier_scripts.hpp"
 
@@ -237,7 +238,7 @@ bool WindowsMacroHost::image_sequence_is_empty(
 
 char* WindowsMacroHost::format_brain_activity_report(
     creatures1::objects::Object* brain_object, char* output_buffer,
-    std::uint32_t report_mode, std::uint32_t rule_index) {
+    std::uint32_t report_mode, std::uint32_t rule_index, bool whole_grid) {
     // CreateBrainActivityData @ 0x004101e0 reaches the target object's CBrain
     // and calls FormatActivityReport with the macro's first two work values as
     // the report mode and the rule index.  Both halves are reachable now: the
@@ -267,7 +268,7 @@ char* WindowsMacroHost::format_brain_activity_report(
     const std::size_t written = brain->format_activity_report(
         output_buffer,
         static_cast<creatures1::brain::ActivityReportMode>(report_mode),
-        static_cast<int>(rule_index));
+        static_cast<int>(rule_index), whole_grid);
     return output_buffer + written;
 }
 
@@ -3044,16 +3045,31 @@ std::string WindowsMacroHost::render_brain_lobe(
     if (brain == nullptr) {
         return {};
     }
+    // LibreCreatures deviation: a lobe off the standard 64 x 64 grid is
+    // reported parked in its bottom-right corner unless the script set work
+    // value 2 to 1 first.  The 1996 Health Kit sums a 64 x 64 array over each
+    // lobe's rectangle unchecked (UpdateHealthLobeSprites, after
+    // QueryAndLoadHealthLobeData @ 0x0040b3e0); parked, the lobe stays inside
+    // it and reads as idle, since the brain report leaves its neurons out too.
+    // Dropping the lobe would shift the kit's lobe numbering instead.
+    const bool whole_grid = macro.caos_work_values[2] == 1;
+    constexpr std::uint32_t kStandard = creatures1::brain::kStandardBrainGridExtent;
     const std::uint32_t count = brain->lobe_count();
     std::string payload;
     payload.reserve(count * 5u + 2u);
     payload.push_back(static_cast<char>(static_cast<std::uint8_t>(count)));
     for (std::uint32_t index = 0; index < count; ++index) {
         const creatures1::brain::Lobe& lobe = brain->lobe(index);
-        payload.push_back(
-            static_cast<char>(static_cast<std::uint8_t>(lobe.grid_x_offset_value())));
-        payload.push_back(
-            static_cast<char>(static_cast<std::uint8_t>(lobe.grid_y_offset_value())));
+        std::uint32_t x = lobe.grid_x_offset_value();
+        std::uint32_t y = lobe.grid_y_offset_value();
+        const std::uint32_t width = lobe.grid_width_value();
+        const std::uint32_t height = lobe.grid_height_value();
+        if (!whole_grid && (x + width > kStandard || y + height > kStandard)) {
+            x = width < kStandard ? kStandard - width : 0;
+            y = height < kStandard ? kStandard - height : 0;
+        }
+        payload.push_back(static_cast<char>(static_cast<std::uint8_t>(x)));
+        payload.push_back(static_cast<char>(static_cast<std::uint8_t>(y)));
         payload.push_back(
             static_cast<char>(static_cast<std::uint8_t>(lobe.grid_width_value())));
         payload.push_back(

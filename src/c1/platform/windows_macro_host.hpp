@@ -353,7 +353,8 @@ public:
         creatures1::scripting::MacroHolder& holder) override;
     char* format_brain_activity_report(
         creatures1::objects::Object* brain_object, char* output_buffer,
-        std::uint32_t report_mode, std::uint32_t rule_index) override;
+        std::uint32_t report_mode, std::uint32_t rule_index,
+        bool whole_grid) override;
 
     // MacroRuntimeHost.  Each method either delegates to already-translated
     // policy or is held with the reason it cannot be reached yet; none is a

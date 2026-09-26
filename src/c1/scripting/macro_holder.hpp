@@ -55,9 +55,12 @@ public:
     // Returns the report buffer on success and nullptr on failure.  The
     // object-to-Brain conversion belongs to the concrete game host because
     // it depends on the recovered Creature layout, not base Object.
+    // `whole_grid`: the Macro's work value 2 is 1 (see
+    // Brain::format_activity_report).
     virtual char* format_brain_activity_report(
         objects::Object* brain_object, char* output_buffer,
-        std::uint32_t report_mode, std::uint32_t rule_index) = 0;
+        std::uint32_t report_mode, std::uint32_t rule_index,
+        bool whole_grid) = 0;
 };
 
 class MacroHolder {
