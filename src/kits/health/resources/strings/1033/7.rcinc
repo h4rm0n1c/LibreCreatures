@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    96 ""
+    97 ""
+    98 ""
+    99 ""
+    100 "OLE initialization failed.  Make sure that the OLE libraries are the correct version."
+    101 "Health Kit... "
+    102 "Health Kit -  "
+    103 " Paused - "
+    104 "Pain"
+    105 "Hunger"
+    106 "Exhaustion"
+    107 "Sleepiness"
+    108 "Boredom"
+    109 "Please wait..."
+    110 "Fitness page"
+    111 "Doctor's page"
+END

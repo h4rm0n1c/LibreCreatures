@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    96 ""
+    97 ""
+    98 ""
+    99 ""
+    100 "OLE initialization failed.  Make sure that the OLE libraries are the correct version."
+    101 "ヘルスキット..."
+    102 "ヘルスキット - "
+    103 "中断"
+    104 "痛み"
+    105 "空腹感"
+    106 "疲労"
+    107 "眠気"
+    108 "退屈"
+    109 "お待ちください..."
+    110 "Fitness page"
+    111 "Doctor's page"
+END

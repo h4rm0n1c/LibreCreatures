@@ -173,6 +173,8 @@ add_c1_kit(OwnersKit "Owner's Kit" ${KITS_ROOT}/owner)
 add_c1_kit(FuneralKit "Funeral Kit" ${KITS_ROOT}/funeral)
 # "Science Kit.exe": OLE server Science.OLE, Tools slot 4.
 add_c1_kit(ScienceKit "Science Kit" ${KITS_ROOT}/science)
+# "Health Kit.exe": OLE server Health.OLE, Tools slot 3.
+add_c1_kit(HealthKit "Health Kit" ${KITS_ROOT}/health)
 
 install(TARGETS c1kitlib RUNTIME DESTINATION .)
 
