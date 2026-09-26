@@ -1,0 +1,19 @@
+STRINGTABLE
+BEGIN
+    96 ""
+    97 ""
+    98 ""
+    99 ""
+    100 "OLE initialization failed.  Make sure that the OLE libraries are the correct version."
+    101 "Oestrogen"
+    102 "Progesterone"
+    103 "Testosterone"
+    104 "Health"
+    105 "Sex Drive"
+    106 "Fertility"
+    107 "Breeder's Kit..."
+    108 "Breeder's Kit - "
+    109 " Paused - "
+    110 "Please wait..."
+    111 "Aphrodisiac Page"
+END

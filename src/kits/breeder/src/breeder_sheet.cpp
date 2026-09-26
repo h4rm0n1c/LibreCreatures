@@ -1,18 +1,18 @@
-// The Health Kit's sheet: the subject creature, the data files, the game
+// The Breeder's Kit's sheet: the subject creature, the data files, the game
 // conversations, polling and preferences.  The original's behaviour is in
 // ../ORIGINAL.md.
 
-#include "health.hpp"
-#include "health_ids.hpp"
+#include "breeder.hpp"
+#include "breeder_ids.hpp"
 
 #include <fstream>
 #include <iterator>
 
-namespace health {
+namespace breeder {
 namespace {
 
 constexpr char kCompany[] = "Gameware Development";
-constexpr char kProduct[] = "Creatures 1\\Health Kit";
+constexpr char kProduct[] = "Creatures 1\\Breeder's Kit";
 constexpr char kVersion[] = "1.0";
 
 struct WindowLocation {
@@ -59,10 +59,7 @@ std::string first_field(const std::string& reply) {
 
 } // namespace
 
-HealthPage::HealthPage(HealthSheet& sheet, UINT title_string)
-    : LayoutPage(sheet, kDialogPage, title_string), sheet_(sheet) {}
-
-BEGIN_MESSAGE_MAP(HealthSheet, c1kitshell::KitSheet)
+BEGIN_MESSAGE_MAP(BreederSheet, c1kitshell::KitSheet)
     ON_WM_CREATE()
     ON_WM_TIMER()
     ON_WM_SIZE()
@@ -73,28 +70,24 @@ END_MESSAGE_MAP()
 
 // The original opened on a cover page and played sound; neither is in this
 // build.  The pages are in the original's order.
-HealthSheet::HealthSheet(CFont& default_font)
+BreederSheet::BreederSheet(CFont& default_font)
     : KitSheet(kStringToolName, kStringPausedMarker),
       default_font_(default_font),
-      fitness_page_(*this),
-      drives_page_(*this),
-      brain_page_(*this),
-      doctor_page_(*this, *this, kDialogPage, kStringDoctorTab) {
+      fertility_page_(*this),
+      shop_page_(*this, *this, kDialogPage, kStringShopTab) {
     m_psh.dwFlags |= PSH_USEHICON;
     m_psh.hIcon = AfxGetApp()->LoadIcon(kIconKit);
-    AddPage(&fitness_page_);
-    AddPage(&drives_page_);
-    AddPage(&brain_page_);
-    AddPage(&doctor_page_);
+    AddPage(&fertility_page_);
+    AddPage(&shop_page_);
 }
 
-HealthSheet::~HealthSheet() {
+BreederSheet::~BreederSheet() {
     if (registry_ != nullptr) {
         registry_->release();
     }
 }
 
-bool HealthSheet::create_window() {
+bool BreederSheet::create_window() {
     load_data_files();
     return Create(nullptr,
                   WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX |
@@ -102,7 +95,7 @@ bool HealthSheet::create_window() {
                   WS_EX_DLGMODALFRAME) != FALSE;
 }
 
-int HealthSheet::OnCreate(LPCREATESTRUCT create) {
+int BreederSheet::OnCreate(LPCREATESTRUCT create) {
     EnableStackedTabs(FALSE);
     if (c1kitshell::KitSheet::OnCreate(create) == -1) {
         return -1;
@@ -116,7 +109,7 @@ int HealthSheet::OnCreate(LPCREATESTRUCT create) {
     return 0;
 }
 
-BOOL HealthSheet::OnInitDialog() {
+BOOL BreederSheet::OnInitDialog() {
     const BOOL result = c1kitshell::KitSheet::OnInitDialog();
     enable_resizing(CSize(kDefaultPageWidthDlu, kDefaultPageHeightDlu));
     if (CMenu* menu = GetSystemMenu(FALSE)) {
@@ -127,13 +120,13 @@ BOOL HealthSheet::OnInitDialog() {
     return result;
 }
 
-std::string HealthSheet::game_file(const std::string& name) const {
+std::string BreederSheet::game_file(const std::string& name) const {
     const CString directory = c1kitshell::game_directory_setting("Main Directory");
     return std::string(CStringA(directory)) + name;
 }
 
-// allchemicals.str (the drive names), the palette, and the shop.
-void HealthSheet::load_data_files() {
+// allchemicals.str (the hormone names), the palette, and the shop.
+void BreederSheet::load_data_files() {
     std::vector<std::uint8_t> bytes;
     if (!read_file(game_file(c1kit::kAllChemicalsFileName), bytes) ||
         !c1kit::parse_chemical_names(bytes, chemical_names_)) {
@@ -143,7 +136,7 @@ void HealthSheet::load_data_files() {
     palette_.load(std::string(CStringA(palettes.IsEmpty() ? CString(_T("Palettes\\")) : palettes)) +
                   "palette.dta");
     shop_.clear();
-    if (read_file(game_file(c1kit::kHealthShopFileName), bytes) &&
+    if (read_file(game_file(kShopFileName), bytes) &&
         !c1kit::parse_shop(bytes, shop_)) {
         shop_.clear();
     }
@@ -153,21 +146,21 @@ void HealthSheet::load_data_files() {
 // original wrote it only when the page released its items as the kit shut
 // down, which does not happen when the game terminates the kit on
 // "app: quit".
-bool HealthSheet::run_shop_command(const std::string& script) {
+bool BreederSheet::run_shop_command(const std::string& script) {
     std::string reply;
     return query(script, reply);
 }
 
-bool HealthSheet::save_shop() {
-    const std::string path = game_file(c1kit::kHealthShopFileName);
+bool BreederSheet::save_shop() {
+    const std::string path = game_file(kShopFileName);
     if (!write_file(path, c1kit::serialize_shop(shop_))) {
-        AfxMessageBox(CString(_T("The Health Kit could not write ")) + CString(path.c_str()) + _T("."));
+        AfxMessageBox(CString(_T("The Breeder's Kit could not write ")) + CString(path.c_str()) + _T("."));
         return false;
     }
     return true;
 }
 
-void HealthSheet::load_preferences() {
+void BreederSheet::load_preferences() {
     WindowSize size = {};
     if (registry_->read_binary(c1kit::SettingsScope::user, "Size", &size, sizeof(size)) &&
         size.width > 0 && size.height > 0) {
@@ -197,7 +190,7 @@ void HealthSheet::load_preferences() {
     SetTimer(kTimerStartup, kStartupDelayMs, nullptr);
 }
 
-void HealthSheet::save_preferences() {
+void BreederSheet::save_preferences() {
     if (registry_ == nullptr || GetSafeHwnd() == nullptr) {
         return;
     }
@@ -213,29 +206,20 @@ void HealthSheet::save_preferences() {
     registry_->write_dword("Page", static_cast<std::uint32_t>(GetActiveIndex() + 1));
 }
 
-// One query holder, and one brain report holder, for the kit's lifetime (the
-// original kept one per page).
-bool HealthSheet::query(const std::string& script, std::string& reply) {
+// One query holder for the kit's lifetime.
+bool BreederSheet::query(const std::string& script, std::string& reply) {
     reply.clear();
     return conversation_ && !quitting() &&
            conversation_->query_reusing_holder(c1kit::kMacroModeQuery, script.c_str(), reply);
 }
 
-bool HealthSheet::brain_report(int mode, std::string& reply) {
-    reply.clear();
-    return report_conversation_ && !quitting() &&
-           report_conversation_->query_reusing_holder(
-               c1kit::kMacroModeBrainReport, c1kit::brain_report_script(mode, 0).c_str(), reply);
-}
-
-void HealthSheet::connect() {
+void BreederSheet::connect() {
     if (!connect_to_game(kCommandBufferBytes)) {
         return;
     }
     connected_ = true;
     if (c1kit::MacroTransport* game = transport()) {
         conversation_ = std::make_unique<c1kit::MacroConversation>(*game);
-        report_conversation_ = std::make_unique<c1kit::MacroConversation>(*game);
     }
     take_subject();
     if (saved_page_ > 0 && saved_page_ < GetPageCount()) {
@@ -248,9 +232,8 @@ void HealthSheet::connect() {
 // `putv ownr`: the creature selected in the game.  Fix (bug 2): with none
 // selected the pages say so; the original looped on a modal "There is no
 // subject" box.
-void HealthSheet::take_subject() {
+void BreederSheet::take_subject() {
     subject_ = Subject();
-    lobes_.clear();
     std::string reply;
     int owner = 0;
     if (query("dde: putv ownr,endm", reply) && c1kit::parse_first_value(reply, owner) &&
@@ -262,22 +245,17 @@ void HealthSheet::take_subject() {
         if (query("dde: getb cnam,endm", reply)) {
             subject_.name = first_field(reply);
         }
-        c1kit::MacroConversation* conversation = conversation_.get();
-        if (conversation != nullptr &&
-            conversation->query_binary(c1kit::kMacroModeQuery, c1kit::kLobeQuery, reply)) {
-            c1kit::parse_lobe_reply(reply, lobes_);
+        int sex = 0;
+        if (query("dde: putv gend,endm", reply) && c1kit::parse_first_value(reply, sex)) {
+            subject_.sex = sex;
         }
     }
     update_title();
-    fitness_page_.subject_changed();
-    drives_page_.subject_changed();
-    brain_page_.subject_changed();
-    if (auto* page = dynamic_cast<HealthPage*>(GetActivePage())) {
-        page->poll();
-    }
+    fertility_page_.subject_changed();
+    fertility_page_.poll();
 }
 
-void HealthSheet::update_title() {
+void BreederSheet::update_title() {
     const CString name = subject_.present ? CString(subject_.name.c_str())
                                           : CString(_T("no creature selected"));
     if (paused()) {
@@ -288,21 +266,20 @@ void HealthSheet::update_title() {
     }
 }
 
-void HealthSheet::OnTimer(UINT_PTR timer_id) {
+void BreederSheet::OnTimer(UINT_PTR timer_id) {
     if (timer_id == kTimerStartup) {
         KillTimer(kTimerStartup);
         connect();
     } else if (timer_id == kTimerPoll && !paused() && subject_.present && !quitting()) {
-        if (auto* page = dynamic_cast<HealthPage*>(GetActivePage())) {
-            page->poll();
-        }
+        // The graph keeps its history whichever page is showing.
+        fertility_page_.poll();
     }
     c1kitshell::KitSheet::OnTimer(timer_id);
 }
 
 // Control states: 6 the selection changed, 7 its name changed, 8 close,
 // 9 the game paused or resumed.
-void HealthSheet::on_control_state(std::uint8_t state) {
+void BreederSheet::on_control_state(std::uint8_t state) {
     switch (state) {
     case 6:
         if (!paused()) {
@@ -333,7 +310,7 @@ void HealthSheet::on_control_state(std::uint8_t state) {
     }
 }
 
-void HealthSheet::OnSize(UINT type, int cx, int cy) {
+void BreederSheet::OnSize(UINT type, int cx, int cy) {
     c1kitshell::KitSheet::OnSize(type, cx, cy);
     const bool minimised = type == SIZE_MINIMIZED;
     if (minimised != minimised_) {
@@ -345,7 +322,7 @@ void HealthSheet::OnSize(UINT type, int cx, int cy) {
     }
 }
 
-void HealthSheet::set_always_on_top(bool on) {
+void BreederSheet::set_always_on_top(bool on) {
     always_on_top_ = on ? 1 : 0;
     SetWindowPos(on ? &wndTopMost : &wndNoTopMost, 0, 0, 0, 0,
                  SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
@@ -356,7 +333,7 @@ void HealthSheet::set_always_on_top(bool on) {
 
 // Fix (bug 3): "Always on top" on the system menu; the original's menu for
 // it (143) was never loaded.
-void HealthSheet::OnSysCommand(UINT id, LPARAM lparam) {
+void BreederSheet::OnSysCommand(UINT id, LPARAM lparam) {
     if ((id & 0xfff0) == kSysCommandOnTop) {
         set_always_on_top(always_on_top_ == 0);
         return;
@@ -364,25 +341,24 @@ void HealthSheet::OnSysCommand(UINT id, LPARAM lparam) {
     c1kitshell::KitSheet::OnSysCommand(id, lparam);
 }
 
-void HealthSheet::before_game_quit() {
+void BreederSheet::before_game_quit() {
     save_preferences();
 }
 
-void HealthSheet::OnClose() {
+void BreederSheet::OnClose() {
     request_game_quit();
 }
 
-void HealthSheet::OnDestroy() {
+void BreederSheet::OnDestroy() {
     KillTimer(kTimerPoll);
     if (!quitting()) {
         if (conversation_) conversation_->close();
-        if (report_conversation_) report_conversation_->close();
     }
     save_preferences();
     c1kitshell::KitSheet::OnDestroy();
 }
 
-} // namespace health
+} // namespace breeder
 
 // ===========================================================================
 // Kit definition
@@ -390,8 +366,8 @@ void HealthSheet::OnDestroy() {
 
 namespace {
 
-c1kitshell::KitSheet* create_health_window(CFont& font) {
-    auto* sheet = new health::HealthSheet(font);
+c1kitshell::KitSheet* create_breeder_window(CFont& font) {
+    auto* sheet = new breeder::BreederSheet(font);
     if (!sheet->create_window()) {
         delete sheet;
         return nullptr;
@@ -401,17 +377,17 @@ c1kitshell::KitSheet* create_health_window(CFont& font) {
 
 c1kitshell::KitDefinition make_definition() {
     c1kitshell::KitDefinition kit;
-    kit.identity.prog_id = "Health.OLE";
-    // {7CCFFEC1-A43D-11CF-BBF2-0020AF71E433}
-    const GUID clsid = {0x7ccffec1, 0xa43d, 0x11cf,
+    kit.identity.prog_id = "Sex.OLE";
+    // {B4A467E1-AF33-11CF-BBF2-0020AF71E433}
+    const GUID clsid = {0xb4a467e1, 0xaf33, 0x11cf,
                         {0xbb, 0xf2, 0x00, 0x20, 0xaf, 0x71, 0xe4, 0x33}};
     memcpy(kit.identity.clsid, &clsid, sizeof(clsid));
-    kit.tool_slot = 3;
-    kit.tool_value_prog_id = "Health.OLE";
-    kit.tool_name_string = health::kStringToolName;
-    kit.tool_help_string = health::kStringToolHelp;
-    kit.ole_init_failed_string = health::kStringOleInitFailed;
-    kit.create_main_window = &create_health_window;
+    kit.tool_slot = 5;
+    kit.tool_value_prog_id = "Sex.OLE";
+    kit.tool_name_string = breeder::kStringToolName;
+    kit.tool_help_string = breeder::kStringToolHelp;
+    kit.ole_init_failed_string = breeder::kStringOleInitFailed;
+    kit.create_main_window = &create_breeder_window;
     return kit;
 }
 
