@@ -168,7 +168,14 @@ void test_brain_map() {
     assert(estimated_value(activity, 5, 6) == 8 && estimated_value(activity, 0, 0) == 0 &&
            estimated_value(activity, 63, 0) == 248 && estimated_value(activity, 3, 1) == 152);
 
-    assert(report_probe_script() == "inst,setv var0 3,setv var1 7,endm");
+    assert(report_probe_script() == "inst,setv var0 3,setv var1 7,setv var2 1,endm");
+    // Coordinates past the standard grid (extended grid, whole-grid reply).
+    std::string far_report;
+    far_report += static_cast<char>('0' + 150);
+    far_report += static_cast<char>('0' + 100);
+    far_report += static_cast<char>('0' + 4);
+    parse_activity_report(far_report, activity);
+    assert(activity.reported[150][100] && activity.level[150][100] == 4);
     assert(lobe_cells_query(8, 10, 2, 1) == "inst,dde: cell 8 10 1,dde: cell 8 11 1,endm");
     std::vector<NeuronValues> batch;
     assert(parse_cell_batch("200|7|4|40|80|120|12|0|0|0|0|0|0|0|", 2, batch));
@@ -303,10 +310,22 @@ void test_brain_wiring() {
     assert(dendrite_reach(639, 640, 7, 16, 8, 2, reach));  // last neuron: last cell, clamped
     assert(reach.spot_x == 6 && reach.spot_y == 15 && reach.right == 6 && reach.bottom == 15);
 
-    struct Layout { int x, y; };
-    assert(wiring_matches(male, std::vector<Layout>{{56, 1}, {10, 5}}));
-    assert(!wiring_matches(male, std::vector<Layout>{{10, 5}, {56, 1}}));
-    assert(!wiring_matches(male, std::vector<Layout>{{56, 1}}));
+    struct Layout { int x, y, width, height; };
+    assert(wiring_matches(male, std::vector<Layout>{{56, 1, 8, 2}, {10, 5, 8, 2}}));
+    assert(!wiring_matches(male, std::vector<Layout>{{10, 5, 8, 2}, {56, 1, 8, 2}}));
+    assert(!wiring_matches(male, std::vector<Layout>{{56, 1, 8, 2}}));
+
+    // The extended grid: the offset is the whole byte, kept inside 208 at
+    // the game's final size.
+    std::vector<Gene> far;
+    far.push_back(lobe_gene(200, 120, 8, 0, 0, 0, 0, 0, 0));
+    const std::vector<LobeWiring> standard = brain_wiring(far, true);
+    const std::vector<LobeWiring> extended = brain_wiring(far, true, true);
+    assert(standard[0].x == 200 % 64 && standard[0].y == 120 % 64);
+    assert(extended[0].x == 200 && extended[0].y == 120);
+    assert(wiring_matches(extended, std::vector<Layout>{{200, 120, 8, 2}}, true));
+    assert(wiring_matches(extended, std::vector<Layout>{{190, 120, 18, 2}}, true));  // widened, pulled in
+    assert(!wiring_matches(extended, std::vector<Layout>{{200 % 64, 120 % 64, 8, 2}}, true));
 }
 
 int main(int argc, char** argv) {

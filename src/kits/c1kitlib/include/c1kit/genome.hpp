@@ -231,7 +231,12 @@ struct LobeWiring {
 constexpr std::size_t kLobeGeneWiringBytes = kLobeRuleOffset + 2 * kLobeRuleBytes;
 constexpr std::size_t kMaximumLobes = 32;
 
-inline std::vector<LobeWiring> brain_wiring(const std::vector<Gene>& genes, bool male) {
+// `extended`: as LibreCreatures lays lobes out with its extended brain grid
+// on, where an offset is the whole byte and nothing is pulled back here (the
+// game keeps the lobe inside 208 x 208 at its final size, which
+// wiring_matches allows for).
+inline std::vector<LobeWiring> brain_wiring(const std::vector<Gene>& genes, bool male,
+                                            bool extended = false) {
     std::vector<LobeWiring> lobes;
     for (int pass = 0; pass < 2; ++pass) {
         for (const Gene& gene : genes) {
@@ -245,10 +250,15 @@ inline std::vector<LobeWiring> brain_wiring(const std::vector<Gene>& genes, bool
             LobeWiring lobe;
             const int width = (p[2] + 62) % 63 + 1;
             const int height = (p[3] + 62) % 63 + 1;
-            lobe.x = p[0] < 0x40 ? p[0] : (p[0] & 0x3f);
-            lobe.y = p[1] < 0x40 ? p[1] : (p[1] & 0x3f);
-            if (lobe.x + width > 0x40) lobe.x = 0x40 - width;
-            if (lobe.y + height > 0x40) lobe.y = 0x40 - height;
+            if (extended) {
+                lobe.x = p[0];
+                lobe.y = p[1];
+            } else {
+                lobe.x = p[0] < 0x40 ? p[0] : (p[0] & 0x3f);
+                lobe.y = p[1] < 0x40 ? p[1] : (p[1] & 0x3f);
+                if (lobe.x + width > 0x40) lobe.x = 0x40 - width;
+                if (lobe.y + height > 0x40) lobe.y = 0x40 - height;
+            }
             lobe.perception_copy = p[4] > 2 ? p[4] % 3 : p[4];
             for (int r = 0; r < 2; ++r) {
                 const std::size_t at = kLobeRuleOffset + kLobeRuleBytes * static_cast<std::size_t>(r);
@@ -306,10 +316,18 @@ inline bool dendrite_reach(int neuron, int own_neurons, int source_width, int so
 // Whether a wiring plan is this brain's: as many lobes, each where the
 // game's `lobe` reply puts it.
 template <typename Layout>
-bool wiring_matches(const std::vector<LobeWiring>& wiring, const std::vector<Layout>& lobes) {
+bool wiring_matches(const std::vector<LobeWiring>& wiring, const std::vector<Layout>& lobes,
+                    bool extended = false) {
     if (wiring.empty() || wiring.size() != lobes.size()) return false;
+    constexpr int kExtent = 208;
     for (std::size_t i = 0; i < wiring.size(); ++i) {
-        if (wiring[i].x != lobes[i].x || wiring[i].y != lobes[i].y) return false;
+        int x = wiring[i].x;
+        int y = wiring[i].y;
+        if (extended) {  // kept inside the grid at the game's final size
+            if (x + lobes[i].width > kExtent) x = kExtent - lobes[i].width;
+            if (y + lobes[i].height > kExtent) y = kExtent - lobes[i].height;
+        }
+        if (x != lobes[i].x || y != lobes[i].y) return false;
     }
     return true;
 }
