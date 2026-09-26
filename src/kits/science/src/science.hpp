@@ -12,6 +12,7 @@
 
 #include "c1kitshell/kit_art.hpp"
 #include "c1kitshell/kit_shell.hpp"
+#include "c1kitshell/kit_widgets.hpp"
 #include "c1kit/brain_map.hpp"
 #include "c1kit/conversation.hpp"
 #include "c1kit/genome.hpp"
@@ -29,46 +30,17 @@ namespace science {
 
 class ScienceSheet;
 
-// ---------------------------------------------------------------------------
-// Drawing
-// ---------------------------------------------------------------------------
-
-// A child window drawn by a callback into an off-screen bitmap, so it never
-// flickers; mouse movement and clicks are passed on.
-class PaintedView : public CWnd {
-public:
-    using Painter = std::function<void(CDC&, const CRect&)>;
-    using MouseHandler = std::function<void(CPoint, bool clicked)>;
-
-    bool create(CWnd& parent, UINT id, Painter painter);
-    void set_mouse_handler(MouseHandler handler) { mouse_ = std::move(handler); }
-    void redraw() { if (GetSafeHwnd() != nullptr) Invalidate(FALSE); }
-
-protected:
-    afx_msg void OnPaint();
-    afx_msg BOOL OnEraseBkgnd(CDC*) { return TRUE; }
-    afx_msg void OnMouseMove(UINT flags, CPoint point);
-    afx_msg void OnLButtonDown(UINT flags, CPoint point);
-    afx_msg void OnMouseLeave();
-    DECLARE_MESSAGE_MAP()
-
-private:
-    Painter painter_;
-    MouseHandler mouse_;
-    bool tracking_ = false;
-};
-
-// Distinct colours for plotted lines and lobes.
-COLORREF series_colour(int index);
-COLORREF lobe_colour(int lobe);
+using c1kitshell::PaintedView;
+using c1kitshell::blend;
+using c1kitshell::lobe_colour;
+using c1kitshell::series_colour;
 
 // ---------------------------------------------------------------------------
 // Pages
 // ---------------------------------------------------------------------------
 
-// A page whose controls are made and placed in code, so it can grow with the
-// window.
-class SciencePage : public CPropertyPage {
+// A page laid out in code (c1kitshell::LayoutPage) that the sheet polls.
+class SciencePage : public c1kitshell::LayoutPage {
 public:
     SciencePage(ScienceSheet& sheet, UINT title_string);
 
@@ -78,27 +50,7 @@ public:
     virtual void subject_changed() {}
 
 protected:
-    BOOL OnInitDialog() override;
-    BOOL OnSetActive() override;
-    virtual void create_controls() = 0;
-    virtual void layout(int width, int height) = 0;
-    afx_msg void OnSize(UINT type, int cx, int cy);
-    afx_msg void OnCloseKit();
-    DECLARE_MESSAGE_MAP()
-
-    // Helpers for create_controls.
-    CWnd* make(CWnd& control, LPCTSTR window_class, LPCTSTR text, DWORD style,
-               UINT id, DWORD ex_style = 0);
-    void place(CWnd& control, int x, int y, int width, int height);
-    int text_height() const { return text_height_; }
-
     ScienceSheet& sheet_;
-    CString title_;
-    CButton close_;
-    bool created_ = false;
-
-private:
-    int text_height_ = 13;
 };
 
 // Biochemistry: any number of chemicals (up to kMaxTrackedChemicals) plotted

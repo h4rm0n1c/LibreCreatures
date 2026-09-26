@@ -28,12 +28,6 @@ const TCHAR* const kModeNames[] = {
     _T("Average dendrite state"),
 };
 
-COLORREF blend(COLORREF a, COLORREF b, int b_percent) {
-    const auto mix = [&](int x, int y) { return (x * (100 - b_percent) + y * b_percent) / 100; };
-    return RGB(mix(GetRValue(a), GetRValue(b)), mix(GetGValue(a), GetGValue(b)),
-               mix(GetBValue(a), GetBValue(b)));
-}
-
 CString neuron_title(const c1kit::NeuronNames& names, int lobe, int neuron) {
     CString title;
     title.Format(_T("%s lobe, neuron %d"), CString(c1kit::lobe_name(lobe)).GetString(), neuron);

@@ -7,6 +7,7 @@ menu and talks to over OLE automation.
 | --- | --- |
 | `c1kitlib/` | `c1kitlib.dll`, the data side every kit shares: the game connection (the SFC.OLE macro calls), the kit's own OLE server and `Communicate` entry point, launch arguments, reply parsing and settings. No windows, drawing or sound. |
 | `shell/` | The kit shell, compiled into every kit: the MFC application, the connected property-sheet window (resizable), bitmaps, and control layout for pages. |
+| `health/` | The Health Kit (Tools slot 3), `Health Kit.exe`: labelled vital signs (life force, temperature, breathing, energy stores), every drive, each lobe's activity, and the Doctor's page shop, whose stock it keeps in `Health` (the 1996 format). |
 | `observation/` | The Observation Kit (Tools slot 6), `observation.exe`. |
 | `funeral/` | The Funeral Kit (Tools slot 9), `Funeral Kit.exe`: a memorial page for each creature whose death the game reports, with its photographs from the Owner's Kit album and an epitaph, and a graveyard of the headstones made for them. Reads `The Register` and the albums; keeps its graves in `Funeral Kit Graves` beside the world. |
 | `owner/` | The Owner's Kit (Tools slot 2), `Owner's Kit.exe`: register a birth, a photo album, the birth certificate. Keeps `The Register` and `<moniker>.Photo Album` beside the world, in the 1996 format, so the original kits read them too. |
