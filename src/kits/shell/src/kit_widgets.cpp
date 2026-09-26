@@ -80,12 +80,13 @@ void PaintedView::OnMouseLeave() {
 }
 
 COLORREF series_colour(int index) {
-    // The 1996 Science Kit's four (red, blue, green, purple: its bitmaps
-    // 176-179), then more that stay apart on white.
+    // The Biochemistry Kit v1.2's eight channel colours (its table at
+    // 0x00418a30; the first four are the 1996 Science Kit's too), then more
+    // that stay apart on white where it picked random ones.
     static const COLORREF kColours[] = {
-        RGB(230, 0, 0),    RGB(0, 0, 230),     RGB(0, 150, 0),
-        RGB(140, 0, 160),  RGB(230, 120, 0),   RGB(0, 160, 170),
-        RGB(160, 100, 40), RGB(230, 0, 160),   RGB(100, 100, 100),
+        RGB(255, 0, 0),    RGB(0, 0, 255),     RGB(0, 128, 0),
+        RGB(128, 0, 128),  RGB(255, 128, 0),   RGB(0, 192, 192),
+        RGB(128, 64, 0),   RGB(192, 0, 192),   RGB(100, 100, 100),
         RGB(120, 170, 0),  RGB(0, 90, 150),    RGB(200, 60, 60),
         RGB(80, 40, 160),  RGB(0, 120, 80),    RGB(200, 170, 0),
         RGB(20, 20, 20)};
