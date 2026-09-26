@@ -175,6 +175,8 @@ add_c1_kit(FuneralKit "Funeral Kit" ${KITS_ROOT}/funeral)
 add_c1_kit(ScienceKit "Science Kit" ${KITS_ROOT}/science)
 # "Health Kit.exe": OLE server Health.OLE, Tools slot 3.
 add_c1_kit(HealthKit "Health Kit" ${KITS_ROOT}/health)
+# "Breeder's Kit.exe": OLE server Sex.OLE, Tools slot 5.
+add_c1_kit(BreedersKit "Breeder's Kit" ${KITS_ROOT}/breeder)
 
 install(TARGETS c1kitlib RUNTIME DESTINATION .)
 

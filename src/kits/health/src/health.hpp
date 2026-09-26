@@ -13,6 +13,7 @@
 
 #include "c1kitshell/kit_art.hpp"
 #include "c1kitshell/kit_shell.hpp"
+#include "c1kitshell/kit_shop.hpp"
 #include "c1kitshell/kit_widgets.hpp"
 #include "c1kit/brain_map.hpp"
 #include "c1kit/conversation.hpp"
@@ -98,31 +99,6 @@ private:
     bool have_report_ = false;
 };
 
-// Doctor's page: the shop ("Health"), one item at a time.
-class DoctorPage : public HealthPage {
-public:
-    explicit DoctorPage(HealthSheet& sheet);
-    void subject_changed() override;
-
-protected:
-    void create_controls() override;
-    void layout(int width, int height) override;
-    afx_msg void OnSelectionChanged();
-    afx_msg void OnAddToWorld();
-    DECLARE_MESSAGE_MAP()
-
-private:
-    void fill_list();
-    void show_selected();
-    void draw_picture(CDC& dc, const CRect& rect);
-
-    CListBox items_;
-    c1kitshell::PaintedView picture_;
-    CButton add_;
-    CStatic status_;
-    c1kitshell::Canvas canvas_;
-};
-
 // ---------------------------------------------------------------------------
 // The sheet
 // ---------------------------------------------------------------------------
@@ -133,7 +109,7 @@ struct Subject {
     std::string name;
 };
 
-class HealthSheet : public c1kitshell::KitSheet {
+class HealthSheet : public c1kitshell::KitSheet, private c1kitshell::ShopHost {
 public:
     explicit HealthSheet(CFont& default_font);
     ~HealthSheet() override;
@@ -145,9 +121,12 @@ public:
     bool brain_report(int mode, std::string& reply);
     const std::vector<std::string>& chemical_names() const { return chemical_names_; }
     const std::vector<c1kit::LobeLayout>& lobes() const { return lobes_; }
-    const c1kitshell::GamePalette& palette() const { return palette_; }
-    std::vector<c1kit::ShopItem>& shop() { return shop_; }
-    bool save_shop();
+    // c1kitshell::ShopHost: the Doctor's page's stock, "Health".
+    std::vector<c1kit::ShopItem>& shop_items() override { return shop_; }
+    bool run_shop_command(const std::string& script) override;
+    bool save_shop() override;
+    const c1kitshell::GamePalette& shop_palette() const override { return palette_; }
+    const char* shop_file_name() const override { return c1kit::kHealthShopFileName; }
     c1kit::KitSettings* settings() { return registry_; }
 
 protected:
@@ -177,7 +156,7 @@ private:
     FitnessPage fitness_page_;
     DrivesPage drives_page_;
     BrainPage brain_page_;
-    DoctorPage doctor_page_;
+    c1kitshell::ShopPage doctor_page_;
     c1kit::KitSettings* registry_ = nullptr;
     std::unique_ptr<c1kit::MacroConversation> conversation_;
     std::unique_ptr<c1kit::MacroConversation> report_conversation_;

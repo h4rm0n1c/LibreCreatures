@@ -1,0 +1,37 @@
+// Reconstructed from the C1 PE resource tree; raw PE leaves are the oracle.
+// The LibreCreatures build keeps the string tables, the kit icon and the
+// female and male icons (187, 188).  Its pages are laid out in code
+// (lc_dialogs.rcinc); the 1996 dialogs, cover, buttons and menu 143 are
+// left out.
+#pragma code_page(65001)
+#include "resource_ids.h"
+
+LANGUAGE 7, 1
+
+#include "strings/1031/7.rcinc"
+#include "strings/1031/8.rcinc"
+LANGUAGE 9, 1
+
+#include "strings/1033/7.rcinc"
+#include "strings/1033/8.rcinc"
+#include "version/1033/1.rcinc"
+LANGUAGE 12, 1
+
+#include "strings/1036/7.rcinc"
+#include "strings/1036/8.rcinc"
+LANGUAGE 17, 1
+
+#include "strings/1041/7.rcinc"
+#include "strings/1041/8.rcinc"
+LANGUAGE 9, 2
+
+#include "strings/2057/7.rcinc"
+#include "strings/2057/8.rcinc"
+#include "strings/2057/2049.rcinc"
+
+LANGUAGE 9, 1
+
+#include "lc_dialogs.rcinc"
+128 ICON "images/icon/128.ico"
+187 ICON "images/icon/187.ico"
+188 ICON "images/icon/188.ico"

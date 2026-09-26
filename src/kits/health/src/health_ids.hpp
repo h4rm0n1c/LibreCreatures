@@ -41,10 +41,6 @@ enum : unsigned {
     kControlVitals = 3000,
     kControlDrives,
     kControlLobes,
-    kControlShopList,
-    kControlShopPicture,
-    kControlShopAdd,
-    kControlShopStatus,
 };
 
 } // namespace health
