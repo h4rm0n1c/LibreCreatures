@@ -128,10 +128,32 @@ bool MacroHolder::dispatch_format_brain_activity_report(
         static_cast<application::OleScriptVariant*>(callback_context);
     char* const output_buffer =
         context == nullptr ? nullptr : context->bstr_value;
+    run_report_script();
     char* result = host_.format_brain_activity_report(
         macro()->object_context.target_object, output_buffer,
         macro()->caos_work_values[0], macro()->caos_work_values[1]);
     return result != nullptr;
+}
+
+void MacroHolder::run_report_script() {
+    // LibreCreatures deviation: the fix for a long-standing bug.  A brain
+    // report measures what its Macro's first two work values say (firing
+    // strength, activation, strongest weight, average target weight or
+    // average dendrite state, and the dendrite rule), and the kits set them
+    // with the script they load: the Science and Health Kits send
+    // `inst,setv var0 1,endm` for activation.  Over DDE that worked, since a
+    // conversation had one Macro and XTYP_EXECUTE ran its script before
+    // XTYP_REQUEST took the report (DDEService::DdeCallback @ 0x0040fdb0).  Over SFC.OLE
+    // nothing runs a report holder's script -- LoadMacro only stores it
+    // (Macro::LoadScriptText @ 0x0041a280) and RequestMacro goes straight to
+    // DispatchFormatBrainActivityReport @ 0x00419400 -- so the values stayed
+    // 0 and every report was of firing strength.  Running the loaded script
+    // first, to completion and unscheduled as a mode 1 holder's is, makes
+    // them take.  A kit that loads nothing gets the native report.
+    if (macro() == nullptr || macro()->script_buffer.empty()) {
+        return;
+    }
+    host_.execute_macro_to_output_buffer(*macro(), nullptr);
 }
 
 bool MacroHolder::start_macro_execution(void* callback_context) {
@@ -156,6 +178,7 @@ bool MacroHolder::format_brain_activity_report(char* output_buffer) {
         return false;
     }
 
+    run_report_script();
     char* result = host_.format_brain_activity_report(
         macro()->object_context.target_object, output_buffer,
         macro()->caos_work_values[0], macro()->caos_work_values[1]);
