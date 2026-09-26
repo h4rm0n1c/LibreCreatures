@@ -214,6 +214,11 @@ struct DendriteRule {
     int fewest = 0;        // dendrites a neuron grows under it
     int most = 0;
     int spread = 0;        // how far from the matching cell they may land
+    // 0: they stay where they were placed; 1 (attach loose dendrites) and 2
+    // (migrate): loose ones move to firing neurons of the source as the
+    // creature learns (Lobe::update_late_phase), so where they were placed
+    // is only where they started.
+    int mode = 0;
 };
 
 struct LobeWiring {
@@ -252,6 +257,7 @@ inline std::vector<LobeWiring> brain_wiring(const std::vector<Gene>& genes, bool
                 rule.fewest = p[at + 1];
                 rule.most = p[at + 2] < p[at + 1] ? p[at + 1] : p[at + 2];
                 rule.spread = p[at + 4] > 8 ? p[at + 4] % 9 : p[at + 4];
+                rule.mode = p[at + 9] > 2 ? p[at + 9] % 3 : p[at + 9];
             }
             lobes.push_back(lobe);
         }
@@ -262,6 +268,39 @@ inline std::vector<LobeWiring> brain_wiring(const std::vector<Gene>& genes, bool
         }
     }
     return lobes;
+}
+
+// Where one neuron's dendrites under a rule land in the lobe they read, as
+// Brain::initialize_connections places them when the brain is built: the
+// first on the matching spot (neuron * source area / own neurons, as a cell
+// of the source lobe), each other one within `spread` cells of it in x and y,
+// kept inside the lobe.  In the source lobe's own cells; nothing if the
+// neuron grows no dendrites under the rule.
+struct DendriteReach {
+    int spot_x = 0;
+    int spot_y = 0;
+    int left = 0;     // the cells the others may land on, inclusive
+    int top = 0;
+    int right = 0;
+    int bottom = 0;
+};
+
+inline bool dendrite_reach(int neuron, int own_neurons, int source_width, int source_height,
+                           int spread, int dendrites, DendriteReach& out) {
+    if (dendrites <= 0 || own_neurons <= 0 || source_width <= 0 || source_height <= 0 ||
+        neuron < 0 || neuron >= own_neurons) {
+        return false;
+    }
+    const long spot = static_cast<long>(neuron) * source_width * source_height / own_neurons;
+    out.spot_x = static_cast<int>(spot % source_width);
+    out.spot_y = static_cast<int>(spot / source_width);
+    const int reach = dendrites > 1 ? spread : 0;
+    const auto clamp = [](int v, int extent) { return v < 0 ? 0 : v > extent - 1 ? extent - 1 : v; };
+    out.left = clamp(out.spot_x - reach, source_width);
+    out.right = clamp(out.spot_x + reach, source_width);
+    out.top = clamp(out.spot_y - reach, source_height);
+    out.bottom = clamp(out.spot_y + reach, source_height);
+    return true;
 }
 
 // Whether a wiring plan is this brain's: as many lobes, each where the

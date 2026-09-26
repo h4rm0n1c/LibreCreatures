@@ -28,6 +28,11 @@
 // not report its dendrites, so these are lobe to lobe, from the genome, and
 // only drawn when the genome's lobes are where the game's `lobe` reply puts
 // them.
+// For the neuron pointed at or followed, each rule's dendrites are traced
+// into the lobe they read (c1kit::dendrite_reach): the spot the first was
+// placed on, the cells the rest could land on, and which of those fire.
+// Where a rule lets dendrites move (its connection mode), that is where they
+// started, and the page says so.
 
 #include "science.hpp"
 #include "science_ids.hpp"
@@ -437,6 +442,64 @@ void BrainPage::lobe_firing(int lobe, int& share_percent, int& mean) const {
     if (firing > 0) mean = static_cast<int>(total / firing);
 }
 
+// Where a neuron's dendrites land, rule by rule: exactly how many it grew if
+// it is the neuron followed (`cell`), else as many as the genome allows.
+CString BrainPage::reach_text(int lobe, int neuron) const {
+    const std::vector<c1kit::LobeLayout>& lobes = sheet_.lobes();
+    if (!wiring_valid_ || lobe < 0 || lobe >= static_cast<int>(wiring_.size()) ||
+        lobe >= static_cast<int>(lobes.size())) {
+        return CString();
+    }
+    const bool counted = lobe == followed_lobe_ && neuron == followed_neuron_ && followed_valid_;
+    CString text;
+    for (int r = 0; r < 2; ++r) {
+        const c1kit::DendriteRule& rule = wiring_[static_cast<std::size_t>(lobe)].rules[r];
+        if (rule.most == 0 || rule.source >= static_cast<int>(lobes.size())) continue;
+        const c1kit::LobeLayout& source = lobes[static_cast<std::size_t>(rule.source)];
+        const int dendrites = counted ? followed_values_[r].dendrites : rule.most;
+        c1kit::DendriteReach reach;
+        CString line;
+        if (!c1kit::dendrite_reach(neuron, lobes[static_cast<std::size_t>(lobe)].neurons(),
+                                   source.width, source.height, rule.spread, dendrites, reach)) {
+            if (counted) {
+                line.Format(_T("  Rule %d: no dendrites into %s\r\n"), r,
+                            CString(c1kit::lobe_name(rule.source)).GetString());
+                text += line;
+            }
+            continue;
+        }
+        const int spot = reach.spot_y * source.width + reach.spot_x;
+        const CString source_name(c1kit::lobe_name(rule.source));
+        if (counted) {
+            line.Format(_T("Rule %d: %d dendrite%s into %s, the first on neuron %d"), r, dendrites,
+                        dendrites == 1 ? _T("") : _T("s"), source_name.GetString(), spot);
+        } else {
+            line.Format(_T("Rule %d reads %s neuron %d"), r, source_name.GetString(), spot);
+        }
+        if (dendrites > 1) {
+            CString more;
+            if (rule.spread == 0) {
+                more.Format(counted ? _T(", all %d there") : _T(", up to %d there"), dendrites);
+            } else if (counted) {
+                more.Format(_T(", the others within %d cell%s of it"), rule.spread,
+                            rule.spread == 1 ? _T("") : _T("s"));
+            } else {
+                more.Format(_T(", and up to %d more within %d cell%s of it"), dendrites - 1,
+                            rule.spread, rule.spread == 1 ? _T("") : _T("s"));
+            }
+            line += more;
+        }
+        if (rule.mode != 0) {
+            line += _T(" when the brain was built; they move to firing neurons as it learns");
+        }
+        text += _T("  ") + line + _T("\r\n");
+    }
+    if (!text.IsEmpty()) {
+        text = _T("Its dendrites:\r\n") + text;
+    }
+    return text;
+}
+
 CString BrainPage::wiring_text(int lobe) const {
     if (!wiring_valid_ || lobe < 0 || lobe >= static_cast<int>(wiring_.size())) {
         return CString();
@@ -746,6 +809,10 @@ void BrainPage::show_neuron_info() {
             report_mode() != c1kit::kReportStrongestWeight) {
             text += _T("Click to follow it and read its lobe exactly.\r\n");
         }
+        const CString reach = reach_text(hover_lobe_, hover_neuron_);
+        if (!reach.IsEmpty()) {
+            text += _T("\r\n") + reach;
+        }
         const CString wiring = wiring_text(hover_lobe_);
         if (!wiring.IsEmpty()) {
             text += _T("\r\n") + wiring;
@@ -809,6 +876,9 @@ void BrainPage::show_neuron_info() {
                                   v.dendrite_state_sum / v.dendrites);
                 }
                 text += values;
+            }
+            if (hover_lobe_ != followed_lobe_ || hover_neuron_ != followed_neuron_) {
+                text += reach_text(followed_lobe_, followed_neuron_);
             }
         }
     }
@@ -973,6 +1043,81 @@ void BrainPage::draw_grid(CDC& dc, const CRect& rect) {
             dc.TextOut(chosen.left, chosen.top, name);
         }
     }
+    // One neuron's dendrites, for the neuron pointed at (else the one
+    // followed): a line to the spot each rule's first dendrite was placed on,
+    // that spot framed, the cells the rest could land on outlined (dotted
+    // where they have since been free to move), the ones of those firing
+    // now framed, and a dot running in along the line while the spot fires.
+    const int reach_lobe = hover_lobe_ >= 0 ? hover_lobe_ : followed_lobe_;
+    const int reach_neuron = hover_lobe_ >= 0 ? hover_neuron_ : followed_neuron_;
+    if (wiring_shown() && reach_lobe >= 0 && reach_lobe < static_cast<int>(wiring_.size()) &&
+        reach_lobe < static_cast<int>(lobes.size())) {
+        const c1kit::LobeLayout& own = lobes[static_cast<std::size_t>(reach_lobe)];
+        const bool counted =
+            reach_lobe == followed_lobe_ && reach_neuron == followed_neuron_ && followed_valid_;
+        const int own_width = (std::max)(1, own.width);
+        const CPoint from((cell_x(own.x + reach_neuron % own_width) +
+                           cell_x(own.x + reach_neuron % own_width + 1)) / 2,
+                          (cell_y(own.y + reach_neuron / own_width) +
+                           cell_y(own.y + reach_neuron / own_width + 1)) / 2);
+        for (int r = 0; r < 2; ++r) {
+            const c1kit::DendriteRule& rule = wiring_[static_cast<std::size_t>(reach_lobe)].rules[r];
+            if (rule.most == 0 || rule.source >= static_cast<int>(lobes.size())) continue;
+            const c1kit::LobeLayout& source = lobes[static_cast<std::size_t>(rule.source)];
+            c1kit::DendriteReach reach;
+            if (!c1kit::dendrite_reach(reach_neuron, own.neurons(), source.width, source.height,
+                                       rule.spread, counted ? followed_values_[r].dendrites
+                                                            : rule.most,
+                                       reach)) {
+                continue;
+            }
+            const COLORREF colour = r == 0 ? RGB(255, 255, 255) : RGB(255, 190, 80);
+            CBrush brush(colour);
+            // Where the rest could land.
+            if (reach.right > reach.left || reach.bottom > reach.top) {
+                const CRect region(cell_x(source.x + reach.left) - 2, cell_y(source.y + reach.top) - 2,
+                                   cell_x(source.x + reach.right + 1) + 2,
+                                   cell_y(source.y + reach.bottom + 1) + 2);
+                CPen pen(rule.mode != 0 ? PS_DOT : PS_SOLID, 1, blend(kBackground, colour, 70));
+                CPen* previous_pen = dc.SelectObject(&pen);
+                CGdiObject* previous_brush = dc.SelectStockObject(NULL_BRUSH);
+                dc.Rectangle(region);
+                dc.SelectObject(previous_brush);
+                dc.SelectObject(previous_pen);
+                for (int y = reach.top; y <= reach.bottom; ++y) {
+                    for (int x = reach.left; x <= reach.right; ++x) {
+                        if (firing_.reported[source.x + x][source.y + y]) {
+                            CBrush firing(blend(kBackground, colour, 80));
+                            dc.FrameRect(CRect(cell_x(source.x + x), cell_y(source.y + y),
+                                               cell_x(source.x + x + 1), cell_y(source.y + y + 1)),
+                                         &firing);
+                        }
+                    }
+                }
+            }
+            // The spot, and the line to it.
+            const int sx = source.x + reach.spot_x;
+            const int sy = source.y + reach.spot_y;
+            CRect spot(cell_x(sx) - 1, cell_y(sy) - 1, cell_x(sx + 1) + 2, cell_y(sy + 1) + 2);
+            dc.FrameRect(spot, &brush);
+            spot.DeflateRect(1, 1);
+            dc.FrameRect(spot, &brush);
+            const CPoint to = spot.CenterPoint();
+            CPen line(PS_SOLID, 1, colour);
+            CPen* previous_pen = dc.SelectObject(&line);
+            dc.MoveTo(to);
+            dc.LineTo(from);
+            dc.SelectObject(previous_pen);
+            if (firing_.reported[sx][sy]) {
+                double t = pulse_frame_ * 0.1;
+                t -= std::floor(t);
+                const int x = to.x + int((from.x - to.x) * t);
+                const int y = to.y + int((from.y - to.y) * t);
+                dc.FillSolidRect(x - 2, y - 2, 5, 5, colour);
+            }
+        }
+    }
+
     // The followed neuron and the one pointed at.
     const auto mark = [&](int lobe_index, int neuron, COLORREF colour) {
         if (lobe_index < 0 || lobe_index >= static_cast<int>(lobes.size())) {

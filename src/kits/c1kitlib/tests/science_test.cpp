@@ -235,11 +235,13 @@ void test_real_files(const std::string& directory, const std::string& genome_pat
     }
     const std::vector<LobeWiring> wiring = brain_wiring(genes, true);
     for (std::size_t i = 0; i < wiring.size(); ++i) {
-        std::printf("  wiring %zu at %2d,%2d: rule 0 from %d (%d-%d), rule 1 from %d (%d-%d), copy %d\n",
+        std::printf("  wiring %zu at %2d,%2d: rule 0 from %d (%d-%d, spread %d, mode %d), "
+                    "rule 1 from %d (%d-%d, spread %d, mode %d), copy %d\n",
                     i, wiring[i].x, wiring[i].y, wiring[i].rules[0].source,
-                    wiring[i].rules[0].fewest, wiring[i].rules[0].most,
-                    wiring[i].rules[1].source, wiring[i].rules[1].fewest,
-                    wiring[i].rules[1].most, wiring[i].perception_copy);
+                    wiring[i].rules[0].fewest, wiring[i].rules[0].most, wiring[i].rules[0].spread,
+                    wiring[i].rules[0].mode, wiring[i].rules[1].source, wiring[i].rules[1].fewest,
+                    wiring[i].rules[1].most, wiring[i].rules[1].spread, wiring[i].rules[1].mode,
+                    wiring[i].perception_copy);
     }
     for (const LobeGene& lobe : summary.lobes) {
         std::printf("  lobe %2d,%2d %2dx%2d dendrites %d-%d + %d-%d\n", lobe.x, lobe.y,
@@ -270,6 +272,7 @@ void test_brain_wiring() {
         gene.payload[19] = 1;
         gene.payload[20] = static_cast<std::uint8_t>(most0);
         gene.payload[22] = 12;  // spread 12 folds to 3
+        gene.payload[27] = 4;   // connection mode 4 folds to 1
         gene.payload[18 + 47] = 9;  // rule 1's source, folded into the count
         return gene;
     };
@@ -282,10 +285,23 @@ void test_brain_wiring() {
     assert(male.size() == 2);
     assert(male[0].x == 56 && male[0].y == 1 && male[0].perception_copy == 1);
     assert(male[1].x == 10 && male[1].rules[0].source == 1 && male[1].rules[0].fewest == 1 &&
-           male[1].rules[0].most == 3 && male[1].rules[0].spread == 3);
+           male[1].rules[0].most == 3 && male[1].rules[0].spread == 3 &&
+           male[1].rules[0].mode == 1 && male[1].rules[1].mode == 0);
     assert(male[0].rules[1].source == 9 % 2);
     const std::vector<LobeWiring> female = brain_wiring(genes, false);
     assert(female.size() == 3 && female[1].x == 20);
+
+    // Concept neuron 331 of 640 reading Perception (7 x 16): spot 331 * 112
+    // / 640 = 57 = (1, 8); with 3 dendrites and spread 2, x 0..3, y 6..10.
+    DendriteReach reach;
+    assert(dendrite_reach(331, 640, 7, 16, 2, 3, reach));
+    assert(reach.spot_x == 1 && reach.spot_y == 8 && reach.left == 0 && reach.right == 3 &&
+           reach.top == 6 && reach.bottom == 10);
+    assert(dendrite_reach(331, 640, 7, 16, 2, 1, reach));  // one dendrite: the spot only
+    assert(reach.left == 1 && reach.right == 1 && reach.top == 8 && reach.bottom == 8);
+    assert(!dendrite_reach(331, 640, 7, 16, 2, 0, reach));
+    assert(dendrite_reach(639, 640, 7, 16, 8, 2, reach));  // last neuron: last cell, clamped
+    assert(reach.spot_x == 6 && reach.spot_y == 15 && reach.right == 6 && reach.bottom == 15);
 
     struct Layout { int x, y; };
     assert(wiring_matches(male, std::vector<Layout>{{56, 1}, {10, 5}}));

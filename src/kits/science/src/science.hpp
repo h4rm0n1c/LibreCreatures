@@ -142,6 +142,8 @@ private:
     void draw_wiring(CDC& dc, const std::vector<CRect>& outlines);
     // "Fed by ... / Feeds ..." for a lobe.
     CString wiring_text(int lobe) const;
+    // Where one neuron's dendrites land, rule by rule.
+    CString reach_text(int lobe, int neuron) const;
     // A lobe's firing: the share of its neurons firing and their mean.
     void lobe_firing(int lobe, int& share_percent, int& mean) const;
     void fit_view(const CRect& rect);
