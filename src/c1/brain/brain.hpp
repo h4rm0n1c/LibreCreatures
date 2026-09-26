@@ -80,9 +80,13 @@ public:
 
     // Writes three characters for each nonzero activity entry, terminates the
     // buffer, and returns the resulting byte count including that terminator.
+    // `whole_grid`: also neurons outside the standard 64 x 64 grid, which
+    // only a kit that asked for them (work value 2 set to 1) can take -- the
+    // 1996 kits index a 64 x 64 array with the coordinates unchecked.
     std::size_t format_activity_report(char* output,
                                        ActivityReportMode mode,
-                                       int rule_index) const;
+                                       int rule_index,
+                                       bool whole_grid = false) const;
 
 private:
     friend class Lobe;

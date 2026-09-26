@@ -52,6 +52,27 @@ input gain, relaxation selector, an expression, winner-take-all flags, and two
 connection rules. Its neurons carry grid coordinates, firing strength,
 activation, source-lobe information, and temporary winner exclusion.
 
+Lobes sit on a 64 x 64 grid. A genome's offsets fold into 0..63, a lobe that
+runs off the edge is pulled back, and a lobe is at most 63 cells a side and
+1024 neurons. Position is behaviour, not just layout: CAOS `fire x y` fires
+the neuron at that grid position.
+
+LibreCreatures can give lobes more room without making any brain bigger. With
+the `ExtendedBrainGrid` registry setting (a DWORD under `HKCU\Software\Gameware
+Development\Creatures 1\1.0`) set to 1, an offset uses the whole byte and
+lobes may sit anywhere on a 208 x 208 grid; the size caps are unchanged. It
+applies to brains built after it is set, since a saved brain keeps its layout,
+and it lays out a genome whose offsets are 64 or more differently from C1, so
+it is off by default. 208 is where the kit protocol runs out: the brain report
+sends grid x and y as `'0'` + coordinate in one byte.
+
+Kits see the grid beyond 64 only if they ask. The 1996 Science and Health Kits
+index 64 x 64 arrays with report and lobe coordinates unchecked, so the brain
+report leaves out neurons past 63, and `dde: lobe` reports a lobe off the
+standard grid parked in its bottom-right corner, unless the script sets work
+value 2 to 1 first (`setv var2 1`). This holds over DDE, SFC.OLE and the pipe.
+LibreCreatures' own kits ask.
+
 A connection points to a target neuron. It has a current weight, a target
 weight, a baseline weight, and a dendrite state. The connection rule says which
 lobe to target, how many connections to create, how far targets may spread,

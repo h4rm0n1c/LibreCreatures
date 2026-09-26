@@ -11,6 +11,8 @@ namespace creatures1::brain {
 
 namespace {
 
+bool g_extended_brain_grid = false;
+
 std::uint32_t normalize_grid_offset(std::uint8_t encoded) {
     return encoded < 0x40u ? encoded : encoded & 0x3fu;
 }
@@ -176,17 +178,28 @@ Lobe::Lobe() = default;
 
 Lobe::~Lobe() = default;
 
+void set_extended_brain_grid(bool enabled) {
+    g_extended_brain_grid = enabled;
+}
+
+bool extended_brain_grid() {
+    return g_extended_brain_grid;
+}
+
 void Lobe::load_genome(Genome& genome, StandardLobeIndex lobe_index) {
-    grid_x_offset = normalize_grid_offset(genome.read_next_gene_byte());
-    grid_y_offset = normalize_grid_offset(genome.read_next_gene_byte());
+    const bool extended = g_extended_brain_grid;
+    const std::uint8_t encoded_x = genome.read_next_gene_byte();
+    const std::uint8_t encoded_y = genome.read_next_gene_byte();
+    grid_x_offset = extended ? encoded_x : normalize_grid_offset(encoded_x);
+    grid_y_offset = extended ? encoded_y : normalize_grid_offset(encoded_y);
 
     grid_width = normalize_grid_extent(genome.read_next_gene_byte());
     grid_height = normalize_grid_extent(genome.read_next_gene_byte());
 
-    if (grid_x_offset + grid_width > 0x40u) {
+    if (!extended && grid_x_offset + grid_width > 0x40u) {
         grid_x_offset = 0x40u - grid_width;
     }
-    if (grid_y_offset + grid_height > 0x40u) {
+    if (!extended && grid_y_offset + grid_height > 0x40u) {
         grid_y_offset = 0x40u - grid_height;
     }
 
@@ -205,6 +218,19 @@ void Lobe::load_genome(Genome& genome, StandardLobeIndex lobe_index) {
     if (grid_area > 0x400u) {
         grid_width = 0x20u;
         grid_height = 0x20u;
+    }
+
+    // On the extended grid the lobe is kept inside it at its final size.  (C1
+    // pulls it back before widening it, above, so a widened lobe can run off
+    // the standard grid; on the extended grid that would run past what the
+    // brain report can say.)
+    if (extended) {
+        if (grid_x_offset + grid_width > kExtendedBrainGridExtent) {
+            grid_x_offset = kExtendedBrainGridExtent - grid_width;
+        }
+        if (grid_y_offset + grid_height > kExtendedBrainGridExtent) {
+            grid_y_offset = kExtendedBrainGridExtent - grid_height;
+        }
     }
 
     auto encoded_perception_state = genome.read_next_gene_byte();

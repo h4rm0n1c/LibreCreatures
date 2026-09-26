@@ -131,7 +131,8 @@ bool MacroHolder::dispatch_format_brain_activity_report(
     run_report_script();
     char* result = host_.format_brain_activity_report(
         macro()->object_context.target_object, output_buffer,
-        macro()->caos_work_values[0], macro()->caos_work_values[1]);
+        macro()->caos_work_values[0], macro()->caos_work_values[1],
+        macro()->caos_work_values[2] == 1);
     return result != nullptr;
 }
 
@@ -181,7 +182,8 @@ bool MacroHolder::format_brain_activity_report(char* output_buffer) {
     run_report_script();
     char* result = host_.format_brain_activity_report(
         macro()->object_context.target_object, output_buffer,
-        macro()->caos_work_values[0], macro()->caos_work_values[1]);
+        macro()->caos_work_values[0], macro()->caos_work_values[1],
+        macro()->caos_work_values[2] == 1);
     // The report writer answers the end of what it wrote.  The result every
     // consumer wants is the length, so carry that rather than an address --
     // the pipe reports this value as its byte count, and a raw pointer there
