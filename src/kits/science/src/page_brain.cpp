@@ -21,6 +21,13 @@
 // neurons, where most of a brain is, are not all one colour.  Selecting a
 // lobe (in the list, or by clicking in it) reads its neurons' exact values
 // with `cell`, a few dozen a query, and shades it with those instead.
+//
+// Under the lobes run the genome's connections (c1kit::brain_wiring): which
+// lobe each lobe's dendrites read, and which lobes copy their firing into
+// Perception, lit and pulsing with the source lobe's firing.  The game does
+// not report its dendrites, so these are lobe to lobe, from the genome, and
+// only drawn when the genome's lobes are where the game's `lobe` reply puts
+// them.
 
 #include "science.hpp"
 #include "science_ids.hpp"
@@ -119,6 +126,7 @@ constexpr COLORREF kBackground = RGB(18, 20, 28);
 BEGIN_MESSAGE_MAP(BrainPage, SciencePage)
     ON_CBN_SELCHANGE(kControlReportMode, &BrainPage::OnModeChanged)
     ON_CBN_SELCHANGE(kControlReportRule, &BrainPage::OnModeChanged)
+    ON_BN_CLICKED(kControlWiring, &BrainPage::OnWiringToggled)
 END_MESSAGE_MAP()
 
 BrainPage::BrainPage(ScienceSheet& sheet) : SciencePage(sheet, kStringBrainTab) {}
@@ -150,6 +158,13 @@ void BrainPage::create_controls() {
     mode_.SetCurSel(selection);
     rule_.SetCurSel(rule <= 1 ? static_cast<int>(rule) : 0);
     rule_.EnableWindow(measure_at(selection).uses_rule);
+    make(wiring_check_, _T("BUTTON"), _T("Connections"), BS_AUTOCHECKBOX | WS_TABSTOP,
+         kControlWiring);
+    std::uint32_t wiring = 1;
+    if (c1kit::KitSettings* settings = sheet_.settings()) {
+        settings->read_dword(c1kit::SettingsScope::user, "Scanner Wiring", wiring);
+    }
+    wiring_check_.SetCheck(wiring != 0 ? BST_CHECKED : BST_UNCHECKED);
 
     make(lobes_, WC_LISTVIEW, _T(""),
          LVS_REPORT | LVS_NOSORTHEADER | LVS_SINGLESEL | LVS_SHOWSELALWAYS | WS_BORDER,
@@ -174,6 +189,7 @@ void BrainPage::layout(int width, int height) {
     place(mode_label_, margin, margin + 4, 36, text_height());
     place(mode_, margin + 38, margin, 190, 200);
     place(rule_, margin + 38 + 196, margin, 130, 200);
+
     const int grid_top = margin + row + 4;
     place(grid_, margin, grid_top, grid_width, height - margin - grid_top);
     const int left = width - side - margin;
@@ -183,6 +199,9 @@ void BrainPage::layout(int width, int height) {
     const int info_top = margin + list_height + margin;
     place(info_, left, info_top, side, height - 2 * margin - button_height() - margin - info_top);
     place_close(width, height);
+    // Beside Close, at the foot of the column.
+    place(wiring_check_, left, height - margin - button_height() + 4, side - 84 - margin,
+          text_height() + 4);
 }
 
 void BrainPage::fill_lobe_list() {
@@ -358,10 +377,244 @@ void BrainPage::subject_changed() {
     followed_valid_ = false;
     selected_lobe_ = -1;
     exact_.clear();
+    wiring_.clear();
+    wiring_loaded_ = wiring_valid_ = false;
+    firing_ = c1kit::BrainActivity();
     if (created_) {
         fill_lobe_list();
         show_neuron_info();
         grid_.redraw();
+    }
+}
+
+void BrainPage::OnWiringToggled() {
+    if (c1kit::KitSettings* settings = sheet_.settings()) {
+        settings->write_dword("Scanner Wiring", wiring_check_.GetCheck() == BST_CHECKED ? 1u : 0u);
+    }
+    poll();
+}
+
+void BrainPage::load_wiring() {
+    const std::vector<c1kit::LobeLayout>& lobes = sheet_.lobes();
+    if (!sheet_.subject().present || lobes.empty()) {
+        return;  // try again once the game has described the brain
+    }
+    wiring_loaded_ = true;
+    std::vector<c1kit::Gene> genes;
+    std::size_t bytes = 0;
+    if (!sheet_.read_genome(genes, bytes)) {
+        return;
+    }
+    wiring_ = c1kit::brain_wiring(genes, sheet_.subject().sex == 1);
+    // The plan is only drawn if it is this brain's: the same lobes, where
+    // the game says they are.
+    wiring_valid_ = c1kit::wiring_matches(wiring_, lobes);
+}
+
+bool BrainPage::wiring_shown() const {
+    return wiring_valid_ && wiring_check_.GetSafeHwnd() != nullptr &&
+           wiring_check_.GetCheck() == BST_CHECKED;
+}
+
+void BrainPage::lobe_firing(int lobe, int& share_percent, int& mean) const {
+    share_percent = mean = 0;
+    const std::vector<c1kit::LobeLayout>& lobes = sheet_.lobes();
+    if (lobe < 0 || lobe >= static_cast<int>(lobes.size())) {
+        return;
+    }
+    const c1kit::LobeLayout& layout = lobes[static_cast<std::size_t>(lobe)];
+    int firing = 0;
+    long total = 0;
+    for (int y = layout.y; y < layout.y + layout.height && y < c1kit::kBrainGridSize; ++y) {
+        for (int x = layout.x; x < layout.x + layout.width && x < c1kit::kBrainGridSize; ++x) {
+            if (firing_.reported[x][y]) {
+                ++firing;
+                total += c1kit::estimated_value(firing_, x, y);
+            }
+        }
+    }
+    if (layout.neurons() > 0) share_percent = firing * 100 / layout.neurons();
+    if (firing > 0) mean = static_cast<int>(total / firing);
+}
+
+CString BrainPage::wiring_text(int lobe) const {
+    if (!wiring_valid_ || lobe < 0 || lobe >= static_cast<int>(wiring_.size())) {
+        return CString();
+    }
+    const auto name = [](int index) { return CString(c1kit::lobe_name(index)); };
+    CString fed;
+    const c1kit::LobeWiring& own = wiring_[static_cast<std::size_t>(lobe)];
+    for (int r = 0; r < 2; ++r) {
+        const c1kit::DendriteRule& rule = own.rules[r];
+        if (rule.most == 0) continue;
+        CString line;
+        if (rule.fewest == rule.most) {
+            line.Format(_T("  %s (rule %d): %d dendrite%s a neuron"), name(rule.source).GetString(), r,
+                        rule.most, rule.most == 1 ? _T("") : _T("s"));
+        } else {
+            line.Format(_T("  %s (rule %d): %d to %d dendrites a neuron"),
+                        name(rule.source).GetString(), r, rule.fewest, rule.most);
+        }
+        if (rule.spread > 0 && rule.most > 1) {
+            CString spread;
+            spread.Format(_T(", within %d cell%s of the matching spot"), rule.spread,
+                          rule.spread == 1 ? _T("") : _T("s"));
+            line += spread;
+        }
+        fed += line + _T("\r\n");
+    }
+    if (lobe == 0) {
+        for (std::size_t i = 1; i < wiring_.size(); ++i) {
+            if (wiring_[i].perception_copy != 0) {
+                fed += _T("  ") + name(static_cast<int>(i)) + _T(" (copies its firing)\r\n");
+            }
+        }
+    }
+    CString feeds;
+    for (std::size_t i = 0; i < wiring_.size(); ++i) {
+        for (int r = 0; r < 2; ++r) {
+            const c1kit::DendriteRule& rule = wiring_[i].rules[r];
+            if (rule.most > 0 && rule.source == lobe) {
+                CString line;
+                line.Format(_T("  %s (rule %d)\r\n"), name(static_cast<int>(i)).GetString(), r);
+                feeds += line;
+            }
+        }
+    }
+    if (lobe != 0 && own.perception_copy != 0) {
+        feeds += _T("  Perception (copies its firing)\r\n");
+    }
+    CString text;
+    if (!fed.IsEmpty()) text += _T("Fed by:\r\n") + fed;
+    if (!feeds.IsEmpty()) text += _T("Feeds:\r\n") + feeds;
+    return text;
+}
+
+// The genome's wiring, under the lobes: a curve from each lobe a dendrite
+// rule reaches into to the lobe that grows the dendrites (thicker the more
+// dendrites), dotted for the firing input lobes copy into Perception, each in
+// its source's colour, brighter the more of the source is firing, with dots
+// running along it as it fires.  Pointing at or selecting a lobe dims the
+// curves that do not touch it.
+void BrainPage::draw_wiring(CDC& dc, const std::vector<CRect>& outlines) {
+    struct Edge {
+        int source;
+        int destination;
+        long dendrites;
+        bool copy;
+    };
+    std::vector<Edge> edges;
+    const std::vector<c1kit::LobeLayout>& lobes = sheet_.lobes();
+    for (std::size_t i = 0; i < wiring_.size() && i < outlines.size(); ++i) {
+        const int destination = static_cast<int>(i);
+        for (const c1kit::DendriteRule& rule : wiring_[i].rules) {
+            if (rule.most == 0) continue;
+            const long dendrites = static_cast<long>(lobes[i].neurons()) * (rule.fewest + rule.most) / 2;
+            auto same = std::find_if(edges.begin(), edges.end(), [&](const Edge& e) {
+                return !e.copy && e.source == rule.source && e.destination == destination;
+            });
+            if (same != edges.end()) {
+                same->dendrites += dendrites;
+            } else {
+                edges.push_back({rule.source, destination, dendrites, false});
+            }
+        }
+        if (i > 0 && wiring_[i].perception_copy != 0) {
+            edges.push_back({destination, 0, lobes[i].neurons(), true});
+        }
+    }
+    const int focus = hover_lobe_ >= 0 ? hover_lobe_ : selected_lobe_;
+    for (const Edge& edge : edges) {
+        const CRect& from = outlines[static_cast<std::size_t>(edge.source)];
+        const CRect& to = outlines[static_cast<std::size_t>(edge.destination)];
+        int share = 0, mean = 0;
+        lobe_firing(edge.source, share, mean);
+        const double drive = share > 0 ? std::sqrt(mean / 255.0) : 0.0;
+        int level = share > 0 ? 45 + int(55 * drive) : 30;
+        if (focus >= 0 && edge.source != focus && edge.destination != focus) {
+            level = level * 35 / 100;
+        }
+        const COLORREF colour = blend(kBackground, lobe_colour(edge.source), level);
+        const int width = (std::max)(1, (std::min)(4, int(std::log2(double(edge.dendrites) + 1) / 3)));
+
+        // The curve: out of the source's outline, into the destination's,
+        // bowed to one side so that two lobes feeding each other show two.
+        POINT points[4];
+        if (edge.source == edge.destination) {
+            const int top = from.top + from.Height() / 4;
+            const int bottom = from.bottom - from.Height() / 4;
+            points[0] = {from.right, top};
+            points[1] = {from.right + 22, top - 6};
+            points[2] = {from.right + 22, bottom + 6};
+            points[3] = {from.right, bottom};
+        } else {
+            const auto exit_point = [](const CRect& r, double fx, double fy, double tx, double ty) {
+                // Where the line from the centre towards (tx, ty) leaves r.
+                const double dx = tx - fx, dy = ty - fy;
+                double t = 1.0;
+                if (dx != 0) t = (std::min)(t, std::abs((dx > 0 ? r.right - fx : r.left - fx) / dx));
+                if (dy != 0) t = (std::min)(t, std::abs((dy > 0 ? r.bottom - fy : r.top - fy) / dy));
+                return POINT{LONG(fx + dx * t), LONG(fy + dy * t)};
+            };
+            const double fx = from.CenterPoint().x, fy = from.CenterPoint().y;
+            const double tx = to.CenterPoint().x, ty = to.CenterPoint().y;
+            const POINT p0 = exit_point(from, fx, fy, tx, ty);
+            const POINT p3 = exit_point(to, tx, ty, fx, fy);
+            const double dx = p3.x - p0.x, dy = p3.y - p0.y;
+            const double length = (std::max)(1.0, std::sqrt(dx * dx + dy * dy));
+            const double bow = (edge.copy ? -0.12 : 0.12) * length;
+            const double nx = -dy / length * bow, ny = dx / length * bow;
+            points[0] = p0;
+            points[1] = {LONG(p0.x + dx / 3 + nx), LONG(p0.y + dy / 3 + ny)};
+            points[2] = {LONG(p0.x + 2 * dx / 3 + nx), LONG(p0.y + 2 * dy / 3 + ny)};
+            points[3] = p3;
+        }
+        CPen pen(edge.copy ? PS_DOT : PS_SOLID, edge.copy ? 1 : width, colour);
+        CPen* previous_pen = dc.SelectObject(&pen);
+        dc.PolyBezier(points, 4);
+        dc.SelectObject(previous_pen);
+
+        // The arrowhead, into the destination.
+        {
+            double ax = points[3].x - points[2].x, ay = points[3].y - points[2].y;
+            const double length = (std::max)(1.0, std::sqrt(ax * ax + ay * ay));
+            ax /= length;
+            ay /= length;
+            const double size = 5 + width;
+            POINT head[3] = {
+                points[3],
+                {LONG(points[3].x - ax * size - ay * size * 0.6), LONG(points[3].y - ay * size + ax * size * 0.6)},
+                {LONG(points[3].x - ax * size + ay * size * 0.6), LONG(points[3].y - ay * size - ax * size * 0.6)},
+            };
+            CBrush brush(colour);
+            CPen outline(PS_SOLID, 1, colour);
+            CBrush* previous_brush = dc.SelectObject(&brush);
+            previous_pen = dc.SelectObject(&outline);
+            dc.Polygon(head, 3);
+            dc.SelectObject(previous_brush);
+            dc.SelectObject(previous_pen);
+        }
+
+        // Firing running along it: a dot for every quarter of the source
+        // firing, moving from source to destination a little each poll.
+        if (share > 0) {
+            const int dots = (std::min)(5, 1 + share / 25);
+            const COLORREF bright = blend(lobe_colour(edge.source), RGB(255, 255, 255),
+                                          focus >= 0 && edge.source != focus &&
+                                                  edge.destination != focus ? 0 : 45);
+            for (int k = 0; k < dots; ++k) {
+                double t = pulse_frame_ * 0.06 + double(k) / dots;
+                t -= std::floor(t);
+                const double u = 1 - t;
+                const double x = u * u * u * points[0].x + 3 * u * u * t * points[1].x +
+                                 3 * u * t * t * points[2].x + t * t * t * points[3].x;
+                const double y = u * u * u * points[0].y + 3 * u * u * t * points[1].y +
+                                 3 * u * t * t * points[2].y + t * t * t * points[3].y;
+                const int radius = 1 + width / 2 + int(2 * drive);
+                dc.FillSolidRect(int(x) - radius, int(y) - radius, 2 * radius + 1, 2 * radius + 1,
+                                 level < 40 ? blend(kBackground, bright, 50) : bright);
+            }
+        }
     }
 }
 
@@ -387,6 +640,17 @@ void BrainPage::poll() {
         activity_ = c1kit::BrainActivity();
     } else if (sheet_.brain_report(report_mode(), report_rule(), reply)) {
         c1kit::parse_activity_report(reply, activity_);
+    }
+    if (!wiring_loaded_) {
+        load_wiring();
+    }
+    if (wiring_shown()) {
+        if (report_mode() == c1kit::kReportFiringStrength) {
+            firing_ = activity_;
+        } else if (sheet_.brain_report(c1kit::kReportFiringStrength, 0, reply)) {
+            c1kit::parse_activity_report(reply, firing_);
+        }
+        ++pulse_frame_;
     }
     if (followed_lobe_ >= 0 &&
         sheet_.query(c1kit::neuron_query(followed_lobe_, followed_neuron_), reply)) {
@@ -482,6 +746,10 @@ void BrainPage::show_neuron_info() {
             report_mode() != c1kit::kReportStrongestWeight) {
             text += _T("Click to follow it and read its lobe exactly.\r\n");
         }
+        const CString wiring = wiring_text(hover_lobe_);
+        if (!wiring.IsEmpty()) {
+            text += _T("\r\n") + wiring;
+        }
         text += _T("\r\n");
     } else if (selected_lobe_ >= 0 && selected_lobe_ < static_cast<int>(lobes.size())) {
         CString lobe;
@@ -489,6 +757,10 @@ void BrainPage::show_neuron_info() {
                     CString(c1kit::lobe_name(selected_lobe_)).GetString(),
                     lobes[static_cast<std::size_t>(selected_lobe_)].neurons());
         text = lobe + CString(c1kit::lobe_description(selected_lobe_)) + _T("\r\n");
+        const CString wiring = wiring_text(selected_lobe_);
+        if (!wiring.IsEmpty()) {
+            text += _T("\r\n") + wiring + _T("\r\n");
+        }
         if (report_mode() == c1kit::kReportStrongestWeight) {
             text += _T("The strongest weight comes only from the report.\r\n");
         } else {
@@ -506,6 +778,16 @@ void BrainPage::show_neuron_info() {
             text += _T(" Select a lobe to shade it with exact values.");
         }
         text += _T("\r\n\r\n") + CString(measure_at(mode_.GetCurSel()).about) + _T("\r\n\r\n");
+        if (wiring_loaded_ && !wiring_valid_ && wiring_check_.GetCheck() == BST_CHECKED) {
+            text += _T("The connections cannot be shown: the creature's genome file does not ")
+                    _T("match its brain.\r\n\r\n");
+        } else if (wiring_shown()) {
+            text += _T("The lines are the genome's wiring: each runs from the lobe a set of ")
+                    _T("dendrites reads to the lobe that grows them, thicker the more ")
+                    _T("dendrites, brighter and busier the more of its source is firing. ")
+                    _T("Dotted lines are the input lobes copying their firing into ")
+                    _T("Perception.\r\n\r\n");
+        }
     }
     if (followed_lobe_ >= 0) {
         text += _T("Following ") + neuron_title(names, followed_lobe_, followed_neuron_) + _T("\r\n");
@@ -561,9 +843,17 @@ void BrainPage::draw_grid(CDC& dc, const CRect& rect) {
     const std::vector<c1kit::LobeLayout>& lobes = sheet_.lobes();
     dc.SetBkMode(TRANSPARENT);
     std::vector<CRect> outlines;
+    for (const c1kit::LobeLayout& lobe : lobes) {
+        outlines.emplace_back(cell_x(lobe.x), cell_y(lobe.y), cell_x(lobe.x + lobe.width) + 1,
+                              cell_y(lobe.y + lobe.height) + 1);
+    }
+    if (wiring_shown()) {
+        draw_wiring(dc, outlines);
+    }
     for (std::size_t index = 0; index < lobes.size(); ++index) {
         const c1kit::LobeLayout& lobe = lobes[index];
         const int lobe_index = static_cast<int>(index);
+        dc.FillSolidRect(outlines[index], kBackground);  // the curves pass under the lobes
         const COLORREF colour = lobe_colour(lobe_index);
         const COLORREF dim = blend(kBackground, colour, 18);
         const COLORREF bright = blend(colour, RGB(255, 255, 255), 35);
@@ -583,9 +873,7 @@ void BrainPage::draw_grid(CDC& dc, const CRect& rect) {
                 dc.FillSolidRect(x0, y0, cell_x(x + 1) - x0, cell_y(y + 1) - y0, shade);
             }
         }
-        const CRect outline(cell_x(lobe.x), cell_y(lobe.y), cell_x(lobe.x + lobe.width) + 1,
-                            cell_y(lobe.y + lobe.height) + 1);
-        outlines.push_back(outline);
+        const CRect& outline = outlines[index];
         CBrush border(colour);
         dc.FrameRect(outline, &border);
         if (lobe_index == hover_lobe_ || lobe_index == selected_lobe_) {

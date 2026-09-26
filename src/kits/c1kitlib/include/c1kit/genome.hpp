@@ -199,6 +199,82 @@ inline bool decode_lobe_gene(const Gene& gene, LobeGene& out) {
     return true;
 }
 
+// How the brain's lobes are wired, as the game builds it from the genome
+// (Brain::load_genome, Lobe::load_genome, LobeConnectionRule::load_from_genome):
+// each lobe's two dendrite rules name the lobe its dendrites reach into, and a
+// lobe may also copy its firing into the Perception lobe (lobe 0).  Which lobe
+// is which is positional: the brain genes (family % 3 == 0, any subtype)
+// switched on at stage 0 that apply to the creature's sex, those with header
+// byte 7 at zero first and then the rest, up to 32; a rule's source is folded
+// into that count.  The game does not report its wiring (the DDE item
+// "BrainWiring" answers nothing), so this is the genome's plan: which lobes
+// feed which, and how many dendrites a neuron may grow, not the dendrites.
+struct DendriteRule {
+    int source = 0;        // lobe index its dendrites reach into
+    int fewest = 0;        // dendrites a neuron grows under it
+    int most = 0;
+    int spread = 0;        // how far from the matching cell they may land
+};
+
+struct LobeWiring {
+    int x = 0;             // where the genome places it, clamped as the game does
+    int y = 0;
+    DendriteRule rules[2];
+    int perception_copy = 0;  // 0 none, 1 copies, 2 copies (mutually exclusive)
+};
+
+constexpr std::size_t kLobeGeneWiringBytes = kLobeRuleOffset + 2 * kLobeRuleBytes;
+constexpr std::size_t kMaximumLobes = 32;
+
+inline std::vector<LobeWiring> brain_wiring(const std::vector<Gene>& genes, bool male) {
+    std::vector<LobeWiring> lobes;
+    for (int pass = 0; pass < 2; ++pass) {
+        for (const Gene& gene : genes) {
+            if (lobes.size() >= kMaximumLobes) break;
+            if (gene.family % 3 != 0 || gene.switch_on_stage != 0) continue;
+            const bool restricted = (gene.flags & (kGeneMaleOnly | kGeneFemaleOnly)) != 0;
+            if (restricted && !(gene.flags & (male ? kGeneMaleOnly : kGeneFemaleOnly))) continue;
+            if ((pass == 0) != (gene.generation == 0)) continue;
+            if (gene.payload.size() < kLobeGeneWiringBytes) return {};  // the game would read past it
+            const std::vector<std::uint8_t>& p = gene.payload;
+            LobeWiring lobe;
+            const int width = (p[2] + 62) % 63 + 1;
+            const int height = (p[3] + 62) % 63 + 1;
+            lobe.x = p[0] < 0x40 ? p[0] : (p[0] & 0x3f);
+            lobe.y = p[1] < 0x40 ? p[1] : (p[1] & 0x3f);
+            if (lobe.x + width > 0x40) lobe.x = 0x40 - width;
+            if (lobe.y + height > 0x40) lobe.y = 0x40 - height;
+            lobe.perception_copy = p[4] > 2 ? p[4] % 3 : p[4];
+            for (int r = 0; r < 2; ++r) {
+                const std::size_t at = kLobeRuleOffset + kLobeRuleBytes * static_cast<std::size_t>(r);
+                DendriteRule& rule = lobe.rules[r];
+                rule.source = p[at];
+                rule.fewest = p[at + 1];
+                rule.most = p[at + 2] < p[at + 1] ? p[at + 1] : p[at + 2];
+                rule.spread = p[at + 4] > 8 ? p[at + 4] % 9 : p[at + 4];
+            }
+            lobes.push_back(lobe);
+        }
+    }
+    for (LobeWiring& lobe : lobes) {
+        for (DendriteRule& rule : lobe.rules) {
+            rule.source %= static_cast<int>(lobes.size());
+        }
+    }
+    return lobes;
+}
+
+// Whether a wiring plan is this brain's: as many lobes, each where the
+// game's `lobe` reply puts it.
+template <typename Layout>
+bool wiring_matches(const std::vector<LobeWiring>& wiring, const std::vector<Layout>& lobes) {
+    if (wiring.empty() || wiring.size() != lobes.size()) return false;
+    for (std::size_t i = 0; i < wiring.size(); ++i) {
+        if (wiring[i].x != lobes[i].x || wiring[i].y != lobes[i].y) return false;
+    }
+    return true;
+}
+
 struct GeneTypeCount {
     std::uint8_t family = 0;
     std::uint8_t subtype = 0;

@@ -131,10 +131,19 @@ protected:
     void layout(int width, int height) override;
     BOOL OnNotify(WPARAM wparam, LPARAM lparam, LRESULT* result) override;
     afx_msg void OnModeChanged();
+    afx_msg void OnWiringToggled();
     DECLARE_MESSAGE_MAP()
 
 private:
     void draw_grid(CDC& dc, const CRect& rect);
+    // The genome's wiring for the subject (brain_wiring), once per subject.
+    void load_wiring();
+    bool wiring_shown() const;
+    void draw_wiring(CDC& dc, const std::vector<CRect>& outlines);
+    // "Fed by ... / Feeds ..." for a lobe.
+    CString wiring_text(int lobe) const;
+    // A lobe's firing: the share of its neurons firing and their mean.
+    void lobe_firing(int lobe, int& share_percent, int& mean) const;
     void fit_view(const CRect& rect);
     bool cell_at(CPoint point, int& x, int& y) const;
     void on_mouse(CPoint point, bool clicked);
@@ -187,6 +196,13 @@ private:
     bool updating_list_ = false;
     // Whether the game honours a report's measure: -1 not known yet.
     int report_honours_measure_ = -1;
+    CButton wiring_check_;
+    std::vector<c1kit::LobeWiring> wiring_;
+    bool wiring_loaded_ = false;
+    bool wiring_valid_ = false;
+    // Firing strength, for the connections, whatever the map shows.
+    c1kit::BrainActivity firing_;
+    int pulse_frame_ = 0;
 };
 
 // Decisions: the decision lobe, one bar per action, the strongest marked,
@@ -269,6 +285,9 @@ public:
     bool query_binary(const std::string& script, std::string& reply);
     // A brain report (mode-2 holder).
     bool brain_report(int mode, int rule, std::string& reply);
+    // The subject's genome file (in the world's Genetics directory), parsed;
+    // `file_bytes` its length.  False if there is none.
+    bool read_genome(std::vector<c1kit::Gene>& genes, std::size_t& file_bytes) const;
     // Runs a script without waiting for output (a scheduler holder).
     bool run(const std::string& script);
 

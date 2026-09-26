@@ -233,6 +233,14 @@ void test_real_files(const std::string& directory, const std::string& genome_pat
         std::printf("  %-22s %3d genes %5d bytes\n", gene_type_name(type.family, type.subtype),
                     type.genes, type.bytes);
     }
+    const std::vector<LobeWiring> wiring = brain_wiring(genes, true);
+    for (std::size_t i = 0; i < wiring.size(); ++i) {
+        std::printf("  wiring %zu at %2d,%2d: rule 0 from %d (%d-%d), rule 1 from %d (%d-%d), copy %d\n",
+                    i, wiring[i].x, wiring[i].y, wiring[i].rules[0].source,
+                    wiring[i].rules[0].fewest, wiring[i].rules[0].most,
+                    wiring[i].rules[1].source, wiring[i].rules[1].fewest,
+                    wiring[i].rules[1].most, wiring[i].perception_copy);
+    }
     for (const LobeGene& lobe : summary.lobes) {
         std::printf("  lobe %2d,%2d %2dx%2d dendrites %d-%d + %d-%d\n", lobe.x, lobe.y,
                     lobe.width, lobe.height, lobe.dendrites_min[0], lobe.dendrites_max[0],
@@ -242,10 +250,54 @@ void test_real_files(const std::string& directory, const std::string& genome_pat
 
 } // namespace
 
+void test_brain_wiring() {
+    // A lobe gene: x, y, width, height, perception copy, then rules at 18.
+    const auto lobe_gene = [](int x, int y, int width, int copy, int source0, int most0,
+                              int generation, int flags, int stage) {
+        Gene gene;
+        gene.family = 3;  // % 3 == 0: brain
+        gene.subtype = 7;  // any subtype
+        gene.generation = static_cast<std::uint8_t>(generation);
+        gene.flags = static_cast<std::uint8_t>(flags);
+        gene.switch_on_stage = static_cast<std::uint8_t>(stage);
+        gene.payload.assign(112, 0);
+        gene.payload[0] = static_cast<std::uint8_t>(x);
+        gene.payload[1] = static_cast<std::uint8_t>(y);
+        gene.payload[2] = static_cast<std::uint8_t>(width);
+        gene.payload[3] = 2;
+        gene.payload[4] = static_cast<std::uint8_t>(copy);
+        gene.payload[18] = static_cast<std::uint8_t>(source0);
+        gene.payload[19] = 1;
+        gene.payload[20] = static_cast<std::uint8_t>(most0);
+        gene.payload[22] = 12;  // spread 12 folds to 3
+        gene.payload[18 + 47] = 9;  // rule 1's source, folded into the count
+        return gene;
+    };
+    std::vector<Gene> genes;
+    genes.push_back(lobe_gene(10, 5, 8, 0, 1, 3, 1, 0, 0));       // second pass
+    genes.push_back(lobe_gene(62, 1, 8, 4, 0, 0, 0, 0, 0));       // first; x clamped to 56
+    genes.push_back(lobe_gene(20, 20, 4, 0, 0, 2, 0, 0x10, 0));   // female only
+    genes.push_back(lobe_gene(30, 30, 4, 0, 0, 2, 0, 0, 1));      // not stage 0
+    const std::vector<LobeWiring> male = brain_wiring(genes, true);
+    assert(male.size() == 2);
+    assert(male[0].x == 56 && male[0].y == 1 && male[0].perception_copy == 1);
+    assert(male[1].x == 10 && male[1].rules[0].source == 1 && male[1].rules[0].fewest == 1 &&
+           male[1].rules[0].most == 3 && male[1].rules[0].spread == 3);
+    assert(male[0].rules[1].source == 9 % 2);
+    const std::vector<LobeWiring> female = brain_wiring(genes, false);
+    assert(female.size() == 3 && female[1].x == 20);
+
+    struct Layout { int x, y; };
+    assert(wiring_matches(male, std::vector<Layout>{{56, 1}, {10, 5}}));
+    assert(!wiring_matches(male, std::vector<Layout>{{10, 5}, {56, 1}}));
+    assert(!wiring_matches(male, std::vector<Layout>{{56, 1}}));
+}
+
 int main(int argc, char** argv) {
     test_strings_and_themes();
     test_genome();
     test_brain_map();
+    test_brain_wiring();
     if (argc > 2) {
         test_real_files(argv[1], argv[2]);
     }

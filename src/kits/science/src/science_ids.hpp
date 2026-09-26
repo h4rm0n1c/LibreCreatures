@@ -59,6 +59,7 @@ enum : unsigned {
     kControlReportRule,
     kControlLobeList,
     kControlNeuronInfo,
+    kControlWiring,
     kControlDecisionBars,
     kControlDecisionValue,
     kControlMedicineList,

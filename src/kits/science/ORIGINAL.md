@@ -65,7 +65,13 @@ ctim`. Control state 6 is a new selection.
   its lobe, what it stands for (drives, actions, verbs and kinds of object
   from the game's own tables and files) and its value; clicking it follows
   it with `dde: cell` (exact firing strength, activation and both dendrite
-  rules' weights).
+  rules' weights). Under the lobes, the genome's connections (the
+  subject's `.gen`, read as the game builds its brain): a curve from each
+  lobe a dendrite rule reads to the lobe that grows the dendrites, and a
+  dotted one for each input lobe copying its firing into Perception, lit and
+  pulsing with the source's firing; pointing at a lobe says what feeds it
+  and what it feeds. Lobe to lobe only: the game reports no dendrites (its
+  DDE item "BrainWiring" answers nothing).
 - **Decisions** (CDecisionPage, 135): a bar per action in `decision.str`
   and for the reward and punishment echo chemicals (54, 55; icons 181, 182),
   from `inst,dde: putv _it_,dde: putv chem 54,dde: putv chem 55,setv var0
