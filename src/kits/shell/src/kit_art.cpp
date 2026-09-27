@@ -112,7 +112,8 @@ bool KitSprite::load_set(const std::string& path, std::vector<KitSprite>& sprite
     std::size_t at = 6;
     for (int i = 0; i < count; ++i) {
         if (at + 6 > bytes.size()) {
-            sprites.clear();
+            // Pregnancy.spr counts two sprites and holds one: keep what is there.
+            if (!sprites.empty()) break;
             return false;
         }
         const int frames = read_u16(bytes, at);

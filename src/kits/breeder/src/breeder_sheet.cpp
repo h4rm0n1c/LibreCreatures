@@ -69,7 +69,9 @@ BEGIN_MESSAGE_MAP(BreederSheet, c1kitshell::KitSheet)
 END_MESSAGE_MAP()
 
 // The original opened on a cover page and played sound; neither is in this
-// build.  The pages are in the original's order.
+// build, except in the classic look (the original beside this one, with the
+// pictures its pages use from the game's folder): then the pages are the
+// 1996 ones, after the cover.  The pages are in the original's order.
 BreederSheet::BreederSheet(CFont& default_font)
     : KitSheet(kStringToolName, kStringPausedMarker),
       default_font_(default_font),
@@ -77,6 +79,24 @@ BreederSheet::BreederSheet(CFont& default_font)
       shop_page_(*this, *this, kDialogPage, kStringShopTab) {
     m_psh.dwFlags |= PSH_USEHICON;
     m_psh.hIcon = AfxGetApp()->LoadIcon(kIconKit);
+    classic_ = c1kitshell::ClassicArt::find({kBitmapGraphScale}, {_T("PREVU"), _T("NEXTU"), _T("EARTHU")},
+                                            {kIconKit});
+    for (const char* picture : {kCoverPicture, "Male.bmp", "Fertility.spr", "Pregnancy.spr", kShopBoard}) {
+        if (classic_ && ::GetFileAttributesA(game_file(picture).c_str()) == INVALID_FILE_ATTRIBUTES) {
+            classic_.reset();
+        }
+    }
+    if (classic_) {
+        cover_ = std::make_unique<c1kitshell::CoverPage>(kDialogCover, kCoverPicture);
+        classic_fertility_ = std::make_unique<ClassicFertilityPage>(*this, *classic_);
+        c1kitshell::ShopHost& shop = *this;  // a private base: converted here
+        classic_shop_ = std::make_unique<c1kitshell::ClassicShopPage>(
+            *this, shop, *classic_, kDialogClassicShop, kStringShopTab, kShopBoard, true);
+        AddPage(cover_.get());
+        AddPage(classic_fertility_.get());
+        AddPage(classic_shop_.get());
+        return;
+    }
     AddPage(&fertility_page_);
     AddPage(&shop_page_);
 }
@@ -89,9 +109,9 @@ BreederSheet::~BreederSheet() {
 
 bool BreederSheet::create_window() {
     load_data_files();
+    const DWORD sizing = classic_ ? 0 : WS_MAXIMIZEBOX | WS_THICKFRAME;  // classic: fixed
     return Create(nullptr,
-                  WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX |
-                      WS_MAXIMIZEBOX | WS_THICKFRAME,
+                  WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | sizing,
                   WS_EX_DLGMODALFRAME) != FALSE;
 }
 
@@ -111,7 +131,11 @@ int BreederSheet::OnCreate(LPCREATESTRUCT create) {
 
 BOOL BreederSheet::OnInitDialog() {
     const BOOL result = c1kitshell::KitSheet::OnInitDialog();
-    enable_resizing(CSize(kDefaultPageWidthDlu, kDefaultPageHeightDlu));
+    if (classic_) {
+        enable_ambience(registry_, kAmbience, kAmbienceVolume);
+    } else {
+        enable_resizing(CSize(kDefaultPageWidthDlu, kDefaultPageHeightDlu));
+    }
     if (CMenu* menu = GetSystemMenu(FALSE)) {
         menu->AppendMenu(MF_SEPARATOR);
         menu->AppendMenu(MF_STRING, kSysCommandOnTop, _T("Always on &top"));
@@ -162,7 +186,8 @@ bool BreederSheet::save_shop() {
 
 void BreederSheet::load_preferences() {
     WindowSize size = {};
-    if (registry_->read_binary(c1kit::SettingsScope::user, "Size", &size, sizeof(size)) &&
+    if (!classic_ &&
+        registry_->read_binary(c1kit::SettingsScope::user, "Size", &size, sizeof(size)) &&
         size.width > 0 && size.height > 0) {
         set_window_size(CSize(size.width, size.height));
     }
@@ -179,7 +204,7 @@ void BreederSheet::load_preferences() {
     // "Page" counts the original's cover as page 0 (the key is shared).
     std::uint32_t page = 1;
     registry_->read_dword(c1kit::SettingsScope::user, "Page", page);
-    saved_page_ = page > 0 ? static_cast<int>(page) - 1 : 0;
+    saved_page_ = classic_ ? static_cast<int>(page) : page > 0 ? static_cast<int>(page) - 1 : 0;
     const int left = location.left < max_left ? location.left : max_left;
     const int top = location.top < max_top ? location.top : max_top;
     SetWindowPos(always_on_top_ != 0 ? &wndTopMost : &wndNoTopMost, left < 0 ? 0 : left,
@@ -201,9 +226,11 @@ void BreederSheet::save_preferences() {
                                      window.top < 0 ? 0 : window.top};
     const WindowSize size = {window.Width(), window.Height()};
     registry_->write_binary("Location", &location, sizeof(location));
-    registry_->write_binary("Size", &size, sizeof(size));
+    if (!classic_) {
+        registry_->write_binary("Size", &size, sizeof(size));  // the classic window is fixed
+    }
     registry_->write_dword("On Top", always_on_top_);
-    registry_->write_dword("Page", static_cast<std::uint32_t>(GetActiveIndex() + 1));
+    registry_->write_dword("Page", static_cast<std::uint32_t>(GetActiveIndex() + (classic_ ? 0 : 1)));
 }
 
 // One query holder for the kit's lifetime.
@@ -251,8 +278,10 @@ void BreederSheet::take_subject() {
         }
     }
     update_title();
-    fertility_page_.subject_changed();
-    fertility_page_.poll();
+    if (!classic_) {  // the classic page reads for itself while it shows
+        fertility_page_.subject_changed();
+        fertility_page_.poll();
+    }
 }
 
 void BreederSheet::update_title() {
@@ -270,7 +299,7 @@ void BreederSheet::OnTimer(UINT_PTR timer_id) {
     if (timer_id == kTimerStartup) {
         KillTimer(kTimerStartup);
         connect();
-    } else if (timer_id == kTimerPoll && !paused() && subject_.present && !quitting()) {
+    } else if (timer_id == kTimerPoll && !classic_ && !paused() && subject_.present && !quitting()) {
         // The graph keeps its history whichever page is showing.
         fertility_page_.poll();
     }

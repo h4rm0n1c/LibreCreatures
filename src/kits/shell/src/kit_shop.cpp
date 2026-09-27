@@ -262,8 +262,10 @@ void ClassicShopPage::draw_board(CDC& dc, const CRect& rect) {
                                        (board.height() - picture.height) / 2, host_.shop_palette());
         }
     }
-    canvas_.present(dc, rect.left + (rect.Width() - board.width()) / 2,
-                    rect.top + (rect.Height() - board.height()) / 2, board.width(), board.height());
+    // From the frame's top left, as CDIBStatic drew it (the Breeder's board
+    // is taller than its frame, and shows its top).
+    canvas_.present(dc, rect.left, rect.top, (std::min)(board.width(), rect.Width()),
+                    (std::min)(board.height(), rect.Height()));
 }
 
 void ClassicShopPage::OnPrevious() {

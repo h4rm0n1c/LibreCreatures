@@ -4,7 +4,21 @@ How the original `Breeder's Kit.exe` behaves, from its disassembly and from
 running it in the lab. Addresses are in that binary. This build keeps its
 protocol and shop file but replaces its pictures with labelled readings
 (below); numbered bugs are marked "Fix (bug N)" in the source. It leaves out
-the cover page and all sound.
+the cover page and all sound -- except in the classic look (the original
+beside it as `Breeder's Kit.old`, and its pictures in the game's folder),
+which keeps every fix but brings back the 1996 pages from their own
+templates: the `Sex.bmp` cover; the Fertility page's silhouette (`Male.bmp`
+crossed out for a male; for a female `Pregnancy.spr`'s woman, with the
+embryo stage from progesterone in the original's steps of 12), its three
+`Fertility.spr` gauges (sex drive; progesterone for a female or glycogen,
+"Health", for a male; gonadotrophin, "Fertility"), the sex icon, and the
+scrolling bar graph of oestrogen or testosterone with its scale (bitmap 193,
+from the original); and the Aphrodisiac page's one item at a time on
+`Shop.bmp` with `Addbgd.bmp` behind it and the original's own buttons. It
+adds the looping `kitb` sound at -10 dB and a "Mute ambient sound" checkbox
+under the pages (saved as `Mute Ambient`). The original fed its middle
+gauge an average of three readings and showed the embryo only past the
+highest level it had seen; the classic look shows each reading as it is.
 
 ## Identity
 

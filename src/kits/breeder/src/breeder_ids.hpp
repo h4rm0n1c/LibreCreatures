@@ -10,6 +10,20 @@ constexpr unsigned kIconKit = 128;
 constexpr unsigned kIconFemale = 187;  // Page8A loads 0xbb for a female
 constexpr unsigned kIconMale = 188;    // and 0xbc for a male
 
+// The classic look: the 1996 templates, the cover picture, the graph's
+// scale (a bitmap in the original), and the ambience (the 1996 kit's
+// "kitb" loop at -10 dB).
+constexpr unsigned kDialogClassicFertility = 138;
+constexpr unsigned kDialogCover = 140;
+constexpr unsigned kDialogClassicShop = 142;
+constexpr unsigned kBitmapGraphScale = 193;
+constexpr char kCoverPicture[] = "Sex.bmp";
+constexpr char kShopBoard[] = "Shop.bmp";
+constexpr char kAmbience[] = "kitb";
+constexpr int kAmbienceVolume = -1000;
+constexpr unsigned kStringHealth = 104;
+constexpr unsigned kStringFertility = 106;
+
 // Strings
 constexpr unsigned kStringOleInitFailed = 100;
 constexpr unsigned kStringOestrogen = 101;     // "Estrogen"

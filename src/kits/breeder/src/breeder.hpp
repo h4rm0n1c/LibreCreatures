@@ -59,12 +59,50 @@ struct Subject {
     int sex = 0;  // 1 male, 2 female
 };
 
+// The classic look's Fertility page (breeder_classic.cpp): the 1996
+// template (dialog 138) with its pictures drawn from the game's files.
+class ClassicFertilityPage : public CPropertyPage {
+public:
+    ClassicFertilityPage(BreederSheet& sheet, const c1kitshell::ClassicArt& art);
+
+protected:
+    BOOL OnInitDialog() override;
+    BOOL OnSetActive() override;
+    BOOL OnKillActive() override;
+    afx_msg void OnTimer(UINT_PTR timer_id);
+    afx_msg void OnCloseKit();
+    DECLARE_MESSAGE_MAP()
+
+private:
+    void poll();
+    void place_view(UINT control, c1kitshell::PaintedView& view, int width, int height,
+                    c1kitshell::PaintedView::Painter painter);
+    void draw_silhouette(CDC& dc, const CRect& rect);
+    void draw_gauge(int index, CDC& dc, const CRect& rect);
+    void draw_graph(CDC& dc, const CRect& rect);
+
+    BreederSheet& sheet_;
+    const c1kitshell::ClassicArt& art_;
+    CString title_;
+    std::vector<c1kitshell::KitSprite> fertility_;  // graph, then three gauges
+    std::vector<c1kitshell::KitSprite> pregnancy_;
+    c1kitshell::PaintedView silhouette_, gauges_[3], graph_;
+    c1kitshell::Canvas canvas_;
+    std::vector<int> columns_;  // the graph's bars, oldest first
+    int levels_[3] = {};
+    int stage_ = 0;
+    int sex_ = 0;
+    HBITMAP scale_ = nullptr;
+};
+
 class BreederSheet : public c1kitshell::KitSheet, private c1kitshell::ShopHost {
 public:
     explicit BreederSheet(CFont& default_font);
     ~BreederSheet() override;
 
     bool create_window();
+    bool classic() const { return classic_ != nullptr; }
+    const c1kitshell::GamePalette& palette() const { return palette_; }
 
     const Subject& subject() const { return subject_; }
     bool query(const std::string& script, std::string& reply);
@@ -103,6 +141,10 @@ private:
     std::string game_file(const std::string& name) const;
 
     CFont& default_font_;
+    std::unique_ptr<c1kitshell::ClassicArt> classic_;
+    std::unique_ptr<c1kitshell::CoverPage> cover_;
+    std::unique_ptr<ClassicFertilityPage> classic_fertility_;
+    std::unique_ptr<c1kitshell::ClassicShopPage> classic_shop_;
     FertilityPage fertility_page_;
     c1kitshell::ShopPage shop_page_;
     c1kit::KitSettings* registry_ = nullptr;
