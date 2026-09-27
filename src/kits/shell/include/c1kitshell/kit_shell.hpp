@@ -10,10 +10,12 @@
 #include <afxole.h>
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "c1kit/c1kit.hpp"
 #include "c1kit/protocol.hpp"
+#include "c1kitshell/kit_sound.hpp"
 
 namespace c1kitshell {
 
@@ -108,6 +110,15 @@ protected:
     // SetActivePage too.
     void layout_pages();
 
+    // The classic look's continuous sound: the game's Sounds\<sound>.wav,
+    // looped at `volume` (hundredths of a decibel below full) while the kit
+    // is open, with a "Mute ambient sound" checkbox under the pages whose
+    // setting is kept as "Mute Ambient" in `settings`.  For a fixed-size
+    // sheet; call it from OnInitDialog.
+    void enable_ambience(c1kit::KitSettings* settings, const char* sound, int volume);
+    bool ambience_muted() const { return ambience_muted_; }
+
+    BOOL OnCommand(WPARAM wparam, LPARAM lparam) override;
     BOOL OnNotify(WPARAM wparam, LPARAM lparam, LRESULT* result) override;
     afx_msg void OnSize(UINT type, int cx, int cy);
     afx_msg void OnGetMinMaxInfo(MINMAXINFO* info);
@@ -127,6 +138,14 @@ private:
     bool quitting_ = false;
     bool resizable_ = false;
     CSize min_track_{0, 0};
+    void apply_ambience();
+    std::unique_ptr<KitSound> ambience_;
+    c1kit::KitSettings* ambience_settings_ = nullptr;
+    std::string ambience_sound_;
+    int ambience_volume_ = 0;
+    int ambience_channel_ = -1;
+    bool ambience_muted_ = false;
+    CButton mute_check_;
     CRect tab_margins_{0, 0, 0, 0};  // tab control inset from the client area
 };
 
@@ -141,6 +160,8 @@ class PaletteBitmap {
 public:
     // From this kit's resources, or from `module` (a ClassicArt's).
     bool load(UINT resource_id, HMODULE module = nullptr);
+    // From a .bmp file (the classic look's pictures in the game's folder).
+    bool load_file(const CString& path);
     int width() const { return width_; }
     int height() const { return height_; }
     CBitmap& bitmap() { return bitmap_; }
@@ -152,6 +173,7 @@ public:
     void realize(CWnd& window);
 
 private:
+    bool adopt(HBITMAP handle);
     CBitmap bitmap_;
     CPalette palette_;
     int width_ = 0;
@@ -218,11 +240,18 @@ private:
     CString path_;
 };
 
+// The 1996 cover dialogs' picture frame.
+constexpr UINT kCoverPictureFrame = 1140;
+
 // The 1996 kits' first page: a picture filling the page, and the kit's icon
 // on its tab.
 class CoverPage : public CPropertyPage {
 public:
     CoverPage(UINT dialog_id, UINT bitmap_id, UINT tab_icon_id, const ClassicArt& art);
+    // The picture a file in the game's Main Directory (Score.bmp, ...),
+    // centred in the page's picture frame (control 1140), as the 1996 kits'
+    // covers drew it; no tab icon.
+    CoverPage(UINT dialog_id, const char* picture_file);
 
 protected:
     BOOL OnInitDialog() override;
@@ -231,7 +260,8 @@ protected:
 
 private:
     UINT bitmap_id_ = 0;
-    const ClassicArt& art_;
+    const ClassicArt* art_ = nullptr;
+    CString picture_file_;
     PaletteBitmap bitmap_;
 };
 

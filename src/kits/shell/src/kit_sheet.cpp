@@ -3,6 +3,7 @@
 #include "c1kitshell/kit_shell.hpp"
 
 #include "c1kit/conversation.hpp"
+#include "c1kitshell/kit_art.hpp"
 
 #include <cstdio>
 
@@ -12,6 +13,7 @@ namespace {
 // Posted after a tab switch: comctl32 shows the new page only once the
 // sheet's WM_NOTIFY handling returns, and places it at the template size.
 constexpr UINT kDeferredLayoutMessage = WM_APP + 0x4c;
+constexpr UINT kMuteCheckbox = 0x7f4d;  // clear of the kits' own control ids
 
 } // namespace
 
@@ -180,6 +182,76 @@ void KitSheet::OnGetMinMaxInfo(MINMAXINFO* info) {
         info->ptMinTrackSize.x = min_track_.cx;
         info->ptMinTrackSize.y = min_track_.cy;
     }
+}
+
+void KitSheet::enable_ambience(c1kit::KitSettings* settings, const char* sound, int volume) {
+    ambience_settings_ = settings;
+    ambience_sound_ = sound;
+    ambience_volume_ = volume;
+    std::uint32_t muted = 0;
+    if (settings != nullptr) {
+        settings->read_dword(c1kit::SettingsScope::user, "Mute Ambient", muted);
+    }
+    ambience_muted_ = muted != 0;
+
+    // The checkbox goes under the pages, in a row the window grows by.
+    CWnd* tabs = GetTabControl();
+    CRect tab_rect;
+    if (tabs != nullptr) {
+        tabs->GetWindowRect(&tab_rect);
+        ScreenToClient(&tab_rect);
+    }
+    CRect row(0, 0, 4, 12);  // dialog units: margin, then the checkbox's height
+    ::MapDialogRect(GetActivePage() != nullptr ? GetActivePage()->GetSafeHwnd() : GetSafeHwnd(),
+                    &row);
+    const int height = row.Height();
+    CRect window;
+    GetWindowRect(&window);
+    SetWindowPos(nullptr, 0, 0, window.Width(), window.Height() + height + row.Width(),
+                 SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+    const CString label = _T("Mute ambient sound");
+    CClientDC dc(this);
+    CFont* previous = dc.SelectObject(GetFont());
+    const int width = dc.GetTextExtent(label).cx + height + 8;
+    dc.SelectObject(previous);
+    mute_check_.Create(label, WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_AUTOCHECKBOX,
+                       CRect(CPoint(tab_rect.left, tab_rect.bottom + row.Width() / 2),
+                             CSize(width, height)),
+                       this, kMuteCheckbox);
+    mute_check_.SetFont(GetFont());
+    mute_check_.SetCheck(ambience_muted_ ? BST_CHECKED : BST_UNCHECKED);
+
+    ambience_ = std::make_unique<KitSound>();
+    if (ambience_->open(GetSafeHwnd())) {
+        const CString directory = game_directory_setting("Main Directory");
+        ambience_->load(ambience_sound_, std::string(CStringA(directory)) + "Sounds\\" +
+                                             ambience_sound_ + ".wav");
+    }
+    apply_ambience();
+}
+
+void KitSheet::apply_ambience() {
+    if (!ambience_) {
+        return;
+    }
+    if (ambience_muted_ && ambience_channel_ >= 0) {
+        ambience_->stop(ambience_channel_);
+        ambience_channel_ = -1;
+    } else if (!ambience_muted_ && ambience_channel_ < 0) {
+        ambience_channel_ = ambience_->play(ambience_sound_, true, ambience_volume_);
+    }
+}
+
+BOOL KitSheet::OnCommand(WPARAM wparam, LPARAM lparam) {
+    if (LOWORD(wparam) == kMuteCheckbox && HIWORD(wparam) == BN_CLICKED && ambience_) {
+        ambience_muted_ = mute_check_.GetCheck() == BST_CHECKED;
+        if (ambience_settings_ != nullptr) {
+            ambience_settings_->write_dword("Mute Ambient", ambience_muted_ ? 1u : 0u);
+        }
+        apply_ambience();
+        return TRUE;
+    }
+    return CPropertySheet::OnCommand(wparam, lparam);
 }
 
 LRESULT KitSheet::OnDeferredLayout(WPARAM, LPARAM) {

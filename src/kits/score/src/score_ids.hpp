@@ -8,12 +8,14 @@ namespace score {
 
 // Dialog, icon and strings
 constexpr unsigned kDialogScore = 138;
+constexpr unsigned kDialogCover = 140;          // classic only
 constexpr unsigned kIconKit = 128;
 constexpr unsigned kStringOleInitFailed = 100;
 constexpr unsigned kStringKitName = 101;        // "Performance Kit" (title)
 constexpr unsigned kStringPausedSuffix = 108;   // " - Paused"
 constexpr unsigned kStringToolName = 111;       // "Performance Kit"
 constexpr unsigned kStringToolHelp = 112;       // "Scoring data"
+constexpr unsigned kStringPageTitle = 110;      // "Performance page" (classic tab)
 
 // Controls
 constexpr unsigned kControlPanel = 1140;        // icon picture
@@ -36,6 +38,11 @@ constexpr char kColonFile[] = "Time.spr";          // blank, colon
 constexpr char kCounterBackdrop[] = "Scorebgd.bmp";
 constexpr char kScoreBackdrop[] = "Brdscore.bmp";
 constexpr char kPaletteFile[] = "palette.dta";
+constexpr char kCoverPicture[] = "Score.bmp";      // classic cover
+// The classic look's ambience: the 1996 kit's "kitp" loop at -10 dB
+// (ScoreKitAllocateSoundSlotForHost @ 0x00404e20).
+constexpr char kAmbience[] = "kitp";
+constexpr int kAmbienceVolume = -1000;
 // The panel background, palette index 0xd6 (InitializeBitmapLayout
 // @ 0x004081c0); the icons are drawn on the same colour.
 constexpr unsigned char kPanelColourIndex = 0xd6;

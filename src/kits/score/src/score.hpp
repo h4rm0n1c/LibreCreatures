@@ -7,7 +7,10 @@
 // Rebuilt from /C1 Kits/Score Kit.exe; ../ORIGINAL.md describes the
 // original's behaviour and numbers its bugs.  This build keeps the
 // original's protocol, registry settings and art, drops its cover page and
-// sound, and fixes those bugs; each fix is marked "Fix (bug N)".
+// sound, and fixes those bugs; each fix is marked "Fix (bug N)".  With the
+// original beside it as "Score Kit.old" it wears the classic look: the 1996
+// fixed window, the cover page and the looping sound (which can be muted),
+// with every fix kept.
 
 #include "c1kitshell/kit_art.hpp"
 #include "c1kitshell/kit_shell.hpp"
@@ -82,6 +85,7 @@ public:
 
     bool create_window();
     const ScoreState& state() const { return state_; }
+    bool classic() const { return classic_ != nullptr; }
 
 protected:
     BOOL OnInitDialog() override;
@@ -106,7 +110,11 @@ private:
     void set_always_on_top(bool on);
 
     CFont& default_font_;
+    std::unique_ptr<c1kitshell::ClassicArt> classic_;
+    std::unique_ptr<c1kitshell::CoverPage> cover_;  // classic only
     ScorePage page_;
+    int saved_page_ = 1;  // classic: the page to open on, the cover being 0
+    CString page_title_;  // classic: "Performance page"
     c1kit::KitSettings* registry_ = nullptr;
     std::unique_ptr<c1kit::MacroConversation> conversation_;
     ScoreState state_;

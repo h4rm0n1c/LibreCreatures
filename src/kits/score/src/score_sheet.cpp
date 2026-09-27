@@ -34,14 +34,27 @@ BEGIN_MESSAGE_MAP(ScoreSheet, c1kitshell::KitSheet)
 END_MESSAGE_MAP()
 
 // The original opened on a cover page (a picture) with the score page
-// second; this build has only the score page.  Its looping start-up sound
-// ("kitp") and the rest of its sound player are left out.
+// second; this build has only the score page, and no sound.  The classic
+// look -- the original beside this one, and its cover picture in the game's
+// folder -- brings back the cover, the 1996 tab title and the looping sound.
 ScoreSheet::ScoreSheet(CFont& default_font)
     : KitSheet(kStringKitName, kStringPausedSuffix),
       default_font_(default_font),
       page_(*this) {
     m_psh.dwFlags |= PSH_USEHICON;
     m_psh.hIcon = AfxGetApp()->LoadIcon(kIconKit);
+    classic_ = c1kitshell::ClassicArt::find({}, {}, {kIconKit});
+    const CString cover = c1kitshell::game_directory_setting("Main Directory") + kCoverPicture;
+    if (classic_ && GetFileAttributes(cover) == INVALID_FILE_ATTRIBUTES) {
+        classic_.reset();
+    }
+    if (classic_) {
+        cover_ = std::make_unique<c1kitshell::CoverPage>(kDialogCover, kCoverPicture);
+        AddPage(cover_.get());
+        page_title_ = c1kitshell::load_string(kStringPageTitle);
+        page_.m_psp.dwFlags |= PSP_USETITLE;
+        page_.m_psp.pszTitle = page_title_;
+    }
     AddPage(&page_);
 }
 
@@ -52,9 +65,9 @@ ScoreSheet::~ScoreSheet() {
 }
 
 bool ScoreSheet::create_window() {
+    const DWORD sizing = classic_ ? 0 : WS_MAXIMIZEBOX | WS_THICKFRAME;  // classic: fixed
     return Create(nullptr,
-                  WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU |
-                      WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_THICKFRAME,
+                  WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | sizing,
                   WS_EX_DLGMODALFRAME) != FALSE;
 }
 
@@ -77,7 +90,11 @@ int ScoreSheet::OnCreate(LPCREATESTRUCT create) {
 
 BOOL ScoreSheet::OnInitDialog() {
     const BOOL result = c1kitshell::KitSheet::OnInitDialog();
-    enable_resizing(CSize(kDefaultPageWidthDlu, kDefaultPageHeightDlu));
+    if (classic_) {
+        enable_ambience(registry_, kAmbience, kAmbienceVolume);
+    } else {
+        enable_resizing(CSize(kDefaultPageWidthDlu, kDefaultPageHeightDlu));
+    }
 
     // Fix (bug 12): "Always on top" on the system menu.  The original had
     // only the saved setting; its menu resource for it was never loaded.
@@ -92,7 +109,8 @@ BOOL ScoreSheet::OnInitDialog() {
 // InitializeWindowState @ 0x00401e00.
 void ScoreSheet::load_preferences() {
     WindowSize size = {};
-    if (registry_->read_binary(c1kit::SettingsScope::user, "Size", &size,
+    if (!classic_ &&
+        registry_->read_binary(c1kit::SettingsScope::user, "Size", &size,
                                sizeof(size)) &&
         size.width > 0 && size.height > 0) {
         const int screen_x = GetSystemMetrics(SM_CXSCREEN);
@@ -110,6 +128,11 @@ void ScoreSheet::load_preferences() {
         location = {0x100, 0x80};
     }
     registry_->read_dword(c1kit::SettingsScope::user, "On Top", always_on_top_);
+    if (classic_) {
+        std::uint32_t page = 1;
+        registry_->read_dword(c1kit::SettingsScope::user, "Page", page);
+        saved_page_ = page <= 1 ? static_cast<int>(page) : 1;
+    }
     const int left = location.left < max_left ? location.left : max_left;
     const int top = location.top < max_top ? location.top : max_top;
     SetWindowPos(always_on_top_ != 0 ? &wndTopMost : &wndNoTopMost,
@@ -122,8 +145,9 @@ void ScoreSheet::load_preferences() {
     SetTimer(kTimerStartup, kStartupDelayMs, nullptr);
 }
 
-// PersistWindowLocationAndShutdown @ 0x00401c80.  "Page" is not written:
-// with the cover gone there is one page.
+// PersistWindowLocationAndShutdown @ 0x00401c80.  "Page" is written only
+// in the classic look: otherwise there is one page.  The classic window
+// keeps the 1996 size, so its size is not written either.
 void ScoreSheet::save_preferences() {
     if (registry_ == nullptr) {
         return;
@@ -140,7 +164,11 @@ void ScoreSheet::save_preferences() {
                  : (max_top < window.top ? max_top : window.top);
     const WindowSize size = {window.Width(), window.Height()};
     registry_->write_binary("Location", &location, sizeof(location));
-    registry_->write_binary("Size", &size, sizeof(size));
+    if (classic_) {
+        registry_->write_dword("Page", static_cast<std::uint32_t>(GetActiveIndex()));
+    } else {
+        registry_->write_binary("Size", &size, sizeof(size));
+    }
     registry_->write_dword("On Top", always_on_top_);
 }
 
@@ -153,6 +181,9 @@ void ScoreSheet::connect() {
         return;
     }
     connected_ = true;
+    if (classic_) {
+        SetActivePage(saved_page_);
+    }
     if (c1kit::MacroTransport* game = transport()) {
         conversation_ = std::make_unique<c1kit::MacroConversation>(*game);
     }

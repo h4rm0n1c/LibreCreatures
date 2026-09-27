@@ -1,15 +1,24 @@
 // Palette bitmaps and the cover page.
 
 #include "c1kitshell/kit_shell.hpp"
+#include "c1kitshell/kit_art.hpp"
 
 #include <vector>
 
 namespace c1kitshell {
 
 bool PaletteBitmap::load(UINT resource_id, HMODULE module) {
-    HBITMAP handle = static_cast<HBITMAP>(
+    return adopt(static_cast<HBITMAP>(
         LoadImage(module != nullptr ? module : AfxGetResourceHandle(),
-                  MAKEINTRESOURCE(resource_id), IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION));
+                  MAKEINTRESOURCE(resource_id), IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION)));
+}
+
+bool PaletteBitmap::load_file(const CString& path) {
+    return adopt(static_cast<HBITMAP>(LoadImage(nullptr, path, IMAGE_BITMAP, 0, 0,
+                                                LR_LOADFROMFILE | LR_CREATEDIBSECTION)));
+}
+
+bool PaletteBitmap::adopt(HBITMAP handle) {
     if (handle == nullptr) {
         return false;
     }
@@ -196,22 +205,38 @@ BEGIN_MESSAGE_MAP(CoverPage, CPropertyPage)
     ON_WM_PAINT()
 END_MESSAGE_MAP()
 
+CoverPage::CoverPage(UINT dialog_id, const char* picture_file)
+    : CPropertyPage(dialog_id), picture_file_(picture_file) {}
+
 CoverPage::CoverPage(UINT dialog_id, UINT bitmap_id, UINT tab_icon_id, const ClassicArt& art)
-    : CPropertyPage(dialog_id), bitmap_id_(bitmap_id), art_(art) {
+    : CPropertyPage(dialog_id), bitmap_id_(bitmap_id), art_(&art) {
     m_psp.dwFlags |= PSP_USEHICON;
     m_psp.hIcon = AfxGetApp()->LoadIcon(tab_icon_id);
 }
 
 BOOL CoverPage::OnInitDialog() {
     CPropertyPage::OnInitDialog();
-    bitmap_.load(bitmap_id_, art_.module());
+    if (art_ != nullptr) {
+        bitmap_.load(bitmap_id_, art_->module());
+    } else {
+        bitmap_.load_file(game_directory_setting("Main Directory") + picture_file_);
+    }
     bitmap_.realize(*this);
     return TRUE;
 }
 
 void CoverPage::OnPaint() {
     CPaintDC dc(this);
-    bitmap_.draw(dc, 7, 7);
+    CWnd* frame = art_ == nullptr ? GetDlgItem(kCoverPictureFrame) : nullptr;
+    if (frame == nullptr) {
+        bitmap_.draw(dc, 7, 7);
+        return;
+    }
+    CRect area;
+    frame->GetWindowRect(&area);
+    ScreenToClient(&area);
+    bitmap_.draw(dc, area.left + (area.Width() - bitmap_.width()) / 2,
+                 area.top + (area.Height() - bitmap_.height()) / 2);
 }
 
 } // namespace c1kitshell
