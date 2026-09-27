@@ -34,13 +34,14 @@ played WAV effects and looping ambience, which players found maddening.
 
 ## Art, and the classic look
 
-The kits contain no Creature Labs art.  Every picture, button face and icon
-a kit draws is either drawn by the kit itself (its icon comes from
-[`tools/make_kit_icons.py`](tools/make_kit_icons.py); button faces, symbols
-and marks are drawn in code) or read, while it runs, from the player's own
-copy of the game: the pictures the 1996 kits kept as files in the game's
-folder (the album wallpaper, the headstones, the score counters, the egg
-sprites) are loaded from there and never copied into this repository.
+The kits carry none of the original kits' pictures.  They do carry the
+originals' icons, as the Community Edition does -- small, stock interface
+pieces like the game's own toolbar and cursor.  Every other picture a kit
+shows is either drawn by the kit itself (button faces, symbols and marks are
+drawn in code) or read, while it runs, from the player's own copy of the
+game: the pictures the 1996 kits kept as files in the game's folder (the
+album wallpaper, the headstones, the score counters, the egg sprites) are
+loaded from there and never copied into this repository.
 
 A player who owns the original kits can have their 1996 look back.  Rename
 each original kit beside the new one to `<name>.old` (for example
@@ -53,9 +54,9 @@ sound (with a setting to mute the continuous ambience).  Without the `.old`,
 or if it lacks what the kit needs, the kit keeps its own interface.  There
 is no other switch.
 
-So the line the kits hold is: no copyrighted art is copied into them or into
-this repository; the 1996 art is only ever loaded at run time from files the
-player already has.  The 1996 dialog layouts (the positions and sizes of a
+So the line the kits hold is: none of the original kits' pictures is copied
+into them or into this repository; those are only ever loaded at run time
+from files the player already has.  The 1996 dialog layouts (the positions and sizes of a
 page's controls) are carried in the kits, as the structure a classic page is
 built on; they hold no artwork.
 

@@ -76,9 +76,7 @@ BreederSheet::BreederSheet(CFont& default_font)
       fertility_page_(*this),
       shop_page_(*this, *this, kDialogPage, kStringShopTab) {
     m_psh.dwFlags |= PSH_USEHICON;
-    // The classic look's art, from the original kit when it is beside this one.
-    classic_ = c1kitshell::ClassicArt::find({}, {}, {kIconKit, kIconFemale, kIconMale});
-    m_psh.hIcon = c1kitshell::kit_icon(kIconKit, classic_.get());
+    m_psh.hIcon = AfxGetApp()->LoadIcon(kIconKit);
     AddPage(&fertility_page_);
     AddPage(&shop_page_);
 }

@@ -69,9 +69,6 @@ public:
     const Subject& subject() const { return subject_; }
     bool query(const std::string& script, std::string& reply);
     const std::vector<std::string>& chemical_names() const { return chemical_names_; }
-    // The classic look (c1kitshell::ClassicArt): the player's original kit
-    // beside this one, or null for this kit's own interface.
-    const c1kitshell::ClassicArt* classic_art() const { return classic_.get(); }
 
     // c1kitshell::ShopHost: the Aphrodisiac page's stock, "Aphro".
     std::vector<c1kit::ShopItem>& shop_items() override { return shop_; }
@@ -95,7 +92,6 @@ protected:
     DECLARE_MESSAGE_MAP()
 
 private:
-    std::unique_ptr<c1kitshell::ClassicArt> classic_;
     void load_preferences();
     void save_preferences();
     void load_data_files();

@@ -33,3 +33,5 @@ LANGUAGE 9, 1
 
 #include "lc_dialogs.rcinc"
 128 ICON "images/icon/128.ico"
+187 ICON "images/icon/187.ico"
+188 ICON "images/icon/188.ico"

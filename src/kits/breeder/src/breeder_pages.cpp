@@ -102,39 +102,9 @@ void FertilityPage::draw(CDC& dc, const CRect& rect) {
         dc.TextOut(rect.left + 12, rect.top + 12, _T("Select a creature in the game."));
         return;
     }
-    // Who: a female or male symbol (the 1996 icon in the classic look), and
-    // the overview.
-    const bool female = subject.sex == 2;
-    if (const c1kitshell::ClassicArt* art = sheet_.classic_art()) {
-        if (HICON icon = static_cast<HICON>(LoadImage(art->module(),
-                                                      MAKEINTRESOURCE(female ? kIconFemale : kIconMale),
-                                                      IMAGE_ICON, 32, 32, 0))) {
-            dc.DrawIcon(rect.left + 8, rect.top + 6, icon);
-            DestroyIcon(icon);
-        }
-    } else {
-        const COLORREF colour = female ? RGB(200, 60, 120) : RGB(40, 90, 190);
-        CPen pen(PS_SOLID, 3, colour);
-        CPen* old_pen = dc.SelectObject(&pen);
-        CGdiObject* old_brush = dc.SelectStockObject(NULL_BRUSH);
-        const int x = rect.left + 8, y = rect.top + 6;
-        if (female) {
-            dc.Ellipse(x + 8, y + 2, x + 24, y + 18);
-            dc.MoveTo(x + 16, y + 18);
-            dc.LineTo(x + 16, y + 30);
-            dc.MoveTo(x + 10, y + 24);
-            dc.LineTo(x + 22, y + 24);
-        } else {
-            dc.Ellipse(x + 3, y + 12, x + 19, y + 28);
-            dc.MoveTo(x + 17, y + 14);
-            dc.LineTo(x + 28, y + 3);
-            dc.MoveTo(x + 20, y + 3);
-            dc.LineTo(x + 28, y + 3);
-            dc.LineTo(x + 28, y + 11);
-        }
-        dc.SelectObject(old_pen);
-        dc.SelectObject(old_brush);
-    }
+    // Who: the 1996 kit's female or male icon, and the overview.
+    const HICON icon = AfxGetApp()->LoadIcon(subject.sex == 2 ? kIconFemale : kIconMale);
+    dc.DrawIcon(rect.left + 8, rect.top + 6, icon);
     dc.SetTextColor(RGB(0, 0, 0));
     CString who = text(subject.name) + (subject.sex == 2 ? _T(", female") : _T(", male"));
     if (have_overview_) {
