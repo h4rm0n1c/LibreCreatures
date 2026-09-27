@@ -205,13 +205,31 @@ BEGIN_MESSAGE_MAP(CoverPage, CPropertyPage)
     ON_WM_PAINT()
 END_MESSAGE_MAP()
 
-CoverPage::CoverPage(UINT dialog_id, const char* picture_file)
-    : CPropertyPage(dialog_id), picture_file_(picture_file) {}
+CoverPage::CoverPage(UINT dialog_id, const char* picture_file, UINT tab_icon_id)
+    : CPropertyPage(dialog_id), picture_file_(picture_file) {
+    use_tab_icon(tab_icon_id);
+}
 
 CoverPage::CoverPage(UINT dialog_id, UINT bitmap_id, UINT tab_icon_id, const ClassicArt& art)
     : CPropertyPage(dialog_id), bitmap_id_(bitmap_id), art_(&art) {
-    m_psp.dwFlags |= PSP_USEHICON;
-    m_psp.hIcon = AfxGetApp()->LoadIcon(tab_icon_id);
+    use_tab_icon(tab_icon_id);
+}
+
+CoverPage::~CoverPage() {
+    if (tab_icon_ != nullptr) {
+        ::DestroyIcon(tab_icon_);
+    }
+}
+
+void CoverPage::use_tab_icon(UINT tab_icon_id) {
+    // The tab is the icon alone: an empty title replaces the dialog's
+    // "Cover" caption.
+    tab_icon_ = static_cast<HICON>(::LoadImage(AfxGetResourceHandle(), MAKEINTRESOURCE(tab_icon_id),
+                                               IMAGE_ICON, ::GetSystemMetrics(SM_CXSMICON),
+                                               ::GetSystemMetrics(SM_CYSMICON), 0));
+    m_psp.dwFlags |= PSP_USETITLE | PSP_USEHICON;
+    m_psp.pszTitle = _T("");
+    m_psp.hIcon = tab_icon_;
 }
 
 BOOL CoverPage::OnInitDialog() {

@@ -89,7 +89,7 @@ FuneralSheet::FuneralSheet(CFont& default_font)
         classic_.reset();
     }
     if (classic_) {
-        cover_ = std::make_unique<c1kitshell::CoverPage>(kDialogCover, kCoverPicture);
+        cover_ = std::make_unique<c1kitshell::CoverPage>(kDialogCover, kCoverPicture, kIconKit);
         AddPage(cover_.get());
     }
     AddPage(&graveyard_page_);

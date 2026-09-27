@@ -53,7 +53,7 @@ BiochemSheet::BiochemSheet(CFont& default_font)
     }
     if (classic_) {
         // The classic skin: its own pages, the v1.2 kit's, and none of these.
-        cover_ = std::make_unique<c1kitshell::CoverPage>(kDialogCover, kCoverPicture);
+        cover_ = std::make_unique<c1kitshell::CoverPage>(kDialogCover, kCoverPicture, kIconKit);
         classic_monitor_ = std::make_unique<ClassicMonitorPage>(*this);
         classic_inject_ = std::make_unique<ClassicInjectPage>(*this);
         classic_names_ = std::make_unique<ClassicNamesPage>(*this);

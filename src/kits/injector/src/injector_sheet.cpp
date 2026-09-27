@@ -103,7 +103,7 @@ InjectorSheet::InjectorSheet(CFont& default_font)
     }
     if (classic_) {
         // The classic skin: its own pages, the 2.0 kit's, and none of these.
-        cover_ = std::make_unique<c1kitshell::CoverPage>(kDialogCover, kCoverPicture);
+        cover_ = std::make_unique<c1kitshell::CoverPage>(kDialogCover, kCoverPicture, kIconKit);
         cover_->m_psp.dwFlags |= PSP_USETITLE;  // the template's caption is "Injector"
         cover_->m_psp.pszTitle = _T("Cover");
         classic_cobs_ = std::make_unique<ClassicCobsPage>(*this);

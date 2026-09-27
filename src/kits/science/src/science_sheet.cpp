@@ -95,7 +95,7 @@ ScienceSheet::ScienceSheet(CFont& default_font)
     }
     if (classic_) {
         // The classic skin: its own pages, the 1996 ones, and none of these.
-        cover_ = std::make_unique<c1kitshell::CoverPage>(kDialogCover, kCoverPicture);
+        cover_ = std::make_unique<c1kitshell::CoverPage>(kDialogCover, kCoverPicture, kIconKit);
         classic_monitor_ = std::make_unique<ClassicMonitorPage>(*this);
         classic_genetics_ = std::make_unique<ClassicGeneticsPage>(*this);
         classic_scanner_ = std::make_unique<ClassicScannerPage>(*this);

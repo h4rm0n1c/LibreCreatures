@@ -252,15 +252,20 @@ private:
 // The 1996 cover dialogs' picture frame.
 constexpr UINT kCoverPictureFrame = 1140;
 
-// The 1996 kits' first page: a picture filling the page, and the kit's icon
-// on its tab.
+// The 1996 kits' first page: a picture filling the page.  Its tab shows
+// only the kit's icon (icon 0x80, the original's), with no "Cover" text:
+// every 1996 cover sets PSP_USEHICON and PSP_USETITLE with an empty title.
+// (Wine's property sheet ignores both, for the originals too, and shows the
+// dialog caption.)
 class CoverPage : public CPropertyPage {
 public:
+    // The picture a bitmap in the original kit.
     CoverPage(UINT dialog_id, UINT bitmap_id, UINT tab_icon_id, const ClassicArt& art);
     // The picture a file in the game's Main Directory (Score.bmp, ...),
     // centred in the page's picture frame (control 1140), as the 1996 kits'
-    // covers drew it; no tab icon.
-    CoverPage(UINT dialog_id, const char* picture_file);
+    // covers drew it.
+    CoverPage(UINT dialog_id, const char* picture_file, UINT tab_icon_id);
+    ~CoverPage() override;
 
 protected:
     BOOL OnInitDialog() override;
@@ -268,8 +273,12 @@ protected:
     DECLARE_MESSAGE_MAP()
 
 private:
+    void use_tab_icon(UINT tab_icon_id);
+
+    HICON tab_icon_ = nullptr;
+
     UINT bitmap_id_ = 0;
-    const ClassicArt* art_ = nullptr;
+    const ClassicArt* art_ = nullptr;  // set when the picture is a bitmap in it
     CString picture_file_;
     PaletteBitmap bitmap_;
 };

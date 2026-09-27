@@ -91,7 +91,7 @@ HealthSheet::HealthSheet(CFont& default_font)
         }
     }
     if (classic_) {
-        cover_ = std::make_unique<c1kitshell::CoverPage>(kDialogCover, kCoverPicture);
+        cover_ = std::make_unique<c1kitshell::CoverPage>(kDialogCover, kCoverPicture, kIconKit);
         classic_fitness_ = std::make_unique<ClassicFitnessPage>(*this);
         classic_drives_ = std::make_unique<ClassicDrivesPage>(*this);
         classic_brain_ = std::make_unique<ClassicBrainPage>(*this);

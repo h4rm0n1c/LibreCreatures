@@ -49,7 +49,7 @@ ScoreSheet::ScoreSheet(CFont& default_font)
         classic_.reset();
     }
     if (classic_) {
-        cover_ = std::make_unique<c1kitshell::CoverPage>(kDialogCover, kCoverPicture);
+        cover_ = std::make_unique<c1kitshell::CoverPage>(kDialogCover, kCoverPicture, kIconKit);
         AddPage(cover_.get());
         page_title_ = c1kitshell::load_string(kStringPageTitle);
         page_.m_psp.dwFlags |= PSP_USETITLE;

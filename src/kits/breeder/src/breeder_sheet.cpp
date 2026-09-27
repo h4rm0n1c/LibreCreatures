@@ -87,7 +87,7 @@ BreederSheet::BreederSheet(CFont& default_font)
         }
     }
     if (classic_) {
-        cover_ = std::make_unique<c1kitshell::CoverPage>(kDialogCover, kCoverPicture);
+        cover_ = std::make_unique<c1kitshell::CoverPage>(kDialogCover, kCoverPicture, kIconKit);
         classic_fertility_ = std::make_unique<ClassicFertilityPage>(*this, *classic_);
         c1kitshell::ShopHost& shop = *this;  // a private base: converted here
         classic_shop_ = std::make_unique<c1kitshell::ClassicShopPage>(
