@@ -7,11 +7,16 @@
 // behaviour and numbers its bugs.  This build keeps its pages, protocol,
 // files and settings, lays its pages out in code so they grow with the
 // window, and fixes those bugs; each fix is marked "Fix (bug N)".  No cover
-// page, no syringe animation and no sound.
+// page, no syringe animation and no sound -- except in the classic look (the
+// original beside it as "BiochemKit.old"), which keeps every fix but wears
+// the v1.2 window: fixed pages laid out as its templates had them, the
+// cover, the syringe, its row of ticks under the pages and its looping
+// sound, which a tick there mutes.
 
 #include "c1kitshell/kit_art.hpp"
 #include "c1kitshell/kit_graph.hpp"
 #include "c1kitshell/kit_shell.hpp"
+#include "c1kitshell/kit_syringe.hpp"
 #include "c1kitshell/kit_widgets.hpp"
 #include "c1kit/biochem_files.hpp"
 #include "c1kit/conversation.hpp"
@@ -36,10 +41,14 @@ public:
     void sample();
     void names_changed();
     void subject_changed();
+    // The classic look's Show Tooltips: the levels under the pointer.
+    void set_tooltips(bool on);
 
 protected:
     void create_controls() override;
     void layout(int width, int height) override;
+    BOOL OnSetActive() override;
+    BOOL OnKillActive() override;
     afx_msg void OnFilterChanged();
     afx_msg void OnAdd();
     afx_msg void OnRemove();
@@ -50,6 +59,7 @@ protected:
     DECLARE_MESSAGE_MAP()
 
 private:
+    void layout_classic();  // dialog 150
     void set_followed(const std::vector<int>& chemicals);
     void fill_followed();
     void fill_saved();
@@ -71,6 +81,7 @@ private:
     CListCtrl followed_;
     c1kitshell::PaintedView graph_;
     c1kitshell::ChemicalGraph plot_{8000, 1000};
+    bool tooltips_ = true;
 };
 
 class InjectPage : public c1kitshell::LayoutPage {
@@ -89,9 +100,19 @@ protected:
     afx_msg void OnStop();
     afx_msg void OnAmountChanged();
     afx_msg void OnHScroll(UINT code, UINT position, CScrollBar* bar);
+    afx_msg void OnVScroll(UINT code, UINT position, CScrollBar* bar);
+    afx_msg void OnTimer(UINT_PTR timer_id);
     DECLARE_MESSAGE_MAP()
 
 private:
+    void layout_classic();  // dialog 151
+    // The dose on the slider: the classic one stands upright with 255 at
+    // the top, as the original's did.
+    int slider_dose() const;
+    void set_slider_dose(int dose);
+    void dose_changed(int dose);
+    void change_liquid();
+    void show_remaining();
     bool inject_once();
     void stop_repeat(const CString& why);
     void update_repeat_controls();
@@ -112,6 +133,17 @@ private:
     CEdit count_;
     CButton stop_;
     CStatic status_;
+    // The classic look's: the syringe, and the template's other labels.
+    c1kitshell::PaintedView syringe_view_;
+    c1kitshell::Syringe syringe_;
+    c1kitshell::GamePalette palette_;
+    CStatic amount_label_;
+    CButton repeat_group_;
+    CStatic seconds_label_;
+    CStatic no_limit_label_;
+    CStatic remaining_label_;
+    CStatic remaining_;
+    int liquid_ = -1;
     bool repeating_ = false;
     int repeat_chemical_ = -1;
     int repeat_done_ = 0;
@@ -133,6 +165,7 @@ protected:
     DECLARE_MESSAGE_MAP()
 
 private:
+    void layout_classic();  // dialog 152
     void fill();
     int selected_chemical() const;
 
@@ -153,6 +186,9 @@ public:
     ~BiochemSheet() override;
 
     bool create_window();
+    bool classic() const { return classic_ != nullptr; }
+    // The classic row's Show Tooltips, seen only with the Biochemistry page.
+    void show_tooltips_check(bool shown);
     bool query(const std::string& script, std::string& reply);
     bool subject_present() const { return subject_present_; }
     std::vector<std::string>& chemical_names() { return chemical_names_; }
@@ -170,9 +206,13 @@ protected:
     afx_msg void OnClose();
     afx_msg void OnDestroy();
     afx_msg void OnSysCommand(UINT id, LPARAM lparam);
+    afx_msg void OnOnTopClicked();
+    afx_msg void OnTooltipsClicked();
+    afx_msg void OnMuteClicked();
     DECLARE_MESSAGE_MAP()
 
 private:
+    void set_up_classic_window();
     void load_preferences();
     void save_preferences();
     void take_subject();
@@ -180,6 +220,13 @@ private:
     std::string game_file(const std::string& name) const;
 
     CFont& default_font_;
+    std::unique_ptr<c1kitshell::ClassicArt> classic_;
+    std::unique_ptr<c1kitshell::CoverPage> cover_;  // classic only
+    CButton on_top_check_;
+    CButton tooltips_check_;
+    CButton mute_check_;
+    CStatic version_;
+    std::uint32_t tooltips_ = 1;
     MonitorPage monitor_page_;
     InjectPage inject_page_;
     NamesPage names_page_;

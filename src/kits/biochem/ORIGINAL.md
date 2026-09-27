@@ -4,7 +4,20 @@ How the original `BiochemKit.exe` (v1.2) behaves, from its disassembly and
 from running it in the lab. Addresses are in that binary. This build keeps
 its pages, protocol, files and settings, lays the pages out in code so they
 grow with the window, and fixes the numbered bugs below (marked "Fix (bug
-N)" in the source). No cover page, no syringe animation and no sound.
+N)" in the source). No cover page, no syringe animation and no sound --
+except in the classic look (the original beside it as `BiochemKit.old`,
+and `science.bmp` in the game's folder), which keeps every fix but wears
+the v1.2 window: fixed pages where dialogs 150-152 put their controls (the
+dosage slider upright with 255 at the top, the Repeat group, "seconds",
+"(0 = no limit)" and Remaining), the `science.bmp` cover, the row under the
+pages (Always on Top, Show Tooltips with the Biochemistry page, the
+version, and "Mute ambient sound", saved as `Mute Ambient`), the looping
+`kits` sound at -10 dB, and the syringe: `DOSE.bmp` with the dosage sprite
+for the chemical (number mod 7 into `Dosage`, `yDosage`, `ODosage`,
+`BDosage`, `cDosage`, `pDosage`, `sDosage`), filled to the dose, and its
+injection animation (the drop squeezed out, the barrel drained four pixels
+every 10 ms, the drop re-formed).  The original then showed the barrel empty
+while the amount still held the dose; the classic look refills it.
 
 ## Identity
 

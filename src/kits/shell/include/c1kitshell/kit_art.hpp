@@ -43,10 +43,17 @@ public:
     };
 
     bool load(const std::string& path);
+    // A file of two sprites (the dosage syringes, Dosage.spr: CInjectPage::
+    // LoadDosageSprite @ 0x00407380 in the Biochemistry Kit): {u16 version,
+    // u32 buffer size}, then each sprite's {u16 frame count, u32 data size}
+    // and frames.  This sprite gets the first, `second` the other.
+    bool load_pair(const std::string& path, KitSprite& second);
     int frame_count() const { return static_cast<int>(frames_.size()); }
     const Frame* frame(int index) const;
 
 private:
+    // `count` frames from `at` on; false if they run past the end.
+    bool read_frames(const std::vector<std::uint8_t>& bytes, std::size_t& at, int count);
     std::vector<Frame> frames_;
 };
 

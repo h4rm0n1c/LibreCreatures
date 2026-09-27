@@ -32,6 +32,9 @@ BEGIN_MESSAGE_MAP(BiochemSheet, c1kitshell::KitSheet)
     ON_WM_CLOSE()
     ON_WM_DESTROY()
     ON_WM_SYSCOMMAND()
+    ON_BN_CLICKED(kControlOnTopCheck, &BiochemSheet::OnOnTopClicked)
+    ON_BN_CLICKED(kControlTooltipsCheck, &BiochemSheet::OnTooltipsClicked)
+    ON_BN_CLICKED(kControlMuteCheck, &BiochemSheet::OnMuteClicked)
 END_MESSAGE_MAP()
 
 BiochemSheet::BiochemSheet(CFont& default_font)
@@ -42,6 +45,16 @@ BiochemSheet::BiochemSheet(CFont& default_font)
       names_page_(*this) {
     m_psh.dwFlags |= PSH_USEHICON;
     m_psh.hIcon = AfxGetApp()->LoadIcon(kIconKit);
+    // The classic look: the original beside this one, and its cover picture
+    // in the game's folder.
+    classic_ = c1kitshell::ClassicArt::find({}, {}, {kIconKit});
+    if (classic_ && ::GetFileAttributesA(game_file(kCoverPicture).c_str()) == INVALID_FILE_ATTRIBUTES) {
+        classic_.reset();
+    }
+    if (classic_) {
+        cover_ = std::make_unique<c1kitshell::CoverPage>(kDialogCover, kCoverPicture);
+        AddPage(cover_.get());
+    }
     AddPage(&monitor_page_);
     AddPage(&inject_page_);
     AddPage(&names_page_);
@@ -54,9 +67,9 @@ BiochemSheet::~BiochemSheet() {
 }
 
 bool BiochemSheet::create_window() {
+    const DWORD sizing = classic_ ? 0 : WS_MAXIMIZEBOX | WS_THICKFRAME;  // classic: fixed
     return Create(nullptr,
-                  WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX |
-                      WS_MAXIMIZEBOX | WS_THICKFRAME,
+                  WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | sizing,
                   WS_EX_DLGMODALFRAME) != FALSE;
 }
 
@@ -98,7 +111,11 @@ int BiochemSheet::OnCreate(LPCREATESTRUCT create) {
 
 BOOL BiochemSheet::OnInitDialog() {
     const BOOL result = c1kitshell::KitSheet::OnInitDialog();
-    enable_resizing(CSize(kDefaultPageWidthDlu, kDefaultPageHeightDlu));
+    if (classic_) {
+        set_up_classic_window();
+    } else {
+        enable_resizing(CSize(kDefaultPageWidthDlu, kDefaultPageHeightDlu));
+    }
     if (CMenu* menu = GetSystemMenu(FALSE)) {
         menu->AppendMenu(MF_SEPARATOR);
         menu->AppendMenu(MF_STRING, kSysCommandOnTop, _T("Always on &Top"));
@@ -156,9 +173,75 @@ void BiochemSheet::take_subject() {
     monitor_page_.subject_changed();
 }
 
+// The classic window: the v1.2 kit's row under the pages -- Always on Top,
+// Show Tooltips (with the Biochemistry page) and the version -- with Mute
+// ambient sound added.
+void BiochemSheet::set_up_classic_window() {
+    CWnd* tabs = GetTabControl();
+    CRect tab_rect;
+    tabs->GetWindowRect(&tab_rect);
+    ScreenToClient(&tab_rect);
+    CRect row(0, 0, 60, 10);
+    CRect gap(0, 0, 4, 4);
+    ::MapDialogRect(GetActivePage()->GetSafeHwnd(), &row);
+    ::MapDialogRect(GetActivePage()->GetSafeHwnd(), &gap);
+    const int top = tab_rect.bottom + gap.Height();
+    CWnd* parent = this;
+    CFont* font = GetFont();
+    int x = tab_rect.left;
+    const auto make_check = [&](CButton& check, LPCTSTR label, UINT id) {
+        CClientDC dc(this);
+        CFont* previous = dc.SelectObject(font);
+        const int width = dc.GetTextExtent(label).cx + row.Height() + 8;
+        dc.SelectObject(previous);
+        check.Create(label, WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_AUTOCHECKBOX,
+                     CRect(CPoint(x, top), CSize(width, row.Height())), parent, id);
+        check.SetFont(font);
+        x += width + gap.Width() * 2;
+    };
+    make_check(on_top_check_, _T("Always on Top"), kControlOnTopCheck);
+    make_check(tooltips_check_, _T("Show Tooltips"), kControlTooltipsCheck);
+    make_check(mute_check_, _T("Mute ambient sound"), kControlMuteCheck);
+    version_.Create(_T("v1.2"), WS_CHILD | WS_VISIBLE | SS_RIGHT,
+                    CRect(CPoint(tab_rect.right - row.Width(), top), row.Size()), parent,
+                    kControlVersion);
+    version_.SetFont(font);
+    registry_->read_dword(c1kit::SettingsScope::user, "Show Tooltips", tooltips_);
+    tooltips_check_.SetCheck(tooltips_ != 0 ? BST_CHECKED : BST_UNCHECKED);
+    monitor_page_.set_tooltips(tooltips_ != 0);
+    show_tooltips_check(false);  // the cover comes first
+    CRect window;
+    GetWindowRect(&window);
+    SetWindowPos(nullptr, 0, 0, window.Width(), window.Height() + row.Height() + gap.Height() * 2,
+                 SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+    enable_ambience(registry_, kAmbience, kAmbienceVolume, false);
+    mute_check_.SetCheck(ambience_muted() ? BST_CHECKED : BST_UNCHECKED);
+}
+
+void BiochemSheet::show_tooltips_check(bool shown) {
+    if (tooltips_check_.GetSafeHwnd() != nullptr) {
+        tooltips_check_.ShowWindow(shown ? SW_SHOW : SW_HIDE);
+    }
+}
+
+void BiochemSheet::OnOnTopClicked() {
+    set_always_on_top(on_top_check_.GetCheck() == BST_CHECKED);
+}
+
+void BiochemSheet::OnTooltipsClicked() {
+    tooltips_ = tooltips_check_.GetCheck() == BST_CHECKED ? 1 : 0;
+    registry_->write_dword("Show Tooltips", tooltips_);
+    monitor_page_.set_tooltips(tooltips_ != 0);
+}
+
+void BiochemSheet::OnMuteClicked() {
+    set_ambience_muted(mute_check_.GetCheck() == BST_CHECKED);
+}
+
 void BiochemSheet::load_preferences() {
     WindowSize size = {};
-    if (registry_->read_binary(c1kit::SettingsScope::user, "Size", &size, sizeof(size)) &&
+    if (!classic_ &&
+        registry_->read_binary(c1kit::SettingsScope::user, "Size", &size, sizeof(size)) &&
         size.width > 0 && size.height > 0) {
         set_window_size(CSize(size.width, size.height));
     }
@@ -171,9 +254,14 @@ void BiochemSheet::load_preferences() {
         location = {0x100, 0x80};
     }
     registry_->read_dword(c1kit::SettingsScope::user, "Always on Top", always_on_top_);
+    // "Page" counts the original's cover as page 0, as the classic look's
+    // pages do.
     std::uint32_t page = 1;
     registry_->read_dword(c1kit::SettingsScope::user, "Page", page);
-    saved_page_ = page > 0 ? static_cast<int>(page) - 1 : 0;
+    saved_page_ = classic_ ? static_cast<int>(page) : page > 0 ? static_cast<int>(page) - 1 : 0;
+    if (on_top_check_.GetSafeHwnd() != nullptr) {
+        on_top_check_.SetCheck(always_on_top_ != 0 ? BST_CHECKED : BST_UNCHECKED);
+    }
     const int left = location.left < max_left ? location.left : max_left;
     const int top = location.top < max_top ? location.top : max_top;
     SetWindowPos(always_on_top_ != 0 ? &wndTopMost : &wndNoTopMost, left < 0 ? 0 : left,
@@ -198,9 +286,12 @@ void BiochemSheet::save_preferences() {
     const WindowLocation location = {window.left < 0 ? 0 : window.left, window.top < 0 ? 0 : window.top};
     const WindowSize size = {window.Width(), window.Height()};
     registry_->write_binary("Location", &location, sizeof(location));
-    registry_->write_binary("Size", &size, sizeof(size));
+    if (!classic_) {
+        registry_->write_binary("Size", &size, sizeof(size));  // the classic window is fixed
+    }
     registry_->write_dword("Always on Top", always_on_top_);
-    registry_->write_dword("Page", static_cast<std::uint32_t>(GetActiveIndex() + 1));
+    registry_->write_dword("Page",
+                           static_cast<std::uint32_t>(GetActiveIndex() + (classic_ ? 0 : 1)));
 }
 
 // The graph samples every second whichever page is showing, so its history
@@ -244,6 +335,9 @@ void BiochemSheet::set_always_on_top(bool on) {
     SetWindowPos(on ? &wndTopMost : &wndNoTopMost, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
     if (CMenu* menu = GetSystemMenu(FALSE)) {
         menu->CheckMenuItem(kSysCommandOnTop, on ? MF_CHECKED : MF_UNCHECKED);
+    }
+    if (on_top_check_.GetSafeHwnd() != nullptr) {
+        on_top_check_.SetCheck(on ? BST_CHECKED : BST_UNCHECKED);
     }
 }
 

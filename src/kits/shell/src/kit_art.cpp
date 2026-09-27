@@ -76,6 +76,33 @@ bool KitSprite::load(const std::string& path) {
     }
     const int count = read_u16(bytes, at);
     at += 6;
+    return read_frames(bytes, at, count);
+}
+
+bool KitSprite::load_pair(const std::string& path, KitSprite& second) {
+    frames_.clear();
+    second.frames_.clear();
+    std::vector<std::uint8_t> bytes;
+    if (!read_file(path, bytes) || bytes.size() < 12) {
+        return false;
+    }
+    std::size_t at = 6;  // version and buffer size
+    const int first_count = read_u16(bytes, at);
+    at += 6;
+    if (!read_frames(bytes, at, first_count) || at + 6 > bytes.size()) {
+        frames_.clear();
+        return false;
+    }
+    const int second_count = read_u16(bytes, at);
+    at += 6;
+    if (!second.read_frames(bytes, at, second_count)) {
+        frames_.clear();
+        return false;
+    }
+    return true;
+}
+
+bool KitSprite::read_frames(const std::vector<std::uint8_t>& bytes, std::size_t& at, int count) {
     for (int index = 0; index < count; ++index) {
         if (at + 10 > bytes.size()) {
             frames_.clear();

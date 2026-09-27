@@ -7,6 +7,17 @@ namespace biochem {
 
 constexpr unsigned kDialogPage = 300;  // blank page; controls made in code
 constexpr unsigned kIconKit = 128;
+constexpr unsigned kDialogCover = 140;  // classic only
+
+// The classic look: its cover picture, its ambience (the v1.2 kit's "kits"
+// loop at -10 dB) and the syringe's liquids, by chemical number mod 7 (the
+// kit's path table at 0x00421020).
+constexpr char kCoverPicture[] = "science.bmp";
+constexpr char kAmbience[] = "kits";
+constexpr int kAmbienceVolume = -1000;
+constexpr const char* kDosageFiles[] = {"Dosage.spr",  "yDosage.spr", "ODosage.spr", "BDosage.spr",
+                                        "cDosage.spr", "pDosage.spr", "sDosage.spr"};
+constexpr unsigned kTimerSyringe = 4;  // on the Injections page
 
 constexpr unsigned kStringOleInitFailed = 100;
 constexpr unsigned kStringTitle = 500;          // "Biochemistry Kit - "
@@ -58,6 +69,14 @@ enum : unsigned {
     kControlRename,
     kControlSaveNames,
     kControlLabel,
+    // The classic look's: the syringe, the Injections page's extra labels,
+    // and the sheet's row (Always on Top, Show Tooltips, Mute, the version).
+    kControlSyringe,
+    kControlRemaining,
+    kControlOnTopCheck,
+    kControlTooltipsCheck,
+    kControlMuteCheck,
+    kControlVersion,
 };
 
 } // namespace biochem
