@@ -4,24 +4,24 @@ How the original `Science Kit.exe` behaves, from its disassembly and from
 running it in the lab. Addresses are in that binary. This build keeps its
 protocol and data files but redesigns every page (below); numbered bugs are
 marked "Fix (bug N)" in the source. It leaves out the cover page and all
-sound -- except in the classic look (the original beside it as
-`Science Kit.old`, with `Science.bmp`, `DOSE.bmp` and the dosage sprites
-in the game's folder), which keeps every fix and this build's functions but
-wears the 1996 window: its fixed page size (widened just enough that the
-six tabs fit on one row), the `Science.bmp` cover, and each page's parts
-where the 1996 templates put them -- Biochemistry's graph above its
-chemicals (the checklist, any number, where the four boxes were) and its
-Themes box; Decisions' two columns of short dark-red bars with the reward
-and punishment icons; and Injections' syringe (`DOSE.bmp` and the
-medicine's dosage sprite, by the original's table, filled to the dose and
-animated on Go), upright slider, Go and medicines.  The Genetics and Brain
-scanner pages keep this build's designs, since the 1996 ones (the
-button-stepped breakdown, the spinning DNA, the picture of a human brain)
-were what the redesign replaced.  The original's table also loaded
-Adrenaline's orange liquid and then, falling through to the next case,
-replaced it with the blue; the classic look shows the orange.  The looping
-`kits` sound plays at -10 dB with a "Mute ambient sound" checkbox under the
-pages (saved as `Mute Ambient`).
+sound -- except in the classic skin (the original beside it as
+`Science Kit.old`, with `Science.bmp`, `Scanner.bmp`, `Gene.spr`, `DOSE.bmp`
+and the dosage sprites in the game's folder).  That is a separate set of
+pages, the 1996 ones on their own templates (dialogs 133, 143, 134, 135 and
+144; `science_classic.cpp`), sharing only the data and queries with this
+build's pages: the `Science.bmp` cover; Biochemistry's four chemical boxes
+with their colour marks, the 1996 graph (white, axes, "MAX", "0", "Time",
+a four-pixel step a second) and themes of four with the Add Theme box;
+Genetics' summary, spinning DNA (`Gene.spr`) and the breakdown with Next;
+the brain scanner's dots on `Scanner.bmp`; Decisions' short bars; and
+Injections' syringe, upright slider, medicines box and Go.  It keeps the
+fixes: the species is the creature's (bug 4); the breakdown skips the types
+the original labelled "Unused" and totals every type; Adrenaline's syringe
+is orange, where the original's table fell through to blue; the Decisions
+names are wide enough for "Deactivate".  The window is the 1996 size,
+widened only so the six tabs fit on a row, and the looping `kits` sound
+plays at -10 dB with a "Mute ambient sound" checkbox under the pages (saved
+as `Mute Ambient`).
 
 ## Identity
 

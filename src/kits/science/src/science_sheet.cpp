@@ -84,19 +84,30 @@ ScienceSheet::ScienceSheet(CFont& default_font)
       injections_page_(*this) {
     m_psh.dwFlags |= PSH_USEHICON;
     m_psh.hIcon = AfxGetApp()->LoadIcon(kIconKit);
-    // The classic look: the original beside this one, and the pictures its
-    // pages use in the game's folder.  The 1996 window size, the cover and
-    // the looping sound, with each page where the 1996 one put its parts
-    // (the Genetics and Brain scanner pages keep this build's own).
+    // The classic skin: the original beside this one, and the pictures its
+    // pages use in the game's folder.  The 1996 window, cover and pages
+    // (science_classic.cpp) and the looping sound.
     classic_ = c1kitshell::ClassicArt::find({}, {}, {kIconKit});
-    for (const char* picture : {kCoverPicture, "DOSE.bmp", "Dosage.spr"}) {
+    for (const char* picture : {kCoverPicture, "DOSE.bmp", "Dosage.spr", "Scanner.bmp", "Gene.spr"}) {
         if (classic_ && ::GetFileAttributesA(game_file(picture).c_str()) == INVALID_FILE_ATTRIBUTES) {
             classic_.reset();
         }
     }
     if (classic_) {
+        // The classic skin: its own pages, the 1996 ones, and none of these.
         cover_ = std::make_unique<c1kitshell::CoverPage>(kDialogCover, kCoverPicture);
+        classic_monitor_ = std::make_unique<ClassicMonitorPage>(*this);
+        classic_genetics_ = std::make_unique<ClassicGeneticsPage>(*this);
+        classic_scanner_ = std::make_unique<ClassicScannerPage>(*this);
+        classic_decisions_ = std::make_unique<ClassicDecisionsPage>(*this);
+        classic_injections_ = std::make_unique<ClassicInjectionsPage>(*this);
         AddPage(cover_.get());
+        AddPage(classic_monitor_.get());
+        AddPage(classic_genetics_.get());
+        AddPage(classic_scanner_.get());
+        AddPage(classic_decisions_.get());
+        AddPage(classic_injections_.get());
+        return;
     }
     AddPage(&biochemistry_page_);
     AddPage(&genetics_page_);
@@ -385,7 +396,7 @@ void ScienceSheet::OnTimer(UINT_PTR timer_id) {
         connect();
     } else if (timer_id == kTimerPoll && !paused() && subject_.present && !quitting()) {
         ++poll_count_;
-        if (poll_count_ % 2 == 0) {
+        if (poll_count_ % 2 == 0 && !classic_) {  // the classic pages poll for themselves
             biochemistry_page_.sample();
         }
         auto* page = dynamic_cast<SciencePage*>(GetActivePage());

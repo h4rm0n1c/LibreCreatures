@@ -1,9 +1,10 @@
 // Reconstructed from the C1 PE resource tree; raw PE leaves are the oracle.
 // The LibreCreatures build keeps the string tables, the kit icon and the
 // Decisions page's reward and punishment icons (181, 182).  Its pages are
-// laid out in code (lc_dialogs.rcinc); the cover's layout (140) is kept for
-// the classic look, whose picture is the game's Science.bmp; the other 1996
-// dialogs, cover bitmap, buttons,
+// laid out in code (lc_dialogs.rcinc).  The 1996 dialogs' layouts (133,
+// 134, 135, 140, 143, 144, 185; 143 only in English, the others' languages
+// being unread) are kept for the classic skin, whose pictures and swatches
+// come from the game's folder and the original; the cover bitmap, buttons,
 // legend swatches and menu 143 are left out.
 #pragma code_page(65001)
 #include "resource_ids.h"
@@ -11,6 +12,11 @@
 LANGUAGE 7, 1
 
 #include "dialogs/1031/140.rcinc"
+#include "dialogs/1031/133.rcinc"
+#include "dialogs/1031/134.rcinc"
+#include "dialogs/1031/135.rcinc"
+#include "dialogs/1031/144.rcinc"
+#include "dialogs/1031/185.rcinc"
 #include "strings/1031/7.rcinc"
 #include "strings/1031/8.rcinc"
 #include "strings/1031/9.rcinc"
@@ -34,6 +40,12 @@ LANGUAGE 7, 1
 LANGUAGE 9, 1
 
 #include "dialogs/1033/140.rcinc"
+#include "dialogs/1033/133.rcinc"
+#include "dialogs/1033/134.rcinc"
+#include "dialogs/1033/135.rcinc"
+#include "dialogs/1033/143.rcinc"
+#include "dialogs/1033/144.rcinc"
+#include "dialogs/1033/185.rcinc"
 #include "strings/1033/7.rcinc"
 #include "strings/1033/8.rcinc"
 #include "strings/1033/9.rcinc"
@@ -58,6 +70,11 @@ LANGUAGE 9, 1
 LANGUAGE 12, 1
 
 #include "dialogs/1036/140.rcinc"
+#include "dialogs/1036/133.rcinc"
+#include "dialogs/1036/134.rcinc"
+#include "dialogs/1036/135.rcinc"
+#include "dialogs/1036/144.rcinc"
+#include "dialogs/1036/185.rcinc"
 #include "strings/1036/7.rcinc"
 #include "strings/1036/8.rcinc"
 #include "strings/1036/9.rcinc"
@@ -81,6 +98,11 @@ LANGUAGE 12, 1
 LANGUAGE 17, 1
 
 #include "dialogs/1041/140.rcinc"
+#include "dialogs/1041/133.rcinc"
+#include "dialogs/1041/134.rcinc"
+#include "dialogs/1041/135.rcinc"
+#include "dialogs/1041/144.rcinc"
+#include "dialogs/1041/185.rcinc"
 #include "strings/1041/7.rcinc"
 #include "strings/1041/8.rcinc"
 #include "strings/1041/9.rcinc"

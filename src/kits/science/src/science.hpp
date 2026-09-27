@@ -74,7 +74,6 @@ protected:
     DECLARE_MESSAGE_MAP()
 
 private:
-    void layout_classic();  // where dialog 133 put things
     void fill_chemical_list();
     void fill_themes();
     void set_tracked(const std::vector<int>& chemicals);
@@ -90,7 +89,6 @@ private:
     CButton delete_theme_;
     CButton clear_;
     CStatic theme_label_;
-    CButton themes_group_;  // the classic look's "Themes" box
     PaintedView graph_;
     CImageList swatches_;
     c1kitshell::ChemicalGraph plot_{2000, 500};
@@ -250,8 +248,6 @@ protected:
 
 private:
     void draw_bars(CDC& dc, const CRect& rect);
-    // Dialog 135's two columns of short bars, the classic look's.
-    void draw_bars_classic(CDC& dc, const CRect& rect);
 
     PaintedView bars_;
     CComboBox value_;
@@ -275,17 +271,9 @@ protected:
     afx_msg void OnInject();
     afx_msg void OnMedicineChanged();
     afx_msg void OnHScroll(UINT code, UINT position, CScrollBar* bar);
-    afx_msg void OnVScroll(UINT code, UINT position, CScrollBar* bar);
-    afx_msg void OnTimer(UINT_PTR timer_id);
     DECLARE_MESSAGE_MAP()
 
 private:
-    void layout_classic();  // dialog 144, with the syringe
-    // The dose on the slider: the classic one stands upright, most at the
-    // top, as the original's did.
-    int slider_dose() const;
-    void set_slider_dose(int dose);
-    void change_liquid();
     void update_dose_label();
     int selected_chemical() const;
 
@@ -295,7 +283,152 @@ private:
     CStatic level_;
     CStatic medicine_label_;
     CButton inject_;
-    // The classic look's syringe.
+};
+
+// ---------------------------------------------------------------------------
+// The classic skin's pages (science_classic.cpp): the 1996 pages themselves,
+// on their own templates, sharing only the sheet's data and queries with
+// the pages above.
+// ---------------------------------------------------------------------------
+
+// A 1996 page: its template, its Close, and a poll timer while it shows.
+class ClassicSciencePage : public CPropertyPage {
+public:
+    ClassicSciencePage(ScienceSheet& sheet, UINT dialog, UINT title_string, UINT poll_ms);
+
+protected:
+    BOOL OnInitDialog() override;
+    BOOL OnSetActive() override;
+    BOOL OnKillActive() override;
+    virtual void init() = 0;
+    virtual void poll() {}
+    virtual void tick() {}  // the animation timer, for a page that has one
+    void start_animation(UINT ms) { animation_ms_ = ms; }
+    // A drawn view where the template's picture control was.
+    void replace_picture(UINT control, PaintedView& view, PaintedView::Painter painter);
+    // The template's image statics (id -1), in order, given the original's bitmaps.
+    void set_template_bitmaps(std::initializer_list<UINT> bitmaps);
+    afx_msg void OnTimer(UINT_PTR timer_id);
+    afx_msg void OnCloseKit();
+    DECLARE_MESSAGE_MAP()
+
+    ScienceSheet& sheet_;
+    CString title_;
+    UINT poll_ms_;
+    UINT animation_ms_ = 0;
+};
+
+// Biochemistry (CMonitorPage, dialog 133): four chemicals on the 1996 graph,
+// themes of four.
+class ClassicMonitorPage : public ClassicSciencePage {
+public:
+    explicit ClassicMonitorPage(ScienceSheet& sheet);
+
+protected:
+    void init() override;
+    void poll() override;
+    afx_msg void OnChemicalChanged();
+    afx_msg void OnThemeChanged();
+    afx_msg void OnAddTheme();
+    afx_msg void OnRemoveTheme();
+    DECLARE_MESSAGE_MAP()
+
+private:
+    void fill_themes();
+    int chemical_in(int slot) const;
+    void draw_graph(CDC& dc, const CRect& rect);
+
+    PaintedView graph_;
+    std::vector<std::array<int, 4>> samples_;  // oldest first
+};
+
+// Genetics (CChromosonePage, dialog 143): the creature's genetic summary,
+// the spinning DNA, and the breakdown a gene type at a time.
+class ClassicGeneticsPage : public ClassicSciencePage {
+public:
+    explicit ClassicGeneticsPage(ScienceSheet& sheet);
+
+protected:
+    BOOL OnSetActive() override;
+    void init() override;
+    void tick() override;
+    afx_msg void OnNext();
+    DECLARE_MESSAGE_MAP()
+
+private:
+    void fill();
+    void show_group();
+    void draw_dna(CDC& dc, const CRect& rect);
+
+    PaintedView dna_;
+    c1kitshell::KitSprite gene_;
+    c1kitshell::Canvas canvas_;
+    c1kitshell::GamePalette palette_;
+    CFont title_font_;
+    std::vector<int> counts_;
+    int group_ = 1;
+    int frame_ = 1;
+};
+
+// Brain scanner (CScannerPage, dialog 134): the brain report's neurons as
+// dots on Scanner.bmp.
+class ClassicScannerPage : public ClassicSciencePage {
+public:
+    explicit ClassicScannerPage(ScienceSheet& sheet);
+
+protected:
+    void init() override;
+    void poll() override;
+
+private:
+    void draw(CDC& dc, const CRect& rect);
+
+    PaintedView picture_;
+    c1kitshell::Canvas canvas_;
+    c1kitshell::GamePalette palette_;
+    std::unique_ptr<c1kit::BrainActivity> activity_;
+    bool have_report_ = false;
+};
+
+// Decisions (CDecisionPage, dialog 135): a short bar per action, and the
+// reward and punishment chemicals.
+class ClassicDecisionsPage : public ClassicSciencePage {
+public:
+    explicit ClassicDecisionsPage(ScienceSheet& sheet);
+
+protected:
+    void init() override;
+    void poll() override;
+    afx_msg void OnDrawItem(int id, LPDRAWITEMSTRUCT draw);
+    DECLARE_MESSAGE_MAP()
+
+private:
+    std::vector<int> outputs_;
+    int reward_ = 0;
+    int punishment_ = 0;
+    CBitmap reward_bitmap_;
+    CBitmap punishment_bitmap_;
+};
+
+// Injections (CInjectPage, dialog 144): the syringe, its slider, the
+// medicines and Go.
+class ClassicInjectionsPage : public ClassicSciencePage {
+public:
+    explicit ClassicInjectionsPage(ScienceSheet& sheet);
+
+protected:
+    void init() override;
+    afx_msg void OnVScroll(UINT code, UINT position, CScrollBar* bar);
+    afx_msg void OnMedicineChanged();
+    afx_msg void OnGo();
+    DECLARE_MESSAGE_MAP()
+
+private:
+    void tick() override;
+    int dose() const;
+    void set_dose(int dose);
+    void change_liquid();
+
     PaintedView syringe_view_;
     c1kitshell::Syringe syringe_;
     c1kitshell::GamePalette palette_;
@@ -322,6 +455,7 @@ public:
     bool create_window();
     // The classic look: the original beside this one as "Science Kit.old".
     bool classic() const { return classic_ != nullptr; }
+    const c1kitshell::ClassicArt* classic_art() const { return classic_.get(); }
 
     CFont& font() { return default_font_; }
     const Subject& subject() const { return subject_; }
@@ -374,6 +508,11 @@ private:
     CFont& default_font_;
     std::unique_ptr<c1kitshell::ClassicArt> classic_;
     std::unique_ptr<c1kitshell::CoverPage> cover_;
+    std::unique_ptr<ClassicMonitorPage> classic_monitor_;
+    std::unique_ptr<ClassicGeneticsPage> classic_genetics_;
+    std::unique_ptr<ClassicScannerPage> classic_scanner_;
+    std::unique_ptr<ClassicDecisionsPage> classic_decisions_;
+    std::unique_ptr<ClassicInjectionsPage> classic_injections_;
     BiochemistryPage biochemistry_page_;
     GeneticsPage genetics_page_;
     BrainPage brain_page_;
