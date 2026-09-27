@@ -100,5 +100,3 @@ LANGUAGE 9, 1
 
 #include "lc_dialogs.rcinc"
 128 ICON "images/icon/128.ico"
-181 BITMAP "images/bitmap/181.bmp"
-182 BITMAP "images/bitmap/182.bmp"

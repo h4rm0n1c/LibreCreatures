@@ -28,10 +28,36 @@ bugs. The rebuild keeps the original's protocol traffic, registry settings
 and look, and fixes those bugs; each fix is marked `Fix (bug N)` in the
 source.
 
-Two things are left out of every kit on purpose: cover pages (the kits open
-on their first working page) and sound.  Several originals played WAV
-effects and looping ambience, which players found maddening; the rebuilt
-kits are silent.
+Two things are left out of the kits' own interface on purpose: cover pages
+(the kits open on their first working page) and sound.  Several originals
+played WAV effects and looping ambience, which players found maddening.
+
+## Art, and the classic look
+
+The kits contain no Creature Labs art.  Every picture, button face and icon
+a kit draws is either drawn by the kit itself (its icon comes from
+[`tools/make_kit_icons.py`](tools/make_kit_icons.py); button faces, symbols
+and marks are drawn in code) or read, while it runs, from the player's own
+copy of the game: the pictures the 1996 kits kept as files in the game's
+folder (the album wallpaper, the headstones, the score counters, the egg
+sprites) are loaded from there and never copied into this repository.
+
+A player who owns the original kits can have their 1996 look back.  Rename
+each original kit beside the new one to `<name>.old` (for example
+`Science Kit.old` next to `Science Kit.exe`) -- the 1996 release, the later
+one and GOG's are all accepted.  A kit that finds its `.old`, and finds in
+it the pictures its classic pages use, opens that file as data (nothing in
+it runs), reads the 1996 art from it and wears the classic look: the same
+working kit, with the 1996 pictures and page layouts, cover pages, and
+sound (with a setting to mute the continuous ambience).  Without the `.old`,
+or if it lacks what the kit needs, the kit keeps its own interface.  There
+is no other switch.
+
+So the line the kits hold is: no copyrighted art is copied into them or into
+this repository; the 1996 art is only ever loaded at run time from files the
+player already has.  The 1996 dialog layouts (the positions and sizes of a
+page's controls) are carried in the kits, as the structure a classic page is
+built on; they hold no artwork.
 
 ## Building
 

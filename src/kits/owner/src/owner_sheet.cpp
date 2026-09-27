@@ -94,8 +94,11 @@ OwnerSheet::OwnerSheet(CFont& default_font)
       register_page_(*this),
       album_page_(*this),
       certificate_page_(*this) {
+    // The classic look: the 1996 buttons and icon, from the original kit.
+    classic_ = c1kitshell::ClassicArt::find(
+        {}, {_T("CAMERAU"), _T("DELETEU"), _T("SAVEASU"), _T("NEXTU"), _T("PREVU")}, {kIconKit});
     m_psh.dwFlags |= PSH_USEHICON;
-    m_psh.hIcon = AfxGetApp()->LoadIcon(kIconKit);
+    m_psh.hIcon = c1kitshell::kit_icon(kIconKit, classic_.get());
     AddPage(&register_page_);
     AddPage(&album_page_);
     AddPage(&certificate_page_);

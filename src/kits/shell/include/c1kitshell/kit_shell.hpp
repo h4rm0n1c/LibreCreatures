@@ -139,7 +139,8 @@ private:
 // table, so it can be realised before blitting.
 class PaletteBitmap {
 public:
-    bool load(UINT resource_id);
+    // From this kit's resources, or from `module` (a ClassicArt's).
+    bool load(UINT resource_id, HMODULE module = nullptr);
     int width() const { return width_; }
     int height() const { return height_; }
     CBitmap& bitmap() { return bitmap_; }
@@ -184,6 +185,67 @@ private:
     };
     std::vector<Item> items_;
     CSize reference_{0, 0};
+};
+
+// ---------------------------------------------------------------------------
+// The classic look: the 1996 art, from the player's own original kit
+// ---------------------------------------------------------------------------
+
+// A kit can wear its 1996 interface.  It does when the player's original
+// kit sits beside it renamed "<name>.old" (or "<name>.exe.old") -- the 1996
+// release, the later one, or GOG's -- and holds the art the classic pages
+// use.  The art is read from that file as data (nothing in it runs), so
+// this kit carries none of it.  There is no other switch: the file being
+// there is the choice.
+class ClassicArt {
+public:
+    // Opens the original beside this kit if it holds every bitmap and icon
+    // listed (by number, and bitmaps by name); null otherwise, and the kit
+    // keeps its modern interface.
+    static std::unique_ptr<ClassicArt> find(std::initializer_list<UINT> bitmaps,
+                                            std::initializer_list<const TCHAR*> named_bitmaps = {},
+                                            std::initializer_list<UINT> icons = {});
+    ~ClassicArt();
+    ClassicArt(const ClassicArt&) = delete;
+    ClassicArt& operator=(const ClassicArt&) = delete;
+
+    HMODULE module() const { return module_; }
+    const CString& path() const { return path_; }
+
+private:
+    ClassicArt(HMODULE module, const CString& path) : module_(module), path_(path) {}
+    HMODULE module_;
+    CString path_;
+};
+
+// A 1996 bitmap button, named by its caption as MFC's AutoLoad names its
+// faces ("<caption>U", "D" and "F"): in the classic look the faces are the
+// original kit's; otherwise they are drawn here, a raised button with a
+// glyph for what it does (CAMERA, DELETE, SAVEAS, NEXT, PREV...), at the
+// 1996 size.  `art` null: this kit's own.
+class FaceButton : public CBitmapButton {
+public:
+    bool load_faces(UINT control, CWnd& parent, const ClassicArt* art);
+};
+
+// The kit's icon: the original kit's in the classic look, else this kit's.
+HICON kit_icon(UINT icon_id, const ClassicArt* art);
+
+// The 1996 kits' first page: a picture filling the page, and the kit's icon
+// on its tab.
+class CoverPage : public CPropertyPage {
+public:
+    CoverPage(UINT dialog_id, UINT bitmap_id, UINT tab_icon_id, const ClassicArt& art);
+
+protected:
+    BOOL OnInitDialog() override;
+    afx_msg void OnPaint();
+    DECLARE_MESSAGE_MAP()
+
+private:
+    UINT bitmap_id_ = 0;
+    const ClassicArt& art_;
+    PaletteBitmap bitmap_;
 };
 
 // Loads a string-table entry (empty when missing).

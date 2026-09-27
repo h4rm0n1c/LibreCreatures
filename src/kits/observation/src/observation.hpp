@@ -98,7 +98,8 @@ private:
 // several alerts can be open at once.  Each deletes itself when closed.
 class AlertWindow : public CDialog {
 public:
-    static void open(CWnd& owner, const CString& text, int alert_type);
+    // `art`: the classic art's module, or null for this kit's own.
+    static void open(CWnd& owner, const CString& text, int alert_type, HMODULE art);
 
 protected:
     BOOL OnInitDialog() override;
@@ -109,10 +110,11 @@ protected:
     DECLARE_MESSAGE_MAP()
 
 private:
-    AlertWindow(const CString& text, int alert_type);
+    AlertWindow(const CString& text, int alert_type, HMODULE art);
 
     CString text_;
     int alert_type_ = 0;
+    HMODULE art_ = nullptr;
     c1kitshell::PaletteBitmap face_;
     static std::vector<AlertWindow*> open_;  // for cascading and repeats
 };
@@ -137,6 +139,10 @@ public:
     bool create_window();
 
     const AlertSettings& settings() const { return settings_; }
+    // The classic look (c1kitshell::ClassicArt): the 1996 art's module, or
+    // null for the modern interface.
+    HMODULE art_module() const { return classic_ ? classic_->module() : nullptr; }
+    const char* size_key() const { return classic_ ? "Classic Size" : "Size"; }
     void set_settings(const AlertSettings& settings) { settings_ = settings; }
     bool always_on_top() const { return always_on_top_ != 0; }
     void set_always_on_top(bool on);
@@ -171,6 +177,8 @@ private:
     OverviewPage overview_;
     OptionsPage options_;
     c1kit::KitSettings* registry_ = nullptr;
+    std::unique_ptr<c1kitshell::ClassicArt> classic_;
+    std::unique_ptr<c1kitshell::CoverPage> cover_;
     AlertSettings settings_;
     std::uint32_t always_on_top_ = 1;
     int saved_page_ = 0;

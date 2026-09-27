@@ -4,7 +4,64 @@
 #include "observation.hpp"
 #include "observation_ids.hpp"
 
+#include <algorithm>
+
 namespace observation {
+
+namespace {
+
+// This kit's own marks for a creature about to give birth (an egg), near
+// death (a headstone) and pregnant (the female symbol), drawn to fit `r`;
+// the classic look uses the 1996 pictures instead.
+void draw_status_glyph(CDC& dc, int kind, const CRect& r) {
+    const int size = (std::min)(r.Width(), r.Height());
+    const int x = r.left + (r.Width() - size) / 2, y = r.top + (r.Height() - size) / 2;
+    const auto at = [&](double fx, double fy) { return CPoint(x + int(fx * size), y + int(fy * size)); };
+    CGdiObject* old_brush = nullptr;
+    CPen* old_pen = nullptr;
+    if (kind == kIconBirth) {
+        CBrush shell(RGB(236, 222, 186));
+        CPen edge(PS_SOLID, 1, RGB(120, 96, 60));
+        old_brush = dc.SelectObject(&shell);
+        old_pen = dc.SelectObject(&edge);
+        const CPoint a = at(0.22, 0.08), b = at(0.78, 0.94);
+        dc.Ellipse(a.x, a.y, b.x, b.y);
+        dc.SelectObject(old_brush);
+        dc.SelectObject(old_pen);
+    } else if (kind == kIconNearDeath) {
+        CBrush stone(RGB(128, 134, 142));
+        CPen edge(PS_SOLID, 1, RGB(70, 74, 80));
+        old_brush = dc.SelectObject(&stone);
+        old_pen = dc.SelectObject(&edge);
+        const CPoint a = at(0.22, 0.10), b = at(0.78, 0.92);
+        dc.RoundRect(a.x, a.y, b.x, b.y, size / 2, size / 2);
+        dc.SelectObject(old_brush);
+        dc.SelectObject(old_pen);
+        const CPoint c = at(0.5, 0.45);
+        const int arm = (std::max)(1, size / 8);
+        dc.FillSolidRect(c.x - (std::max)(1, size / 16), c.y - arm * 2, (std::max)(2, size / 8), arm * 4,
+                         RGB(40, 42, 46));
+        dc.FillSolidRect(c.x - arm * 2 + 1, c.y - arm, arm * 4 - 1, (std::max)(2, size / 8),
+                         RGB(40, 42, 46));
+    } else if (kind == kIconPregnant) {
+        CPen pen(PS_SOLID, (std::max)(1, size / 8), RGB(200, 60, 120));
+        old_pen = dc.SelectObject(&pen);
+        old_brush = dc.SelectStockObject(NULL_BRUSH);
+        const CPoint a = at(0.25, 0.06), b = at(0.75, 0.56);
+        dc.Ellipse(a.x, a.y, b.x, b.y);
+        const CPoint top = at(0.5, 0.56), bottom = at(0.5, 0.96);
+        dc.MoveTo(top);
+        dc.LineTo(bottom);
+        const CPoint left = at(0.3, 0.78), right = at(0.7, 0.78);
+        dc.MoveTo(left);
+        dc.LineTo(right);
+        dc.SelectObject(old_brush);
+        dc.SelectObject(old_pen);
+    }
+}
+
+} // namespace
+
 namespace {
 
 CString sex_text(const std::string& field) {
@@ -30,7 +87,31 @@ BOOL OverviewPage::OnInitDialog() {
     CPropertyPage::OnInitDialog();
     list_.SubclassDlgItem(kControlOverviewList, this);
     list_.SetExtendedStyle(list_.GetExtendedStyle() | LVS_EX_FULLROWSELECT);
-    icons_.Create(kBitmapListIcons, 16, 1, RGB(255, 255, 255));
+    // The egg, grave and sex marks: the 1996 strip, from the original kit
+    // in the classic look; otherwise drawn here.
+    {
+        CBitmap strip;
+        if (const HMODULE art = sheet_.art_module()) {
+            strip.Attach(static_cast<HBITMAP>(LoadImage(
+                art, MAKEINTRESOURCE(kBitmapListIcons), IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION)));
+        } else {
+            CClientDC screen(this);
+            strip.CreateCompatibleBitmap(&screen, 64, 16);
+            CDC dc;
+            dc.CreateCompatibleDC(&screen);
+            CBitmap* previous = dc.SelectObject(&strip);
+            dc.FillSolidRect(0, 0, 64, 16, RGB(255, 255, 255));  // the mask colour
+            for (int kind = kIconBirth; kind <= kIconPregnant; ++kind) {
+                draw_status_glyph(dc, kind, CRect(kind * 16 + 1, 1, kind * 16 + 15, 15));
+            }
+            dc.SelectObject(previous);
+        }
+        BITMAP info = {};
+        if (strip.GetSafeHandle() != nullptr && strip.GetBitmap(&info) != 0) {
+            icons_.Create(16, info.bmHeight, ILC_COLOR24 | ILC_MASK, info.bmWidth / 16, 1);
+            icons_.Add(&strip, RGB(255, 255, 255));
+        }
+    }
     list_.SetImageList(&icons_, LVSIL_SMALL);
 
     struct Column {
@@ -293,8 +374,8 @@ BEGIN_MESSAGE_MAP(AlertWindow, CDialog)
     ON_WM_PAINT()
 END_MESSAGE_MAP()
 
-AlertWindow::AlertWindow(const CString& text, int alert_type)
-    : CDialog(kDialogAlert), text_(text), alert_type_(alert_type) {}
+AlertWindow::AlertWindow(const CString& text, int alert_type, HMODULE art)
+    : CDialog(kDialogAlert), text_(text), alert_type_(alert_type), art_(art) {}
 
 std::vector<AlertWindow*> AlertWindow::open_;
 
@@ -302,13 +383,13 @@ std::vector<AlertWindow*> AlertWindow::open_;
 // none hides another.  An alert still open with the same text is not
 // repeated (the near-death alert recurs every 30 seconds while a creature
 // stays low, and an unattended kit would otherwise pile them up).
-void AlertWindow::open(CWnd& owner, const CString& text, int alert_type) {
+void AlertWindow::open(CWnd& owner, const CString& text, int alert_type, HMODULE art) {
     for (const AlertWindow* existing : open_) {
         if (existing->text_ == text) {
             return;
         }
     }
-    auto* alert = new AlertWindow(text, alert_type);
+    auto* alert = new AlertWindow(text, alert_type, art);
     if (!alert->Create(kDialogAlert, &owner)) {
         delete alert;
         return;
@@ -334,7 +415,10 @@ BOOL AlertWindow::OnInitDialog() {
     const unsigned bitmap = alert_type_ == kAlertPregnancy ? kBitmapAlertPregnancy
                           : alert_type_ == kAlertBirth     ? kBitmapAlertBirth
                                                            : kBitmapAlertDeath;
-    face_.load(bitmap);
+    // The 1996 face in the classic look; otherwise OnPaint draws a mark.
+    if (art_ != nullptr) {
+        face_.load(bitmap, art_);
+    }
     face_.realize(*this);
     SetWindowPos(&wndTopMost, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
     return TRUE;
@@ -360,7 +444,14 @@ void AlertWindow::PostNcDestroy() {
 
 void AlertWindow::OnPaint() {
     CPaintDC dc(this);
-    face_.draw(dc, 7, 7);
+    if (art_ != nullptr) {
+        face_.draw(dc, 7, 7);
+        return;
+    }
+    const int kind = alert_type_ == kAlertPregnancy ? kIconPregnant
+                   : alert_type_ == kAlertBirth     ? kIconBirth
+                                                    : kIconNearDeath;
+    draw_status_glyph(dc, kind, CRect(7, 7, 7 + 52, 7 + 43));
 }
 
 // COverviewAboutPage @ 0x004026a0.

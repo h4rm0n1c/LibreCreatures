@@ -144,11 +144,14 @@ BOOL AlbumPage::OnInitDialog() {
         picture->SetWindowPos(&CWnd::wndBottom, 0, 0, 0, 0,
                               SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
     }
-    save_as_.AutoLoad(kControlSaveAs, this);
-    delete_.AutoLoad(kControlDeletePhoto, this);
-    camera_.AutoLoad(kControlTakePhoto, this);
-    previous_.AutoLoad(kControlPreviousPhoto, this);
-    next_.AutoLoad(kControlNextPhoto, this);
+    // The 1996 bitmap buttons: their faces from the original kit in the
+    // classic look, else drawn (c1kitshell::FaceButton).
+    const c1kitshell::ClassicArt* art = sheet_.classic_art();
+    save_as_.load_faces(kControlSaveAs, *this, art);
+    delete_.load_faces(kControlDeletePhoto, *this, art);
+    camera_.load_faces(kControlTakePhoto, *this, art);
+    previous_.load_faces(kControlPreviousPhoto, *this, art);
+    next_.load_faces(kControlNextPhoto, *this, art);
     initialized_ = true;
     show();
     return TRUE;

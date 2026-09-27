@@ -15,7 +15,8 @@ constexpr char kProduct[] = "Creatures 1\\Overview Kit";
 constexpr char kVersion[] = "1.0";
 constexpr char kOverviewQuery[] = "inst,dde: getb ovvd,endm";
 
-// Registry value layouts: "Location" is the original's; "Size" is new.
+// Registry value layouts: "Location" is the original's; "Size" (and
+// "Classic Size", for the classic look) are new.
 struct WindowLocation {
     std::int32_t left;
     std::int32_t top;
@@ -44,8 +45,17 @@ ObservationSheet::ObservationSheet(CFont& default_font)
       options_(*this) {
     m_psh.dwFlags |= PSH_USEHICON;
     m_psh.hIcon = AfxGetApp()->LoadIcon(kIconKit);
-    // The original opened on a cover page (a picture) and added these two
-    // once connected; this build has no cover and opens on Details.
+    // The classic look, when the player's original kit is beside this one:
+    // its cover page first, as in 1996.  The modern interface has no cover
+    // and opens on Details.
+    classic_ = c1kitshell::ClassicArt::find({kBitmapCover, kBitmapListIcons,
+                                             kBitmapAlertPregnancy, kBitmapAlertDeath,
+                                             kBitmapAlertBirth});
+    if (classic_) {
+        cover_ = std::make_unique<c1kitshell::CoverPage>(kDialogCover, kBitmapCover, kIconKit,
+                                                         *classic_);
+        AddPage(cover_.get());
+    }
     AddPage(&overview_);
     AddPage(&options_);
 }
@@ -82,7 +92,8 @@ int ObservationSheet::OnCreate(LPCREATESTRUCT create) {
 
 BOOL ObservationSheet::OnInitDialog() {
     const BOOL result = c1kitshell::KitSheet::OnInitDialog();
-    enable_resizing(CSize(kDefaultPageWidthDlu, kDefaultPageHeightDlu));
+    // The classic look keeps the 1996 size; the modern one opens larger.
+    enable_resizing(classic_ ? CSize(0, 0) : CSize(kDefaultPageWidthDlu, kDefaultPageHeightDlu));
     load_preferences();
     return result;
 }
@@ -90,7 +101,8 @@ BOOL ObservationSheet::OnInitDialog() {
 // LoadPreferences @ 0x00403ae0.
 void ObservationSheet::load_preferences() {
     WindowSize size = {};
-    if (registry_->read_binary(c1kit::SettingsScope::user, "Size", &size,
+    // Each look keeps its own size: the classic one opens at the 1996 size.
+    if (registry_->read_binary(c1kit::SettingsScope::user, size_key(), &size,
                                sizeof(size)) &&
         size.width > 0 && size.height > 0) {
         const int screen_x = GetSystemMetrics(SM_CXSCREEN);
@@ -125,7 +137,8 @@ void ObservationSheet::load_preferences() {
     registry_->read_dword(c1kit::SettingsScope::user, "Page", page);
     // Fix (bug 12): applied once connected (initialize_pages); the original
     // applied it while only the cover had been added, so it never worked.
-    saved_page_ = page > 0 ? static_cast<int>(page) - 1 : 0;
+    // (With the classic cover the pages count as they did in 1996.)
+    saved_page_ = classic_ ? static_cast<int>(page) : page > 0 ? static_cast<int>(page) - 1 : 0;
 
     const int left = location.left < max_left ? location.left : max_left;
     const int top = location.top < max_top ? location.top : max_top;
@@ -154,7 +167,7 @@ void ObservationSheet::save_preferences() {
                  : (max_top < window.top ? max_top : window.top);
     const WindowSize size = {window.Width(), window.Height()};
     registry_->write_binary("Location", &location, sizeof(location));
-    registry_->write_binary("Size", &size, sizeof(size));
+    registry_->write_binary(size_key(), &size, sizeof(size));
     registry_->write_dword("On Top", always_on_top_);
     registry_->write_dword("Alert near Death", settings_.alert_near_death);
     registry_->write_dword("Alert on Pregnancy", settings_.alert_on_pregnancy);
@@ -162,7 +175,7 @@ void ObservationSheet::save_preferences() {
     registry_->write_dword("Message Box", settings_.message_box);
     registry_->write_dword("Warn Level", settings_.warn_level);
     registry_->write_dword("Page",
-                           static_cast<std::uint32_t>(GetActiveIndex() + 1));
+                           static_cast<std::uint32_t>(GetActiveIndex() + (classic_ ? 0 : 1)));
 }
 
 void ObservationSheet::OnTimer(UINT_PTR timer_id) {
@@ -224,7 +237,7 @@ void ObservationSheet::raise_alerts(const std::vector<Alert>& alerts) {
         const CString text =
             CString(alert.name.c_str()) + c1kitshell::load_string(text_id);
         if (settings_.message_box != 0) {
-            AlertWindow::open(*this, text, alert.type);
+            AlertWindow::open(*this, text, alert.type, art_module());
         } else {
             FLASHWINFO flash = {sizeof(flash), GetSafeHwnd(),
                                 FLASHW_ALL | FLASHW_TIMERNOFG, 3, 0};

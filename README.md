@@ -98,6 +98,11 @@ This project is not affiliated with, endorsed by, or supported by Gameware
 Development. It reimplements the engine only. It ships no original game data,
 and it needs a legally obtained copy of Creatures 1 to run.
 
+The rebuilt kits follow the same line: they carry no Creature Labs art, and
+their optional 1996 look loads that art at run time from the player's own
+original kits (renamed to `.old`), never from copies. See
+[src/kits/README.md](src/kits/README.md#art-and-the-classic-look).
+
 The binary this work was derived from is the **Creatures 1 Community Edition**
 maintained by **[lisdude](https://lisdude.com/Creatures/Community/C1/)** — a
 series of patches over the last official Creatures 1 release, adding stability
