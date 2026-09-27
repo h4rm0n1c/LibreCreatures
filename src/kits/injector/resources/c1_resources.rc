@@ -1,9 +1,9 @@
 // Reconstructed from the C1 PE resource tree; raw PE leaves are the oracle.
 // The LibreCreatures build keeps the string tables and the icon.  Its pages
-// are laid out in code (lc_dialogs.rcinc); of the original's dialogs only
-// the cover's layout is kept (140, for the classic look, whose picture is
-// the game's jigsaw.bmp); its menu (130: built in code for the classic
-// look), cover bitmap and manifest are left out.
+// are laid out in code (lc_dialogs.rcinc).  The original's dialogs' layouts
+// (140, 150, 151) are kept for the classic skin, whose pictures come from
+// the game's folder and the original; its menu (130: built in code for the
+// classic skin), cover bitmap and manifest are left out.
 #pragma code_page(65001)
 #include "resource_ids.h"
 
@@ -14,4 +14,6 @@ LANGUAGE 9, 1
 #include "version/1033/1.rcinc"
 #include "lc_dialogs.rcinc"
 #include "dialogs/1033/140.rcinc"
+#include "dialogs/1033/150.rcinc"
+#include "dialogs/1033/151.rcinc"
 128 ICON "images/icon/128.ico"

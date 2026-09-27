@@ -102,10 +102,16 @@ InjectorSheet::InjectorSheet(CFont& default_font)
         classic_.reset();
     }
     if (classic_) {
+        // The classic skin: its own pages, the 2.0 kit's, and none of these.
         cover_ = std::make_unique<c1kitshell::CoverPage>(kDialogCover, kCoverPicture);
         cover_->m_psp.dwFlags |= PSP_USETITLE;  // the template's caption is "Injector"
         cover_->m_psp.pszTitle = _T("Cover");
+        classic_cobs_ = std::make_unique<ClassicCobsPage>(*this);
+        classic_analysis_ = std::make_unique<ClassicAnalysisPage>(*this);
         AddPage(cover_.get());
+        AddPage(classic_cobs_.get());
+        AddPage(classic_analysis_.get());
+        return;
     }
     AddPage(&cobs_page_);
     AddPage(&analysis_page_);
@@ -212,8 +218,13 @@ void InjectorSheet::reload() {
     std::sort(entries_.begin(), entries_.end(), [](const CobEntry& a, const CobEntry& b) {
         return _stricmp(a.cob.name.c_str(), b.cob.name.c_str()) < 0;
     });
-    cobs_page_.cobs_changed();
-    analysis_page_.cobs_changed();
+    if (classic_) {
+        if (classic_cobs_) classic_cobs_->cobs_changed();
+        if (classic_analysis_) classic_analysis_->cobs_changed();
+    } else {
+        cobs_page_.cobs_changed();
+        analysis_page_.cobs_changed();
+    }
 }
 
 void InjectorSheet::set_folder(const std::string& folder) {
