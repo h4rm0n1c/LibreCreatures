@@ -114,9 +114,12 @@ protected:
     // looped at `volume` (hundredths of a decibel below full) while the kit
     // is open, with a "Mute ambient sound" checkbox under the pages whose
     // setting is kept as "Mute Ambient" in `settings`.  For a fixed-size
-    // sheet; call it from OnInitDialog.
-    void enable_ambience(c1kit::KitSettings* settings, const char* sound, int volume);
+    // sheet; call it from OnInitDialog.  A kit with a menu passes
+    // `checkbox` false and offers set_ambience_muted there instead.
+    void enable_ambience(c1kit::KitSettings* settings, const char* sound, int volume,
+                         bool checkbox = true);
     bool ambience_muted() const { return ambience_muted_; }
+    void set_ambience_muted(bool muted);
 
     BOOL OnCommand(WPARAM wparam, LPARAM lparam) override;
     BOOL OnNotify(WPARAM wparam, LPARAM lparam, LRESULT* result) override;
@@ -139,6 +142,7 @@ private:
     bool resizable_ = false;
     CSize min_track_{0, 0};
     void apply_ambience();
+    void add_mute_checkbox();
     std::unique_ptr<KitSound> ambience_;
     c1kit::KitSettings* ambience_settings_ = nullptr;
     std::string ambience_sound_;

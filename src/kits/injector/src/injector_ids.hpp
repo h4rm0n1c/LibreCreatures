@@ -7,6 +7,23 @@ namespace injector {
 
 constexpr unsigned kDialogPage = 300;  // blank page; controls made in code
 constexpr unsigned kIconKit = 128;
+constexpr unsigned kDialogCover = 140;  // classic only
+
+// The classic look: its cover picture and ambience (the 1996 kit's "kits"
+// loop at -10 dB), and menu 130's commands, with Mute added.
+constexpr char kCoverPicture[] = "jigsaw.bmp";
+constexpr char kPictureBackdrop[] = "Alima.bmp";  // behind the COB's picture (CDibView)
+constexpr char kAmbience[] = "kits";
+constexpr int kAmbienceVolume = -1000;
+constexpr unsigned kCommandSetFolder = 32771;
+constexpr unsigned kCommandRefresh = 32772;
+constexpr unsigned kCommandOnTop = 32773;
+constexpr unsigned kCommandHide = 32774;
+constexpr unsigned kCommandIgnoreAmount = 32775;
+constexpr unsigned kCommandAllowWithout = 32776;
+constexpr unsigned kCommandAbout = 57664;
+constexpr unsigned kCommandClose = 57665;
+constexpr unsigned kCommandMute = 0x8101;
 
 // Strings
 constexpr unsigned kStringOleInitFailed = 100;
@@ -45,6 +62,16 @@ enum : unsigned {
     kControlAllowWithout,
     kControlTree,
     kControlFindLabel,
+    // The classic look: the Analysis page's labels and buttons, and the
+    // sheet's bottom row.
+    kControlListLabel,
+    kControlResultsLabel,
+    kControlAnalysisBrowse,
+    kControlAnalysisRefresh,
+    kControlAnalysisFolder,
+    kControlOnTopCheck,
+    kControlHide,
+    kControlCloseKit,
 };
 
 } // namespace injector

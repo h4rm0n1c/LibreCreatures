@@ -54,6 +54,25 @@ void CobListPage::create_list() {
     fill_list();
 }
 
+bool CobListPage::classic() const {
+    return sheet_.classic();
+}
+
+// The 1996 list was a plain list of names: no heading, and no count column
+// (the page shows the count).  The column fills the list, so, unlike the
+// original's, it never scrolls sideways.
+void CobListPage::place_list_dlu(int find_label_x, int find_y, int find_x, int find_width,
+                                 int list_y, int list_width, int list_height) {
+    place_dlu(find_label_, find_label_x, find_y + 2, 24, 8);
+    place_dlu(find_, find_x, find_y, find_width, 12);
+    place_dlu(list_, find_label_x, list_y, list_width, list_height);
+    list_.ModifyStyle(0, LVS_NOCOLUMNHEADER);
+    CRect inside;
+    list_.GetClientRect(&inside);
+    list_.SetColumnWidth(1, 0);
+    list_.SetColumnWidth(0, inside.Width() - GetSystemMetrics(SM_CXVSCROLL));
+}
+
 void CobListPage::place_list(int x, int y, int width, int height) {
     place(find_label_, x, y + 3, 30, text_height());
     place(find_, x + 32, y, width - 32, text_height() + 4);
@@ -154,6 +173,10 @@ void CobsPage::create_controls() {
 }
 
 void CobsPage::layout(int width, int height) {
+    if (classic()) {
+        layout_classic();
+        return;
+    }
     const int m = kMargin;
     const int row = button_height();
     const int list_width = (std::max)(170, width * 2 / 5);
@@ -175,6 +198,26 @@ void CobsPage::layout(int width, int height) {
     place(browse_, m, bottom, 70, row);
     place(folder_, 2 * m + 70, bottom + 5, width - 4 * m - 70 - 84, text_height());
     place_close(width, height);
+}
+
+// Dialog 150, in its dialog units.  The template put "Quantity remaining:"
+// under the Refresh button and its figure in a box beside it; here one line
+// of text follows the button.  Close is on the sheet's row, and the two
+// Advanced ticks are in the menu.
+void CobsPage::layout_classic() {
+    place_list_dlu(4, 4, 30, 84, 20, 110, 114);
+    place_dlu(picture_, 120, 4, 116, 116);
+    place_dlu(description_, 4, 140, 232, 68);
+    place_dlu(inject_, 4, 212, 50, 14);
+    place_dlu(remove_, 58, 212, 50, 14);
+    place_dlu(refresh_, 112, 212, 50, 14);
+    place_dlu(quantity_, 166, 215, 70, 10);
+    place_dlu(browse_, 4, 232, 50, 14);
+    place_dlu(folder_, 58, 235, 178, 10);
+    for (CWnd* hidden : {static_cast<CWnd*>(&ignore_amount_), static_cast<CWnd*>(&allow_without_),
+                         static_cast<CWnd*>(&close_)}) {
+        hidden->ShowWindow(SW_HIDE);
+    }
 }
 
 void CobsPage::cobs_changed() {
@@ -205,7 +248,9 @@ void CobsPage::show_selected() {
         return;
     }
     const c1kit::Cob& cob = sheet_.entries()[static_cast<std::size_t>(index)].cob;
-    CString shown = text(cob.description);
+    // The original's words for a COB with no description.
+    CString shown = cob.description.empty() ? CString(_T("No description available."))
+                                            : text(cob.description);
     shown.Replace(_T("\r\n"), _T("\n"));
     shown.Replace(_T("\n"), _T("\r\n"));
     const std::vector<std::string> warnings = c1kit::cob_warnings(cob, sheet_.expired(cob));
@@ -219,11 +264,74 @@ void CobsPage::show_selected() {
         shown += _T("\r\n\r\nIt acts on the selected creature.");
     }
     description_.SetWindowText(shown);
-    quantity_.SetWindowText(_T("Quantity remaining: ") + quantity_text(sheet_, cob));
+    // The classic page has the 1996 template's room for the count.
+    quantity_.SetWindowText((classic() ? _T("Quantity: ") : _T("Quantity remaining: ")) +
+                            quantity_text(sheet_, cob));
     picture_.redraw();
 }
 
+// CDibView::OnPaint @ 0x004047a0: the sheet's Alima.bmp stretched behind
+// the picture, which is drawn at its own size, centred, with palette index
+// 0 left out.
+void CobsPage::draw_picture_classic(CDC& dc, const CRect& rect) {
+    if (!backdrop_loaded_) {
+        backdrop_loaded_ = true;
+        backdrop_.load_file(c1kitshell::game_directory_setting("Main Directory") + kPictureBackdrop);
+    }
+    dc.FillSolidRect(rect, RGB(0, 0, 0));
+    if (backdrop_.width() > 0) {
+        CDC source;
+        source.CreateCompatibleDC(&dc);
+        CBitmap* previous = source.SelectObject(&backdrop_.bitmap());
+        dc.SetStretchBltMode(COLORONCOLOR);
+        dc.StretchBlt(rect.left, rect.top, rect.Width(), rect.Height(), &source, 0, 0,
+                      backdrop_.width(), backdrop_.height(), SRCCOPY);
+        source.SelectObject(previous);
+    }
+    const int index = selected_index();
+    if (index < 0 || index >= static_cast<int>(sheet_.entries().size())) return;
+    const c1kit::CobSprite& sprite = sheet_.entries()[static_cast<std::size_t>(index)].cob.sprite;
+    if (sprite.width <= 0 || sprite.height <= 0 || !canvas_.create(sprite.width, sprite.height)) return;
+    canvas_.fill(0);
+    canvas_.draw_indexed(sprite.pixels.data(), sprite.width, sprite.height, sprite.stride, false, 0, 0,
+                         sheet_.palette());
+    // The mask: set where index 0 (the background) is.  Rows of a
+    // CreateBitmap monochrome bitmap are padded to 16 bits.
+    const int mask_stride = ((sprite.width + 15) / 16) * 2;
+    std::vector<BYTE> mask_bits(static_cast<std::size_t>(mask_stride) * sprite.height, 0);
+    for (int y = 0; y < sprite.height; ++y) {
+        for (int x = 0; x < sprite.width; ++x) {
+            if (sprite.pixels[static_cast<std::size_t>(y) * sprite.stride + x] == 0) {
+                mask_bits[static_cast<std::size_t>(y) * mask_stride + x / 8] |=
+                    static_cast<BYTE>(0x80 >> (x % 8));
+            }
+        }
+    }
+    CBitmap mask;
+    mask.CreateBitmap(sprite.width, sprite.height, 1, 1, mask_bits.data());
+    CBitmap colour;
+    colour.CreateCompatibleBitmap(&dc, sprite.width, sprite.height);
+    CDC mask_dc, colour_dc;
+    mask_dc.CreateCompatibleDC(&dc);
+    colour_dc.CreateCompatibleDC(&dc);
+    CBitmap* previous_mask = mask_dc.SelectObject(&mask);
+    CBitmap* previous_colour = colour_dc.SelectObject(&colour);
+    canvas_.present(colour_dc, 0, 0, sprite.width, sprite.height);
+    const int x = rect.left + (rect.Width() - sprite.width) / 2;
+    const int y = rect.top + (rect.Height() - sprite.height) / 2;
+    dc.SetBkColor(RGB(255, 255, 255));
+    dc.SetTextColor(RGB(0, 0, 0));
+    dc.BitBlt(x, y, sprite.width, sprite.height, &mask_dc, 0, 0, SRCAND);
+    dc.BitBlt(x, y, sprite.width, sprite.height, &colour_dc, 0, 0, SRCPAINT);
+    mask_dc.SelectObject(previous_mask);
+    colour_dc.SelectObject(previous_colour);
+}
+
 void CobsPage::draw_picture(CDC& dc, const CRect& rect) {
+    if (classic()) {
+        draw_picture_classic(dc, rect);
+        return;
+    }
     dc.FillSolidRect(rect, RGB(0, 0, 0));
     const int index = selected_index();
     if (index < 0 || index >= static_cast<int>(sheet_.entries().size())) return;
@@ -272,19 +380,8 @@ void CobsPage::OnRefresh() {
     sheet_.reload();
 }
 
-// Set COB Folder (SelectCobFolder @ 0x00403040).
 void CobsPage::OnBrowse() {
-    BROWSEINFOA browse = {};
-    browse.hwndOwner = GetSafeHwnd();
-    browse.lpszTitle = "Select the folder containing your COBs (.cob files)";
-    browse.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
-    LPITEMIDLIST chosen = ::SHBrowseForFolderA(&browse);
-    if (chosen == nullptr) return;
-    char path[MAX_PATH] = {};
-    if (::SHGetPathFromIDListA(chosen, path)) {
-        sheet_.set_folder(path);
-    }
-    ::CoTaskMemFree(chosen);
+    sheet_.browse_for_folder(this);
 }
 
 void CobsPage::OnIgnoreAmount() {
@@ -304,6 +401,11 @@ void CobsPage::OnAllowWithout() {
 // the game's ClassifierNames.txt, each one's commands are its children, and
 // how it would be removed is added.
 
+BEGIN_MESSAGE_MAP(AnalysisPage, CobListPage)
+    ON_BN_CLICKED(kControlAnalysisBrowse, &AnalysisPage::OnBrowse)
+    ON_BN_CLICKED(kControlAnalysisRefresh, &AnalysisPage::OnRefresh)
+END_MESSAGE_MAP()
+
 AnalysisPage::AnalysisPage(InjectorSheet& sheet) : CobListPage(sheet, kStringAnalysisTab) {}
 
 void AnalysisPage::create_controls() {
@@ -311,10 +413,51 @@ void AnalysisPage::create_controls() {
     make(tree_, WC_TREEVIEW, _T(""),
          TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | TVS_SHOWSELALWAYS | WS_BORDER | WS_TABSTOP,
          kControlTree);
+    if (classic()) {
+        make(list_label_, _T("STATIC"), _T("COB list"), SS_LEFT, kControlListLabel);
+        make(results_label_, _T("STATIC"), _T("Results of Analysis"), SS_LEFT, kControlResultsLabel);
+        make(browse_, _T("BUTTON"), _T("Browse..."), BS_PUSHBUTTON | WS_TABSTOP,
+             kControlAnalysisBrowse);
+        make(refresh_, _T("BUTTON"), _T("Refresh"), BS_PUSHBUTTON | WS_TABSTOP,
+             kControlAnalysisRefresh);
+        make(folder_, _T("STATIC"), text(sheet_.folder()), SS_LEFT | SS_PATHELLIPSIS,
+             kControlAnalysisFolder);
+    }
     fill_tree();
 }
 
+void AnalysisPage::cobs_changed() {
+    CobListPage::cobs_changed();
+    if (folder_.GetSafeHwnd() != nullptr) {
+        folder_.SetWindowText(text(sheet_.folder()));
+    }
+}
+
+void AnalysisPage::OnBrowse() {
+    sheet_.browse_for_folder(this);
+}
+
+void AnalysisPage::OnRefresh() {
+    sheet_.reload();
+}
+
+// Dialog 151, in its dialog units; Close is on the sheet's row.
+void AnalysisPage::layout_classic() {
+    place_dlu(list_label_, 4, 4, 80, 8);
+    place_list_dlu(4, 15, 30, 58, 30, 84, 194);
+    place_dlu(results_label_, 92, 4, 140, 8);
+    place_dlu(tree_, 92, 14, 144, 210);
+    place_dlu(browse_, 4, 232, 50, 14);
+    place_dlu(refresh_, 58, 232, 50, 14);
+    place_dlu(folder_, 112, 235, 124, 10);
+    close_.ShowWindow(SW_HIDE);
+}
+
 void AnalysisPage::layout(int width, int height) {
+    if (classic()) {
+        layout_classic();
+        return;
+    }
     const int m = kMargin;
     const int list_width = (std::max)(150, width / 3);
     const int bottom = height - 2 * m - button_height();

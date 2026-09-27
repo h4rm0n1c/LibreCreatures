@@ -82,6 +82,9 @@ protected:
     CWnd* make(CWnd& control, LPCTSTR window_class, LPCTSTR text, DWORD style,
                UINT id, DWORD ex_style = 0);
     void place(CWnd& control, int x, int y, int width, int height);
+    // The same in the page's dialog units (the classic look places controls
+    // where the 1996 templates had them).
+    void place_dlu(CWnd& control, int x, int y, int width, int height);
     // A line of text in the page's font, plus a little.
     int text_height() const { return text_height_; }
     // The usual gap and button height.

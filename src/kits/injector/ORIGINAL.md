@@ -6,7 +6,17 @@ Object Injector (its PDB path: `...\Tools\New Injector Kit\Release`).
 Addresses are in that binary. This build keeps its pages, protocol, files
 and settings, lays the pages out in code so they grow with the window, and
 fixes the numbered bugs below (marked "Fix (bug N)" in the source). No
-cover page and no sound.
+cover page and no sound -- except in the classic look (the original beside
+it as `Injector.old`, and `jigsaw.bmp` in the game's folder), which keeps
+every fix but wears the 2.0 kit's window: fixed size, the `jigsaw.bmp`
+cover, menu 130 (File, Window, Advanced, Help, with "Mute Ambient Sound"
+added to Window and saved as `Mute Ambient`), the pages where dialogs 150
+and 151 put their controls (the COB list a plain list of names that never
+scrolls sideways, and the count on one line after Refresh rather than under
+it), the COB's picture on `Alima.bmp` as CDibView drew it, the Keep on top,
+Hide (here it minimises) and Close row, and the looping `kits` sound at
+-10 dB.  Both looks say "No description available." for a COB without one,
+as the original did.
 
 ## Identity
 

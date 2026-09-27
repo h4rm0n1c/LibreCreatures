@@ -7,7 +7,11 @@
 // 1996 Object Injector; ../ORIGINAL.md describes its behaviour and numbers
 // its bugs.  This build keeps its pages, protocol and settings, lays its
 // pages out in code so they grow with the window, and fixes those bugs;
-// each fix is marked "Fix (bug N)".  No cover page and no sound.
+// each fix is marked "Fix (bug N)".  No cover page and no sound -- except
+// in the classic look (the original beside it as "Injector.old"): its
+// fixed window with the cover, menu and bottom row, the pages laid out as
+// its templates had them (without their overlaps), and its looping sound,
+// which the menu can mute.
 
 #include "c1kitshell/kit_art.hpp"
 #include "c1kitshell/kit_shell.hpp"
@@ -37,8 +41,12 @@ public:
     virtual void cobs_changed();
 
 protected:
+    bool classic() const;
     void create_list();
     void place_list(int x, int y, int width, int height);
+    // The find box and list where a 1996 template had them (dialog units).
+    void place_list_dlu(int find_label_x, int find_y, int find_x, int find_width, int list_y,
+                        int list_width, int list_height);
     void fill_list();
     int selected_index() const;  // into the sheet's entries, or -1
     virtual void selection_changed() {}
@@ -72,11 +80,15 @@ protected:
     DECLARE_MESSAGE_MAP()
 
 private:
+    void layout_classic();  // dialog 150
     void show_selected();
     void draw_picture(CDC& dc, const CRect& rect);
+    void draw_picture_classic(CDC& dc, const CRect& rect);
 
     c1kitshell::PaintedView picture_;
     c1kitshell::Canvas canvas_;
+    c1kitshell::PaletteBitmap backdrop_;  // classic only
+    bool backdrop_loaded_ = false;
     CEdit description_;
     CButton inject_;
     CButton remove_;
@@ -92,16 +104,28 @@ private:
 class AnalysisPage : public CobListPage {
 public:
     explicit AnalysisPage(InjectorSheet& sheet);
+    void cobs_changed() override;
 
 protected:
     void create_controls() override;
     void layout(int width, int height) override;
     void selection_changed() override;
+    afx_msg void OnBrowse();
+    afx_msg void OnRefresh();
+    DECLARE_MESSAGE_MAP()
 
 private:
+    void layout_classic();  // dialog 151
     void fill_tree();
 
     CTreeCtrl tree_;
+    // The classic look's: labels over the list and tree, and Browse,
+    // Refresh and the folder under them.
+    CStatic list_label_;
+    CStatic results_label_;
+    CButton browse_;
+    CButton refresh_;
+    CStatic folder_;
 };
 
 class InjectorSheet : public c1kitshell::KitSheet {
@@ -110,6 +134,9 @@ public:
     ~InjectorSheet() override;
 
     bool create_window();
+    bool classic() const { return classic_ != nullptr; }
+    // Set COB Folder (SelectCobFolder @ 0x00403040).
+    void browse_for_folder(CWnd* owner);
 
     std::vector<CobEntry>& entries() { return entries_; }
     const std::string& folder() const { return folder_; }
@@ -137,9 +164,20 @@ protected:
     afx_msg void OnClose();
     afx_msg void OnDestroy();
     afx_msg void OnSysCommand(UINT id, LPARAM lparam);
+    afx_msg void OnInitMenuPopup(CMenu* menu, UINT index, BOOL system_menu);
+    afx_msg void OnSetFolder();
+    afx_msg void OnRefreshCobs();
+    afx_msg void OnToggleOnTop();
+    afx_msg void OnHide();
+    afx_msg void OnToggleIgnoreAmount();
+    afx_msg void OnToggleAllowWithout();
+    afx_msg void OnToggleMute();
+    afx_msg void OnAbout();
+    afx_msg void OnCloseCommand();
     DECLARE_MESSAGE_MAP()
 
 private:
+    void set_up_classic_window();
     void load_preferences();
     void save_preferences();
     void update_title();
@@ -149,6 +187,12 @@ private:
     std::string game_file(const std::string& name) const;
 
     CFont& default_font_;
+    std::unique_ptr<c1kitshell::ClassicArt> classic_;
+    std::unique_ptr<c1kitshell::CoverPage> cover_;  // classic only
+    CMenu classic_menu_;
+    CButton on_top_check_;
+    CButton hide_;
+    CButton close_kit_;
     CobsPage cobs_page_;
     AnalysisPage analysis_page_;
     c1kit::KitSettings* registry_ = nullptr;

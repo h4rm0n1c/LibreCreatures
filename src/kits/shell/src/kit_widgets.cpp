@@ -284,6 +284,12 @@ void LayoutPage::place(CWnd& control, int x, int y, int width, int height) {
     }
 }
 
+void LayoutPage::place_dlu(CWnd& control, int x, int y, int width, int height) {
+    CRect rect(x, y, x + width, y + height);
+    ::MapDialogRect(GetSafeHwnd(), &rect);
+    place(control, rect.left, rect.top, rect.Width(), rect.Height());
+}
+
 void LayoutPage::place_close(int width, int height) {
     place(close_, width - kMargin - 84, height - kMargin - button_height(), 84,
           button_height());

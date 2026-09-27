@@ -184,7 +184,8 @@ void KitSheet::OnGetMinMaxInfo(MINMAXINFO* info) {
     }
 }
 
-void KitSheet::enable_ambience(c1kit::KitSettings* settings, const char* sound, int volume) {
+void KitSheet::enable_ambience(c1kit::KitSettings* settings, const char* sound, int volume,
+                               bool checkbox) {
     ambience_settings_ = settings;
     ambience_sound_ = sound;
     ambience_volume_ = volume;
@@ -193,8 +194,20 @@ void KitSheet::enable_ambience(c1kit::KitSettings* settings, const char* sound, 
         settings->read_dword(c1kit::SettingsScope::user, "Mute Ambient", muted);
     }
     ambience_muted_ = muted != 0;
+    if (checkbox) {
+        add_mute_checkbox();
+    }
+    ambience_ = std::make_unique<KitSound>();
+    if (ambience_->open(GetSafeHwnd())) {
+        const CString directory = game_directory_setting("Main Directory");
+        ambience_->load(ambience_sound_, std::string(CStringA(directory)) + "Sounds\\" +
+                                             ambience_sound_ + ".wav");
+    }
+    apply_ambience();
+}
 
-    // The checkbox goes under the pages, in a row the window grows by.
+// Under the pages, in a row the window grows by.
+void KitSheet::add_mute_checkbox() {
     CWnd* tabs = GetTabControl();
     CRect tab_rect;
     if (tabs != nullptr) {
@@ -220,12 +233,15 @@ void KitSheet::enable_ambience(c1kit::KitSettings* settings, const char* sound, 
                        this, kMuteCheckbox);
     mute_check_.SetFont(GetFont());
     mute_check_.SetCheck(ambience_muted_ ? BST_CHECKED : BST_UNCHECKED);
+}
 
-    ambience_ = std::make_unique<KitSound>();
-    if (ambience_->open(GetSafeHwnd())) {
-        const CString directory = game_directory_setting("Main Directory");
-        ambience_->load(ambience_sound_, std::string(CStringA(directory)) + "Sounds\\" +
-                                             ambience_sound_ + ".wav");
+void KitSheet::set_ambience_muted(bool muted) {
+    ambience_muted_ = muted;
+    if (ambience_settings_ != nullptr) {
+        ambience_settings_->write_dword("Mute Ambient", muted ? 1u : 0u);
+    }
+    if (mute_check_.GetSafeHwnd() != nullptr) {
+        mute_check_.SetCheck(muted ? BST_CHECKED : BST_UNCHECKED);
     }
     apply_ambience();
 }
@@ -244,11 +260,7 @@ void KitSheet::apply_ambience() {
 
 BOOL KitSheet::OnCommand(WPARAM wparam, LPARAM lparam) {
     if (LOWORD(wparam) == kMuteCheckbox && HIWORD(wparam) == BN_CLICKED && ambience_) {
-        ambience_muted_ = mute_check_.GetCheck() == BST_CHECKED;
-        if (ambience_settings_ != nullptr) {
-            ambience_settings_->write_dword("Mute Ambient", ambience_muted_ ? 1u : 0u);
-        }
-        apply_ambience();
+        set_ambience_muted(mute_check_.GetCheck() == BST_CHECKED);
         return TRUE;
     }
     return CPropertySheet::OnCommand(wparam, lparam);

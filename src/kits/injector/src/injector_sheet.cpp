@@ -9,6 +9,7 @@
 #include <ctime>
 #include <fstream>
 #include <iterator>
+#include <shlobj.h>
 
 namespace injector {
 namespace {
@@ -72,6 +73,19 @@ BEGIN_MESSAGE_MAP(InjectorSheet, c1kitshell::KitSheet)
     ON_WM_CLOSE()
     ON_WM_DESTROY()
     ON_WM_SYSCOMMAND()
+    ON_WM_INITMENUPOPUP()
+    ON_COMMAND(kCommandSetFolder, &InjectorSheet::OnSetFolder)
+    ON_COMMAND(kCommandRefresh, &InjectorSheet::OnRefreshCobs)
+    ON_COMMAND(kCommandOnTop, &InjectorSheet::OnToggleOnTop)
+    ON_COMMAND(kCommandHide, &InjectorSheet::OnHide)
+    ON_COMMAND(kCommandIgnoreAmount, &InjectorSheet::OnToggleIgnoreAmount)
+    ON_COMMAND(kCommandAllowWithout, &InjectorSheet::OnToggleAllowWithout)
+    ON_COMMAND(kCommandMute, &InjectorSheet::OnToggleMute)
+    ON_COMMAND(kCommandAbout, &InjectorSheet::OnAbout)
+    ON_COMMAND(kCommandClose, &InjectorSheet::OnCloseCommand)
+    ON_BN_CLICKED(kControlOnTopCheck, &InjectorSheet::OnToggleOnTop)
+    ON_BN_CLICKED(kControlHide, &InjectorSheet::OnHide)
+    ON_BN_CLICKED(kControlCloseKit, &InjectorSheet::OnCloseCommand)
 END_MESSAGE_MAP()
 
 InjectorSheet::InjectorSheet(CFont& default_font)
@@ -81,6 +95,18 @@ InjectorSheet::InjectorSheet(CFont& default_font)
       analysis_page_(*this) {
     m_psh.dwFlags |= PSH_USEHICON;
     m_psh.hIcon = AfxGetApp()->LoadIcon(kIconKit);
+    // The classic look: the original beside this one, and its cover picture
+    // in the game's folder.
+    classic_ = c1kitshell::ClassicArt::find({}, {}, {kIconKit});
+    if (classic_ && !file_exists(game_file(kCoverPicture))) {
+        classic_.reset();
+    }
+    if (classic_) {
+        cover_ = std::make_unique<c1kitshell::CoverPage>(kDialogCover, kCoverPicture);
+        cover_->m_psp.dwFlags |= PSP_USETITLE;  // the template's caption is "Injector"
+        cover_->m_psp.pszTitle = _T("Cover");
+        AddPage(cover_.get());
+    }
     AddPage(&cobs_page_);
     AddPage(&analysis_page_);
 }
@@ -92,9 +118,9 @@ InjectorSheet::~InjectorSheet() {
 }
 
 bool InjectorSheet::create_window() {
+    const DWORD sizing = classic_ ? 0 : WS_MAXIMIZEBOX | WS_THICKFRAME;  // classic: fixed
     return Create(nullptr,
-                  WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX |
-                      WS_MAXIMIZEBOX | WS_THICKFRAME,
+                  WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | sizing,
                   WS_EX_DLGMODALFRAME) != FALSE;
 }
 
@@ -147,7 +173,11 @@ int InjectorSheet::OnCreate(LPCREATESTRUCT create) {
 
 BOOL InjectorSheet::OnInitDialog() {
     const BOOL result = c1kitshell::KitSheet::OnInitDialog();
-    enable_resizing(CSize(kDefaultPageWidthDlu, kDefaultPageHeightDlu));
+    if (classic_) {
+        set_up_classic_window();
+    } else {
+        enable_resizing(CSize(kDefaultPageWidthDlu, kDefaultPageHeightDlu));
+    }
     if (CMenu* menu = GetSystemMenu(FALSE)) {
         menu->AppendMenu(MF_SEPARATOR);
         menu->AppendMenu(MF_STRING, kSysCommandOnTop, _T("Always on &top"));
@@ -324,7 +354,8 @@ bool InjectorSheet::remove(CobEntry& entry, CString& why) {
 
 void InjectorSheet::load_preferences() {
     WindowSize size = {};
-    if (registry_->read_binary(c1kit::SettingsScope::user, "Size", &size, sizeof(size)) &&
+    if (!classic_ &&
+        registry_->read_binary(c1kit::SettingsScope::user, "Size", &size, sizeof(size)) &&
         size.width > 0 && size.height > 0) {
         set_window_size(CSize(size.width, size.height));
     }
@@ -338,9 +369,14 @@ void InjectorSheet::load_preferences() {
         location = {0x100, 0x80};
     }
     registry_->read_dword(c1kit::SettingsScope::user, "Keep on top", always_on_top_);
+    // "Page" counts the original's cover as page 0, as the classic look's
+    // pages do.
     std::uint32_t page = 1;
     registry_->read_dword(c1kit::SettingsScope::user, "Page", page);
-    saved_page_ = page > 0 ? static_cast<int>(page) - 1 : 0;
+    saved_page_ = classic_ ? static_cast<int>(page) : page > 0 ? static_cast<int>(page) - 1 : 0;
+    if (on_top_check_.GetSafeHwnd() != nullptr) {
+        on_top_check_.SetCheck(always_on_top_ != 0 ? BST_CHECKED : BST_UNCHECKED);
+    }
     const int left = location.left < max_left ? location.left : max_left;
     const int top = location.top < max_top ? location.top : max_top;
     SetWindowPos(always_on_top_ != 0 ? &wndTopMost : &wndNoTopMost, left < 0 ? 0 : left,
@@ -366,9 +402,12 @@ void InjectorSheet::save_preferences() {
                                      window.top < 0 ? 0 : window.top};
     const WindowSize size = {window.Width(), window.Height()};
     registry_->write_binary("Location", &location, sizeof(location));
-    registry_->write_binary("Size", &size, sizeof(size));
+    if (!classic_) {
+        registry_->write_binary("Size", &size, sizeof(size));  // the classic window is fixed
+    }
     registry_->write_dword("Keep on top", always_on_top_);
-    registry_->write_dword("Page", static_cast<std::uint32_t>(GetActiveIndex() + 1));
+    registry_->write_dword("Page",
+                           static_cast<std::uint32_t>(GetActiveIndex() + (classic_ ? 0 : 1)));
 }
 
 // "Injector Kit - <name>", or "No Subject" (strings 500, 502).
@@ -415,6 +454,119 @@ void InjectorSheet::set_always_on_top(bool on) {
     if (CMenu* menu = GetSystemMenu(FALSE)) {
         menu->CheckMenuItem(kSysCommandOnTop, on ? MF_CHECKED : MF_UNCHECKED);
     }
+    if (on_top_check_.GetSafeHwnd() != nullptr) {
+        on_top_check_.SetCheck(on ? BST_CHECKED : BST_UNCHECKED);
+    }
+}
+
+void InjectorSheet::browse_for_folder(CWnd* owner) {
+    BROWSEINFOA browse = {};
+    browse.hwndOwner = owner != nullptr ? owner->GetSafeHwnd() : GetSafeHwnd();
+    browse.lpszTitle = "Select the folder containing your COBs (.cob files)";
+    browse.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
+    LPITEMIDLIST chosen = ::SHBrowseForFolderA(&browse);
+    if (chosen == nullptr) return;
+    char path[MAX_PATH] = {};
+    if (::SHGetPathFromIDListA(chosen, path)) {
+        set_folder(path);
+    }
+    ::CoTaskMemFree(chosen);
+}
+
+// ---------------------------------------------------------------------------
+// The classic look's window: menu 130 (with Mute ambient sound added to
+// Window), the pages at the templates' 240 x 250, and the 2.0 kit's row
+// under them -- Keep on top, Hide and Close.
+// ---------------------------------------------------------------------------
+
+void InjectorSheet::set_up_classic_window() {
+    CRect client;
+    GetClientRect(&client);
+    CWnd* tabs = GetTabControl();
+    CRect tab_rect = client;
+    if (tabs != nullptr) {
+        tabs->GetWindowRect(&tab_rect);
+        ScreenToClient(&tab_rect);
+    }
+    classic_menu_.CreateMenu();
+    CMenu file, window, advanced, help;
+    file.CreatePopupMenu();
+    file.AppendMenu(MF_STRING, kCommandSetFolder, _T("Set COB &Folder..."));
+    file.AppendMenu(MF_STRING, kCommandRefresh, _T("&Refresh"));
+    file.AppendMenu(MF_SEPARATOR);
+    file.AppendMenu(MF_STRING, kCommandClose, _T("&Close"));
+    window.CreatePopupMenu();
+    window.AppendMenu(MF_STRING, kCommandOnTop, _T("&Keep on Top"));
+    window.AppendMenu(MF_STRING, kCommandHide, _T("&Hide"));
+    window.AppendMenu(MF_SEPARATOR);
+    window.AppendMenu(MF_STRING, kCommandMute, _T("&Mute Ambient Sound"));
+    advanced.CreatePopupMenu();
+    advanced.AppendMenu(MF_STRING, kCommandIgnoreAmount, _T("&Ignore Amount Remaining"));
+    advanced.AppendMenu(MF_STRING, kCommandAllowWithout, _T("&Allow Without Active Creature"));
+    help.CreatePopupMenu();
+    help.AppendMenu(MF_STRING, kCommandAbout, _T("&About Injector Kit..."));
+    classic_menu_.AppendMenu(MF_POPUP, reinterpret_cast<UINT_PTR>(file.Detach()), _T("&File"));
+    classic_menu_.AppendMenu(MF_POPUP, reinterpret_cast<UINT_PTR>(window.Detach()), _T("&Window"));
+    classic_menu_.AppendMenu(MF_POPUP, reinterpret_cast<UINT_PTR>(advanced.Detach()),
+                             _T("&Advanced"));
+    classic_menu_.AppendMenu(MF_POPUP, reinterpret_cast<UINT_PTR>(help.Detach()), _T("&Help"));
+    SetMenu(&classic_menu_);
+
+    // The row under the pages, in dialog units as the pages are.
+    CRect row(0, 0, 50, 14);
+    CRect gap(0, 0, 4, 4);
+    if (CPropertyPage* page = GetActivePage()) {
+        ::MapDialogRect(page->GetSafeHwnd(), &row);
+        ::MapDialogRect(page->GetSafeHwnd(), &gap);
+    }
+    const int top = tab_rect.bottom + gap.Height();
+    CFont* font = GetFont();
+    on_top_check_.Create(_T("Keep on top"), WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_AUTOCHECKBOX,
+                         CRect(CPoint(tab_rect.left, top), CSize(row.Width() * 2, row.Height())),
+                         this, kControlOnTopCheck);
+    close_kit_.Create(_T("Close"), WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
+                      CRect(CPoint(tab_rect.right - row.Width(), top), row.Size()), this,
+                      kControlCloseKit);
+    hide_.Create(_T("Hide"), WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
+                 CRect(CPoint(tab_rect.right - 2 * row.Width() - gap.Width(), top), row.Size()),
+                 this, kControlHide);
+    for (CButton* control : {&on_top_check_, &close_kit_, &hide_}) {
+        control->SetFont(font);
+    }
+
+    // The window: the same width, tall enough for the menu, the pages and
+    // the row (sized from the styles, as the menu leaves the client
+    // rectangle stale until the window is next sized).
+    CRect wanted(0, 0, client.Width(), top + row.Height() + gap.Height());
+    ::AdjustWindowRectEx(&wanted, GetStyle(), TRUE, GetExStyle());
+    SetWindowPos(nullptr, 0, 0, wanted.Width(), wanted.Height(),
+                 SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+    enable_ambience(registry_, kAmbience, kAmbienceVolume, false);
+}
+
+void InjectorSheet::OnInitMenuPopup(CMenu* menu, UINT index, BOOL system_menu) {
+    c1kitshell::KitSheet::OnInitMenuPopup(menu, index, system_menu);
+    if (system_menu || menu == nullptr) return;
+    menu->CheckMenuItem(kCommandOnTop, always_on_top_ != 0 ? MF_CHECKED : MF_UNCHECKED);
+    menu->CheckMenuItem(kCommandIgnoreAmount, ignore_amount_ != 0 ? MF_CHECKED : MF_UNCHECKED);
+    menu->CheckMenuItem(kCommandAllowWithout, allow_without_ != 0 ? MF_CHECKED : MF_UNCHECKED);
+    menu->CheckMenuItem(kCommandMute, ambience_muted() ? MF_CHECKED : MF_UNCHECKED);
+}
+
+void InjectorSheet::OnSetFolder() { browse_for_folder(this); }
+void InjectorSheet::OnRefreshCobs() { reload(); }
+void InjectorSheet::OnToggleOnTop() { set_always_on_top(always_on_top_ == 0); }
+// The 2.0 kit's Hide; here it minimises, so the kit can be brought back.
+void InjectorSheet::OnHide() { ShowWindow(SW_MINIMIZE); }
+void InjectorSheet::OnToggleIgnoreAmount() { set_ignore_amount(ignore_amount_ == 0); }
+void InjectorSheet::OnToggleAllowWithout() { set_allow_without_subject(allow_without_ == 0); }
+void InjectorSheet::OnToggleMute() { set_ambience_muted(!ambience_muted()); }
+void InjectorSheet::OnCloseCommand() { PostMessage(WM_CLOSE); }
+
+void InjectorSheet::OnAbout() {
+    MessageBox(_T("Injector Kit\n\nLibreCreatures' Object Injector, wearing the look of the ")
+               _T("original beside it."),
+               _T("About Injector Kit"), MB_OK | MB_ICONINFORMATION);
 }
 
 void InjectorSheet::OnSysCommand(UINT id, LPARAM lparam) {
