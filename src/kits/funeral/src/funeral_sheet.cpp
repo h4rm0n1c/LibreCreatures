@@ -73,14 +73,25 @@ BEGIN_MESSAGE_MAP(FuneralSheet, c1kitshell::KitSheet)
 END_MESSAGE_MAP()
 
 // The original opened on a cover page and played sound; neither is in this
-// build.  The graveyard is always the first page; a page is added for each
-// dead creature.
+// build, except in the classic look (the original beside this one as
+// "Funeral Kit.old", and its cover picture in the game's folder), which
+// also keeps the 1996 fixed size.  The graveyard is always the first page
+// after any cover; a page is added for each dead creature.
 FuneralSheet::FuneralSheet(CFont& default_font)
     : KitSheet(kStringTitle, 0),
       default_font_(default_font),
       graveyard_page_(*this) {
     m_psh.dwFlags |= PSH_USEHICON;
     m_psh.hIcon = AfxGetApp()->LoadIcon(kIconKit);
+    classic_ = c1kitshell::ClassicArt::find({}, {}, {kIconKit});
+    const CString cover = c1kitshell::game_directory_setting("Main Directory") + kCoverPicture;
+    if (classic_ && GetFileAttributes(cover) == INVALID_FILE_ATTRIBUTES) {
+        classic_.reset();
+    }
+    if (classic_) {
+        cover_ = std::make_unique<c1kitshell::CoverPage>(kDialogCover, kCoverPicture);
+        AddPage(cover_.get());
+    }
     AddPage(&graveyard_page_);
 }
 
@@ -101,9 +112,9 @@ bool FuneralSheet::create_window() {
             add_memorial_page(grave[c1kit::kGraveMoniker]);
         }
     }
+    const DWORD sizing = classic_ ? 0 : WS_MAXIMIZEBOX | WS_THICKFRAME;  // classic: fixed
     return Create(nullptr,
-                  WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU |
-                      WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_THICKFRAME,
+                  WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | sizing,
                   WS_EX_DLGMODALFRAME) != FALSE;
 }
 
@@ -130,7 +141,11 @@ int FuneralSheet::OnCreate(LPCREATESTRUCT create) {
 
 BOOL FuneralSheet::OnInitDialog() {
     const BOOL result = c1kitshell::KitSheet::OnInitDialog();
-    enable_resizing(CSize(kDefaultPageWidthDlu, kDefaultPageHeightDlu));
+    if (classic_) {
+        enable_ambience(registry_, kAmbience, kAmbienceVolume);
+    } else {
+        enable_resizing(CSize(kDefaultPageWidthDlu, kDefaultPageHeightDlu));
+    }
     if (CMenu* menu = GetSystemMenu(FALSE)) {
         menu->AppendMenu(MF_SEPARATOR);
         menu->AppendMenu(MF_STRING, kSysCommandOnTop, _T("Always on &top"));
@@ -141,7 +156,8 @@ BOOL FuneralSheet::OnInitDialog() {
 
 void FuneralSheet::load_preferences() {
     WindowSize size = {};
-    if (registry_->read_binary(c1kit::SettingsScope::user, "Size", &size,
+    if (!classic_ &&
+        registry_->read_binary(c1kit::SettingsScope::user, "Size", &size,
                                sizeof(size)) &&
         size.width > 0 && size.height > 0) {
         set_window_size(CSize(size.width, size.height));
@@ -181,7 +197,9 @@ void FuneralSheet::save_preferences() {
                                      window.top < 0 ? 0 : window.top};
     const WindowSize size = {window.Width(), window.Height()};
     registry_->write_binary("Location", &location, sizeof(location));
-    registry_->write_binary("Size", &size, sizeof(size));
+    if (!classic_) {
+        registry_->write_binary("Size", &size, sizeof(size));  // the classic window is fixed
+    }
     registry_->write_dword("On Top", always_on_top_);
 }
 

@@ -9,6 +9,7 @@ namespace funeral {
 constexpr unsigned kDialogMemorial = 137;   // CFuneralSheet: one dead creature
 constexpr unsigned kDialogGraveyard = 182;  // CGravePage: "GraveYard"
 constexpr unsigned kDialogUnmarked = 183;   // CUnMarkedPage: "UnMarked Grave"
+constexpr unsigned kDialogCover = 140;      // classic only
 constexpr unsigned kIconKit = 128;
 
 // Strings
@@ -37,6 +38,10 @@ constexpr char kGraveBackdrop[] = "GRAVE.bmp";      // 240 x 302, photo frame
 constexpr char kUnknownBackdrop[] = "UNKNOWN.bmp";  // the same, silhouetted
 constexpr char kHeadstoneBackdrop[] = "funeral.bmp";  // 238 x 300
 constexpr char kPaletteFile[] = "palette.dta";
+constexpr char kCoverPicture[] = "Funeral.bmp";   // classic cover
+// The classic look's ambience: the 1996 kit's "kitf" loop at -10 dB.
+constexpr char kAmbience[] = "kitf";
+constexpr int kAmbienceVolume = -1000;
 
 // Where a photograph sits in GRAVE.bmp (RenderSelectedPhotoItem @ 0x0040a2b0
 // copies it to (0x3b,0x1c)-(0xb3,0xa8)).

@@ -185,6 +185,8 @@ private:
     void set_always_on_top(bool on);
 
     CFont& default_font_;
+    std::unique_ptr<c1kitshell::ClassicArt> classic_;
+    std::unique_ptr<c1kitshell::CoverPage> cover_;  // classic only
     GraveyardPage graveyard_page_;
     std::vector<std::unique_ptr<MemorialPage>> memorial_pages_;
     std::vector<std::unique_ptr<UnmarkedPage>> unmarked_pages_;

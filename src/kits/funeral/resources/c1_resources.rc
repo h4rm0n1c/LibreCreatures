@@ -8,12 +8,14 @@
 LANGUAGE 7, 1
 
 #include "dialogs/1031/137.rcinc"
+#include "dialogs/1031/140.rcinc"
 #include "dialogs/1031/182.rcinc"
 #include "dialogs/1031/183.rcinc"
 #include "strings/1031/7.rcinc"
 LANGUAGE 9, 1
 
 #include "dialogs/1033/137.rcinc"
+#include "dialogs/1033/140.rcinc"
 #include "dialogs/1033/182.rcinc"
 #include "dialogs/1033/183.rcinc"
 #include "version/1033/1.rcinc"
@@ -21,12 +23,14 @@ LANGUAGE 9, 1
 LANGUAGE 12, 1
 
 #include "dialogs/1036/137.rcinc"
+#include "dialogs/1036/140.rcinc"
 #include "dialogs/1036/182.rcinc"
 #include "dialogs/1036/183.rcinc"
 #include "strings/1036/7.rcinc"
 LANGUAGE 17, 1
 
 #include "dialogs/1041/137.rcinc"
+#include "dialogs/1041/140.rcinc"
 #include "dialogs/1041/182.rcinc"
 #include "dialogs/1041/183.rcinc"
 #include "strings/1041/7.rcinc"
