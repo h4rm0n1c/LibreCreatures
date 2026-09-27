@@ -52,8 +52,16 @@ BiochemSheet::BiochemSheet(CFont& default_font)
         classic_.reset();
     }
     if (classic_) {
+        // The classic skin: its own pages, the v1.2 kit's, and none of these.
         cover_ = std::make_unique<c1kitshell::CoverPage>(kDialogCover, kCoverPicture);
+        classic_monitor_ = std::make_unique<ClassicMonitorPage>(*this);
+        classic_inject_ = std::make_unique<ClassicInjectPage>(*this);
+        classic_names_ = std::make_unique<ClassicNamesPage>(*this);
         AddPage(cover_.get());
+        AddPage(classic_monitor_.get());
+        AddPage(classic_inject_.get());
+        AddPage(classic_names_.get());
+        return;
     }
     AddPage(&monitor_page_);
     AddPage(&inject_page_);
@@ -147,6 +155,12 @@ bool BiochemSheet::save_chemical_names() {
 }
 
 void BiochemSheet::names_changed() {
+    if (classic_) {
+        classic_monitor_->names_changed();
+        classic_inject_->names_changed();
+        classic_names_->names_changed();
+        return;
+    }
     monitor_page_.names_changed();
     inject_page_.names_changed();
 }
@@ -170,7 +184,11 @@ void BiochemSheet::take_subject() {
     }
     SetWindowText(c1kitshell::load_string(kStringTitle) +
                   (subject_present_ ? CString(subject_name_.c_str()) : CString(_T("no creature selected"))));
-    monitor_page_.subject_changed();
+    if (classic_) {
+        classic_monitor_->subject_changed();
+    } else {
+        monitor_page_.subject_changed();
+    }
 }
 
 // The classic window: the v1.2 kit's row under the pages -- Always on Top,
@@ -208,7 +226,7 @@ void BiochemSheet::set_up_classic_window() {
     version_.SetFont(font);
     registry_->read_dword(c1kit::SettingsScope::user, "Show Tooltips", tooltips_);
     tooltips_check_.SetCheck(tooltips_ != 0 ? BST_CHECKED : BST_UNCHECKED);
-    monitor_page_.set_tooltips(tooltips_ != 0);
+    classic_monitor_->set_tooltips(tooltips_ != 0);
     show_tooltips_check(false);  // the cover comes first
     CRect window;
     GetWindowRect(&window);
@@ -231,7 +249,7 @@ void BiochemSheet::OnOnTopClicked() {
 void BiochemSheet::OnTooltipsClicked() {
     tooltips_ = tooltips_check_.GetCheck() == BST_CHECKED ? 1 : 0;
     registry_->write_dword("Show Tooltips", tooltips_);
-    monitor_page_.set_tooltips(tooltips_ != 0);
+    classic_monitor_->set_tooltips(tooltips_ != 0);
 }
 
 void BiochemSheet::OnMuteClicked() {
@@ -306,9 +324,17 @@ void BiochemSheet::OnTimer(UINT_PTR timer_id) {
             SetTimer(kTimerMonitor, kMonitorMs, nullptr);
         }
     } else if (timer_id == kTimerMonitor && !game_paused_ && !quitting()) {
-        monitor_page_.sample();
+        if (classic_) {
+            classic_monitor_->sample();
+        } else {
+            monitor_page_.sample();
+        }
     } else if (timer_id == kTimerRepeat && !quitting()) {
-        inject_page_.repeat_tick();
+        if (classic_) {
+            classic_inject_->repeat_tick();
+        } else {
+            inject_page_.repeat_tick();
+        }
     }
     c1kitshell::KitSheet::OnTimer(timer_id);
 }

@@ -7,11 +7,9 @@
 // behaviour and numbers its bugs.  This build keeps its pages, protocol,
 // files and settings, lays its pages out in code so they grow with the
 // window, and fixes those bugs; each fix is marked "Fix (bug N)".  No cover
-// page, no syringe animation and no sound -- except in the classic look (the
-// original beside it as "BiochemKit.old"), which keeps every fix but wears
-// the v1.2 window: fixed pages laid out as its templates had them, the
-// cover, the syringe, its row of ticks under the pages and its looping
-// sound, which a tick there mutes.
+// page, no syringe animation and no sound -- except in the classic skin (the
+// original beside it as "BiochemKit.old"): the v1.2 kit's own pages and
+// window (biochem_classic.cpp), sharing only the sheet's data with these.
 
 #include "c1kitshell/kit_art.hpp"
 #include "c1kitshell/kit_graph.hpp"
@@ -41,14 +39,10 @@ public:
     void sample();
     void names_changed();
     void subject_changed();
-    // The classic look's Show Tooltips: the levels under the pointer.
-    void set_tooltips(bool on);
 
 protected:
     void create_controls() override;
     void layout(int width, int height) override;
-    BOOL OnSetActive() override;
-    BOOL OnKillActive() override;
     afx_msg void OnFilterChanged();
     afx_msg void OnAdd();
     afx_msg void OnRemove();
@@ -59,7 +53,6 @@ protected:
     DECLARE_MESSAGE_MAP()
 
 private:
-    void layout_classic();  // dialog 150
     void set_followed(const std::vector<int>& chemicals);
     void fill_followed();
     void fill_saved();
@@ -81,7 +74,6 @@ private:
     CListCtrl followed_;
     c1kitshell::PaintedView graph_;
     c1kitshell::ChemicalGraph plot_{8000, 1000};
-    bool tooltips_ = true;
 };
 
 class InjectPage : public c1kitshell::LayoutPage {
@@ -100,19 +92,9 @@ protected:
     afx_msg void OnStop();
     afx_msg void OnAmountChanged();
     afx_msg void OnHScroll(UINT code, UINT position, CScrollBar* bar);
-    afx_msg void OnVScroll(UINT code, UINT position, CScrollBar* bar);
-    afx_msg void OnTimer(UINT_PTR timer_id);
     DECLARE_MESSAGE_MAP()
 
 private:
-    void layout_classic();  // dialog 151
-    // The dose on the slider: the classic one stands upright with 255 at
-    // the top, as the original's did.
-    int slider_dose() const;
-    void set_slider_dose(int dose);
-    void dose_changed(int dose);
-    void change_liquid();
-    void show_remaining();
     bool inject_once();
     void stop_repeat(const CString& why);
     void update_repeat_controls();
@@ -133,17 +115,6 @@ private:
     CEdit count_;
     CButton stop_;
     CStatic status_;
-    // The classic look's: the syringe, and the template's other labels.
-    c1kitshell::PaintedView syringe_view_;
-    c1kitshell::Syringe syringe_;
-    c1kitshell::GamePalette palette_;
-    CStatic amount_label_;
-    CButton repeat_group_;
-    CStatic seconds_label_;
-    CStatic no_limit_label_;
-    CStatic remaining_label_;
-    CStatic remaining_;
-    int liquid_ = -1;
     bool repeating_ = false;
     int repeat_chemical_ = -1;
     int repeat_done_ = 0;
@@ -165,7 +136,6 @@ protected:
     DECLARE_MESSAGE_MAP()
 
 private:
-    void layout_classic();  // dialog 152
     void fill();
     int selected_chemical() const;
 
@@ -178,6 +148,116 @@ private:
     CEdit name_;
     CButton rename_;
     CButton save_;
+};
+
+// ---------------------------------------------------------------------------
+// The classic skin's pages (biochem_classic.cpp): the v1.2 kit's own, on its
+// templates (dialogs 150, 151 and 152).
+// ---------------------------------------------------------------------------
+
+// A v1.2 page on its template.
+class ClassicBiochemPage : public CPropertyPage {
+public:
+    ClassicBiochemPage(BiochemSheet& sheet, UINT dialog, UINT title_string);
+    virtual void names_changed() {}
+
+protected:
+    BiochemSheet& sheet_;
+    CString title_;
+};
+
+// Biochemistry (CMonitorPage, dialog 150).
+class ClassicMonitorPage : public ClassicBiochemPage {
+public:
+    explicit ClassicMonitorPage(BiochemSheet& sheet);
+    void sample();
+    void subject_changed();
+    void set_tooltips(bool on);
+    void names_changed() override;
+
+protected:
+    BOOL OnInitDialog() override;
+    BOOL OnSetActive() override;
+    BOOL OnKillActive() override;
+    afx_msg void OnFilterChanged();
+    afx_msg void OnAdd();
+    afx_msg void OnRemove();
+    afx_msg void OnClear();
+    afx_msg void OnLoad();
+    afx_msg void OnSave();
+    afx_msg void OnDelete();
+    BOOL OnNotify(WPARAM wparam, LPARAM lparam, LRESULT* result) override;
+    DECLARE_MESSAGE_MAP()
+
+private:
+    void set_followed(const std::vector<int>& chemicals);
+    void fill_followed();
+    void fill_saved();
+    std::string saved_path() const;
+
+    CListCtrl followed_;
+    c1kitshell::PaintedView graph_;
+    c1kitshell::ChemicalGraph plot_{8000, 1000};
+    bool tooltips_ = true;
+};
+
+// Injections (CInjectPage, dialog 151).
+class ClassicInjectPage : public ClassicBiochemPage {
+public:
+    explicit ClassicInjectPage(BiochemSheet& sheet);
+    void repeat_tick();
+    void names_changed() override;
+
+protected:
+    BOOL OnInitDialog() override;
+    afx_msg void OnFilterChanged();
+    afx_msg void OnChemicalChanged();
+    afx_msg void OnInject();
+    afx_msg void OnRepeatChanged();
+    afx_msg void OnStop();
+    afx_msg void OnAmountChanged();
+    afx_msg void OnVScroll(UINT code, UINT position, CScrollBar* bar);
+    afx_msg void OnTimer(UINT_PTR timer_id);
+    DECLARE_MESSAGE_MAP()
+
+private:
+    bool inject_once();
+    void stop_repeat(const CString& why);
+    void update_repeat_controls();
+    void change_liquid();
+    int dose() const;
+    void set_dose(int dose);
+
+    c1kitshell::PaintedView syringe_view_;
+    c1kitshell::Syringe syringe_;
+    c1kitshell::GamePalette palette_;
+    int liquid_ = -1;
+    bool repeating_ = false;
+    int repeat_chemical_ = -1;
+    int repeat_done_ = 0;
+    int repeat_total_ = 0;
+    bool syncing_ = false;
+};
+
+// Chemical Names (CChemicalsPage, dialog 152).
+class ClassicNamesPage : public ClassicBiochemPage {
+public:
+    explicit ClassicNamesPage(BiochemSheet& sheet);
+    void names_changed() override;
+
+protected:
+    BOOL OnInitDialog() override;
+    BOOL OnNotify(WPARAM wparam, LPARAM lparam, LRESULT* result) override;
+    afx_msg void OnSearchChanged();
+    afx_msg void OnRename();
+    afx_msg void OnSaveNames();
+    DECLARE_MESSAGE_MAP()
+
+private:
+    void fill();
+    int selected_chemical() const;
+
+    CListCtrl names_;
 };
 
 class BiochemSheet : public c1kitshell::KitSheet {
@@ -221,7 +301,10 @@ private:
 
     CFont& default_font_;
     std::unique_ptr<c1kitshell::ClassicArt> classic_;
-    std::unique_ptr<c1kitshell::CoverPage> cover_;  // classic only
+    std::unique_ptr<c1kitshell::CoverPage> cover_;
+    std::unique_ptr<ClassicMonitorPage> classic_monitor_;
+    std::unique_ptr<ClassicInjectPage> classic_inject_;
+    std::unique_ptr<ClassicNamesPage> classic_names_;
     CButton on_top_check_;
     CButton tooltips_check_;
     CButton mute_check_;

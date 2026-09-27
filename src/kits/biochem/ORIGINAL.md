@@ -5,19 +5,23 @@ from running it in the lab. Addresses are in that binary. This build keeps
 its pages, protocol, files and settings, lays the pages out in code so they
 grow with the window, and fixes the numbered bugs below (marked "Fix (bug
 N)" in the source). No cover page, no syringe animation and no sound --
-except in the classic look (the original beside it as `BiochemKit.old`,
-and `science.bmp` in the game's folder), which keeps every fix but wears
-the v1.2 window: fixed pages where dialogs 150-152 put their controls (the
-dosage slider upright with 255 at the top, the Repeat group, "seconds",
-"(0 = no limit)" and Remaining), the `science.bmp` cover, the row under the
-pages (Always on Top, Show Tooltips with the Biochemistry page, the
-version, and "Mute ambient sound", saved as `Mute Ambient`), the looping
-`kits` sound at -10 dB, and the syringe: `DOSE.bmp` with the dosage sprite
-for the chemical (number mod 7 into `Dosage`, `yDosage`, `ODosage`,
-`BDosage`, `cDosage`, `pDosage`, `sDosage`), filled to the dose, and its
-injection animation (the drop squeezed out, the barrel drained four pixels
-every 10 ms, the drop re-formed).  The original then showed the barrel empty
-while the amount still held the dose; the classic look refills it.
+except in the classic skin (the original beside it as `BiochemKit.old`,
+and `science.bmp` in the game's folder).  That is a separate set of pages,
+the v1.2 kit's own on its templates (dialogs 150, 151 and 152;
+`biochem_classic.cpp`), sharing only the data with this build's pages, in
+the v1.2 window: the `science.bmp` cover, the row under the pages (Always on
+Top, Show Tooltips with the Biochemistry page, the version, and "Mute
+ambient sound", saved as `Mute Ambient`) and the looping `kits` sound at
+-10 dB.  Biochemistry: Filter, Chemical, Add, Remove, Clear, the saved sets,
+the chemicals followed (their colour, name and level, in columns that fit
+the list, where the original's scrolled sideways) and the v1.2 graph.
+Injections: the syringe (`DOSE.bmp` with the chemical's dosage sprite,
+number mod 7 into `Dosage`, `yDosage`, `ODosage`, `BDosage`, `cDosage`,
+`pDosage`, `sDosage`, filled to the dose and animated on Inject, refilling
+where the original stayed empty), the chemical and filter, the upright
+dosage slider and amount, and the repeat with Remaining and Stop.  Chemical
+Names: the list, Search, Rename and Save.  Every fix below holds in both
+skins.
 
 ## Identity
 

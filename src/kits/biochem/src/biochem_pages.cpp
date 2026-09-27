@@ -112,7 +112,7 @@ void MonitorPage::create_controls() {
                                             : CString(_T("Select a creature in the game.")));
     });
     graph_.set_mouse_handler([this](CPoint point, bool) {
-        plot_.set_pointer(tooltips_ ? point.x : -1);
+        plot_.set_pointer(point.x);
         graph_.redraw();
     });
     fill_chemical_combo(chemical_, sheet_.chemical_names(), CString(), -1);
@@ -120,10 +120,6 @@ void MonitorPage::create_controls() {
 }
 
 void MonitorPage::layout(int width, int height) {
-    if (sheet_.classic()) {
-        layout_classic();
-        return;
-    }
     const int m = kMargin;
     const int row = button_height();
     const int line1 = m;
@@ -148,48 +144,6 @@ void MonitorPage::layout(int width, int height) {
     followed_.SetColumnWidth(0, list_width - 44 - 6);
     place(graph_, 2 * m + list_width, top, width - 3 * m - list_width, bottom - top);
     place_close(width, height);
-}
-
-// Dialog 150, in its dialog units; Close is not on the classic pages (the
-// window's own close box, as in 1996).
-void MonitorPage::layout_classic() {
-    place_dlu(filter_label_, 4, 6, 22, 8);
-    place_dlu(filter_, 28, 4, 72, 12);
-    place_dlu(chemical_label_, 104, 6, 34, 8);
-    place_dlu(chemical_, 140, 4, 136, 120);
-    place_dlu(add_, 280, 4, 24, 12);
-    place_dlu(remove_, 306, 4, 36, 12);
-    place_dlu(clear_, 344, 4, 32, 12);
-    place_dlu(saved_label_, 4, 20, 22, 8);
-    place_dlu(saved_, 28, 18, 100, 120);
-    place_dlu(load_, 132, 18, 24, 12);
-    place_dlu(save_, 160, 18, 26, 12);
-    place_dlu(delete_, 188, 18, 30, 12);
-    place_dlu(followed_, 4, 34, 92, 162);
-    CRect inside;
-    followed_.GetClientRect(&inside);
-    followed_.SetColumnWidth(0, inside.Width() - 44);
-    followed_.SetColumnWidth(1, 44);
-    place_dlu(graph_, 100, 34, 276, 162);
-    close_.ShowWindow(SW_HIDE);
-}
-
-void MonitorPage::set_tooltips(bool on) {
-    tooltips_ = on;
-    if (!on) {
-        plot_.set_pointer(-1);
-        graph_.redraw();
-    }
-}
-
-BOOL MonitorPage::OnSetActive() {
-    sheet_.show_tooltips_check(true);
-    return LayoutPage::OnSetActive();
-}
-
-BOOL MonitorPage::OnKillActive() {
-    sheet_.show_tooltips_check(false);
-    return LayoutPage::OnKillActive();
 }
 
 void MonitorPage::names_changed() {
@@ -367,8 +321,6 @@ BEGIN_MESSAGE_MAP(InjectPage, c1kitshell::LayoutPage)
     ON_BN_CLICKED(kControlStop, &InjectPage::OnStop)
     ON_EN_CHANGE(kControlAmount, &InjectPage::OnAmountChanged)
     ON_WM_HSCROLL()
-    ON_WM_VSCROLL()
-    ON_WM_TIMER()
 END_MESSAGE_MAP()
 
 InjectPage::InjectPage(BiochemSheet& sheet)
@@ -379,54 +331,25 @@ void InjectPage::create_controls() {
     make(chemical_, _T("COMBOBOX"), _T(""), CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP, kControlChemical);
     make(filter_label_, _T("STATIC"), _T("Filter:"), SS_LEFT, kControlLabel);
     make(filter_, _T("EDIT"), _T(""), ES_AUTOHSCROLL | WS_BORDER | WS_TABSTOP, kControlFilter);
-    const bool classic = sheet_.classic();
-    make(dose_label_, _T("STATIC"), classic ? _T("Dosage:") : _T("Amount:"), SS_LEFT, kControlLabel);
-    make(dose_, TRACKBAR_CLASS, _T(""),
-         (classic ? TBS_VERT | TBS_BOTH | TBS_NOTICKS : TBS_HORZ | TBS_AUTOTICKS) | WS_TABSTOP,
-         kControlDose);
+    make(dose_label_, _T("STATIC"), _T("Amount:"), SS_LEFT, kControlLabel);
+    make(dose_, TRACKBAR_CLASS, _T(""), TBS_HORZ | TBS_AUTOTICKS | WS_TABSTOP, kControlDose);
     dose_.SetRange(0, 255);
     dose_.SetTicFreq(32);
     dose_.SetPageSize(16);
-    set_slider_dose(0);
     make(amount_, _T("EDIT"), _T("0"), ES_NUMBER | WS_BORDER | WS_TABSTOP, kControlAmount);
     make(inject_, _T("BUTTON"), _T("Inject"), BS_DEFPUSHBUTTON | WS_TABSTOP, kControlInject);
-    make(repeat_, _T("BUTTON"), classic ? _T("Enable") : _T("Repeat"), BS_AUTOCHECKBOX | WS_TABSTOP,
-         kControlRepeat);
-    make(every_label_, _T("STATIC"), classic ? _T("Every:") : _T("Every (seconds):"), SS_LEFT,
-         kControlLabel);
+    make(repeat_, _T("BUTTON"), _T("Repeat"), BS_AUTOCHECKBOX | WS_TABSTOP, kControlRepeat);
+    make(every_label_, _T("STATIC"), _T("Every (seconds):"), SS_LEFT, kControlLabel);
     make(every_, _T("EDIT"), _T("5"), ES_NUMBER | WS_BORDER | WS_TABSTOP, kControlEvery);
-    make(count_label_, _T("STATIC"), classic ? _T("Count:") : _T("Times (0 = until stopped):"),
-         SS_LEFT, kControlLabel);
+    make(count_label_, _T("STATIC"), _T("Times (0 = until stopped):"), SS_LEFT, kControlLabel);
     make(count_, _T("EDIT"), _T("0"), ES_NUMBER | WS_BORDER | WS_TABSTOP, kControlCount);
     make(stop_, _T("BUTTON"), _T("Stop"), BS_PUSHBUTTON | WS_TABSTOP, kControlStop);
     make(status_, _T("STATIC"), _T(""), SS_LEFT, kControlStatus);
-    if (classic) {
-        make(amount_label_, _T("STATIC"), _T("Amount:"), SS_LEFT, kControlLabel);
-        make(repeat_group_, _T("BUTTON"), _T("Repeat"), BS_GROUPBOX, kControlLabel);
-        repeat_group_.SetWindowPos(&wndBottom, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-        make(seconds_label_, _T("STATIC"), _T("seconds"), SS_LEFT, kControlLabel);
-        make(no_limit_label_, _T("STATIC"), _T("(0 = no limit)"), SS_LEFT, kControlLabel);
-        make(remaining_label_, _T("STATIC"), _T("Remaining:"), SS_LEFT, kControlLabel);
-        make(remaining_, _T("STATIC"), _T(""), SS_LEFT, kControlRemaining);
-        syringe_view_.create(*this, kControlSyringe,
-                             [this](CDC& dc, const CRect& rect) { syringe_.draw(dc, rect); });
-        const CString palettes = c1kitshell::game_directory_setting("Palette Directory");
-        palette_.load(std::string(CStringA(palettes.IsEmpty() ? CString(_T("Palettes\\")) : palettes)) +
-                      "palette.dta");
-        syringe_.load(std::string(CStringA(c1kitshell::game_directory_setting("Main Directory"))),
-                      kDosageFiles[0], palette_);
-        liquid_ = 0;
-    }
     fill_chemical_combo(chemical_, sheet_.chemical_names(), CString(), -1);
-    change_liquid();
     update_repeat_controls();
 }
 
 void InjectPage::layout(int width, int height) {
-    if (sheet_.classic()) {
-        layout_classic();
-        return;
-    }
     const int m = kMargin;
     const int row = button_height();
     int y = m;
@@ -455,83 +378,6 @@ void InjectPage::layout(int width, int height) {
     place_close(width, height);
 }
 
-// Dialog 151, in its dialog units.
-void InjectPage::layout_classic() {
-    place_dlu(syringe_view_, 4, 4, 120, 192);
-    place_dlu(chemical_label_, 132, 6, 34, 8);
-    place_dlu(chemical_, 168, 4, 208, 120);
-    place_dlu(filter_label_, 132, 22, 22, 8);
-    place_dlu(filter_, 168, 20, 208, 12);
-    place_dlu(dose_label_, 132, 40, 28, 8);
-    place_dlu(dose_, 128, 52, 24, 120);
-    place_dlu(amount_label_, 158, 90, 28, 8);
-    place_dlu(amount_, 158, 100, 36, 12);
-    place_dlu(inject_, 158, 116, 48, 14);
-    place_dlu(repeat_group_, 230, 36, 146, 138);
-    place_dlu(repeat_, 238, 63, 40, 10);
-    place_dlu(every_label_, 238, 81, 22, 8);
-    place_dlu(every_, 264, 79, 28, 12);
-    place_dlu(seconds_label_, 296, 81, 28, 8);
-    place_dlu(count_label_, 238, 97, 24, 8);
-    place_dlu(count_, 264, 95, 28, 12);
-    place_dlu(no_limit_label_, 296, 97, 50, 8);
-    place_dlu(remaining_label_, 238, 117, 40, 8);
-    place_dlu(remaining_, 282, 117, 80, 8);
-    place_dlu(stop_, 238, 133, 48, 14);
-    place_dlu(status_, 132, 186, 244, 10);
-    close_.ShowWindow(SW_HIDE);
-}
-
-int InjectPage::slider_dose() const {
-    return sheet_.classic() ? 255 - dose_.GetPos() : dose_.GetPos();
-}
-
-void InjectPage::set_slider_dose(int dose) {
-    dose_.SetPos(sheet_.classic() ? 255 - dose : dose);
-}
-
-void InjectPage::dose_changed(int dose) {
-    if (syringe_.loaded()) {
-        syringe_.set_dose(dose);
-        syringe_view_.redraw();
-    }
-}
-
-// The liquid follows the chemical (OnChemicalSelectionChanged @ 0x00407cd0).
-void InjectPage::change_liquid() {
-    if (!syringe_.loaded()) return;
-    const int chemical = combo_chemical(chemical_);
-    const int liquid = chemical < 0 ? 0 : chemical % 7;
-    if (liquid != liquid_ && syringe_.set_liquid(kDosageFiles[liquid])) {
-        liquid_ = liquid;
-        syringe_view_.redraw();
-    }
-}
-
-void InjectPage::show_remaining() {
-    if (remaining_.GetSafeHwnd() == nullptr) return;
-    CString text;
-    if (repeating_) {
-        if (repeat_total_ > 0) {
-            text.Format(_T("%d"), repeat_total_ - repeat_done_);
-        } else {
-            text = _T("no limit");
-        }
-    }
-    remaining_.SetWindowText(text);
-}
-
-void InjectPage::OnTimer(UINT_PTR timer_id) {
-    if (timer_id == kTimerSyringe) {
-        const bool more = syringe_.tick();
-        set_slider_dose(more ? syringe_.shown_dose() : syringe_.dose());
-        syringe_view_.redraw();
-        if (!more) KillTimer(kTimerSyringe);
-        return;
-    }
-    LayoutPage::OnTimer(timer_id);
-}
-
 void InjectPage::names_changed() {
     if (!created_) return;
     CString filter;
@@ -552,30 +398,20 @@ void InjectPage::OnChemicalChanged() {
     if (repeating_ && combo_chemical(chemical_) != repeat_chemical_) {
         stop_repeat(_T("Repeat stopped (chemical changed)"));
     }
-    change_liquid();
 }
 
 void InjectPage::OnHScroll(UINT code, UINT position, CScrollBar* bar) {
     LayoutPage::OnHScroll(code, position, bar);
-    if (syringe_.injecting()) return;
     syncing_ = true;
     CString value;
-    value.Format(_T("%d"), slider_dose());
+    value.Format(_T("%d"), dose_.GetPos());
     amount_.SetWindowText(value);
     syncing_ = false;
-    dose_changed(slider_dose());
-}
-
-void InjectPage::OnVScroll(UINT code, UINT position, CScrollBar* bar) {
-    LayoutPage::OnVScroll(code, position, bar);
-    OnHScroll(code, position, bar);  // the classic slider stands upright
 }
 
 void InjectPage::OnAmountChanged() {
     if (syncing_) return;
-    const int dose = (std::min)(255, (std::max)(0, edit_number(amount_, 0)));
-    set_slider_dose(dose);
-    dose_changed(dose);
+    dose_.SetPos((std::min)(255, (std::max)(0, edit_number(amount_, 0))));
 }
 
 bool InjectPage::inject_once() {
@@ -585,10 +421,6 @@ bool InjectPage::inject_once() {
     if (chemical < 0 || !sheet_.query(c1kit::injection_script(chemical, amount), reply)) {
         status_.SetWindowText(_T("The game did not take the injection."));
         return false;
-    }
-    if (syringe_.loaded() && !syringe_.injecting()) {
-        syringe_.start_injection();
-        SetTimer(kTimerSyringe, c1kitshell::Syringe::kTickMs, nullptr);
     }
     CString done;
     done.Format(_T("Injected %d of %s"), amount,
@@ -635,7 +467,6 @@ void InjectPage::repeat_tick() {
     if (repeat_total_ > 0 && repeat_done_ >= repeat_total_) {
         stop_repeat(_T("Repeat injection complete"));
     }
-    show_remaining();
 }
 
 void InjectPage::OnStop() {
@@ -649,7 +480,6 @@ void InjectPage::stop_repeat(const CString& why) {
         status_.SetWindowText(why);
     }
     update_repeat_controls();
-    show_remaining();
 }
 
 void InjectPage::OnRepeatChanged() {
@@ -700,10 +530,6 @@ void NamesPage::create_controls() {
 }
 
 void NamesPage::layout(int width, int height) {
-    if (sheet_.classic()) {
-        layout_classic();
-        return;
-    }
     const int m = kMargin;
     const int row = button_height();
     place(search_label_, m, m + 4, 44, text_height());
@@ -718,23 +544,6 @@ void NamesPage::layout(int width, int height) {
     place(rename_, width - m - 2 * 70 - m, edit_row, 70, row - 2);
     place(save_, width - m - 70, edit_row, 70, row - 2);
     place_close(width, height);
-}
-
-// Dialog 152, in its dialog units.  The template's "Index:" and its number
-// are one label here.
-void NamesPage::layout_classic() {
-    place_dlu(search_label_, 4, 6, 26, 8);
-    place_dlu(search_, 32, 4, 100, 12);
-    place_dlu(names_, 4, 20, 372, 150);
-    CRect inside;
-    names_.GetClientRect(&inside);
-    names_.SetColumnWidth(1, inside.Width() - 40 - GetSystemMetrics(SM_CXVSCROLL));
-    place_dlu(index_, 4, 178, 48, 8);
-    place_dlu(name_label_, 54, 178, 22, 8);
-    place_dlu(name_, 78, 176, 190, 12);
-    place_dlu(rename_, 272, 176, 36, 12);
-    place_dlu(save_, 316, 176, 36, 12);
-    close_.ShowWindow(SW_HIDE);
 }
 
 void NamesPage::fill() {
