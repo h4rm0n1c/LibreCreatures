@@ -1,0 +1,9 @@
+STRINGTABLE
+BEGIN
+    32930 "Save the egg you are holding to a file\nExport held egg"
+    32931 "Bring in an egg saved to a file\nImport egg"
+    32932 "This egg's genome is missing from the world's Genetics folder, so it cannot be exported."
+    32933 "The egg file could not be written."
+    32934 "The egg file could not be opened."
+    32935 "That file is not an egg this version can read."
+END

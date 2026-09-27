@@ -36,6 +36,7 @@ LANGUAGE 7, 1
 #include "strings/1031/7.rcinc"
 #include "strings/1031/8.rcinc"
 #include "strings/1031/9.rcinc"
+#include "strings/1031/2059.rcinc"
 #include "version/1031/1.rcinc"
 LANGUAGE 9, 1
 
@@ -72,6 +73,7 @@ LANGUAGE 9, 1
 #include "strings/1033/7.rcinc"
 #include "strings/1033/8.rcinc"
 #include "strings/1033/9.rcinc"
+#include "strings/1033/2059.rcinc"
 #include "version/1033/1.rcinc"
 1 24 "manifest/1-1033.xml"
 LANGUAGE 12, 1
@@ -108,6 +110,7 @@ LANGUAGE 12, 1
 #include "strings/1036/7.rcinc"
 #include "strings/1036/8.rcinc"
 #include "strings/1036/9.rcinc"
+#include "strings/1036/2059.rcinc"
 #include "version/1036/1.rcinc"
 LANGUAGE 16, 1
 
@@ -143,6 +146,7 @@ LANGUAGE 16, 1
 #include "strings/1040/7.rcinc"
 #include "strings/1040/8.rcinc"
 #include "strings/1040/9.rcinc"
+#include "strings/1040/2059.rcinc"
 #include "version/1040/1.rcinc"
 LANGUAGE 17, 1
 
@@ -178,6 +182,7 @@ LANGUAGE 17, 1
 #include "strings/1041/7.rcinc"
 #include "strings/1041/8.rcinc"
 #include "strings/1041/9.rcinc"
+#include "strings/1041/2059.rcinc"
 #include "version/1041/1.rcinc"
 LANGUAGE 9, 2
 
@@ -218,6 +223,7 @@ LANGUAGE 9, 2
 #include "strings/2057/7.rcinc"
 #include "strings/2057/8.rcinc"
 #include "strings/2057/9.rcinc"
+#include "strings/2057/2059.rcinc"
 #include "toolbars/2057/128.rcinc"
 #include "version/2057/1.rcinc"
 103 BITMAP "images/bitmap/103.bmp"
@@ -261,4 +267,5 @@ LANGUAGE 10, 3
 #include "strings/3082/7.rcinc"
 #include "strings/3082/8.rcinc"
 #include "strings/3082/9.rcinc"
+#include "strings/3082/2059.rcinc"
 #include "version/3082/1.rcinc"

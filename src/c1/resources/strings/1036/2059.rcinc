@@ -1,0 +1,9 @@
+STRINGTABLE
+BEGIN
+    32930 "Enregistrer l'œuf que vous tenez dans un fichier\nExporter l'œuf tenu"
+    32931 "Charger un œuf enregistré dans un fichier\nImporter un œuf"
+    32932 "Le génome de cet œuf est absent du dossier Genetics du monde ; il ne peut pas être exporté."
+    32933 "Impossible d'écrire le fichier de l'œuf."
+    32934 "Impossible d'ouvrir le fichier de l'œuf."
+    32935 "Ce fichier n'est pas un œuf lisible par cette version."
+END

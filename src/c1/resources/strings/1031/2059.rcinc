@@ -1,0 +1,9 @@
+STRINGTABLE
+BEGIN
+    32930 "Das gehaltene Ei in einer Datei sichern\nGehaltenes Ei exportieren"
+    32931 "Ein in einer Datei gesichertes Ei laden\nEi importieren"
+    32932 "Das Genom dieses Eis fehlt im Genetics-Ordner der Welt, daher kann es nicht exportiert werden."
+    32933 "Die Ei-Datei konnte nicht geschrieben werden."
+    32934 "Die Ei-Datei konnte nicht geöffnet werden."
+    32935 "Diese Datei ist kein Ei, das diese Version lesen kann."
+END

@@ -33,6 +33,13 @@ constexpr int kSpawnCameraY = 724;
 
 constexpr char kEggFileFilter[] = "Eggs (*.egg)|*.egg|All files (*.*)|*.*||";
 
+// The messages, in the string table beside the two commands' prompts
+// (32930, 32931) in every language.
+constexpr UINT kStringGenomeMissing = 32932;
+constexpr UINT kStringCannotWrite = 32933;
+constexpr UINT kStringCannotOpen = 32934;
+constexpr UINT kStringNotAnEgg = 32935;
+
 creatures1::creatures::GenomeSex genome_sex(std::uint32_t egg_sex) {
     return egg_sex == 2 ? creatures1::creatures::GenomeSex::female
                         : creatures1::creatures::GenomeSex::male;
@@ -94,8 +101,8 @@ private:
     const creatures1::creatures::Genome& genome_;
 };
 
-void warn(const char* text) {
-    ::AfxMessageBox(text, MB_OK | MB_ICONEXCLAMATION);
+void warn(UINT string_id) {
+    ::AfxMessageBox(string_id, MB_OK | MB_ICONEXCLAMATION);
 }
 
 } // namespace
@@ -131,8 +138,7 @@ void export_held_egg(C1WindowsDocument& document) {
         creatures1::creatures::GenomeLifeStage::stage_zero,
         &document.genome_files());
     if (record.genome->payload().empty()) {
-        warn("This egg's genome is missing from the world's Genetics folder, "
-             "so it cannot be exported.");
+        warn(kStringGenomeMissing);
         return;
     }
 
@@ -149,7 +155,7 @@ void export_held_egg(C1WindowsDocument& document) {
     if (!file.Open(dialog.GetPathName(),
                    CFile::modeCreate | CFile::modeWrite | CFile::shareExclusive,
                    &exception)) {
-        warn("The egg file could not be written.");
+        warn(kStringCannotWrite);
         return;
     }
     {
@@ -184,7 +190,7 @@ void import_egg(C1WindowsDocument& document) {
     CFileException exception;
     if (!file.Open(dialog.GetPathName(), CFile::modeRead | CFile::shareDenyWrite,
                    &exception)) {
-        warn("The egg file could not be opened.");
+        warn(kStringCannotOpen);
         return;
     }
     try {
@@ -203,7 +209,7 @@ void import_egg(C1WindowsDocument& document) {
     if (record == nullptr || record->genome == nullptr ||
         record->genome->payload().empty() ||
         !creatures1::creatures::Egg::is_egg_classifier(record->classifier)) {
-        warn("That file is not an egg this version can read.");
+        warn(kStringNotAnEgg);
         return;
     }
 
@@ -246,6 +252,10 @@ void import_egg(C1WindowsDocument& document) {
     document.request_event_bar_viewport_origin(document.viewport_left(),
                                                document.renderer_viewport_top());
     document.set_renderer_viewport_origin(kSpawnCameraX, kSpawnCameraY);
+
+    // The egg is in the world now, so the file is used up, as importing a
+    // creature uses up its .exp.  A file that could not be read is kept.
+    ::DeleteFileA(dialog.GetPathName());
 }
 
 } // namespace creatures1::platform

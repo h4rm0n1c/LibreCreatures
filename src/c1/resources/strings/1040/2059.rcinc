@@ -1,0 +1,9 @@
+STRINGTABLE
+BEGIN
+    32930 "Salva in un file l'uovo che tieni in mano\nEsporta l'uovo tenuto"
+    32931 "Carica un uovo salvato in un file\nImporta uovo"
+    32932 "Il genoma di quest'uovo manca dalla cartella Genetics del mondo, quindi non può essere esportato."
+    32933 "Impossibile scrivere il file dell'uovo."
+    32934 "Impossibile aprire il file dell'uovo."
+    32935 "Questo file non è un uovo leggibile da questa versione."
+END
