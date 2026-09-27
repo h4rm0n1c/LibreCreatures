@@ -104,6 +104,10 @@ void BiochemistryPage::create_controls() {
 }
 
 void BiochemistryPage::layout(int width, int height) {
+    if (sheet_.classic()) {
+        layout_classic();
+        return;
+    }
     const int margin = 7;
     const int row = text_height() + 8;
     const int list_width = (std::min)(320, (std::max)(230, width * 2 / 5));
@@ -120,6 +124,31 @@ void BiochemistryPage::layout(int width, int height) {
     place(clear_, margin, bottom, button_width, row);
     place(close_, width - margin - button_width, bottom, button_width, row);
     chemicals_.SetColumnWidth(0, list_width - 36 - 48 - GetSystemMetrics(SM_CXVSCROLL) - 4);
+}
+
+// The classic look: dialog 133's places.  The graph where its graph was, the
+// checklist (any number of chemicals, as here) where its four chemical
+// boxes and their colour marks were, and the themes in its Themes box with
+// Add and Remove.
+void BiochemistryPage::layout_classic() {
+    if (themes_group_.GetSafeHwnd() == nullptr) {
+        make(themes_group_, _T("BUTTON"), _T("Themes"), BS_GROUPBOX, kControlThemesGroup);
+        themes_group_.SetWindowPos(&wndBottom, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+        save_theme_.SetWindowText(_T("Add"));
+        delete_theme_.SetWindowText(_T("Remove"));
+        theme_label_.ShowWindow(SW_HIDE);
+        clear_.ShowWindow(SW_HIDE);
+    }
+    place_dlu(graph_, 8, 2, 236, 96);
+    place_dlu(chemicals_, 8, 105, 112, 74);
+    place_dlu(themes_group_, 128, 101, 116, 64);
+    place_dlu(themes_, 141, 112, 91, 120);
+    place_dlu(save_theme_, 141, 129, 50, 14);
+    place_dlu(delete_theme_, 142, 146, 50, 14);
+    place_dlu(close_, 194, 170, 50, 14);
+    CRect inside;
+    chemicals_.GetClientRect(&inside);
+    chemicals_.SetColumnWidth(0, (std::max)(40, inside.Width() - 36 - 48 - GetSystemMetrics(SM_CXVSCROLL)));
 }
 
 // Every chemical with a name, by number (allchemicals.str).

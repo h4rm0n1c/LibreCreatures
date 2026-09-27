@@ -120,6 +120,11 @@ protected:
                          bool checkbox = true);
     bool ambience_muted() const { return ambience_muted_; }
     void set_ambience_muted(bool muted);
+    // For a fixed-size sheet: widens the window and its tab strip until
+    // every tab fits on one row (the 1996 sheets had the room; a narrower
+    // one would hide tabs behind scroll arrows).  Call from OnInitDialog,
+    // before enable_ambience.
+    void fit_tabs();
 
     BOOL OnCommand(WPARAM wparam, LPARAM lparam) override;
     BOOL OnNotify(WPARAM wparam, LPARAM lparam, LRESULT* result) override;

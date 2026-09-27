@@ -235,6 +235,25 @@ void KitSheet::add_mute_checkbox() {
     mute_check_.SetCheck(ambience_muted_ ? BST_CHECKED : BST_UNCHECKED);
 }
 
+void KitSheet::fit_tabs() {
+    CTabCtrl* tabs = GetTabControl();
+    const int count = tabs != nullptr ? tabs->GetItemCount() : 0;
+    if (count == 0) return;
+    CRect last, strip;
+    tabs->GetItemRect(count - 1, &last);
+    tabs->GetClientRect(&strip);
+    const int missing = last.right + 4 - strip.Width();
+    if (missing <= 0) return;
+    CRect window, tab_window;
+    GetWindowRect(&window);
+    tabs->GetWindowRect(&tab_window);
+    ScreenToClient(&tab_window);
+    SetWindowPos(nullptr, 0, 0, window.Width() + missing, window.Height(),
+                 SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+    tabs->SetWindowPos(nullptr, 0, 0, tab_window.Width() + missing, tab_window.Height(),
+                       SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+}
+
 void KitSheet::set_ambience_muted(bool muted) {
     ambience_muted_ = muted;
     if (ambience_settings_ != nullptr) {

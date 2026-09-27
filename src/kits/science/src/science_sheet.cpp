@@ -84,6 +84,20 @@ ScienceSheet::ScienceSheet(CFont& default_font)
       injections_page_(*this) {
     m_psh.dwFlags |= PSH_USEHICON;
     m_psh.hIcon = AfxGetApp()->LoadIcon(kIconKit);
+    // The classic look: the original beside this one, and the pictures its
+    // pages use in the game's folder.  The 1996 window size, the cover and
+    // the looping sound, with each page where the 1996 one put its parts
+    // (the Genetics and Brain scanner pages keep this build's own).
+    classic_ = c1kitshell::ClassicArt::find({}, {}, {kIconKit});
+    for (const char* picture : {kCoverPicture, "DOSE.bmp", "Dosage.spr"}) {
+        if (classic_ && ::GetFileAttributesA(game_file(picture).c_str()) == INVALID_FILE_ATTRIBUTES) {
+            classic_.reset();
+        }
+    }
+    if (classic_) {
+        cover_ = std::make_unique<c1kitshell::CoverPage>(kDialogCover, kCoverPicture);
+        AddPage(cover_.get());
+    }
     AddPage(&biochemistry_page_);
     AddPage(&genetics_page_);
     AddPage(&brain_page_);
@@ -99,9 +113,9 @@ ScienceSheet::~ScienceSheet() {
 
 bool ScienceSheet::create_window() {
     load_data_files();
+    const DWORD sizing = classic_ ? 0 : WS_MAXIMIZEBOX | WS_THICKFRAME;  // classic: fixed
     return Create(nullptr,
-                  WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU |
-                      WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_THICKFRAME,
+                  WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | sizing,
                   WS_EX_DLGMODALFRAME) != FALSE;
 }
 
@@ -122,7 +136,12 @@ int ScienceSheet::OnCreate(LPCREATESTRUCT create) {
 
 BOOL ScienceSheet::OnInitDialog() {
     const BOOL result = c1kitshell::KitSheet::OnInitDialog();
-    enable_resizing(CSize(kDefaultPageWidthDlu, kDefaultPageHeightDlu));
+    if (classic_) {
+        fit_tabs();
+        enable_ambience(registry_, kAmbience, kAmbienceVolume);
+    } else {
+        enable_resizing(CSize(kDefaultPageWidthDlu, kDefaultPageHeightDlu));
+    }
     if (CMenu* menu = GetSystemMenu(FALSE)) {
         menu->AppendMenu(MF_SEPARATOR);
         menu->AppendMenu(MF_STRING, kSysCommandOnTop, _T("Always on &top"));
@@ -193,7 +212,8 @@ void ScienceSheet::load_preferences() {
     CRect window;
     GetWindowRect(&window);
     WindowSize size = {};
-    if (registry_->read_binary(c1kit::SettingsScope::user, "Size", &size, sizeof(size)) &&
+    if (!classic_ &&
+        registry_->read_binary(c1kit::SettingsScope::user, "Size", &size, sizeof(size)) &&
         size.width > 0 && size.height > 0) {
         set_window_size(CSize((std::max)(static_cast<int>(size.width), window.Width()),
                               (std::max)(static_cast<int>(size.height), window.Height())));
@@ -210,7 +230,7 @@ void ScienceSheet::load_preferences() {
     // "Page" counts the original's cover as page 0 (the key is shared).
     std::uint32_t page = 1;
     registry_->read_dword(c1kit::SettingsScope::user, "Page", page);
-    saved_page_ = page > 0 ? static_cast<int>(page) - 1 : 0;
+    saved_page_ = classic_ ? static_cast<int>(page) : page > 0 ? static_cast<int>(page) - 1 : 0;
     const int left = location.left < max_left ? location.left : max_left;
     const int top = location.top < max_top ? location.top : max_top;
     SetWindowPos(always_on_top_ != 0 ? &wndTopMost : &wndNoTopMost, left < 0 ? 0 : left,
@@ -232,9 +252,11 @@ void ScienceSheet::save_preferences() {
                                      window.top < 0 ? 0 : window.top};
     const WindowSize size = {window.Width(), window.Height()};
     registry_->write_binary("Location", &location, sizeof(location));
-    registry_->write_binary("Size", &size, sizeof(size));
+    if (!classic_) {
+        registry_->write_binary("Size", &size, sizeof(size));  // the classic window is fixed
+    }
     registry_->write_dword("On Top", always_on_top_);
-    registry_->write_dword("Page", static_cast<std::uint32_t>(GetActiveIndex() + 1));
+    registry_->write_dword("Page", static_cast<std::uint32_t>(GetActiveIndex() + (classic_ ? 0 : 1)));
 }
 
 // Fix (bug 1): one query holder, and one brain report holder, for the kit's

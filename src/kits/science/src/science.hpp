@@ -13,6 +13,7 @@
 #include "c1kitshell/kit_art.hpp"
 #include "c1kitshell/kit_graph.hpp"
 #include "c1kitshell/kit_shell.hpp"
+#include "c1kitshell/kit_syringe.hpp"
 #include "c1kitshell/kit_widgets.hpp"
 #include "c1kit/brain_map.hpp"
 #include "c1kit/conversation.hpp"
@@ -73,6 +74,7 @@ protected:
     DECLARE_MESSAGE_MAP()
 
 private:
+    void layout_classic();  // where dialog 133 put things
     void fill_chemical_list();
     void fill_themes();
     void set_tracked(const std::vector<int>& chemicals);
@@ -88,6 +90,7 @@ private:
     CButton delete_theme_;
     CButton clear_;
     CStatic theme_label_;
+    CButton themes_group_;  // the classic look's "Themes" box
     PaintedView graph_;
     CImageList swatches_;
     c1kitshell::ChemicalGraph plot_{2000, 500};
@@ -247,6 +250,8 @@ protected:
 
 private:
     void draw_bars(CDC& dc, const CRect& rect);
+    // Dialog 135's two columns of short bars, the classic look's.
+    void draw_bars_classic(CDC& dc, const CRect& rect);
 
     PaintedView bars_;
     CComboBox value_;
@@ -270,9 +275,17 @@ protected:
     afx_msg void OnInject();
     afx_msg void OnMedicineChanged();
     afx_msg void OnHScroll(UINT code, UINT position, CScrollBar* bar);
+    afx_msg void OnVScroll(UINT code, UINT position, CScrollBar* bar);
+    afx_msg void OnTimer(UINT_PTR timer_id);
     DECLARE_MESSAGE_MAP()
 
 private:
+    void layout_classic();  // dialog 144, with the syringe
+    // The dose on the slider: the classic one stands upright, most at the
+    // top, as the original's did.
+    int slider_dose() const;
+    void set_slider_dose(int dose);
+    void change_liquid();
     void update_dose_label();
     int selected_chemical() const;
 
@@ -282,6 +295,11 @@ private:
     CStatic level_;
     CStatic medicine_label_;
     CButton inject_;
+    // The classic look's syringe.
+    PaintedView syringe_view_;
+    c1kitshell::Syringe syringe_;
+    c1kitshell::GamePalette palette_;
+    int liquid_ = -1;
 };
 
 // ---------------------------------------------------------------------------
@@ -302,6 +320,8 @@ public:
     ~ScienceSheet() override;
 
     bool create_window();
+    // The classic look: the original beside this one as "Science Kit.old".
+    bool classic() const { return classic_ != nullptr; }
 
     CFont& font() { return default_font_; }
     const Subject& subject() const { return subject_; }
@@ -352,6 +372,8 @@ private:
     void set_always_on_top(bool on);
 
     CFont& default_font_;
+    std::unique_ptr<c1kitshell::ClassicArt> classic_;
+    std::unique_ptr<c1kitshell::CoverPage> cover_;
     BiochemistryPage biochemistry_page_;
     GeneticsPage genetics_page_;
     BrainPage brain_page_;

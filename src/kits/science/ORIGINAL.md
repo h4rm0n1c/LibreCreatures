@@ -4,7 +4,24 @@ How the original `Science Kit.exe` behaves, from its disassembly and from
 running it in the lab. Addresses are in that binary. This build keeps its
 protocol and data files but redesigns every page (below); numbered bugs are
 marked "Fix (bug N)" in the source. It leaves out the cover page and all
-sound.
+sound -- except in the classic look (the original beside it as
+`Science Kit.old`, with `Science.bmp`, `DOSE.bmp` and the dosage sprites
+in the game's folder), which keeps every fix and this build's functions but
+wears the 1996 window: its fixed page size (widened just enough that the
+six tabs fit on one row), the `Science.bmp` cover, and each page's parts
+where the 1996 templates put them -- Biochemistry's graph above its
+chemicals (the checklist, any number, where the four boxes were) and its
+Themes box; Decisions' two columns of short dark-red bars with the reward
+and punishment icons; and Injections' syringe (`DOSE.bmp` and the
+medicine's dosage sprite, by the original's table, filled to the dose and
+animated on Go), upright slider, Go and medicines.  The Genetics and Brain
+scanner pages keep this build's designs, since the 1996 ones (the
+button-stepped breakdown, the spinning DNA, the picture of a human brain)
+were what the redesign replaced.  The original's table also loaded
+Adrenaline's orange liquid and then, falling through to the next case,
+replaced it with the blue; the classic look shows the orange.  The looping
+`kits` sound plays at -10 dB with a "Mute ambient sound" checkbox under the
+pages (saved as `Mute Ambient`).
 
 ## Identity
 

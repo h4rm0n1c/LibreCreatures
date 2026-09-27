@@ -1,13 +1,16 @@
 // Reconstructed from the C1 PE resource tree; raw PE leaves are the oracle.
 // The LibreCreatures build keeps the string tables, the kit icon and the
 // Decisions page's reward and punishment icons (181, 182).  Its pages are
-// laid out in code (lc_dialogs.rcinc); the 1996 dialogs, cover, buttons,
+// laid out in code (lc_dialogs.rcinc); the cover's layout (140) is kept for
+// the classic look, whose picture is the game's Science.bmp; the other 1996
+// dialogs, cover bitmap, buttons,
 // legend swatches and menu 143 are left out.
 #pragma code_page(65001)
 #include "resource_ids.h"
 
 LANGUAGE 7, 1
 
+#include "dialogs/1031/140.rcinc"
 #include "strings/1031/7.rcinc"
 #include "strings/1031/8.rcinc"
 #include "strings/1031/9.rcinc"
@@ -30,6 +33,7 @@ LANGUAGE 7, 1
 #include "strings/1031/26.rcinc"
 LANGUAGE 9, 1
 
+#include "dialogs/1033/140.rcinc"
 #include "strings/1033/7.rcinc"
 #include "strings/1033/8.rcinc"
 #include "strings/1033/9.rcinc"
@@ -53,6 +57,7 @@ LANGUAGE 9, 1
 #include "version/1033/1.rcinc"
 LANGUAGE 12, 1
 
+#include "dialogs/1036/140.rcinc"
 #include "strings/1036/7.rcinc"
 #include "strings/1036/8.rcinc"
 #include "strings/1036/9.rcinc"
@@ -75,6 +80,7 @@ LANGUAGE 12, 1
 #include "strings/1036/26.rcinc"
 LANGUAGE 17, 1
 
+#include "dialogs/1041/140.rcinc"
 #include "strings/1041/7.rcinc"
 #include "strings/1041/8.rcinc"
 #include "strings/1041/9.rcinc"

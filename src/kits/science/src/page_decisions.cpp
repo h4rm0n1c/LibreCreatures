@@ -40,8 +40,13 @@ END_MESSAGE_MAP()
 DecisionsPage::DecisionsPage(ScienceSheet& sheet) : SciencePage(sheet, kStringDecisionsTab) {}
 
 void DecisionsPage::create_controls() {
-    bars_.create(*this, kControlDecisionBars,
-                 [this](CDC& dc, const CRect& rect) { draw_bars(dc, rect); });
+    bars_.create(*this, kControlDecisionBars, [this](CDC& dc, const CRect& rect) {
+        if (sheet_.classic()) {
+            draw_bars_classic(dc, rect);
+        } else {
+            draw_bars(dc, rect);
+        }
+    });
     make(value_label_, _T("STATIC"), _T("Show:"), SS_LEFT, kControlHint);
     make(value_, _T("COMBOBOX"), _T(""), CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP,
          kControlDecisionValue);
@@ -54,6 +59,17 @@ void DecisionsPage::create_controls() {
 }
 
 void DecisionsPage::layout(int width, int height) {
+    if (sheet_.classic()) {
+        // Dialog 135: the bars over the page, the value's box in the space
+        // under the right-hand column, Close where it was.
+        place(bars_, 0, 0, width, height);
+        bars_.ModifyStyle(0, WS_CLIPSIBLINGS);
+        bars_.SetWindowPos(&wndBottom, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+        place_dlu(value_label_, 126, 141, 40, 8);
+        place_dlu(value_, 126, 151, 113, 80);
+        place_dlu(close_, 194, 170, 50, 14);
+        return;
+    }
     const int margin = 7;
     const int row = text_height() + 8;
     const int bottom = height - margin - row;
@@ -158,6 +174,56 @@ void DecisionsPage::draw_bars(CDC& dc, const CRect& rect) {
     y += row_height;
     bar(y, _T("Punishment"), punishment_level_, 255, RGB(0, 0, 160), false);
     icon(punishment_, y);
+}
+
+// The classic look: dialog 135's two columns (the first six actions, then
+// the rest), each a name and a short sunken bar filled dark red, and the
+// reward and punishment bars under the first column with their icons.  The
+// value shown is the chosen one (the original only had output).
+void DecisionsPage::draw_bars_classic(CDC& dc, const CRect& rect) {
+    dc.FillSolidRect(rect, GetSysColor(COLOR_BTNFACE));
+    dc.SetBkMode(TRANSPARENT);
+    dc.SetTextColor(RGB(0, 0, 0));
+    const auto dlu = [this](int x, int y, int w, int h) {
+        CRect r(x, y, x + w, y + h);
+        ::MapDialogRect(GetSafeHwnd(), &r);
+        return r;
+    };
+    const int value_index = value_.GetSafeHwnd() != nullptr ? (std::max)(0, value_.GetCurSel()) : 0;
+    int scale = 255;
+    if (value_index >= 2) {
+        scale = 1;
+        for (const auto& neuron : neurons_) scale = (std::max)(scale, neuron[static_cast<std::size_t>(value_index)]);
+    }
+    const auto bar = [&](const CRect& area, int value, int maximum) {
+        dc.FillSolidRect(area, RGB(255, 255, 255));
+        CRect edge = area;
+        dc.DrawEdge(&edge, BDR_SUNKENOUTER, BF_RECT);
+        const int length = maximum > 0 ? area.Width() * (std::min)((std::max)(value, 0), maximum) / maximum : 0;
+        dc.FillSolidRect(area.left, area.top, length, area.Height(), RGB(128, 0, 0));
+    };
+    const std::vector<std::string>& names = sheet_.neuron_names().decisions;
+    for (std::size_t n = 0; n < names.size() && n < 12; ++n) {
+        const int column = n < 6 ? 0 : 1;
+        const int y = 17 + 21 * static_cast<int>(n % 6);
+        CRect label = dlu(column == 0 ? 6 : 126, y, 37, 8);
+        dc.DrawText(CString(names[n].c_str()), &label, DT_RIGHT | DT_SINGLELINE | DT_VCENTER | DT_NOCLIP);
+        const int value = n < neurons_.size() ? neurons_[n][static_cast<std::size_t>(value_index)] : 0;
+        bar(dlu(column == 0 ? 51 : 177, y, 62, 8), value, scale);
+    }
+    const auto icon = [&](CBitmap& bitmap, const CRect& at) {
+        CDC memory;
+        memory.CreateCompatibleDC(&dc);
+        CBitmap* previous = memory.SelectObject(&bitmap);
+        BITMAP info = {};
+        bitmap.GetBitmap(&info);
+        dc.BitBlt(at.left, at.top, info.bmWidth, info.bmHeight, &memory, 0, 0, SRCCOPY);
+        memory.SelectObject(previous);
+    };
+    icon(reward_, dlu(19, 141, 13, 12));
+    bar(dlu(51, 143, 62, 8), reward_level_, 255);
+    icon(punishment_, dlu(20, 162, 13, 12));
+    bar(dlu(51, 164, 62, 8), punishment_level_, 255);
 }
 
 } // namespace science

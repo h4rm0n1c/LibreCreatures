@@ -42,6 +42,21 @@ constexpr unsigned kCommandBufferBytes = 0x1000;
 constexpr int kDefaultPageWidthDlu = 520;
 constexpr int kDefaultPageHeightDlu = 320;
 
+// The classic look: the cover, the ambience (the 1996 kit's "kits" loop at
+// -10 dB), and each medicine's liquid in the syringe (CInjectPage::
+// RefreshDosageDisplay @ 0x0040aca0's table, by the medicine's place in
+// injections.str; anything past it the blue).
+constexpr unsigned kDialogCover = 140;
+constexpr char kCoverPicture[] = "Science.bmp";
+constexpr char kAmbience[] = "kits";
+constexpr int kAmbienceVolume = -1000;
+constexpr const char* kMedicineLiquids[] = {
+    "yDosage.spr", "ODosage.spr", "BDosage.spr", "cDosage.spr", "pDosage.spr", "sDosage.spr",
+    "Dosage.spr",  "BDosage.spr", "cDosage.spr", "pDosage.spr", "ODosage.spr", "Dosage.spr",
+    "pDosage.spr", "cDosage.spr", "BDosage.spr", "ODosage.spr", "Dosage.spr"};
+constexpr char kOtherMedicineLiquid[] = "BDosage.spr";
+constexpr unsigned kTimerSyringe = 21;  // on the Injections page
+
 // System menu item: Always on top (the original's menu 143, never loaded).
 constexpr unsigned kSysCommandOnTop = 0x0020;
 
@@ -70,6 +85,8 @@ enum : unsigned {
     kControlInject,
     kControlMedicineLevel,
     kControlHint,
+    kControlThemesGroup,  // the classic look's
+    kControlSyringe,
 };
 
 // At most this many chemicals on the graph at once (the 1996 kit had four).
