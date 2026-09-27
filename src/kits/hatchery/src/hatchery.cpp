@@ -36,12 +36,12 @@ CSize bitmap_size(HBITMAP bitmap) {
     return CSize(info.bmWidth, info.bmHeight);
 }
 
-// Draws `bitmap` scaled into `target`, leaving its pure-green pixels out
-// (a mask, as TransparentBlt would, without needing msimg32).  Scaling is
+} // namespace
+
+// A mask, as TransparentBlt would make, without needing msimg32.  Scaling is
 // nearest-neighbour, so a whole-number scale keeps pixel art crisp.
-// `fade_percent` washes it towards `fade_to`.
-void draw_keyed(CDC& dc, HBITMAP bitmap, const CRect& target, int fade_percent = 0,
-                COLORREF fade_to = RGB(0, 0, 0)) {
+void draw_keyed(CDC& dc, HBITMAP bitmap, const CRect& target, int fade_percent, COLORREF fade_to,
+                COLORREF key) {
     const CSize size = bitmap_size(bitmap);
     if (size.cx == 0) {
         return;
@@ -54,7 +54,7 @@ void draw_keyed(CDC& dc, HBITMAP bitmap, const CRect& target, int fade_percent =
     CBitmap mask;
     mask.CreateBitmap(size.cx, size.cy, 1, 1, nullptr);
     CBitmap* previous_mask = mask_dc.SelectObject(&mask);
-    source.SetBkColor(kTransparent);
+    source.SetBkColor(key);
     mask_dc.BitBlt(0, 0, size.cx, size.cy, &source, 0, 0, SRCCOPY);  // green -> white
     // A copy with the green turned black, to OR over the hole the mask cuts.
     CDC image_dc;
@@ -87,6 +87,8 @@ void draw_keyed(CDC& dc, HBITMAP bitmap, const CRect& target, int fade_percent =
     mask_dc.SelectObject(previous_mask);
     ::SelectObject(source.GetSafeHdc(), previous_source);
 }
+
+namespace {
 
 // A game sprite frame as a bitmap whose transparent pixels are the key
 // colour, for draw_keyed.
@@ -484,13 +486,27 @@ BEGIN_MESSAGE_MAP(HatcherySheet, c1kitshell::KitSheet)
     ON_WM_CLOSE()
     ON_WM_DESTROY()
     ON_WM_SYSCOMMAND()
+    ON_WM_INITMENUPOPUP()
+    ON_WM_WINDOWPOSCHANGING()
+    ON_COMMAND(kCommandMute, &HatcherySheet::OnMute)
+    ON_COMMAND(kCommandRefill, &HatcherySheet::OnRefillNest)
+    ON_COMMAND(kCommandAbout, &HatcherySheet::OnAbout)
 END_MESSAGE_MAP()
 
 HatcherySheet::HatcherySheet(CFont& default_font)
-    : KitSheet(kStringToolName, 0), default_font_(default_font), nest_page_(*this) {
+    : KitSheet(kStringToolName, 0), default_font_(default_font), nest_page_(*this),
+      machine_page_(*this) {
     m_psh.dwFlags |= PSH_USEHICON;
     m_psh.hIcon = AfxGetApp()->LoadIcon(kIconKit);
-    AddPage(&nest_page_);
+    // The classic look, when the player's original Hatchery is beside this
+    // one (its pictures are files in the game's Hatchery folder, so they
+    // must be there too): the 1996 machine instead of the nest page.
+    classic_ = c1kitshell::ClassicArt::find({}, {}, {kIconKit});
+    if (classic_ && GetFileAttributesA(game_file("Hatchery\\hatchery.bmp").c_str()) ==
+                        INVALID_FILE_ATTRIBUTES) {
+        classic_.reset();
+    }
+    AddPage(classic_ ? static_cast<CPropertyPage*>(&machine_page_) : &nest_page_);
 }
 
 HatcherySheet::~HatcherySheet() {
@@ -500,9 +516,9 @@ HatcherySheet::~HatcherySheet() {
 }
 
 bool HatcherySheet::create_window() {
-    return Create(nullptr,
-                  WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX |
-                      WS_MAXIMIZEBOX | WS_THICKFRAME,
+    // The classic look is the 1996 fixed-size window.
+    const DWORD sizing = classic_ ? 0 : WS_MAXIMIZEBOX | WS_THICKFRAME;
+    return Create(nullptr, WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | sizing,
                   WS_EX_DLGMODALFRAME) != FALSE;
 }
 
@@ -533,13 +549,18 @@ int HatcherySheet::OnCreate(LPCREATESTRUCT create) {
 
 BOOL HatcherySheet::OnInitDialog() {
     const BOOL result = c1kitshell::KitSheet::OnInitDialog();
-    enable_resizing(CSize(kDefaultPageWidthDlu, kDefaultPageHeightDlu));
+    if (classic_) {
+        set_up_classic_window();
+    } else {
+        enable_resizing(CSize(kDefaultPageWidthDlu, kDefaultPageHeightDlu));
+    }
     SetWindowText(c1kitshell::load_string(kStringToolName));
     if (CMenu* menu = GetSystemMenu(FALSE)) {
         menu->AppendMenu(MF_SEPARATOR);
         menu->AppendMenu(MF_STRING, kSysCommandOnTop, _T("Always on &top"));
     }
     load_preferences();
+    if (classic_) fit_classic_window();  // after anything that sized the sheet
     return result;
 }
 
@@ -549,7 +570,8 @@ void HatcherySheet::load_preferences() {
     CRect window;
     GetWindowRect(&window);
     WindowSize size = {};
-    if (registry_->read_binary(c1kit::SettingsScope::user, "Size", &size, sizeof(size)) &&
+    if (!classic_ &&
+        registry_->read_binary(c1kit::SettingsScope::user, "Size", &size, sizeof(size)) &&
         size.width > 0 && size.height > 0) {
         set_window_size(CSize((std::max)(static_cast<int>(size.width), window.Width()),
                               (std::max)(static_cast<int>(size.height), window.Height())));
@@ -563,6 +585,7 @@ void HatcherySheet::load_preferences() {
         location = {0x100, 0x80};
     }
     registry_->read_dword(c1kit::SettingsScope::user, "On Top", always_on_top_);
+    registry_->read_dword(c1kit::SettingsScope::user, "Mute Ambient", muted_);
     const int left = location.left < max_left ? location.left : max_left;
     const int top = location.top < max_top ? location.top : max_top;
     SetWindowPos(always_on_top_ != 0 ? &wndTopMost : &wndNoTopMost, left < 0 ? 0 : left,
@@ -584,8 +607,11 @@ void HatcherySheet::save_preferences() {
                                      window.top < 0 ? 0 : window.top};
     const WindowSize size = {window.Width(), window.Height()};
     registry_->write_binary("Location", &location, sizeof(location));
-    registry_->write_binary("Size", &size, sizeof(size));
+    if (!classic_) {
+        registry_->write_binary("Size", &size, sizeof(size));  // the classic window is fixed
+    }
     registry_->write_dword("On Top", always_on_top_);
+    registry_->write_dword("Mute Ambient", muted_);
 }
 
 void HatcherySheet::save_nest() {
@@ -631,8 +657,97 @@ void HatcherySheet::OnTimer(UINT_PTR timer_id) {
     if (timer_id == kTimerStartup) {
         KillTimer(kTimerStartup);
         connected_ = connect_to_game(kCommandBufferBytes);
+        if (classic_) {
+            fit_classic_window();
+            machine_page_.refresh();
+        }
     }
     c1kitshell::KitSheet::OnTimer(timer_id);
+}
+
+// The 1996 window: no tabs or buttons, the machine filling it (320 x 240),
+// and its menu -- Help > About Hatchery -- with Options added: "Mute
+// ambient sound" (saved) and "Refill the nest" (for when it is empty, in
+// place of the 1996 Egg Disk).
+void HatcherySheet::set_up_classic_window() {
+    if (CWnd* tabs = GetTabControl()) {
+        tabs->ShowWindow(SW_HIDE);
+    }
+    classic_menu_.CreateMenu();
+    CMenu options;
+    options.CreatePopupMenu();
+    options.AppendMenu(MF_STRING, kCommandMute, _T("&Mute ambient sound"));
+    options.AppendMenu(MF_STRING, kCommandRefill, _T("&Refill the nest"));
+    CMenu help;
+    help.CreatePopupMenu();
+    help.AppendMenu(MF_STRING, kCommandAbout, _T("&About Hatchery..."));
+    classic_menu_.AppendMenu(MF_POPUP, reinterpret_cast<UINT_PTR>(options.Detach()), _T("&Options"));
+    classic_menu_.AppendMenu(MF_POPUP, reinterpret_cast<UINT_PTR>(help.Detach()), _T("&Help"));
+    SetMenu(&classic_menu_);
+    fit_classic_window();
+    sound_.open(GetSafeHwnd());
+}
+
+// The frame for a 320 x 240 client under the menu, from the styles rather
+// than from the current client rectangle, which the property sheet's own
+// sizing leaves stale during start-up.
+CSize HatcherySheet::classic_window_size() const {
+    CRect frame(0, 0, kMachineWidth, kMachineHeight);
+    ::AdjustWindowRectEx(&frame, GetStyle(), TRUE, GetExStyle());
+    return frame.Size() + classic_correction_;
+}
+
+void HatcherySheet::fit_classic_window() {
+    const CSize size = classic_window_size();
+    SetWindowPos(nullptr, 0, 0, size.cx, size.cy, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+    // AdjustWindowRectEx counts the menu bar a pixel short of the drawn one;
+    // measure once and make up the difference.
+    CRect client;
+    GetClientRect(&client);
+    const CSize missing(kMachineWidth - client.Width(), kMachineHeight - client.Height());
+    if (missing != CSize(0, 0)) {
+        classic_correction_ += missing;
+        const CSize corrected = classic_window_size();
+        SetWindowPos(nullptr, 0, 0, corrected.cx, corrected.cy,
+                     SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+    }
+    machine_page_.SetWindowPos(nullptr, 0, 0, kMachineWidth, kMachineHeight, SWP_NOZORDER);
+}
+
+// The classic window is fixed: whatever else sizes the sheet gets the
+// machine's size.
+void HatcherySheet::OnWindowPosChanging(WINDOWPOS* position) {
+    c1kitshell::KitSheet::OnWindowPosChanging(position);
+    if (classic_ && (position->flags & SWP_NOSIZE) == 0) {
+        const CSize size = classic_window_size();
+        position->cx = size.cx;
+        position->cy = size.cy;
+    }
+}
+
+void HatcherySheet::OnInitMenuPopup(CMenu* menu, UINT index, BOOL system_menu) {
+    c1kitshell::KitSheet::OnInitMenuPopup(menu, index, system_menu);
+    if (!system_menu && menu != nullptr) {
+        menu->CheckMenuItem(kCommandMute, muted_ != 0 ? MF_CHECKED : MF_UNCHECKED);
+        menu->EnableMenuItem(kCommandRefill, nest_.any_left() ? MF_GRAYED : MF_ENABLED);
+    }
+}
+
+void HatcherySheet::OnMute() {
+    muted_ = muted_ != 0 ? 0 : 1;
+    if (registry_ != nullptr) registry_->write_dword("Mute Ambient", muted_);
+    machine_page_.refresh();
+}
+
+void HatcherySheet::OnRefillNest() {
+    refill();
+    machine_page_.refresh();
+}
+
+void HatcherySheet::OnAbout() {
+    MessageBox(_T("The Hatchery\n\nLibreCreatures' Hatchery, wearing the 1996 look from the ")
+               _T("original beside it."),
+               _T("About Hatchery"), MB_OK | MB_ICONINFORMATION);
 }
 
 void HatcherySheet::set_always_on_top(bool on) {
@@ -662,6 +777,7 @@ void HatcherySheet::OnClose() {
 
 void HatcherySheet::OnDestroy() {
     save_preferences();
+    sound_.stop_all();
     c1kitshell::KitSheet::OnDestroy();
 }
 

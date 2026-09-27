@@ -51,6 +51,20 @@ norn showing through) for the one picked, and the cracked shell once
 hatched; each labelled with its sex; click to pick, double-click or "Hatch
 this egg" to hatch; the same script and `Eggstra` value.
 
+*Classic look* (with the player's original `Hatchery.exe` beside this one
+as `Hatchery.old`, and the game's `Hatchery\` pictures present): the 1996
+window, 320 x 240 under a menu, composed as CHatcheryView did from the
+install's `Hatchery\*.bmp` (nothing copied): the machine, the nest front
+over the eggs, the fans turning, the lamp flickering now and then, the
+scanner until the kit is connected, and the spinning sex sign over the egg
+under the pointer, which wobbles; double-click hatches.  The 1996 sounds
+play from the install's `Sounds\` (`hfan`, `hdsk`, `hlgt`, `hegg`, `hmle`,
+`hfml`, `hslt`).  The menu keeps Help > About Hatchery and adds Options:
+"Mute ambient sound" (saved as `Mute Ambient`; silences the fan, scanner,
+lamp and hover loops, not the clicks) and "Refill the nest" (enabled when
+it is empty, in place of the Egg Disk).  Both bug fixes below hold in
+either look.
+
 ## Bugs in the original
 
 1. Once the six eggs are gone it wants an "Egg Disk" floppy in drive A,

@@ -153,6 +153,7 @@ function(add_c1_kit target output_name kit_dir)
         comctl32.lib
         comdlg32.lib
         winmm.lib
+        dsound.lib
     )
     set_target_properties(${target} PROPERTIES
         OUTPUT_NAME "${output_name}"

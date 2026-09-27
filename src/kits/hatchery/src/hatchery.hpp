@@ -13,6 +13,7 @@
 
 #include "c1kitshell/kit_art.hpp"
 #include "c1kitshell/kit_shell.hpp"
+#include "c1kitshell/kit_sound.hpp"
 #include "c1kitshell/kit_widgets.hpp"
 #include "c1kit/conversation.hpp"
 #include "c1kit/game_sprite.hpp"
@@ -24,6 +25,58 @@
 namespace hatchery {
 
 class HatcherySheet;
+
+// Draws `bitmap` into `target` (nearest-neighbour when scaled), leaving out
+// its `key`-coloured pixels; `fade_percent` washes it towards `fade_to`.
+void draw_keyed(CDC& dc, HBITMAP bitmap, const CRect& target, int fade_percent = 0,
+                COLORREF fade_to = RGB(0, 0, 0), COLORREF key = RGB(0, 255, 0));
+
+// The classic look (hatchery_classic.cpp): the 1996 machine, 320 x 240 --
+// the incubator from Hatchery\hatchery.bmp with its fans, flickering lamp
+// and scanner, the eggs in its nest, the pointed-at egg wobbling under its
+// spinning sex symbol, and the 1996 sounds -- all read from the game's own
+// Hatchery and Sounds folders at run time.
+class MachinePage : public CPropertyPage {
+public:
+    explicit MachinePage(HatcherySheet& sheet);
+    ~MachinePage() override;
+    void refresh();
+
+protected:
+    BOOL OnInitDialog() override;
+    afx_msg void OnPaint();
+    afx_msg BOOL OnEraseBkgnd(CDC* dc);
+    afx_msg void OnTimer(UINT_PTR timer_id);
+    afx_msg void OnMouseMove(UINT flags, CPoint point);
+    afx_msg void OnLButtonDown(UINT flags, CPoint point);
+    afx_msg void OnLButtonDblClk(UINT flags, CPoint point);
+    afx_msg void OnDestroy();
+    DECLARE_MESSAGE_MAP()
+
+private:
+    void hatch_at(CPoint point);
+    void load_art();
+    void compose(CDC& dc);
+    int egg_at(CPoint point) const;
+    void keep_ambience();
+
+    HatcherySheet& sheet_;
+    HBITMAP background_ = nullptr;
+    HBITMAP front_ = nullptr;
+    HBITMAP eggs_[c1kit::kEggCount] = {};
+    HBITMAP genspin_ = nullptr;
+    HBITMAP fans_[4] = {};
+    HBITMAP scans_[6] = {};
+    HBITMAP lamp_off_ = nullptr;
+    int counter_ = 0;
+    int wobble_[c1kit::kEggCount] = {};
+    int pointed_ = -1;
+    int last_click_egg_ = -1;
+    DWORD last_click_time_ = 0;
+    int fan_channel_ = -1;
+    int scanner_channel_ = -1;
+    int egg_channel_ = -1;
+};
 
 class NestPage : public c1kitshell::LayoutPage {
 public:
@@ -81,6 +134,12 @@ public:
     bool hatch(int slot, CString& why);
     void refill();
     std::string game_file(const std::string& name) const;
+    bool connected() const { return connected_; }
+    // The classic look: the player's original Hatchery beside this one.
+    bool classic() const { return classic_ != nullptr; }
+    c1kitshell::KitSound& sound() { return sound_; }
+    // The saved "Mute ambient sound" (classic look).
+    bool muted() const { return muted_ != 0; }
 
 protected:
     BOOL OnInitDialog() override;
@@ -90,9 +149,18 @@ protected:
     afx_msg void OnClose();
     afx_msg void OnDestroy();
     afx_msg void OnSysCommand(UINT id, LPARAM lparam);
+    afx_msg void OnInitMenuPopup(CMenu* menu, UINT index, BOOL system_menu);
+    afx_msg void OnMute();
+    afx_msg void OnRefillNest();
+    afx_msg void OnAbout();
+    afx_msg void OnWindowPosChanging(WINDOWPOS* position);
     DECLARE_MESSAGE_MAP()
 
 private:
+    void set_up_classic_window();
+    // Sizes the window so its inside is the machine, exactly.
+    void fit_classic_window();
+    CSize classic_window_size() const;
     void load_preferences();
     void save_preferences();
     void save_nest();
@@ -100,6 +168,12 @@ private:
 
     CFont& default_font_;
     NestPage nest_page_;
+    MachinePage machine_page_;
+    std::unique_ptr<c1kitshell::ClassicArt> classic_;
+    CSize classic_correction_{0, 0};  // see fit_classic_window
+    c1kitshell::KitSound sound_;
+    CMenu classic_menu_;
+    std::uint32_t muted_ = 0;
     c1kit::KitSettings* registry_ = nullptr;
     c1kit::Nest nest_;
     std::uint32_t always_on_top_ = 0;

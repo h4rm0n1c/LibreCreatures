@@ -22,6 +22,15 @@ constexpr int kDefaultPageHeightDlu = 220;
 
 constexpr unsigned kSysCommandOnTop = 0x0020;
 
+// The classic look's menu (1996: Help > About Hatchery, ID_APP_ABOUT).
+constexpr unsigned kCommandMute = 0x8101;
+constexpr unsigned kCommandRefill = 0x8102;
+constexpr unsigned kCommandAbout = 57664;
+constexpr unsigned kTimerMachine = 2;
+constexpr unsigned kMachineTickMs = 75;  // the 1996 view's timer
+constexpr int kMachineWidth = 320;
+constexpr int kMachineHeight = 240;
+
 enum : unsigned {
     kControlNest = 3000,
     kControlHatch,
