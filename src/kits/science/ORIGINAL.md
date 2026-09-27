@@ -53,8 +53,12 @@ ctim`. Control state 6 is a new selection.
   `inst,setv var0 1,endm`: three bytes per active neuron, '0' + grid x,
   grid y and value / 16; ParseScannerDdeResponse @ 0x00401880) painted as
   dots over a bitmap of a human brain.
-  *This build:* the brain on its own 64 x 64 grid, zoomed to fill the view,
-  each lobe outlined, coloured and named clear of the others; every neuron
+  *This build:* the brain's lobes arranged by how they feed each other,
+  inputs first, zoomed to fill the view; or, with "Grid positions", where
+  the genome puts them: the whole grid, C1's 64 x 64 (or further, for lobes
+  out on LibreCreatures' extended grid, with C1's edge marked), never
+  drawn smaller than 6 pixels a neuron -- a grid that does not fit then
+  scrolls; each lobe outlined, coloured and named clear of the others; every neuron
   shaded by any of the report's five measures (keeping the neurons at 1..15
   it lists as level 0, on a square-root scale); on the original game, where
   the report is only ever of firing strength (bug 5), exactly by activation,

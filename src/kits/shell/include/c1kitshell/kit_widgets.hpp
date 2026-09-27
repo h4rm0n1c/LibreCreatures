@@ -25,9 +25,18 @@ public:
         double_click_ = std::move(handler);
     }
     void redraw() { if (GetSafeHwnd() != nullptr) Invalidate(FALSE); }
+    // A painting larger than the view scrolls: `size` is how large it is
+    // (scroll bars appear when it does not fit; (0, 0) for none), and the
+    // painter shifts what it draws by scroll_position().
+    void set_content_size(CSize size);
+    CPoint scroll_position() const { return scroll_; }
 
 protected:
     afx_msg void OnPaint();
+    afx_msg void OnSize(UINT type, int cx, int cy);
+    afx_msg void OnHScroll(UINT code, UINT position, CScrollBar* bar);
+    afx_msg void OnVScroll(UINT code, UINT position, CScrollBar* bar);
+    afx_msg BOOL OnMouseWheel(UINT flags, short delta, CPoint point);
     afx_msg BOOL OnEraseBkgnd(CDC*) { return TRUE; }
     afx_msg void OnMouseMove(UINT flags, CPoint point);
     afx_msg void OnLButtonDown(UINT flags, CPoint point);
@@ -40,6 +49,10 @@ private:
     MouseHandler mouse_;
     std::function<void(CPoint)> double_click_;
     bool tracking_ = false;
+    CSize content_{0, 0};
+    CPoint scroll_{0, 0};
+    void update_scroll_bars();
+    void scroll_to(int bar, int position);
 };
 
 // Distinct colours: for plotted lines (the 1996 kits' red, blue, green and

@@ -186,13 +186,16 @@ private:
     CListCtrl lobes_;
     CEdit info_;
     c1kit::BrainActivity activity_;
-    // The part of the 64 x 64 grid drawn (the lobes' extent), and where:
-    // grid cell (view_x_, view_y_) at view_origin_, scale_ pixels a cell.
+    // The cells drawn (arranged, the lobes' extent; on the grid, the whole
+    // grid from (0, 0)), and where: grid cell (view_x_, view_y_) at
+    // view_origin_ (scrolled, when the grid is larger than the page),
+    // scale_ pixels a cell.
     int view_x_ = 0;
     int view_y_ = 0;
     int view_width_ = c1kit::kStandardBrainGrid;
     int view_height_ = c1kit::kStandardBrainGrid;
     CPoint view_origin_;
+    CRect painted_;  // the whole painting, in view coordinates
     double scale_ = 0;
     int hover_lobe_ = -1;
     int hover_neuron_ = -1;

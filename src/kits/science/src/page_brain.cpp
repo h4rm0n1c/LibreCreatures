@@ -24,7 +24,9 @@
 //
 // The lobes are drawn arranged by how they feed each other
 // (c1kit::arrange_lobes) unless "Grid positions" asks for where the genome
-// puts them; values are always read at the real positions.
+// puts them: then the page is the grid itself, C1's 64 x 64 or larger for
+// lobes out on LibreCreatures' extended grid, never shrunk past a readable
+// size -- it scrolls instead.  Values are always read at the real positions.
 //
 // Under the lobes run the genome's connections (c1kit::brain_wiring): which
 // lobe each lobe's dendrites read, and which lobes copy their firing into
@@ -133,6 +135,9 @@ long overlap_area(const CRect& box, const std::vector<CRect>& others) {
 }
 
 constexpr COLORREF kBackground = RGB(18, 20, 28);
+// The smallest a neuron is drawn on the grid, in pixels: past this the grid
+// scrolls rather than shrinks.
+constexpr int kMinCell = 6;
 constexpr COLORREF kExcite = RGB(110, 220, 130);
 constexpr COLORREF kInhibit = RGB(240, 100, 90);
 
@@ -912,8 +917,14 @@ void BrainPage::poll() {
 // Zooms to the lobes: the smallest part of the grid holding them all, as
 // large as the view allows (not a whole number of pixels a cell, so that it
 // fills the view), with room around it for the lobes' names.
+// Arranged: the lobes' extent, as large as the page allows.  On the grid:
+// the grid itself from (0, 0) -- C1's whole 64 x 64, or as far as lobes
+// reach beyond it on LibreCreatures' extended grid -- so every layout is
+// shown where it really is; cells never shrink below kMinCell, and a grid
+// that is then larger than the page scrolls instead.
 void BrainPage::fit_view(const CRect& rect) {
     const std::vector<c1kit::LobeLayout>& lobes = shown();
+    const bool grid = grid_positions();
     int left = c1kit::kBrainGridSize, top = c1kit::kBrainGridSize, right = 0, bottom = 0;
     for (const c1kit::LobeLayout& lobe : lobes) {
         left = (std::min)(left, lobe.x);
@@ -921,9 +932,10 @@ void BrainPage::fit_view(const CRect& rect) {
         right = (std::max)(right, lobe.x + lobe.width);
         bottom = (std::max)(bottom, lobe.y + lobe.height);
     }
-    if (lobes.empty() || right <= left || bottom <= top) {
+    if (grid || lobes.empty() || right <= left || bottom <= top) {
         left = top = 0;
-        right = bottom = c1kit::kStandardBrainGrid;
+        right = (std::max)(right, static_cast<int>(c1kit::kStandardBrainGrid));
+        bottom = (std::max)(bottom, static_cast<int>(c1kit::kStandardBrainGrid));
     }
     view_x_ = left;
     view_y_ = top;
@@ -931,10 +943,29 @@ void BrainPage::fit_view(const CRect& rect) {
     view_height_ = bottom - top;
     const int margin_x = text_height() + 4;  // room for a name down the side
     const int margin_y = text_height() + 4;
-    scale_ = (std::max)(1.0, (std::min)(double(rect.Width() - 2 * margin_x) / view_width_,
-                                        double(rect.Height() - 2 * margin_y) / view_height_));
-    view_origin_ = CPoint(rect.left + int((rect.Width() - scale_ * view_width_) / 2),
-                          rect.top + int((rect.Height() - scale_ * view_height_) / 2));
+    const double fit = (std::min)(double(rect.Width() - 2 * margin_x) / view_width_,
+                                  double(rect.Height() - 2 * margin_y) / view_height_);
+    scale_ = (std::max)(grid ? double(kMinCell) : 1.0, fit);
+    const CSize content(int(std::ceil(scale_ * view_width_)) + 2 * margin_x,
+                        int(std::ceil(scale_ * view_height_)) + 2 * margin_y);
+    const bool scrolls = content.cx > rect.Width() || content.cy > rect.Height();
+    grid_.set_content_size(scrolls ? content : CSize(0, 0));
+    const CPoint scroll = scrolls ? grid_.scroll_position() : CPoint(0, 0);
+    view_origin_ = CPoint(
+        content.cx > rect.Width() ? rect.left + margin_x - scroll.x
+                                  : rect.left + int((rect.Width() - scale_ * view_width_) / 2),
+        content.cy > rect.Height() ? rect.top + margin_y - scroll.y
+                                   : rect.top + int((rect.Height() - scale_ * view_height_) / 2));
+    // The whole painting, of which the view shows part when it scrolls.
+    painted_ = rect;
+    if (content.cx > rect.Width()) {
+        painted_.left = view_origin_.x - margin_x;
+        painted_.right = painted_.left + content.cx;
+    }
+    if (content.cy > rect.Height()) {
+        painted_.top = view_origin_.y - margin_y;
+        painted_.bottom = painted_.top + content.cy;
+    }
 }
 
 bool BrainPage::cell_at(CPoint point, int& x, int& y) const {
@@ -1108,6 +1139,23 @@ void BrainPage::draw_grid(CDC& dc, const CRect& rect) {
             if (y % 8 == 0 || scale_ >= 5) {
                 dc.FillSolidRect(area.left, cell_y(y), area.Width(), 1,
                                  y % 8 == 0 ? RGB(55, 60, 75) : RGB(32, 35, 46));
+            }
+        }
+        // Lobes beyond C1's own grid: where it ends.
+        const int edge = c1kit::kStandardBrainGrid;
+        if (view_width_ > edge || view_height_ > edge) {
+            const COLORREF marker = RGB(150, 130, 70);
+            const CRect box(cell_x(0), cell_y(0), cell_x(edge) + 1, cell_y(edge) + 1);
+            CBrush brush(marker);
+            dc.FrameRect(box, &brush);
+            dc.SetBkMode(TRANSPARENT);
+            dc.SetTextColor(marker);
+            const CString label = _T("C1 grid, 64 x 64");
+            const CSize extent = dc.GetTextExtent(label);
+            if (view_height_ > edge) {
+                dc.TextOut(box.right - extent.cx - 2, box.bottom + 2, label);
+            } else {
+                dc.TextOut(box.right + 3, box.top + 1, label);
             }
         }
     }
@@ -1322,7 +1370,7 @@ void BrainPage::draw_grid(CDC& dc, const CRect& rect) {
 
     // The names: each in the first place clear of every other lobe and name
     // (above, below, then running down beside it, beside, inside), within
-    // the view, or failing that the place least in the way.  Down the side
+    // the painting (scrolled with it), or failing that the place least in the way.  Down the side
     // is for the tall thin lobes (the decision lobe, one neuron wide).
     LOGFONT down_font_description = {};
     if (CFont* font = dc.GetCurrentFont()) {
@@ -1344,9 +1392,9 @@ void BrainPage::draw_grid(CDC& dc, const CRect& rect) {
         const CSize down_extent(extent.cy, extent.cx);
         const int middle_y = (outline.top + outline.bottom - extent.cy) / 2;
         // Above or below, pulled in from the view's edges.
-        const int pulled_x = (std::max)(static_cast<int>(rect.left) + 2,
+        const int pulled_x = (std::max)(static_cast<int>(painted_.left) + 2,
                                         (std::min)(static_cast<int>(outline.left),
-                                                   static_cast<int>(rect.right - extent.cx) - 2));
+                                                   static_cast<int>(painted_.right - extent.cx) - 2));
         // A tall thin lobe is named down its side first.
         const bool tall = outline.Height() > 3 * outline.Width();
         const Place places[] = {
@@ -1378,8 +1426,8 @@ void BrainPage::draw_grid(CDC& dc, const CRect& rect) {
         long least = -1;
         for (std::size_t c = tall ? 0 : 2; c < place_count; ++c) {
             const CRect box(places[c].at, places[c].down ? down_extent : extent);
-            if (box.left < rect.left || box.top < rect.top || box.right > rect.right ||
-                box.bottom > rect.bottom) {
+            if (box.left < painted_.left || box.top < painted_.top || box.right > painted_.right ||
+                box.bottom > painted_.bottom) {
                 continue;
             }
             if (c + 1 == place_count && (box.right > outline.right || box.bottom > outline.bottom)) {

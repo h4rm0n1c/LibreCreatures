@@ -2,6 +2,9 @@
 
 #include "c1kitshell/kit_widgets.hpp"
 
+#include <algorithm>
+#include <climits>
+
 namespace c1kitshell {
 
 // ===========================================================================
@@ -15,6 +18,10 @@ BEGIN_MESSAGE_MAP(PaintedView, CWnd)
     ON_WM_LBUTTONDOWN()
     ON_WM_LBUTTONDBLCLK()
     ON_WM_MOUSELEAVE()
+    ON_WM_SIZE()
+    ON_WM_HSCROLL()
+    ON_WM_VSCROLL()
+    ON_WM_MOUSEWHEEL()
 END_MESSAGE_MAP()
 
 bool PaintedView::create(CWnd& parent, UINT id, Painter painter) {
@@ -46,6 +53,105 @@ void PaintedView::OnPaint() {
     memory.SelectObject(previous_bitmap);
 }
 
+void PaintedView::set_content_size(CSize size) {
+    if (size != content_) {
+        content_ = size;
+        update_scroll_bars();
+    }
+}
+
+// Each bar's range is the painting, its page the view; Windows hides a bar
+// whose page covers its range.  Only changes are applied, since showing or
+// hiding a bar resizes the view and repaints it.
+void PaintedView::update_scroll_bars() {
+    if (GetSafeHwnd() == nullptr) {
+        return;
+    }
+    CRect client;
+    GetClientRect(&client);
+    const int extents[2] = {content_.cx, content_.cy};
+    const int pages[2] = {client.Width(), client.Height()};
+    LONG* positions[2] = {&scroll_.x, &scroll_.y};
+    for (int i = 0; i < 2; ++i) {
+        const int bar = i == 0 ? SB_HORZ : SB_VERT;
+        const int most = extents[i] > pages[i] ? extents[i] - pages[i] : 0;
+        *positions[i] = (std::min)((std::max)(*positions[i], 0L), static_cast<LONG>(most));
+        SCROLLINFO info = {sizeof(info), SIF_ALL};
+        GetScrollInfo(bar, &info, SIF_ALL);
+        const int max = most > 0 ? extents[i] - 1 : 0;
+        const UINT page = most > 0 ? static_cast<UINT>(pages[i]) : 0;
+        if (info.nMin != 0 || info.nMax != max || info.nPage != page ||
+            info.nPos != *positions[i]) {
+            SCROLLINFO wanted = {sizeof(wanted), SIF_RANGE | SIF_PAGE | SIF_POS, 0, max, page,
+                                 static_cast<int>(*positions[i])};
+            SetScrollInfo(bar, &wanted, TRUE);
+        }
+    }
+}
+
+void PaintedView::scroll_to(int bar, int position) {
+    SCROLLINFO info = {sizeof(info), SIF_ALL};
+    GetScrollInfo(bar, &info, SIF_ALL);
+    const int most = info.nMax - static_cast<int>(info.nPage) + 1;
+    position = (std::max)(0, (std::min)(position, most > 0 ? most : 0));
+    LONG& current = bar == SB_HORZ ? scroll_.x : scroll_.y;
+    if (position != current) {
+        current = position;
+        SetScrollPos(bar, position, TRUE);
+        redraw();
+    }
+}
+
+void PaintedView::OnSize(UINT type, int cx, int cy) {
+    CWnd::OnSize(type, cx, cy);
+    update_scroll_bars();
+}
+
+namespace {
+
+int scrolled(int bar_code, int current, int page, int track) {
+    switch (bar_code) {
+    case SB_LINEUP: return current - 16;
+    case SB_LINEDOWN: return current + 16;
+    case SB_PAGEUP: return current - page;
+    case SB_PAGEDOWN: return current + page;
+    case SB_THUMBTRACK:
+    case SB_THUMBPOSITION: return track;
+    case SB_TOP: return 0;
+    case SB_BOTTOM: return INT_MAX / 2;
+    default: return current;
+    }
+}
+
+} // namespace
+
+void PaintedView::OnHScroll(UINT code, UINT, CScrollBar*) {
+    SCROLLINFO info = {sizeof(info), SIF_ALL};
+    GetScrollInfo(SB_HORZ, &info, SIF_ALL);
+    scroll_to(SB_HORZ, scrolled(code, scroll_.x, static_cast<int>(info.nPage), info.nTrackPos));
+}
+
+void PaintedView::OnVScroll(UINT code, UINT, CScrollBar*) {
+    SCROLLINFO info = {sizeof(info), SIF_ALL};
+    GetScrollInfo(SB_VERT, &info, SIF_ALL);
+    scroll_to(SB_VERT, scrolled(code, scroll_.y, static_cast<int>(info.nPage), info.nTrackPos));
+}
+
+// The wheel scrolls down and up, or across with Shift (or when the painting
+// is only too wide).
+BOOL PaintedView::OnMouseWheel(UINT flags, short delta, CPoint) {
+    CRect client;
+    GetClientRect(&client);
+    const bool across = (flags & MK_SHIFT) != 0 || content_.cy <= client.Height();
+    const int step = -delta * 48 / WHEEL_DELTA;
+    if (across) {
+        scroll_to(SB_HORZ, scroll_.x + step);
+    } else {
+        scroll_to(SB_VERT, scroll_.y + step);
+    }
+    return TRUE;
+}
+
 void PaintedView::OnMouseMove(UINT flags, CPoint point) {
     if (!tracking_) {
         TRACKMOUSEEVENT track = {sizeof(track), TME_LEAVE, GetSafeHwnd(), 0};
@@ -58,6 +164,9 @@ void PaintedView::OnMouseMove(UINT flags, CPoint point) {
 }
 
 void PaintedView::OnLButtonDown(UINT flags, CPoint point) {
+    if (content_ != CSize(0, 0)) {
+        SetFocus();  // for the wheel
+    }
     if (mouse_) {
         mouse_(point, true);
     }
