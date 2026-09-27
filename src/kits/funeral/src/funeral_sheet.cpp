@@ -79,11 +79,8 @@ FuneralSheet::FuneralSheet(CFont& default_font)
     : KitSheet(kStringTitle, 0),
       default_font_(default_font),
       graveyard_page_(*this) {
-    // The classic look: the 1996 buttons and icon, from the original kit.
-    classic_ = c1kitshell::ClassicArt::find(
-        {}, {_T("NEXTU"), _T("PREVU"), _T("NEXTAU"), _T("PREVAU")}, {kIconKit});
     m_psh.dwFlags |= PSH_USEHICON;
-    m_psh.hIcon = c1kitshell::kit_icon(kIconKit, classic_.get());
+    m_psh.hIcon = AfxGetApp()->LoadIcon(kIconKit);
     AddPage(&graveyard_page_);
 }
 

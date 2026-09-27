@@ -23,6 +23,7 @@ LANGUAGE 9, 1
 #include "strings/1033/8.rcinc"
 #include "version/1033/1.rcinc"
 128 ICON "images/icon/128.ico"
+142 BITMAP "images/bitmap/142.bmp"
 LANGUAGE 12, 1
 
 #include "dialogs/1036/100.rcinc"

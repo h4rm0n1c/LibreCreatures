@@ -49,12 +49,8 @@ void DecisionsPage::create_controls() {
         value_.AddString(name);
     }
     value_.SetCurSel(0);
-    // The 1996 icons in the classic look; otherwise they are drawn.
-    if (const c1kitshell::ClassicArt* art = sheet_.classic_art()) {
-        reward_.Attach(LoadImage(art->module(), MAKEINTRESOURCE(kBitmapReward), IMAGE_BITMAP, 0, 0, 0));
-        punishment_.Attach(
-            LoadImage(art->module(), MAKEINTRESOURCE(kBitmapPunishment), IMAGE_BITMAP, 0, 0, 0));
-    }
+    reward_.LoadBitmap(kBitmapReward);
+    punishment_.LoadBitmap(kBitmapPunishment);
 }
 
 void DecisionsPage::layout(int width, int height) {
@@ -148,34 +144,20 @@ void DecisionsPage::draw_bars(CDC& dc, const CRect& rect) {
         y += row_height;
     }
     y += row_height / 2;
-    // Reward and punishment (the learning chemicals), each with an icon: the
-    // 1996 one in the classic look, else a disc with a plus or a minus.
-    const auto icon = [&](CBitmap& bitmap, int top, COLORREF colour, bool plus) {
-        const int left = rect.left + label_width - 24;
-        const int y0 = top + (row_height - 17) / 2;
-        if (bitmap.GetSafeHandle() != nullptr) {
-            CDC memory;
-            memory.CreateCompatibleDC(&dc);
-            CBitmap* previous = memory.SelectObject(&bitmap);
-            dc.BitBlt(left, y0, 17, 17, &memory, 0, 0, SRCCOPY);
-            memory.SelectObject(previous);
-            return;
-        }
-        CBrush disc(colour);
-        CPen edge(PS_SOLID, 1, colour);
-        CBrush* old_brush = dc.SelectObject(&disc);
-        CPen* old_pen = dc.SelectObject(&edge);
-        dc.Ellipse(left + 1, y0 + 1, left + 16, y0 + 16);
-        dc.SelectObject(old_brush);
-        dc.SelectObject(old_pen);
-        dc.FillSolidRect(left + 4, y0 + 7, 9, 3, RGB(255, 255, 255));
-        if (plus) dc.FillSolidRect(left + 7, y0 + 4, 3, 9, RGB(255, 255, 255));
+    // Reward and punishment (the learning chemicals), with the 1996 icons.
+    const auto icon = [&](CBitmap& bitmap, int top) {
+        CDC memory;
+        memory.CreateCompatibleDC(&dc);
+        CBitmap* previous = memory.SelectObject(&bitmap);
+        dc.BitBlt(rect.left + label_width - 24, top + (row_height - 17) / 2, 17, 17, &memory, 0, 0,
+                  SRCCOPY);
+        memory.SelectObject(previous);
     };
     bar(y, _T("Reward"), reward_level_, 255, RGB(0, 140, 0), false);
-    icon(reward_, y, RGB(0, 140, 0), true);
+    icon(reward_, y);
     y += row_height;
     bar(y, _T("Punishment"), punishment_level_, 255, RGB(0, 0, 160), false);
-    icon(punishment_, y, RGB(0, 0, 160), false);
+    icon(punishment_, y);
 }
 
 } // namespace science

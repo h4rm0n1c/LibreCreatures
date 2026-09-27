@@ -321,9 +321,6 @@ public:
     std::vector<c1kit::ChemicalTheme>& themes() { return themes_; }
     bool save_themes();
     const std::vector<c1kit::LobeLayout>& lobes() const { return lobes_; }
-    // The classic look (c1kitshell::ClassicArt): the player's original kit
-    // beside this one, or null for this kit's own interface.
-    const c1kitshell::ClassicArt* classic_art() const { return classic_.get(); }
     CString name_for_moniker(const std::string& moniker) const;
     std::string world_file(const std::string& name) const;
     std::string game_file(const std::string& name) const;
@@ -367,7 +364,6 @@ private:
     std::vector<c1kit::ChemicalTheme> themes_;
     std::vector<c1kit::OwnerRecord> register_;
     std::vector<c1kit::LobeLayout> lobes_;
-    std::unique_ptr<c1kitshell::ClassicArt> classic_;
     std::uint32_t always_on_top_ = 0;
     int saved_page_ = 0;
     unsigned poll_count_ = 0;

@@ -35,13 +35,15 @@ played WAV effects and looping ambience, which players found maddening.
 ## Art, and the classic look
 
 The kits carry none of the original kits' pictures.  They do carry the
-originals' icons, as the Community Edition does -- small, stock interface
-pieces like the game's own toolbar and cursor.  Every other picture a kit
-shows is either drawn by the kit itself (button faces, symbols and marks are
-drawn in code) or read, while it runs, from the player's own copy of the
-game: the pictures the 1996 kits kept as files in the game's folder (the
-album wallpaper, the headstones, the score counters, the egg sprites) are
-loaded from there and never copied into this repository.
+originals' small, stock interface pieces -- the icons, the little button
+faces, the list and chemical markers -- as the Community Edition does, and
+as the game carries its own toolbar and cursor.  Every larger picture a kit
+shows is either drawn by the kit itself or read, while it runs, from the
+player's own copy of the game: the pictures the 1996 kits kept as files in
+the game's folder (the album wallpaper, the headstones, the score counters,
+the egg sprites) are loaded from there, and the ones inside the original
+kits (cover pages, the alert faces) from the original kit itself (below),
+and none is ever copied into this repository.
 
 A player who owns the original kits can have their 1996 look back.  Rename
 each original kit beside the new one to `<name>.old` (for example
@@ -56,7 +58,8 @@ is no other switch.
 
 So the line the kits hold is: none of the original kits' pictures is copied
 into them or into this repository; those are only ever loaded at run time
-from files the player already has.  The 1996 dialog layouts (the positions and sizes of a
+from files the player already has.  Only small interface pieces are
+carried.  The 1996 dialog layouts (the positions and sizes of a
 page's controls) are carried in the kits, as the structure a classic page is
 built on; they hold no artwork.
 

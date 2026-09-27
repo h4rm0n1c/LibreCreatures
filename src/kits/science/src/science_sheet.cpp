@@ -83,9 +83,7 @@ ScienceSheet::ScienceSheet(CFont& default_font)
       decisions_page_(*this),
       injections_page_(*this) {
     m_psh.dwFlags |= PSH_USEHICON;
-    // The classic look's art, from the original kit when it is beside this one.
-    classic_ = c1kitshell::ClassicArt::find({kBitmapReward, kBitmapPunishment}, {}, {kIconKit});
-    m_psh.hIcon = c1kitshell::kit_icon(kIconKit, classic_.get());
+    m_psh.hIcon = AfxGetApp()->LoadIcon(kIconKit);
     AddPage(&biochemistry_page_);
     AddPage(&genetics_page_);
     AddPage(&brain_page_);

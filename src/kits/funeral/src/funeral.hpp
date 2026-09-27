@@ -71,8 +71,8 @@ private:
     CString tab_;
     std::vector<c1kit::Photo> photos_;
     int selected_photo_ = 0;
-    c1kitshell::FaceButton previous_;
-    c1kitshell::FaceButton next_;
+    CBitmapButton previous_;
+    CBitmapButton next_;
     c1kitshell::Canvas picture_;
     Lettering lettering_;
     CRect life_span_box_;
@@ -124,8 +124,8 @@ private:
 
     FuneralSheet& sheet_;
     std::string selected_;  // moniker of the grave shown
-    c1kitshell::FaceButton previous_;
-    c1kitshell::FaceButton next_;
+    CBitmapButton previous_;
+    CBitmapButton next_;
     c1kitshell::Canvas picture_;
     Lettering name_lettering_;
     Lettering lettering_;
@@ -152,9 +152,6 @@ public:
     // A creature's name from the graves or the Register, or its moniker.
     CString name_for_moniker(const std::string& moniker) const;
     std::string world_file(const std::string& name) const;
-    // The classic look (c1kitshell::ClassicArt): the player's original kit
-    // beside this one, or null for this kit's own interface.
-    const c1kitshell::ClassicArt* classic_art() const { return classic_.get(); }
 
     // Writes the graves file now.
     bool save_graves();
@@ -176,7 +173,6 @@ private:
     void load_preferences();
     void save_preferences();
     void connect();
-    std::unique_ptr<c1kitshell::ClassicArt> classic_;
     void load_register();
     void load_graves();
     void creature_died(const std::string& moniker);

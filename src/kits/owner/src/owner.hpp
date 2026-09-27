@@ -81,11 +81,11 @@ private:
     void draw_picture();
 
     OwnerSheet& sheet_;
-    c1kitshell::FaceButton save_as_;
-    c1kitshell::FaceButton delete_;
-    c1kitshell::FaceButton camera_;
-    c1kitshell::FaceButton previous_;
-    c1kitshell::FaceButton next_;
+    CBitmapButton save_as_;
+    CBitmapButton delete_;
+    CBitmapButton camera_;
+    CBitmapButton previous_;
+    CBitmapButton next_;
     c1kitshell::Canvas picture_;
     bool initialized_ = false;
 };
@@ -132,9 +132,6 @@ public:
     int selected_photo() const { return selected_photo_; }
     void select_photo(int index);
     const c1kitshell::GamePalette& palette() const { return palette_; }
-    // The classic look (c1kitshell::ClassicArt): the player's original kit
-    // beside this one, or null for this kit's own interface.
-    const c1kitshell::ClassicArt* classic_art() const { return classic_.get(); }
 
     // Register Birth: store the record on the creature and in the register.
     bool register_birth(const c1kit::OwnerRecord& record);
@@ -161,7 +158,6 @@ private:
     void save_preferences();
     void connect();
     bool query(const char* script, std::string& reply);
-    std::unique_ptr<c1kitshell::ClassicArt> classic_;
     void take_subject();       // `putv ownr`, then everything about it
     void refresh_subject();    // name, record, sex and age
     void refresh_age();

@@ -139,9 +139,8 @@ MemorialPage::MemorialPage(FuneralSheet& sheet, const std::string& moniker,
 BOOL MemorialPage::OnInitDialog() {
     CPropertyPage::OnInitDialog();
     prepare_picture(*this);
-    // The 1996 bitmap buttons (c1kitshell::FaceButton).
-    previous_.load_faces(kControlPreviousPhoto, *this, sheet_.classic_art());
-    next_.load_faces(kControlNextPhoto, *this, sheet_.classic_art());
+    previous_.AutoLoad(kControlPreviousPhoto, this);
+    next_.AutoLoad(kControlNextPhoto, this);
     life_span_box_ = take_text_box(*this, kControlPicture, kControlLifeSpan);
     lettering_.create(13, FW_BOLD);
     epitaph_brush_.CreateSolidBrush(kPanelColour);
@@ -361,9 +360,8 @@ GraveyardPage::GraveyardPage(FuneralSheet& sheet)
 BOOL GraveyardPage::OnInitDialog() {
     CPropertyPage::OnInitDialog();
     prepare_picture(*this);
-    // The 1996 bitmap buttons (c1kitshell::FaceButton).
-    previous_.load_faces(kControlPreviousPhoto, *this, sheet_.classic_art());
-    next_.load_faces(kControlNextPhoto, *this, sheet_.classic_art());
+    previous_.AutoLoad(kControlPreviousPhoto, this);
+    next_.AutoLoad(kControlNextPhoto, this);
     name_box_ = take_text_box(*this, kControlPicture, kControlHeadstoneName);
     span_box_ = take_text_box(*this, kControlPicture, kControlLifeSpan);
     epitaph_box_ = take_text_box(*this, kControlPicture, kControlHeadstoneEpitaph);

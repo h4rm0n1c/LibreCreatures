@@ -10,9 +10,9 @@ namespace observation {
 
 namespace {
 
-// This kit's own marks for a creature about to give birth (an egg), near
-// death (a headstone) and pregnant (the female symbol), drawn to fit `r`;
-// the classic look uses the 1996 pictures instead.
+// This kit's own alert pictures for a creature about to give birth (an
+// egg), near death (a headstone) and pregnant (the female symbol), drawn to
+// fit `r`; the classic look shows the 1996 faces, read from the original.
 void draw_status_glyph(CDC& dc, int kind, const CRect& r) {
     const int size = (std::min)(r.Width(), r.Height());
     const int x = r.left + (r.Width() - size) / 2, y = r.top + (r.Height() - size) / 2;
@@ -87,25 +87,14 @@ BOOL OverviewPage::OnInitDialog() {
     CPropertyPage::OnInitDialog();
     list_.SubclassDlgItem(kControlOverviewList, this);
     list_.SetExtendedStyle(list_.GetExtendedStyle() | LVS_EX_FULLROWSELECT);
-    // The egg, grave and sex marks: the 1996 strip, from the original kit
-    // in the classic look; otherwise drawn here.
+    // The egg, grave and sex marks: the 1996 strip (this kit's copy; the
+    // classic look reads the original kit's).
     {
         CBitmap strip;
-        if (const HMODULE art = sheet_.art_module()) {
-            strip.Attach(static_cast<HBITMAP>(LoadImage(
-                art, MAKEINTRESOURCE(kBitmapListIcons), IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION)));
-        } else {
-            CClientDC screen(this);
-            strip.CreateCompatibleBitmap(&screen, 64, 16);
-            CDC dc;
-            dc.CreateCompatibleDC(&screen);
-            CBitmap* previous = dc.SelectObject(&strip);
-            dc.FillSolidRect(0, 0, 64, 16, RGB(255, 255, 255));  // the mask colour
-            for (int kind = kIconBirth; kind <= kIconPregnant; ++kind) {
-                draw_status_glyph(dc, kind, CRect(kind * 16 + 1, 1, kind * 16 + 15, 15));
-            }
-            dc.SelectObject(previous);
-        }
+        const HMODULE art = sheet_.art_module();
+        strip.Attach(static_cast<HBITMAP>(
+            LoadImage(art != nullptr ? art : AfxGetResourceHandle(),
+                      MAKEINTRESOURCE(kBitmapListIcons), IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION)));
         BITMAP info = {};
         if (strip.GetSafeHandle() != nullptr && strip.GetBitmap(&info) != 0) {
             icons_.Create(16, info.bmHeight, ILC_COLOR24 | ILC_MASK, info.bmWidth / 16, 1);

@@ -218,19 +218,6 @@ private:
     CString path_;
 };
 
-// A 1996 bitmap button, named by its caption as MFC's AutoLoad names its
-// faces ("<caption>U", "D" and "F"): in the classic look the faces are the
-// original kit's; otherwise they are drawn here, a raised button with a
-// glyph for what it does (CAMERA, DELETE, SAVEAS, NEXT, PREV...), at the
-// 1996 size.  `art` null: this kit's own.
-class FaceButton : public CBitmapButton {
-public:
-    bool load_faces(UINT control, CWnd& parent, const ClassicArt* art);
-};
-
-// The kit's icon: the original kit's in the classic look, else this kit's.
-HICON kit_icon(UINT icon_id, const ClassicArt* art);
-
 // The 1996 kits' first page: a picture filling the page, and the kit's icon
 // on its tab.
 class CoverPage : public CPropertyPage {
