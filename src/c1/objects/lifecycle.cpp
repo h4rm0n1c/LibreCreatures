@@ -57,6 +57,10 @@ void delete_object_and_purge_runtime_references(
         host.clear_edit_object();
     }
 
+    // Not native, as in Object::initialize_runtime_state: a carried norn
+    // deleted from the hand would otherwise leave the hand frozen.
+    host.release_from_pointer_tool(object);
+
     host.remove_from_event_bar(object, true);
     host.purge_destroy_when_finished_macros(object);
 

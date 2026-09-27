@@ -3660,6 +3660,32 @@ bool C1WindowsDocument::selected_creature_exists() const {
     return selected_creature() != nullptr;
 }
 
+void C1WindowsDocument::release_from_pointer_tool(
+    creatures1::objects::Object& object) {
+    // The carried object is the one unbounded object besides the hand.  Run
+    // the hand's event 4 now, as a drop does, while the object still exists
+    // for the drop script; queued, it would be purged with the object.  The
+    // object itself stops following the mouse too: left unbounded, the next
+    // scroll moves it from where it was put away back under the hand.
+    creatures1::objects::Object* pointer = pointer_tool();
+    if (pointer == nullptr || pointer == &object ||
+        !object.uses_unbounded_world_position()) {
+        return;
+    }
+    // A carried norn is let go the way Creature's own drop does it, with the
+    // hand as the source: from a creature, event 4 is the hand's stimulus.
+    creatures1::objects::QueuedObjectEvent event;
+    event.source = creature_for_object(object) != nullptr ? pointer : &object;
+    event.target = pointer;
+    event.event_id = creatures1::objects::ObjectEventId::event_4;
+    WindowsObjectEventRuntime runtime(*this);
+    runtime.handle_event_4(*pointer, event);
+    object.set_bounds_mode(
+        static_cast<std::uint32_t>(
+            creatures1::objects::Object::BoundsMode::default_world),
+        renderables());
+}
+
 void C1WindowsDocument::clear_references_from_other_object(
     creatures1::objects::Object& object,
     creatures1::objects::Object& deleted_object) {

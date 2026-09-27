@@ -114,6 +114,9 @@ public:
     virtual ~ObjectInitializationHost() = default;
     virtual bool is_edit_object(const Object& object) const = 0;
     virtual void clear_edit_object() = 0;
+    // Lets go of the object if the hand is carrying it, as dropping it
+    // would.  Not native: see Object::initialize_runtime_state.
+    virtual void release_from_pointer_tool(Object& object) = 0;
     virtual void remove_from_event_bar(Object& object,
                                        bool remove_all_entries) = 0;
     virtual void purge_destroy_when_finished_macros(Object& object) = 0;

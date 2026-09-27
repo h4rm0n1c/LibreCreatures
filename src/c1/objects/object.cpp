@@ -383,6 +383,13 @@ void Object::initialize_runtime_state(ObjectInitializationHost& runtime) {
     if (runtime.is_edit_object(*this)) {
         runtime.clear_edit_object();
     }
+
+    // Not native: neither this (`kill` on an object) nor the permanent
+    // delete @0x0040e9f0 lets the hand go.  While the hand carries
+    // something, that object follows the mouse and the hand is placed on it,
+    // so removing it -- a norn eating food straight out of the hand -- left
+    // the hand frozen where it was until the world was reloaded.
+    runtime.release_from_pointer_tool(*this);
     runtime.remove_from_event_bar(*this, true);
     runtime.purge_destroy_when_finished_macros(*this);
 
