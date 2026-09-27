@@ -6,6 +6,8 @@ BEGIN
         MENUITEM "", 0
         MENUITEM "&Exporter créature actuelle", 32863
         MENUITEM "&Importer créature", 32864
+        MENUITEM "Exporter l'œu&f tenu...", 32930
+        MENUITEM "Importer un œ&uf...", 32931
         MENUITEM "", 0
         MENUITEM "&Quitter", 57665
     END

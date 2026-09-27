@@ -1,5 +1,6 @@
 #include "windows_embedded_kit_host.hpp"
 #include "windows_creature_transfer_host.hpp"
+#include "windows_egg_transfer.hpp"
 #include "windows_macro_host.hpp"
 #include "windows_creature_hosts.hpp"
 #include "windows_shell.hpp"
@@ -393,6 +394,11 @@ BEGIN_MESSAGE_MAP(C1MainFrame, CFrameWnd)
     ON_COMMAND(32864, &C1MainFrame::OnImportCreature)
     ON_COMMAND(32863, &C1MainFrame::OnExportCurrentCreature)
     ON_UPDATE_COMMAND_UI(32863, &C1MainFrame::OnUpdateExportCurrentCreature)
+    // Not native: File > Export Held Egg... and Import Egg..., clear of
+    // the embedded kit tools' 0x8086-0x8099 range below.
+    ON_COMMAND(32930, &C1MainFrame::OnExportHeldEgg)
+    ON_UPDATE_COMMAND_UI(32930, &C1MainFrame::OnUpdateExportHeldEgg)
+    ON_COMMAND(32931, &C1MainFrame::OnImportEgg)
     ON_COMMAND(32804, &C1MainFrame::OnCreateMaleNorn)
     ON_COMMAND(32805, &C1MainFrame::OnCreateFemaleNorn)
     ON_COMMAND(32897, &C1MainFrame::OnMuteCreatureVoices)
@@ -1304,6 +1310,25 @@ void C1MainFrame::OnUpdateExportCurrentCreature(CCmdUI* command_ui) {
     auto* document = DYNAMIC_DOWNCAST(C1WindowsDocument, GetActiveDocument());
     command_ui->Enable(document != nullptr &&
                        document->selected_creature() != nullptr);
+}
+
+void C1MainFrame::OnExportHeldEgg() {
+    auto* document = DYNAMIC_DOWNCAST(C1WindowsDocument, GetActiveDocument());
+    if (document != nullptr) {
+        export_held_egg(*document);
+    }
+}
+
+void C1MainFrame::OnUpdateExportHeldEgg(CCmdUI* command_ui) {
+    auto* document = DYNAMIC_DOWNCAST(C1WindowsDocument, GetActiveDocument());
+    command_ui->Enable(document != nullptr && held_egg(*document) != nullptr);
+}
+
+void C1MainFrame::OnImportEgg() {
+    auto* document = DYNAMIC_DOWNCAST(C1WindowsDocument, GetActiveDocument());
+    if (document != nullptr) {
+        import_egg(*document);
+    }
 }
 
 namespace {

@@ -6,6 +6,8 @@ BEGIN
         MENUITEM "", 0
         MENUITEM "Aktuelles Wesen &exportieren", 32863
         MENUITEM "Wesen &importieren", 32864
+        MENUITEM "Gehaltenes E&i exportieren...", 32930
+        MENUITEM "Ei i&mportieren...", 32931
         MENUITEM "", 0
         MENUITEM "E&nde", 57665
     END

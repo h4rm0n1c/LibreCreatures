@@ -6,6 +6,8 @@ BEGIN
         MENUITEM "", 0
         MENUITEM "&Export current creature", 32863
         MENUITEM "&Import creature", 32864
+        MENUITEM "Export &held egg...", 32930
+        MENUITEM "Import e&gg...", 32931
         MENUITEM "", 0
         MENUITEM "E&xit", 57665
     END

@@ -301,6 +301,9 @@ public:
     afx_msg void OnImportCreature();
     afx_msg void OnExportCurrentCreature();
     afx_msg void OnUpdateExportCurrentCreature(CCmdUI* command_ui);
+    afx_msg void OnExportHeldEgg();
+    afx_msg void OnUpdateExportHeldEgg(CCmdUI* command_ui);
+    afx_msg void OnImportEgg();
     afx_msg void OnCreateMaleNorn();
     afx_msg void OnCreateFemaleNorn();
     afx_msg void OnMuteCreatureVoices();
@@ -1308,6 +1311,8 @@ public:
         creatures1::objects::Object& object) override;
     void delete_object(creatures1::objects::Object& object) override;
     void delete_creature(creatures1::creatures::Creature& creature);
+    // The permanent delete for any world object (an exported egg).
+    void delete_world_object(creatures1::objects::Object& object);
     // Creature::RemoveFromWorld (0040e0d0) drops one living norn from the score.
     void decrement_living_norn_score();
     void remove_from_selection(creatures1::creatures::Creature& creature);

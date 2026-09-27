@@ -6,6 +6,8 @@ BEGIN
         MENUITEM "", 0
         MENUITEM "ノームをエクスポートする", 32863
         MENUITEM "ノームをインポートする", 32864
+        MENUITEM "持っている卵をエクスポートする...", 32930
+        MENUITEM "卵をインポートする...", 32931
         MENUITEM "", 0
         MENUITEM "終了", 57665
     END

@@ -9,6 +9,7 @@
 #include "../display/bitmap.hpp"
 #include "../world/viewport.hpp"
 #include "../archive/funeral_kit.hpp"
+#include "../creatures/egg.hpp"
 
 #include <limits>
 #include <optional>
@@ -3731,6 +3732,12 @@ void C1WindowsDocument::delete_creature(
         creature.skeleton(), *this, event_scheduler_, object_registry());
 }
 
+void C1WindowsDocument::delete_world_object(
+    creatures1::objects::Object& object) {
+    creatures1::objects::delete_object_and_purge_runtime_references(
+        object, *this, event_scheduler_, object_registry());
+}
+
 void C1WindowsDocument::add_to_world_object_registry( creatures1::objects::Object& object) {
     if (world_runtime_ == nullptr) {
         throw std::logic_error(
@@ -5203,6 +5210,11 @@ void* C1WindowsDocument::ArchiveHost::create_object(std::string_view name, std::
         // @ 0040dda0 reads them with ReadObject).  The reader takes ownership.
         return new creatures1::creatures::Genome();
     }
+    if (name == "CEgg") {
+        // Only an .egg file carries one (not native).  The reader takes
+        // ownership.
+        return new creatures1::creatures::Egg();
+    }
     if (name == "CBrain") {
         auto* brain = new (std::nothrow) creatures1::brain::Brain();
         if (brain == nullptr) {
@@ -5318,6 +5330,7 @@ std::uint16_t C1WindowsDocument::ArchiveHost::class_schema(std::string_view name
         name == "Lift" || name == "CallButton" || name == "Scenery" ||
         name == "Entity" || name == "CGallery" || name == "Creature" ||
         name == "CBrain" || name == "CBiochemistry" || name == "CGenome" ||
+        name == "CEgg" ||
         name == "CInstinct" || name == "Blackboard" || name == "COwner" ||
         name == "MapData" || name == "PointerTool" ||
         name == "Bubble" || name == "Macro" || name == "Body" ||
@@ -5377,6 +5390,9 @@ std::string C1WindowsDocument::ArchiveHost::runtime_class(const void* object, st
     }
     if (requested == "CGenome") {
         return "CGenome";
+    }
+    if (requested == "CEgg") {
+        return "CEgg";
     }
     if (requested == "Creature") {
         return "Creature";
@@ -5465,6 +5481,10 @@ void C1WindowsDocument::ArchiveHost::read_object(void* object, std::string_view 
         GenomeObjectArchive genome_archive(archive);
         static_cast<creatures1::creatures::Genome*>(object)->serialize(
             genome_archive);
+        return;
+    }
+    if (name == "CEgg") {
+        static_cast<creatures1::creatures::Egg*>(object)->serialize(archive);
         return;
     }
     if (name == "CBrain") {
@@ -5571,6 +5591,12 @@ void C1WindowsDocument::ArchiveHost::write_object(const void* object, std::strin
         const_cast<creatures1::creatures::Genome*>(
             static_cast<const creatures1::creatures::Genome*>(object))
             ->serialize(genome_archive);
+        return;
+    }
+    if (name == "CEgg") {
+        const_cast<creatures1::creatures::Egg*>(
+            static_cast<const creatures1::creatures::Egg*>(object))
+            ->serialize(archive);
         return;
     }
     if (name == "CBrain") {

@@ -6,6 +6,8 @@ BEGIN
         MENUITEM "", 0
         MENUITEM "&Exportar esta criatura", 32863
         MENUITEM "&Importar criatura", 32864
+        MENUITEM "Exportar el &huevo sostenido...", 32930
+        MENUITEM "Importar h&uevo...", 32931
         MENUITEM "", 0
         MENUITEM "&Salir", 57665
     END

@@ -6,6 +6,8 @@ BEGIN
         MENUITEM "", 0
         MENUITEM "&Esporta creatura attuale", 32863
         MENUITEM "&Importa creatura", 32864
+        MENUITEM "Esporta l'&uovo tenuto...", 32930
+        MENUITEM "Importa u&ovo...", 32931
         MENUITEM "", 0
         MENUITEM "E&sci", 57665
     END
