@@ -102,6 +102,31 @@ bool KitSprite::load_pair(const std::string& path, KitSprite& second) {
     return true;
 }
 
+bool KitSprite::load_set(const std::string& path, std::vector<KitSprite>& sprites) {
+    sprites.clear();
+    std::vector<std::uint8_t> bytes;
+    if (!read_file(path, bytes) || bytes.size() < 6) {
+        return false;
+    }
+    const int count = read_u16(bytes, 0);
+    std::size_t at = 6;
+    for (int i = 0; i < count; ++i) {
+        if (at + 6 > bytes.size()) {
+            sprites.clear();
+            return false;
+        }
+        const int frames = read_u16(bytes, at);
+        at += 6;
+        KitSprite sprite;
+        if (!sprite.read_frames(bytes, at, frames)) {
+            sprites.clear();
+            return false;
+        }
+        sprites.push_back(std::move(sprite));
+    }
+    return true;
+}
+
 bool KitSprite::read_frames(const std::vector<std::uint8_t>& bytes, std::size_t& at, int count) {
     for (int index = 0; index < count; ++index) {
         if (at + 10 > bytes.size()) {
@@ -214,6 +239,42 @@ void Canvas::draw_frame(const KitSprite& sprite, int frame_index, int x, int y,
             bits_[dy * width_ + dx] = palette.colour(
                 frame->pixels[static_cast<std::size_t>(row) * frame->width + column]);
         }
+    }
+}
+
+void Canvas::draw_frame_keyed(const KitSprite& sprite, int frame_index, int x, int y,
+                              const GamePalette& palette, std::uint8_t key) {
+    const KitSprite::Frame* frame = sprite.frame(frame_index);
+    if (frame != nullptr) {
+        draw_indexed_keyed(frame->pixels.data(), frame->width, frame->height, frame->width, false,
+                           x, y, palette, key);
+    }
+}
+
+void Canvas::draw_indexed_keyed(const std::uint8_t* pixels, int width, int height, int stride,
+                                bool bottom_up, int x, int y, const GamePalette& palette,
+                                std::uint8_t key) {
+    if (bits_ == nullptr || pixels == nullptr) {
+        return;
+    }
+    GdiFlush();
+    for (int row = 0; row < height; ++row) {
+        const int dy = y + row;
+        if (dy < 0 || dy >= height_) continue;
+        const std::uint8_t* source =
+            pixels + static_cast<std::size_t>(bottom_up ? height - 1 - row : row) * stride;
+        for (int column = 0; column < width; ++column) {
+            const int dx = x + column;
+            if (dx < 0 || dx >= width_ || source[column] == key) continue;
+            bits_[dy * width_ + dx] = palette.colour(source[column]);
+        }
+    }
+}
+
+void Canvas::set_pixel(int x, int y, std::uint32_t colour) {
+    if (bits_ != nullptr && x >= 0 && x < width_ && y >= 0 && y < height_) {
+        GdiFlush();
+        bits_[y * width_ + x] = colour;
     }
 }
 

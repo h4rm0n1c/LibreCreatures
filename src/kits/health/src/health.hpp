@@ -9,7 +9,10 @@
 // and shop file, drops its cover page and sound, and replaces its pictures
 // (a thermometer, a heart monitor, gauges, a cartoon brain) with labelled
 // readings: each deviation is noted where it is made, and bug fixes are
-// marked "Fix (bug N)".
+// marked "Fix (bug N)".  The classic look (the original beside it as
+// "Health Kit.old") brings the 1996 pages back -- their pictures drawn from
+// the game's files as the original drew them -- with the cover and the
+// looping sound, keeping every fix.
 
 #include "c1kitshell/kit_art.hpp"
 #include "c1kitshell/kit_shell.hpp"
@@ -100,6 +103,104 @@ private:
 };
 
 // ---------------------------------------------------------------------------
+// The classic look's pages: the 1996 dialogs (health_classic.cpp)
+// ---------------------------------------------------------------------------
+
+// A 1996 page: its template, a drawn view in place of each picture control,
+// its Close, and a poll timer that runs while the page is showing.
+class ClassicHealthPage : public CPropertyPage {
+public:
+    ClassicHealthPage(HealthSheet& sheet, UINT dialog, UINT title_string, UINT poll_ms);
+
+protected:
+    BOOL OnInitDialog() override;
+    BOOL OnSetActive() override;
+    BOOL OnKillActive() override;
+    virtual void init() = 0;
+    virtual void poll() = 0;
+    virtual void tick() {}  // the animation timer, if the page has one
+    void replace_picture(UINT control, c1kitshell::PaintedView& view,
+                         c1kitshell::PaintedView::Painter painter);
+    void start_animation(UINT ms);
+    afx_msg void OnTimer(UINT_PTR timer_id);
+    afx_msg void OnCloseKit();
+    DECLARE_MESSAGE_MAP()
+
+    HealthSheet& sheet_;
+    CString title_;
+    UINT poll_ms_;
+    UINT animation_ms_ = 0;
+};
+
+// Fitness page (dialog 138): Skeleton.bmp with the thermometer, the heart
+// monitor, the beating heart and the blinking eye.
+class ClassicFitnessPage : public ClassicHealthPage {
+public:
+    explicit ClassicFitnessPage(HealthSheet& sheet);
+
+protected:
+    void init() override;
+    void poll() override;
+    void tick() override;
+
+private:
+    void draw(CDC& dc, const CRect& rect);
+    void fade(int scan_x);
+    void flat();
+    void line_to(int target_y, bool up);
+    void thermometer();
+
+    c1kitshell::PaintedView picture_;
+    c1kitshell::Canvas canvas_;
+    int width_ = 0, height_ = 0;
+    std::vector<std::uint8_t> skeleton_, frame_;
+    int therm_width_ = 0, therm_height_ = 0;
+    std::vector<std::uint8_t> therm_;
+    c1kitshell::KitSprite hearts_, blink_;
+    bool loaded_ = false, have_data_ = false;
+    int x_ = 0, y_ = 0, state_ = 0, pending_ = 0, gap_ = 0;
+    int heart_tick_ = 0, heart_frame_ = 0, blink_counter_ = 0, eye_frame_ = 0;
+    int mercury_x_ = 0;
+};
+
+// Drives and needs (dialog 139): five Gauge.spr gauges and their names.
+class ClassicDrivesPage : public ClassicHealthPage {
+public:
+    explicit ClassicDrivesPage(HealthSheet& sheet);
+
+protected:
+    void init() override;
+    void poll() override;
+
+private:
+    void draw_gauge(int index, CDC& dc, const CRect& rect);
+
+    c1kitshell::PaintedView gauges_[5];
+    c1kitshell::Canvas canvas_;
+    c1kitshell::KitSprite gauge_;
+    CFont label_font_;
+    int levels_[5] = {};
+};
+
+// Brain activity (dialog 134): Lobes.bmp, each lobe lit as it is busy.
+class ClassicBrainPage : public ClassicHealthPage {
+public:
+    explicit ClassicBrainPage(HealthSheet& sheet);
+
+protected:
+    void init() override;
+    void poll() override;
+
+private:
+    void draw(CDC& dc, const CRect& rect);
+
+    c1kitshell::PaintedView picture_;
+    c1kitshell::Canvas canvas_;
+    std::vector<c1kitshell::KitSprite> lobe_sprites_;
+    int frames_[6] = {};
+};
+
+// ---------------------------------------------------------------------------
 // The sheet
 // ---------------------------------------------------------------------------
 
@@ -115,6 +216,8 @@ public:
     ~HealthSheet() override;
 
     bool create_window();
+    bool classic() const { return classic_ != nullptr; }
+    const c1kitshell::GamePalette& palette() const { return palette_; }
 
     const Subject& subject() const { return subject_; }
     bool query(const std::string& script, std::string& reply);
@@ -153,6 +256,12 @@ private:
     std::string game_file(const std::string& name) const;
 
     CFont& default_font_;
+    std::unique_ptr<c1kitshell::ClassicArt> classic_;
+    std::unique_ptr<c1kitshell::CoverPage> cover_;
+    std::unique_ptr<ClassicFitnessPage> classic_fitness_;
+    std::unique_ptr<ClassicDrivesPage> classic_drives_;
+    std::unique_ptr<ClassicBrainPage> classic_brain_;
+    std::unique_ptr<c1kitshell::ClassicShopPage> classic_doctor_;
     FitnessPage fitness_page_;
     DrivesPage drives_page_;
     BrainPage brain_page_;

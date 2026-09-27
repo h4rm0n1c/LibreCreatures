@@ -72,7 +72,9 @@ BEGIN_MESSAGE_MAP(HealthSheet, c1kitshell::KitSheet)
 END_MESSAGE_MAP()
 
 // The original opened on a cover page and played sound; neither is in this
-// build.  The pages are in the original's order.
+// build, except in the classic look (the original beside this one, with the
+// pictures its pages use from the game's folder): then the pages are the
+// 1996 ones, after the cover.  The pages are in the original's order.
 HealthSheet::HealthSheet(CFont& default_font)
     : KitSheet(kStringToolName, kStringPausedMarker),
       default_font_(default_font),
@@ -82,6 +84,27 @@ HealthSheet::HealthSheet(CFont& default_font)
       doctor_page_(*this, *this, kDialogPage, kStringDoctorTab) {
     m_psh.dwFlags |= PSH_USEHICON;
     m_psh.hIcon = AfxGetApp()->LoadIcon(kIconKit);
+    classic_ = c1kitshell::ClassicArt::find({}, {_T("PREVU"), _T("NEXTU"), _T("EARTHU")}, {kIconKit});
+    for (const char* picture : {kCoverPicture, "Skeleton.bmp", "Lobes.bmp", kDoctorBoard}) {
+        if (classic_ && ::GetFileAttributesA(game_file(picture).c_str()) == INVALID_FILE_ATTRIBUTES) {
+            classic_.reset();
+        }
+    }
+    if (classic_) {
+        cover_ = std::make_unique<c1kitshell::CoverPage>(kDialogCover, kCoverPicture);
+        classic_fitness_ = std::make_unique<ClassicFitnessPage>(*this);
+        classic_drives_ = std::make_unique<ClassicDrivesPage>(*this);
+        classic_brain_ = std::make_unique<ClassicBrainPage>(*this);
+        c1kitshell::ShopHost& shop = *this;  // a private base: converted here
+        classic_doctor_ = std::make_unique<c1kitshell::ClassicShopPage>(
+            *this, shop, *classic_, kDialogClassicDoctor, kStringDoctorTab, kDoctorBoard, false);
+        AddPage(cover_.get());
+        AddPage(classic_fitness_.get());
+        AddPage(classic_drives_.get());
+        AddPage(classic_brain_.get());
+        AddPage(classic_doctor_.get());
+        return;
+    }
     AddPage(&fitness_page_);
     AddPage(&drives_page_);
     AddPage(&brain_page_);
@@ -96,9 +119,9 @@ HealthSheet::~HealthSheet() {
 
 bool HealthSheet::create_window() {
     load_data_files();
+    const DWORD sizing = classic_ ? 0 : WS_MAXIMIZEBOX | WS_THICKFRAME;  // classic: fixed
     return Create(nullptr,
-                  WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX |
-                      WS_MAXIMIZEBOX | WS_THICKFRAME,
+                  WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | sizing,
                   WS_EX_DLGMODALFRAME) != FALSE;
 }
 
@@ -118,7 +141,11 @@ int HealthSheet::OnCreate(LPCREATESTRUCT create) {
 
 BOOL HealthSheet::OnInitDialog() {
     const BOOL result = c1kitshell::KitSheet::OnInitDialog();
-    enable_resizing(CSize(kDefaultPageWidthDlu, kDefaultPageHeightDlu));
+    if (classic_) {
+        enable_ambience(registry_, kAmbience, kAmbienceVolume);
+    } else {
+        enable_resizing(CSize(kDefaultPageWidthDlu, kDefaultPageHeightDlu));
+    }
     if (CMenu* menu = GetSystemMenu(FALSE)) {
         menu->AppendMenu(MF_SEPARATOR);
         menu->AppendMenu(MF_STRING, kSysCommandOnTop, _T("Always on &top"));
@@ -169,7 +196,8 @@ bool HealthSheet::save_shop() {
 
 void HealthSheet::load_preferences() {
     WindowSize size = {};
-    if (registry_->read_binary(c1kit::SettingsScope::user, "Size", &size, sizeof(size)) &&
+    if (!classic_ &&
+        registry_->read_binary(c1kit::SettingsScope::user, "Size", &size, sizeof(size)) &&
         size.width > 0 && size.height > 0) {
         set_window_size(CSize(size.width, size.height));
     }
@@ -186,7 +214,7 @@ void HealthSheet::load_preferences() {
     // "Page" counts the original's cover as page 0 (the key is shared).
     std::uint32_t page = 1;
     registry_->read_dword(c1kit::SettingsScope::user, "Page", page);
-    saved_page_ = page > 0 ? static_cast<int>(page) - 1 : 0;
+    saved_page_ = classic_ ? static_cast<int>(page) : page > 0 ? static_cast<int>(page) - 1 : 0;
     const int left = location.left < max_left ? location.left : max_left;
     const int top = location.top < max_top ? location.top : max_top;
     SetWindowPos(always_on_top_ != 0 ? &wndTopMost : &wndNoTopMost, left < 0 ? 0 : left,
@@ -208,9 +236,11 @@ void HealthSheet::save_preferences() {
                                      window.top < 0 ? 0 : window.top};
     const WindowSize size = {window.Width(), window.Height()};
     registry_->write_binary("Location", &location, sizeof(location));
-    registry_->write_binary("Size", &size, sizeof(size));
+    if (!classic_) {
+        registry_->write_binary("Size", &size, sizeof(size));  // the classic window is fixed
+    }
     registry_->write_dword("On Top", always_on_top_);
-    registry_->write_dword("Page", static_cast<std::uint32_t>(GetActiveIndex() + 1));
+    registry_->write_dword("Page", static_cast<std::uint32_t>(GetActiveIndex() + (classic_ ? 0 : 1)));
 }
 
 // One query holder, and one brain report holder, for the kit's lifetime (the

@@ -8,6 +8,19 @@ namespace health {
 constexpr unsigned kDialogPage = 200;  // blank page; controls made in code
 constexpr unsigned kIconKit = 128;
 
+// The classic look: the 1996 pages' templates, their picture control, the
+// cover picture, and the ambience (the 1996 kit's "kith" loop at -10 dB).
+constexpr unsigned kDialogClassicBrain = 134;
+constexpr unsigned kDialogClassicFitness = 138;
+constexpr unsigned kDialogClassicDrives = 139;
+constexpr unsigned kDialogCover = 140;
+constexpr unsigned kDialogClassicDoctor = 142;
+constexpr unsigned kControlClassicPicture = 1019;
+constexpr char kCoverPicture[] = "health.bmp";
+constexpr char kDoctorBoard[] = "Black.bmp";
+constexpr char kAmbience[] = "kith";
+constexpr int kAmbienceVolume = -1000;
+
 // Strings
 constexpr unsigned kStringOleInitFailed = 100;
 constexpr unsigned kStringTitlePaused = 101;   // "Health Kit... "

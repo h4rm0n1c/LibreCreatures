@@ -4,7 +4,24 @@ How the original `Health Kit.exe` behaves, from its disassembly and from
 running it in the lab. Addresses are in that binary. This build keeps its
 protocol and shop file but replaces its pictures with labelled readings
 (below); numbered bugs are marked "Fix (bug N)" in the source. It leaves out
-the cover page and all sound.
+the cover page and all sound -- except in the classic look (the original
+beside it as `Health Kit.old`, and its pictures in the game's folder),
+which keeps every fix but brings back the 1996 pages from their own
+templates: the `health.bmp` cover; the Fitness page's `Skeleton.bmp` with
+the thermometer (`Therm.bmp`), the heart monitor, the beating heart and
+the blinking eye, as described below; the five `Gauge.spr` gauges; the
+cartoon brain (`Lobes.bmp`, `LOBES.SPR`); and the Doctor's page's one item
+at a time on `Black.bmp` with the original's own arrow and Earth buttons.
+It adds the looping `kith` sound at -10 dB and a "Mute ambient sound"
+checkbox under the pages (saved as `Mute Ambient`).  The monitor follows
+CFitnessPage: carbon dioxide sets the pause between beats (34 down to 8
+ticks of 50 ms), glycogen each beat's height (up to 25 pixels), coldness
+against hotness the mercury, and the trace fades through two greens about
+100 pixels behind the sweep.  The brain lights each of its six parts with
+one of eight frames by the lobe's average level, halved; the original
+could ask for a ninth frame for a lobe at the top level, and the classic
+look shows the last.  (The 1996 thermometer also jumped about from second
+to second; here it follows the chemicals.)
 
 ## Identity
 

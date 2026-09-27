@@ -9,6 +9,7 @@
 // does the same.
 
 #include "c1kitshell/kit_art.hpp"
+#include "c1kitshell/kit_shell.hpp"
 #include "c1kitshell/kit_widgets.hpp"
 #include "c1kit/health_files.hpp"
 
@@ -55,6 +56,49 @@ private:
     CButton add_;
     CStatic status_;
     Canvas canvas_;
+};
+
+// The classic look's shop page: the 1996 CAddObjectPage itself (dialog 142
+// in both kits).  One item at a time, drawn at its own size in the middle
+// of the board -- the Health Kit's Black.bmp, or the Breeder's Shop.bmp with
+// Addbgd.bmp behind the item (RenderHealthValueBitmap @ 0x00405a60) -- with
+// its name, how many are left and what it does in the template's boxes,
+// the arrows and the Earth button (their faces the original's PREV, NEXT
+// and EARTH bitmaps, from the original itself), and Close.  The Earth button
+// does what the modern page's "Put one in the world" does.
+class ClassicShopPage : public CPropertyPage {
+public:
+    ClassicShopPage(KitSheet& sheet, ShopHost& host, const ClassicArt& art, UINT dialog,
+                    UINT title_string, const char* board, bool item_backdrop);
+    void refresh();
+
+protected:
+    BOOL OnInitDialog() override;
+    afx_msg void OnPrevious();
+    afx_msg void OnNext();
+    afx_msg void OnEarth();
+    afx_msg void OnCloseKit();
+    afx_msg void OnDrawItem(int id, LPDRAWITEMSTRUCT draw);
+    afx_msg HBRUSH OnCtlColor(CDC* dc, CWnd* control, UINT type);
+    DECLARE_MESSAGE_MAP()
+
+private:
+    void show();
+    void draw_board(CDC& dc, const CRect& rect);
+    HBITMAP face(const CString& caption, TCHAR state) const;
+
+    KitSheet& kit_sheet_;
+    ShopHost& host_;
+    const ClassicArt& art_;
+    CString title_;
+    std::string board_;
+    bool item_backdrop_ = false;
+    int selected_ = 0;
+    PaintedView board_view_;
+    Canvas canvas_;
+    CFont title_font_;
+    CFont notes_font_;
+    CBrush white_;
 };
 
 } // namespace c1kitshell

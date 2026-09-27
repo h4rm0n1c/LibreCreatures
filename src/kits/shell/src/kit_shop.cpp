@@ -158,4 +158,193 @@ void ShopPage::OnAddToWorld() {
     status_.SetWindowText(text(item.name) + _T(" is on the pointer: click in the world to drop it."));
 }
 
+// ===========================================================================
+// ClassicShopPage
+// ===========================================================================
+
+namespace {
+
+// CAddObjectPage's controls (dialog 142).
+constexpr UINT kShopFrame = 1071;
+constexpr UINT kShopPrevious = 1115;
+constexpr UINT kShopNext = 1120;
+constexpr UINT kShopEarth = 1121;
+constexpr UINT kShopNotes = 1119;
+constexpr UINT kShopTitle = 1116;
+constexpr UINT kShopCount = 1118;
+constexpr UINT kShopClose = 1123;
+constexpr UINT kShopBoard = 0x7f50;  // the drawn board, over the frame
+constexpr int kBackdropX = 0x68;     // Addbgd.bmp, on the Breeder's board
+constexpr int kBackdropY = 0x73;
+
+} // namespace
+
+BEGIN_MESSAGE_MAP(ClassicShopPage, CPropertyPage)
+    ON_BN_CLICKED(kShopPrevious, &ClassicShopPage::OnPrevious)
+    ON_BN_CLICKED(kShopNext, &ClassicShopPage::OnNext)
+    ON_BN_CLICKED(kShopEarth, &ClassicShopPage::OnEarth)
+    ON_BN_CLICKED(kShopClose, &ClassicShopPage::OnCloseKit)
+    ON_WM_DRAWITEM()
+    ON_WM_CTLCOLOR()
+END_MESSAGE_MAP()
+
+ClassicShopPage::ClassicShopPage(KitSheet& sheet, ShopHost& host, const ClassicArt& art,
+                                 UINT dialog, UINT title_string, const char* board,
+                                 bool item_backdrop)
+    : CPropertyPage(dialog), kit_sheet_(sheet), host_(host), art_(art), board_(board),
+      item_backdrop_(item_backdrop) {
+    title_ = load_string(title_string);
+    m_psp.dwFlags |= PSP_USETITLE;
+    m_psp.pszTitle = title_;
+}
+
+BOOL ClassicShopPage::OnInitDialog() {
+    CPropertyPage::OnInitDialog();
+    // The board takes the frame's place, under the buttons.
+    if (CWnd* frame = GetDlgItem(kShopFrame)) {
+        CRect area;
+        frame->GetWindowRect(&area);
+        ScreenToClient(&area);
+        frame->ShowWindow(SW_HIDE);
+        board_view_.create(*this, kShopBoard, [this](CDC& dc, const CRect& rect) { draw_board(dc, rect); });
+        board_view_.ModifyStyle(0, WS_CLIPSIBLINGS);  // it must not paint over the controls on it
+        board_view_.SetWindowPos(&wndBottom, area.left, area.top, area.Width(), area.Height(),
+                                 SWP_NOACTIVATE);
+    }
+    LOGFONT description = {};
+    GetFont()->GetLogFont(&description);
+    description.lfWeight = FW_BOLD;
+    notes_font_.CreateFontIndirect(&description);
+    description.lfHeight = description.lfHeight * 5 / 4;
+    lstrcpy(description.lfFaceName, _T("Arial"));  // the dialog font does not embolden larger
+    title_font_.CreateFontIndirect(&description);
+    for (UINT id : {kShopTitle, kShopCount}) {
+        if (CWnd* box = GetDlgItem(id)) box->SetFont(&title_font_);
+    }
+    if (CWnd* box = GetDlgItem(kShopNotes)) box->SetFont(&notes_font_);
+    white_.CreateSolidBrush(RGB(255, 255, 255));
+    show();
+    return TRUE;
+}
+
+void ClassicShopPage::refresh() {
+    if (GetSafeHwnd() != nullptr) show();
+}
+
+void ClassicShopPage::show() {
+    std::vector<c1kit::ShopItem>& items = host_.shop_items();
+    if (selected_ >= static_cast<int>(items.size())) selected_ = 0;
+    const bool any = !items.empty();
+    const c1kit::ShopItem* item = any ? &items[static_cast<std::size_t>(selected_)] : nullptr;
+    CString count;
+    if (item != nullptr) count.Format(_T("%d"), item->quantity);
+    SetDlgItemText(kShopTitle, item != nullptr ? CString(item->name.c_str()) : CString());
+    SetDlgItemText(kShopCount, count);
+    SetDlgItemText(kShopNotes, item != nullptr ? CString(item->description.c_str()) : CString());
+    if (CWnd* earth = GetDlgItem(kShopEarth)) earth->EnableWindow(item != nullptr && item->quantity > 0);
+    board_view_.redraw();
+}
+
+void ClassicShopPage::draw_board(CDC& dc, const CRect& rect) {
+    dc.FillSolidRect(rect, GetSysColor(COLOR_BTNFACE));
+    const std::string directory = std::string(CStringA(game_directory_setting("Main Directory")));
+    PaletteBitmap board;
+    if (!board.load_file(CString((directory + board_).c_str()))) return;
+    if (!canvas_.create(board.width(), board.height())) return;
+    canvas_.draw_bitmap_file(directory + board_, 0, 0);
+    if (item_backdrop_) canvas_.draw_bitmap_file(directory + "Addbgd.bmp", kBackdropX, kBackdropY);
+    const std::vector<c1kit::ShopItem>& items = host_.shop_items();
+    if (selected_ < static_cast<int>(items.size())) {
+        const c1kit::PhotoBitmap& picture = items[static_cast<std::size_t>(selected_)].picture;
+        if (picture.width > 0 && picture.height > 0) {
+            canvas_.draw_indexed_keyed(picture.pixels.data(), picture.width, picture.height,
+                                       picture.stride, true, (board.width() - picture.width) / 2,
+                                       (board.height() - picture.height) / 2, host_.shop_palette());
+        }
+    }
+    canvas_.present(dc, rect.left + (rect.Width() - board.width()) / 2,
+                    rect.top + (rect.Height() - board.height()) / 2, board.width(), board.height());
+}
+
+void ClassicShopPage::OnPrevious() {
+    const int count = static_cast<int>(host_.shop_items().size());
+    if (count > 0) selected_ = (selected_ + count - 1) % count;
+    show();
+}
+
+void ClassicShopPage::OnNext() {
+    const int count = static_cast<int>(host_.shop_items().size());
+    if (count > 0) selected_ = (selected_ + 1) % count;
+    show();
+}
+
+// SubmitSelectedHealthValue @ 0x00405c80: the item's CAOS, and one fewer.
+void ClassicShopPage::OnEarth() {
+    std::vector<c1kit::ShopItem>& items = host_.shop_items();
+    if (selected_ >= static_cast<int>(items.size())) return;
+    c1kit::ShopItem& item = items[static_cast<std::size_t>(selected_)];
+    if (item.quantity <= 0) return;
+    if (!host_.run_shop_command(item.command)) {
+        AfxMessageBox(_T("The game did not take it."), MB_ICONINFORMATION);
+        return;
+    }
+    --item.quantity;
+    host_.save_shop();
+    show();
+}
+
+void ClassicShopPage::OnCloseKit() {
+    kit_sheet_.request_game_quit();
+}
+
+// CBitmapButton's faces: the caption with U (up), D (down), F (focused) or
+// X (disabled), from the original.
+HBITMAP ClassicShopPage::face(const CString& caption, TCHAR state) const {
+    return static_cast<HBITMAP>(::LoadImage(art_.module(), caption + state, IMAGE_BITMAP, 0, 0,
+                                            LR_CREATEDIBSECTION));
+}
+
+void ClassicShopPage::OnDrawItem(int id, LPDRAWITEMSTRUCT draw) {
+    if (id != kShopPrevious && id != kShopNext && id != kShopEarth) {
+        CPropertyPage::OnDrawItem(id, draw);
+        return;
+    }
+    CString caption;
+    GetDlgItemText(id, caption);
+    TCHAR state = _T('U');
+    if ((draw->itemState & ODS_SELECTED) != 0) {
+        state = _T('D');
+    } else if ((draw->itemState & ODS_DISABLED) != 0) {
+        state = _T('X');
+    } else if ((draw->itemState & ODS_FOCUS) != 0) {
+        state = _T('F');
+    }
+    HBITMAP bitmap = face(caption, state);
+    if (bitmap == nullptr && state != _T('U')) bitmap = face(caption, _T('U'));
+    CDC* dc = CDC::FromHandle(draw->hDC);
+    if (bitmap == nullptr) {
+        dc->DrawFrameControl(&draw->rcItem, DFC_BUTTON, DFCS_BUTTONPUSH);
+        return;
+    }
+    CDC source;
+    source.CreateCompatibleDC(dc);
+    HGDIOBJ previous = ::SelectObject(source.GetSafeHdc(), bitmap);
+    BITMAP info = {};
+    ::GetObject(bitmap, sizeof(info), &info);
+    dc->BitBlt(draw->rcItem.left, draw->rcItem.top, info.bmWidth, info.bmHeight, &source, 0, 0,
+               SRCCOPY);
+    ::SelectObject(source.GetSafeHdc(), previous);
+    ::DeleteObject(bitmap);
+}
+
+// The name, count and notes on white, as the original showed them.
+HBRUSH ClassicShopPage::OnCtlColor(CDC* dc, CWnd* control, UINT type) {
+    const UINT id = control != nullptr ? control->GetDlgCtrlID() : 0;
+    if (type == CTLCOLOR_STATIC && (id == kShopTitle || id == kShopCount || id == kShopNotes)) {
+        dc->SetBkColor(RGB(255, 255, 255));
+        return static_cast<HBRUSH>(white_.GetSafeHandle());
+    }
+    return CPropertyPage::OnCtlColor(dc, control, type);
+}
+
 } // namespace c1kitshell

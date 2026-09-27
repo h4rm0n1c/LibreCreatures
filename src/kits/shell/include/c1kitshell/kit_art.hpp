@@ -48,6 +48,9 @@ public:
     // u32 buffer size}, then each sprite's {u16 frame count, u32 data size}
     // and frames.  This sprite gets the first, `second` the other.
     bool load_pair(const std::string& path, KitSprite& second);
+    // A file of several sprites in that layout ({u16 sprite count, u32
+    // buffer size} first): the Health Kit's LOBES.SPR has six.
+    static bool load_set(const std::string& path, std::vector<KitSprite>& sprites);
     int frame_count() const { return static_cast<int>(frames_.size()); }
     const Frame* frame(int index) const;
 
@@ -75,11 +78,20 @@ public:
     // own background colour).
     void draw_frame(const KitSprite& sprite, int frame, int x, int y,
                     const GamePalette& palette);
+    // The same, leaving out palette index `key` (the kits' transparent
+    // blits).
+    void draw_frame_keyed(const KitSprite& sprite, int frame, int x, int y,
+                          const GamePalette& palette, std::uint8_t key = 0);
     // Draws palette-indexed pixels (a photograph), `bottom_up` when rows are
     // stored bottom row first, as the kits' bitmaps are.
     void draw_indexed(const std::uint8_t* pixels, int width, int height,
                       int stride, bool bottom_up, int x, int y,
                       const GamePalette& palette);
+    void draw_indexed_keyed(const std::uint8_t* pixels, int width, int height,
+                            int stride, bool bottom_up, int x, int y,
+                            const GamePalette& palette, std::uint8_t key = 0);
+    // One pixel, as 0x00RRGGBB.
+    void set_pixel(int x, int y, std::uint32_t colour);
     // Covers the surface with a BMP file, tiled from the top-left.
     bool tile_bitmap_file(const std::string& path);
     // Draws a BMP file once with its top-left at (x, y).
