@@ -171,6 +171,8 @@ private:
     std::string world_file(const std::string& name) const;
 
     CFont& default_font_;
+    std::unique_ptr<c1kitshell::ClassicArt> classic_;
+    std::unique_ptr<c1kitshell::CoverPage> cover_;  // classic only
     RegisterPage register_page_;
     AlbumPage album_page_;
     CertificatePage certificate_page_;

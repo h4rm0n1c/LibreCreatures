@@ -3,7 +3,12 @@
 How the original `Owner's Kit.exe` behaves, from its disassembly and from
 running it in the lab. Addresses are in that binary. This build follows it
 except where a numbered bug below is fixed (marked "Fix (bug N)" in the
-source), and it leaves out the cover page and all sound.
+source), and it leaves out the cover page and all sound -- except in the
+classic look (the original beside it as `Owner's Kit.old`, and `Owner.bmp`
+in the game's folder), which keeps every fix but brings back the 1996
+fixed-size window, the cover page (and "Page" counting from it again) and
+the looping `kito` sound at -10 dB, with a "Mute ambient sound" checkbox
+under the pages (saved as `Mute Ambient`).
 
 ## Identity
 

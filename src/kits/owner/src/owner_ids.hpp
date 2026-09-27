@@ -9,6 +9,7 @@ namespace owner {
 constexpr unsigned kDialogRegister = 136;     // "Register the birth"
 constexpr unsigned kDialogAlbum = 137;        // "Photo Album"
 constexpr unsigned kDialogCertificate = 141;  // "Certificate"
+constexpr unsigned kDialogCover = 140;        // classic only
 constexpr unsigned kIconKit = 128;
 
 // Strings
@@ -59,6 +60,10 @@ constexpr char kAlbumBackdrop[] = "photograph.bmp";  // 312 x 299
 constexpr char kBlankPhoto[] = "Blank.bmp";           // 125 x 145
 constexpr char kCertificateBackdrop[] = "birth.bmp";  // 244 x 304
 constexpr char kPaletteFile[] = "palette.dta";
+constexpr char kCoverPicture[] = "Owner.bmp";   // classic cover
+// The classic look's ambience: the 1996 kit's "kito" loop at -10 dB.
+constexpr char kAmbience[] = "kito";
+constexpr int kAmbienceVolume = -1000;
 
 // Where the photograph sits in the album picture, and the certificate text
 // (measured from the 1996 kit on screen).

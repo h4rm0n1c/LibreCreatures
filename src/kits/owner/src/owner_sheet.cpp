@@ -96,6 +96,18 @@ OwnerSheet::OwnerSheet(CFont& default_font)
       certificate_page_(*this) {
     m_psh.dwFlags |= PSH_USEHICON;
     m_psh.hIcon = AfxGetApp()->LoadIcon(kIconKit);
+    // The classic look: the original beside this one as "Owner's Kit.old",
+    // and its cover picture in the game's folder.  It brings back the cover,
+    // the 1996 fixed size and the looping sound, keeping every fix.
+    classic_ = c1kitshell::ClassicArt::find({}, {}, {kIconKit});
+    const CString cover = c1kitshell::game_directory_setting("Main Directory") + kCoverPicture;
+    if (classic_ && GetFileAttributes(cover) == INVALID_FILE_ATTRIBUTES) {
+        classic_.reset();
+    }
+    if (classic_) {
+        cover_ = std::make_unique<c1kitshell::CoverPage>(kDialogCover, kCoverPicture);
+        AddPage(cover_.get());
+    }
     AddPage(&register_page_);
     AddPage(&album_page_);
     AddPage(&certificate_page_);
@@ -108,9 +120,9 @@ OwnerSheet::~OwnerSheet() {
 }
 
 bool OwnerSheet::create_window() {
+    const DWORD sizing = classic_ ? 0 : WS_MAXIMIZEBOX | WS_THICKFRAME;  // classic: fixed
     return Create(nullptr,
-                  WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU |
-                      WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_THICKFRAME,
+                  WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | sizing,
                   WS_EX_DLGMODALFRAME) != FALSE;
 }
 
@@ -138,7 +150,11 @@ int OwnerSheet::OnCreate(LPCREATESTRUCT create) {
 
 BOOL OwnerSheet::OnInitDialog() {
     const BOOL result = c1kitshell::KitSheet::OnInitDialog();
-    enable_resizing(CSize(kDefaultPageWidthDlu, kDefaultPageHeightDlu));
+    if (classic_) {
+        enable_ambience(registry_, kAmbience, kAmbienceVolume);
+    } else {
+        enable_resizing(CSize(kDefaultPageWidthDlu, kDefaultPageHeightDlu));
+    }
     if (CMenu* menu = GetSystemMenu(FALSE)) {
         menu->AppendMenu(MF_SEPARATOR);
         menu->AppendMenu(MF_STRING, kSysCommandOnTop, _T("Always on &top"));
@@ -149,7 +165,8 @@ BOOL OwnerSheet::OnInitDialog() {
 
 void OwnerSheet::load_preferences() {
     WindowSize size = {};
-    if (registry_->read_binary(c1kit::SettingsScope::user, "Size", &size,
+    if (!classic_ &&
+        registry_->read_binary(c1kit::SettingsScope::user, "Size", &size,
                                sizeof(size)) &&
         size.width > 0 && size.height > 0) {
         set_window_size(CSize(size.width, size.height));
@@ -165,10 +182,11 @@ void OwnerSheet::load_preferences() {
     }
     registry_->read_dword(c1kit::SettingsScope::user, "On Top", always_on_top_);
     registry_->read_dword(c1kit::SettingsScope::user, "Photo", saved_photo_);
-    // "Page" counts the original's cover as page 0 (the key is shared).
+    // "Page" counts the original's cover as page 0 (the key is shared), as
+    // the pages do in the classic look, which has the cover.
     std::uint32_t page = 1;
     registry_->read_dword(c1kit::SettingsScope::user, "Page", page);
-    saved_page_ = page > 0 ? static_cast<int>(page) - 1 : 0;
+    saved_page_ = classic_ ? static_cast<int>(page) : page > 0 ? static_cast<int>(page) - 1 : 0;
     const int left = location.left < max_left ? location.left : max_left;
     const int top = location.top < max_top ? location.top : max_top;
     SetWindowPos(always_on_top_ != 0 ? &wndTopMost : &wndNoTopMost,
@@ -192,10 +210,12 @@ void OwnerSheet::save_preferences() {
                                      window.top < 0 ? 0 : window.top};
     const WindowSize size = {window.Width(), window.Height()};
     registry_->write_binary("Location", &location, sizeof(location));
-    registry_->write_binary("Size", &size, sizeof(size));
+    if (!classic_) {
+        registry_->write_binary("Size", &size, sizeof(size));  // the classic window is fixed
+    }
     registry_->write_dword("On Top", always_on_top_);
     registry_->write_dword("Page",
-                           static_cast<std::uint32_t>(GetActiveIndex() + 1));
+                           static_cast<std::uint32_t>(GetActiveIndex() + (classic_ ? 0 : 1)));
     registry_->write_dword("Photo", static_cast<std::uint32_t>(selected_photo_));
 }
 
