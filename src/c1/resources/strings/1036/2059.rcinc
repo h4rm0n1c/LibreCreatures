@@ -6,4 +6,5 @@ BEGIN
     32933 "Impossible d'écrire le fichier de l'œuf."
     32934 "Impossible d'ouvrir le fichier de l'œuf."
     32935 "Ce fichier n'est pas un œuf lisible par cette version."
+    32936 "Cet œuf ne peut pas être enregistré dans un fichier."
 END

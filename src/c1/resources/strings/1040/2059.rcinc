@@ -6,4 +6,5 @@ BEGIN
     32933 "Impossibile scrivere il file dell'uovo."
     32934 "Impossibile aprire il file dell'uovo."
     32935 "Questo file non è un uovo leggibile da questa versione."
+    32936 "Quest'uovo non può essere salvato in un file."
 END

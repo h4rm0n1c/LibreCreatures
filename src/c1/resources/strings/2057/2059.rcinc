@@ -6,4 +6,5 @@ BEGIN
     32933 "The egg file could not be written."
     32934 "The egg file could not be opened."
     32935 "That file is not an egg this version can read."
+    32936 "This egg cannot be saved to a file."
 END

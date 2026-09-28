@@ -6,4 +6,5 @@ BEGIN
     32933 "No se pudo escribir el archivo del huevo."
     32934 "No se pudo abrir el archivo del huevo."
     32935 "Ese archivo no es un huevo que esta versión pueda leer."
+    32936 "Este huevo no se puede guardar en un archivo."
 END

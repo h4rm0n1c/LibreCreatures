@@ -9,6 +9,7 @@
 #include <exception>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace creatures1::platform {
 namespace {
@@ -39,6 +40,7 @@ constexpr UINT kStringGenomeMissing = 32932;
 constexpr UINT kStringCannotWrite = 32933;
 constexpr UINT kStringCannotOpen = 32934;
 constexpr UINT kStringNotAnEgg = 32935;
+constexpr UINT kStringCannotExport = 32936;
 
 creatures1::creatures::GenomeSex genome_sex(std::uint32_t egg_sex) {
     return egg_sex == 2 ? creatures1::creatures::GenomeSex::female
@@ -142,6 +144,25 @@ void export_held_egg(C1WindowsDocument& document) {
         return;
     }
 
+    // Build the file in memory and hold it to the same check an import
+    // makes, so every file written can be read back.
+    CMemFile memory;
+    {
+        CArchive archive(&memory, CArchive::store);
+        C1WindowsDocument::ArchiveHost host(document, archive);
+        host.dynamic_objects().write_object_reference(&record, "CEgg");
+        archive.Close();
+    }
+    const auto size = static_cast<std::size_t>(memory.GetLength());
+    std::vector<std::uint8_t> bytes(size);
+    memory.SeekToBegin();
+    memory.Read(bytes.data(), static_cast<UINT>(size));
+    if (!creatures1::creatures::Egg::is_well_formed_file(bytes.data(),
+                                                          bytes.size())) {
+        warn(kStringCannotExport);
+        return;
+    }
+
     CFileDialog dialog(FALSE, "egg", nullptr,
                        OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT | OFN_NOCHANGEDIR |
                            OFN_NONETWORKBUTTON,
@@ -158,13 +179,16 @@ void export_held_egg(C1WindowsDocument& document) {
         warn(kStringCannotWrite);
         return;
     }
-    {
-        CArchive archive(&file, CArchive::store);
-        C1WindowsDocument::ArchiveHost host(document, archive);
-        host.dynamic_objects().write_object_reference(&record, "CEgg");
-        archive.Close();
+    try {
+        file.Write(bytes.data(), static_cast<UINT>(bytes.size()));
+        file.Close();
+    } catch (CException* error) {
+        error->Delete();
+        file.Abort();
+        ::DeleteFileA(dialog.GetPathName());
+        warn(kStringCannotWrite);
+        return;
     }
-    file.Close();
 
     // An export moves the egg out of the world, as exporting a creature does.
     // The hand is let go as the egg goes.
@@ -185,7 +209,6 @@ void import_egg(C1WindowsDocument& document) {
         return;
     }
 
-    std::unique_ptr<creatures1::creatures::Egg> record;
     CFile file;
     CFileException exception;
     if (!file.Open(dialog.GetPathName(), CFile::modeRead | CFile::shareDenyWrite,
@@ -193,8 +216,35 @@ void import_egg(C1WindowsDocument& document) {
         warn(kStringCannotOpen);
         return;
     }
+    // Read at most one egg's worth, and check every byte of it before the
+    // archive sees any: a renamed video or a crafted file stops here, and no
+    // size in the file is trusted until it agrees with the file's length.
+    std::vector<std::uint8_t> bytes;
+    const ULONGLONG length = file.GetLength();
+    if (length <= creatures1::creatures::Egg::kHeaderBytes +
+                      creatures1::creatures::Egg::kMaxGenomeBytes) {
+        bytes.resize(static_cast<std::size_t>(length));
+        try {
+            if (file.Read(bytes.data(), static_cast<UINT>(bytes.size())) !=
+                bytes.size()) {
+                bytes.clear();
+            }
+        } catch (CException* error) {
+            error->Delete();
+            bytes.clear();
+        }
+    }
+    file.Close();
+    if (!creatures1::creatures::Egg::is_well_formed_file(bytes.data(),
+                                                          bytes.size())) {
+        warn(kStringNotAnEgg);
+        return;
+    }
+
+    std::unique_ptr<creatures1::creatures::Egg> record;
     try {
-        CArchive archive(&file, CArchive::load);
+        CMemFile memory(bytes.data(), static_cast<UINT>(bytes.size()));
+        CArchive archive(&memory, CArchive::load);
         C1WindowsDocument::ArchiveHost host(document, archive);
         record.reset(static_cast<creatures1::creatures::Egg*>(
             host.dynamic_objects().read_object_reference("CEgg")));
@@ -205,7 +255,6 @@ void import_egg(C1WindowsDocument& document) {
     } catch (const std::exception&) {
         record.reset();
     }
-    file.Close();
     if (record == nullptr || record->genome == nullptr ||
         record->genome->payload().empty() ||
         !creatures1::creatures::Egg::is_egg_classifier(record->classifier)) {
