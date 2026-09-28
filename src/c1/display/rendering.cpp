@@ -216,7 +216,6 @@ WorldRenderer::WorldRenderer(WorldRendererHost& host,
                              bool apply_world_scroll_side_effects)
     : host_(host),
       owner_window_(owner_window),
-      palette_(host.game_palette()),
       smooth_scrolling_enabled_(smooth_scrolling_enabled),
       apply_world_scroll_side_effects_(apply_world_scroll_side_effects),
       followed_creature_(nullptr),
@@ -294,11 +293,12 @@ void WorldRenderer::resize_back_buffer_for_viewport(void* viewport_window,
 }
 
 std::uint32_t WorldRenderer::realize_palette() {
-    if (palette_ == nullptr) {
+    void* const palette = host_.game_palette();
+    if (palette == nullptr) {
         return 1;
     }
     const std::uint32_t realized =
-        host_.realize_palette(owner_window_, palette_);
+        host_.realize_palette(owner_window_, palette);
     if (realized != 0) {
         host_.invalidate_window(owner_window_);
     }
@@ -980,10 +980,18 @@ void* WorldRenderer::create_back_buffer_dib(int width, int height) {
 }
 
 void WorldRenderer::update_dib_palette() {
-    if (memory_dc_ == nullptr || palette_ == nullptr) {
+    // CWorldRenderer keeps palette_source = &g_game_palette_handle and reads
+    // the handle through it on every use.  The game palette is built by the
+    // document (OnNewDocument/OnOpenDocument), after the view has created
+    // its renderer, so a handle copied at construction is still null -- and
+    // stays null for good in the one path that keeps that first renderer:
+    // Doctor privilege's File > New start, whose world then drew through an
+    // uninitialised colour table.
+    void* const palette = host_.game_palette();
+    if (memory_dc_ == nullptr || palette == nullptr) {
         return;
     }
-    const auto source = host_.read_palette_entries(palette_);
+    const auto source = host_.read_palette_entries(palette);
     std::array<RendererDibColour, 0x100> colours{};
     for (std::size_t index = 0; index < colours.size(); ++index) {
         // UpdateDIBPalette @ 0x00413aa0 appears to swap red and blue, but it

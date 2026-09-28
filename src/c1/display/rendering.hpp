@@ -260,7 +260,6 @@ private:
     std::uint8_t* dib_pixels_ = nullptr;
     int dib_width_ = 0;
     int dib_height_ = 0;
-    void* palette_ = nullptr;
     bool smooth_scrolling_enabled_ = false;
     // The main renderer owns the document's screen-space renderable set and
     // therefore applies native ScrollViewport/SetViewportOrigin movement to
