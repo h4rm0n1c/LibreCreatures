@@ -101,6 +101,17 @@ public:
                    std::uint32_t sprite_data_offset,
                    std::uint8_t cache_flags = 0);
 
+    // Not native (neorender): the game changed these pixels while running
+    // -- a creature's pigment remap, speech or blackboard text, a fill.  The
+    // version lets a renderer's texture cache notice; the flag keeps such an
+    // image drawn from its own 1x indexed pixels, never from S32 art.
+    void mark_pixels_changed() {
+        ++pixel_version_;
+        runtime_drawn_ = true;
+    }
+    std::uint32_t pixel_version() const { return pixel_version_; }
+    bool runtime_drawn() const { return runtime_drawn_; }
+
     std::uint8_t* pixel_data() const { return pixel_data_.get(); }
     int width() const { return width_; }
     int height() const { return height_; }
@@ -130,6 +141,8 @@ private:
     PixelCacheState* resident_cache_ = nullptr;
     std::list<Image*>::iterator lru_position_;
     bool lru_position_valid_ = false;
+    std::uint32_t pixel_version_ = 0;
+    bool runtime_drawn_ = false;
 };
 
 // A gallery owns the fixed Image array described by the C1 sprite metadata

@@ -230,6 +230,7 @@ bool Image::remap_palette_indices(
     for (std::size_t index = 0; index < pixel_count; ++index) {
         pixels[index] = palette.remapped_palette_index[pixels[index]];
     }
+    mark_pixels_changed();
     return true;
 }
 

@@ -22,6 +22,7 @@
 #include "../application/resource_hosts.hpp"
 #include "../display/font.hpp"
 #include "../display/gallery.hpp"
+#include "../display/image_tiers.hpp"
 #include "../display/palette.hpp"
 #include "../display/rendering.hpp"
 #include "../display/sprite_cache.hpp"
@@ -305,6 +306,7 @@ public:
     afx_msg void OnUpdateExportHeldEgg(CCmdUI* command_ui);
     afx_msg void OnImportEgg();
     afx_msg void OnDumpRendererFrame();
+    afx_msg void OnReportImageTiers();
     afx_msg void OnCreateMaleNorn();
     afx_msg void OnCreateFemaleNorn();
     afx_msg void OnMuteCreatureVoices();
@@ -1364,6 +1366,11 @@ public:
     // through the live game palette, as a 24-bit .bmp.  The reference the
     // renderer back-ends are compared against.
     bool dump_renderer_frame(const std::string& path);
+    // Developer report (not native): every gallery's drawing tiers and any
+    // tier files refused, one line each.
+    bool report_image_tiers(const std::string& path);
+    creatures1::display::ImageTierStore& image_tiers() { return image_tiers_; }
+    creatures1::display::TierFileSource& tier_files();
     bool write_renderer_dib_rect(
         const creatures1::world::WorldRect& world_rect,
         std::string_view output_path);
@@ -1555,6 +1562,10 @@ private:
     CWnd* renderer_view_ = nullptr;
     std::unique_ptr<creatures1::application::Document> semantic_document_;
     creatures1::display::SpriteFileCache sprite_files_;
+    // Not native (neorender): the .s32 / @2x.s32 tiers found beside the
+    // world's sprite files.  Forgotten whenever a world is opened or made.
+    creatures1::display::ImageTierStore image_tiers_;
+    std::unique_ptr<creatures1::display::TierFileSource> tier_files_;
     creatures1::objects::ObjectEventScheduler event_scheduler_;
     creatures1::creatures::CreatureSelectionState selection_;
     creatures1::creatures::CreatureSelectionEntry* selected_creature_entry_ =

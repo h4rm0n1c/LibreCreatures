@@ -564,6 +564,7 @@ void C1WindowsDocument::construct_semantic_document() {
 }
 
 BOOL C1WindowsDocument::OnOpenDocument(LPCTSTR path) {
+    image_tiers_.clear();
     if (path == nullptr) {
         return FALSE;
     }
@@ -627,6 +628,7 @@ BOOL C1WindowsDocument::OnSaveDocument(LPCTSTR path) {
 }
 
 BOOL C1WindowsDocument::OnNewDocument() {
+    image_tiers_.clear();
     // A new world is not backed by the previously opened save directory.
     // Clear this before MFC drains the old document so the next resource-host
     // construction cannot retain the old world's Images/Genetics tree.
@@ -3139,6 +3141,9 @@ std::uint8_t* C1WindowsDocument::current_image_pixels(
     if (pixels == nullptr) {
         return nullptr;
     }
+    // Both callers write into these pixels (fills and text), so the image
+    // now differs from its sprite file and stays drawn from 1x pixels.
+    image.mark_pixels_changed();
     out_width = image.width();
     out_height = image.height();
     return pixels;
@@ -3875,6 +3880,68 @@ void C1WindowsDocument::set_renderer_caos_viewport_height(int height) {
 std::string C1WindowsDocument::primary_main_resource_directory() {
     ensure_resource_hosts();
     return resource_paths_[kMainDirectoryIndex];
+}
+
+namespace {
+
+// Whole-file reads for S32 tiers, refusing anything over the S32 size limit
+// before reading it.
+class WindowsTierFiles final : public creatures1::display::TierFileSource {
+public:
+    bool read_whole_file(std::string_view path,
+                         std::vector<std::uint8_t>& out) override {
+        out.clear();
+        std::ifstream in(std::string(path), std::ios::binary | std::ios::ate);
+        if (!in) {
+            return false;
+        }
+        const std::streamoff size = in.tellg();
+        if (size < 0 || static_cast<std::uint64_t>(size) >
+                            creatures1::display::kS32MaxFileBytes) {
+            return false;
+        }
+        out.resize(static_cast<std::size_t>(size));
+        in.seekg(0);
+        return static_cast<bool>(
+            in.read(reinterpret_cast<char*>(out.data()), size));
+    }
+};
+
+} // namespace
+
+creatures1::display::TierFileSource& C1WindowsDocument::tier_files() {
+    if (tier_files_ == nullptr) {
+        tier_files_ = std::make_unique<WindowsTierFiles>();
+    }
+    return *tier_files_;
+}
+
+bool C1WindowsDocument::report_image_tiers(const std::string& path) {
+    if (world_runtime_ == nullptr) {
+        return false;
+    }
+    std::ofstream out(path);
+    const auto paths = sprite_file_search_paths();
+    for (std::size_t index = 0; index < world_runtime_->gallery_count();
+         ++index) {
+        const creatures1::display::Gallery* gallery =
+            world_runtime_->gallery_at(index);
+        if (gallery == nullptr) {
+            continue;
+        }
+        const std::uint8_t tiers =
+            image_tiers_.tiers_for(*gallery, paths, tier_files());
+        out << creatures1::display::tier_file_name(
+                   gallery->sprite_file_id, creatures1::display::ImageTier::spr)
+            << " frames " << gallery->header_record_index << "+"
+            << gallery->image_count << ": spr"
+            << ((tiers & 2) ? " s32" : "") << ((tiers & 4) ? " @2x" : "")
+            << "\n";
+    }
+    for (const std::string& message : image_tiers_.take_log()) {
+        out << "refused: " << message << "\n";
+    }
+    return static_cast<bool>(out);
 }
 
 bool C1WindowsDocument::dump_renderer_frame(const std::string& path) {

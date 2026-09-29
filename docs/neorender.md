@@ -54,3 +54,31 @@ Baseline before any neorender change (lab, two norns, 612 x 358 view,
 The world is busy under 1% of the time. The simulation itself is cheap; what
 grows with resolution is drawing, which is why it moves to the GPU and out of
 the tick.
+
+## Art tiers (phase 1)
+
+`display/s32` reads S32 files: the header, every offset, each PNG's
+signature and size, all checked against the real file length before
+anything is decoded (tests: `tests/c1_s32_test.cpp`). PNGs decode through the
+vendored `stb_image` (`third_party/`). Frames over 16M pixels are refused:
+the 1 GB a 16384-square frame needs would not fit a 32-bit process.
+
+`display/image_tiers` finds `NAME.s32` and `NAME@2x.s32` in the same places
+as `NAME.spr` (the world's `Images`, then the install's), keeps a tier only
+if it has a frame for each of a gallery's images at exactly the 1x size (or
+twice it), and picks the best tier under a cap (tests:
+`tests/c1_image_tiers_test.cpp`). An image the game draws into while running
+(pigment, speech, blackboards, fills) is marked by `Image::mark_pixels_changed`
+and always drawn from its own pixels.
+
+With `C1_FRAME_DUMP_DIR` set, `sys: cmnd 32941` writes `tiers.txt` there:
+each loaded gallery and its tiers, then any tier file refused and why.
+
+`scripts/spr_to_s32.py` converts a `.spr` to `.s32` (or `@2x.s32` by
+nearest-neighbour doubling) through the game palette, to test with.
+
+Not yet: an `.s32` with no `.spr` beside it. The world file records each
+frame's size and its offset in the `.spr`, and game logic, hit tests and the
+8-bit renderer all use the `.spr`'s pixels, so that case needs the `.s32`
+quantised to the palette for them. It also would not load in the original
+game, which needs the `.spr`.
