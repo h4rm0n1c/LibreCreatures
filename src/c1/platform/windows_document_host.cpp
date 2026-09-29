@@ -10,6 +10,7 @@
 #include "../world/viewport.hpp"
 #include "../archive/funeral_kit.hpp"
 #include "../creatures/egg.hpp"
+#include "../display/frame_dump.hpp"
 
 #include <limits>
 #include <optional>
@@ -17,6 +18,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>
+#include <fstream>
 #include <string>
 #include <vector>
 
@@ -3873,6 +3875,32 @@ void C1WindowsDocument::set_renderer_caos_viewport_height(int height) {
 std::string C1WindowsDocument::primary_main_resource_directory() {
     ensure_resource_hosts();
     return resource_paths_[kMainDirectoryIndex];
+}
+
+bool C1WindowsDocument::dump_renderer_frame(const std::string& path) {
+    if (renderer_ == nullptr || gdi_host_ == nullptr ||
+        renderer_->dib_pixels() == nullptr || renderer_->dib_width() <= 0 ||
+        renderer_->dib_height() <= 0) {
+        return false;
+    }
+    const auto entries = gdi_host_->read_palette_entries(game_palette());
+    std::array<creatures1::display::FrameColour, 256> palette{};
+    for (std::size_t index = 0; index < palette.size(); ++index) {
+        palette[index] = {entries[index].red, entries[index].green,
+                          entries[index].blue};
+    }
+    // The back buffer is a top-down 8-bit DIB, rows padded to four bytes.
+    const int width = renderer_->dib_width();
+    const creatures1::display::RgbFrame frame =
+        creatures1::display::expand_indexed_frame(
+            renderer_->dib_pixels(), width, renderer_->dib_height(),
+            (width + 3) & ~3, palette);
+    const std::vector<std::uint8_t> bmp =
+        creatures1::display::encode_bmp24(frame);
+    std::ofstream out(path, std::ios::binary);
+    out.write(reinterpret_cast<const char*>(bmp.data()),
+              static_cast<std::streamsize>(bmp.size()));
+    return static_cast<bool>(out);
 }
 
 bool C1WindowsDocument::write_renderer_dib_rect(

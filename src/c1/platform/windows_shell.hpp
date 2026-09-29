@@ -304,6 +304,7 @@ public:
     afx_msg void OnExportHeldEgg();
     afx_msg void OnUpdateExportHeldEgg(CCmdUI* command_ui);
     afx_msg void OnImportEgg();
+    afx_msg void OnDumpRendererFrame();
     afx_msg void OnCreateMaleNorn();
     afx_msg void OnCreateFemaleNorn();
     afx_msg void OnMuteCreatureVoices();
@@ -1359,6 +1360,10 @@ public:
     void set_renderer_caos_viewport_width(int width);
     void set_renderer_caos_viewport_height(int height);
 
+    // Developer frame dump (not native): the whole current view, expanded
+    // through the live game palette, as a 24-bit .bmp.  The reference the
+    // renderer back-ends are compared against.
+    bool dump_renderer_frame(const std::string& path);
     bool write_renderer_dib_rect(
         const creatures1::world::WorldRect& world_rect,
         std::string_view output_path);

@@ -399,6 +399,9 @@ BEGIN_MESSAGE_MAP(C1MainFrame, CFrameWnd)
     ON_COMMAND(32930, &C1MainFrame::OnExportHeldEgg)
     ON_UPDATE_COMMAND_UI(32930, &C1MainFrame::OnUpdateExportHeldEgg)
     ON_COMMAND(32931, &C1MainFrame::OnImportEgg)
+    // Not native, developer only: dump the rendered view (C1_FRAME_DUMP_DIR),
+    // reachable from CAOS as `sys: cmnd 32940`.
+    ON_COMMAND(32940, &C1MainFrame::OnDumpRendererFrame)
     ON_COMMAND(32804, &C1MainFrame::OnCreateMaleNorn)
     ON_COMMAND(32805, &C1MainFrame::OnCreateFemaleNorn)
     ON_COMMAND(32897, &C1MainFrame::OnMuteCreatureVoices)
@@ -1322,6 +1325,22 @@ void C1MainFrame::OnExportHeldEgg() {
 void C1MainFrame::OnUpdateExportHeldEgg(CCmdUI* command_ui) {
     auto* document = DYNAMIC_DOWNCAST(C1WindowsDocument, GetActiveDocument());
     command_ui->Enable(document != nullptr && held_egg(*document) != nullptr);
+}
+
+void C1MainFrame::OnDumpRendererFrame() {
+    char directory[MAX_PATH] = {};
+    const DWORD length =
+        GetEnvironmentVariableA("C1_FRAME_DUMP_DIR", directory, MAX_PATH);
+    auto* document = DYNAMIC_DOWNCAST(C1WindowsDocument, GetActiveDocument());
+    if (length == 0 || length >= MAX_PATH || document == nullptr) {
+        return;
+    }
+    std::string path(directory);
+    if (path.back() != '\\' && path.back() != '/') {
+        path.push_back('\\');
+    }
+    path += "frame-" + std::to_string(document->world_tick_count()) + "-gdi.bmp";
+    document->dump_renderer_frame(path);
 }
 
 void C1MainFrame::OnImportEgg() {

@@ -29,6 +29,8 @@ same path.
 9. [Packed classifiers](packed-classifiers.md) documents the single 32-bit
    family/genus/species encoding reused for both object identity and CAOS
    script dispatch, and where its wildcard-matching rules apply.
+10. [neorender](neorender.md) is the branch work on true-colour art, zoom,
+    SDL3 rendering and the fixed-step world loop.
 
 For build prerequisites, packaging, and supplying game data, see
 [Building and packaging](building.md).
