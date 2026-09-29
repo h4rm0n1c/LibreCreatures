@@ -20,6 +20,7 @@
 #include "../application/kit_processes.hpp"
 #include "../application/main_frame.hpp"
 #include "../application/resource_hosts.hpp"
+#include "../application/s32_sprite_files.hpp"
 #include "../display/font.hpp"
 #include "../display/frame_dump.hpp"
 #include "../display/gallery.hpp"
@@ -1599,7 +1600,14 @@ private:
 
     void present_renderer_rect(const creatures1::world::WorldRect& rect);
 
-    creatures1::application::StandardResourceFileBackend files_;
+    creatures1::application::StandardResourceFileBackend disk_files_;
+    // neorender: the files every resource host reads, with a .spr made from
+    // an .s32 for galleries that ship only as .s32.
+    creatures1::application::S32SpriteFileBackend files_{disk_files_};
+    creatures1::display::PaletteDtaBuffer s32_sprite_colours_{};
+    bool s32_sprite_colours_loaded_ = false;
+    const creatures1::display::PaletteDtaBuffer* s32_sprite_colours();
+    void forget_made_sprites();
     std::array<std::string, kResourceDirectoryCount> resource_paths_{};
     std::string save_world_directory_;
     std::string save_image_directory_;

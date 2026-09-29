@@ -80,11 +80,39 @@ each loaded gallery and its tiers, then any tier file refused and why.
 `scripts/spr_to_s32.py` converts a `.spr` to `.s32` (or `@2x.s32` by
 nearest-neighbour doubling) through the game palette, to test with.
 
-Not yet: an `.s32` with no `.spr` beside it. The world file records each
-frame's size and its offset in the `.spr`, and game logic, hit tests and the
-8-bit renderer all use the `.spr`'s pixels, so that case needs the `.s32`
-quantised to the palette for them. It also would not load in the original
-game, which needs the `.spr`.
+### Art that ships only as `.s32` (phase 1b)
+
+The game needs an 8-bit `.spr` behind every gallery. The world file records
+frames by their place in it, and frame sizes, hit tests, pigment remapping,
+the 8-bit renderer and snapshots all read its pixels. So when a `NAME.spr`
+is asked for and there is none in any image directory, the file layer
+(`application/s32_sprite_files`) answers with one made from `NAME.s32` in
+the same directory (`display/s32_to_spr`):
+
+- Alpha under 128 becomes index 0 (transparent).
+- Every other pixel becomes the nearest of the game's own colours, palette
+  indices 10..245 from the install's `PALETTE.DTA`. That file is read on its
+  own, because a world's sprite indexes are read before its palette is set
+  up.
+- A real `NAME.spr` anywhere always wins, so game logic uses a `.spr`'s
+  frames whenever there is one.
+
+The made `.spr` lives in memory, one per file per world. The SDL renderer
+still draws the `.s32` itself, in true colour; the made `.spr` is what the
+rules and the 8-bit path see. `tiers.txt` lists each `.spr` made, or the
+`.s32` refused and why (tests: `tests/c1_s32_to_spr_test.cpp`).
+
+Checked:
+- `back.spr` converted to `.s32` and back through the real palette gives a
+  file of the same size and index table. Of 10 million pixels, 7,241 have a
+  different index, all with the same colour (the palette repeats colours).
+- In the lab, with the install's `back.spr` set aside and only `back.s32` in
+  the world, the world loads and plays. The 8-bit frame from the made `.spr`
+  and the SDL frame from the `.s32` differ by 0 pixels.
+
+Such a world will not load in the original game, which needs the `.spr`.
+The kits read `.spr` files themselves, so they can't see these galleries
+yet.
 
 ## SDL world view (phase 2)
 

@@ -572,6 +572,7 @@ void C1WindowsDocument::construct_semantic_document() {
 
 BOOL C1WindowsDocument::OnOpenDocument(LPCTSTR path) {
     image_tiers_.clear();
+    forget_made_sprites();
     forget_sdl_textures();
     if (path == nullptr) {
         return FALSE;
@@ -637,6 +638,7 @@ BOOL C1WindowsDocument::OnSaveDocument(LPCTSTR path) {
 
 BOOL C1WindowsDocument::OnNewDocument() {
     image_tiers_.clear();
+    forget_made_sprites();
     forget_sdl_textures();
     // A new world is not backed by the previously opened save directory.
     // Clear this before MFC drains the old document so the next resource-host
@@ -4318,6 +4320,9 @@ bool C1WindowsDocument::report_image_tiers(const std::string& path) {
     for (const std::string& message : image_tiers_.take_log()) {
         out << "refused: " << message << "\n";
     }
+    for (const std::string& message : files_.take_log()) {
+        out << "spr from s32: " << message << "\n";
+    }
     return static_cast<bool>(out);
 }
 
@@ -5170,6 +5175,27 @@ void C1WindowsDocument::ensure_resource_hosts() {
         creatures1::application::C1PaletteDtaHost>(files_);
     palette_platform_ = std::make_unique<
         creatures1::platform::WindowsPalettePlatform>(nullptr);
+    files_.set_sources(
+        {[this] { return s32_sprite_colours(); },
+         [this] { return sprite_file_search_paths(); }});
+}
+
+const creatures1::display::PaletteDtaBuffer*
+C1WindowsDocument::s32_sprite_colours() {
+    // Read here rather than taken from the game palette: a world's sprite
+    // indexes are read while its file loads, before the palette is set up.
+    // PALETTE.DTA is the install's, the same for every world.
+    if (!s32_sprite_colours_loaded_ && palette_files_ != nullptr) {
+        s32_sprite_colours_loaded_ = creatures1::display::load_palette_dta_into_buffer(
+            s32_sprite_colours_, *palette_files_,
+            resource_paths_[kPaletteDirectoryIndex]);
+    }
+    return s32_sprite_colours_loaded_ ? &s32_sprite_colours_ : nullptr;
+}
+
+void C1WindowsDocument::forget_made_sprites() {
+    files_.clear();
+    s32_sprite_colours_loaded_ = false;
 }
 
 void C1WindowsDocument::ensure_renderer(CWnd& view, bool smooth_scrolling_enabled) {
