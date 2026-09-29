@@ -408,6 +408,9 @@ BEGIN_MESSAGE_MAP(C1MainFrame, CFrameWnd)
     // 32947-32949, Creature's view size 32950-32951.
     ON_COMMAND_RANGE(32944, 32951, &C1MainFrame::OnViewScale)
     ON_UPDATE_COMMAND_UI_RANGE(32944, 32951, &C1MainFrame::OnUpdateViewScale)
+    // View > Smooth motion.
+    ON_COMMAND(32952, &C1MainFrame::OnSmoothMotion)
+    ON_UPDATE_COMMAND_UI(32952, &C1MainFrame::OnUpdateSmoothMotion)
     ON_COMMAND(32804, &C1MainFrame::OnCreateMaleNorn)
     ON_COMMAND(32805, &C1MainFrame::OnCreateFemaleNorn)
     ON_COMMAND(32897, &C1MainFrame::OnMuteCreatureVoices)
@@ -1473,6 +1476,20 @@ void C1MainFrame::OnUpdateViewScale(CCmdUI* command_ui) {
                    id - kViewEyeZoomFirst + 1;
     }
     command_ui->SetRadio(selected ? TRUE : FALSE);
+}
+
+void C1MainFrame::OnSmoothMotion() {
+    auto* document = DYNAMIC_DOWNCAST(C1WindowsDocument, GetActiveDocument());
+    if (document != nullptr) {
+        document->set_smooth_motion(!document->smooth_motion());
+    }
+}
+
+void C1MainFrame::OnUpdateSmoothMotion(CCmdUI* command_ui) {
+    auto* document = DYNAMIC_DOWNCAST(C1WindowsDocument, GetActiveDocument());
+    const bool available = document != nullptr && document->sdl_view_active();
+    command_ui->Enable(available ? TRUE : FALSE);
+    command_ui->SetCheck(available && document->smooth_motion() ? 1 : 0);
 }
 
 void C1MainFrame::OnImportEgg() {

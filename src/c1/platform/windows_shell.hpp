@@ -9,6 +9,7 @@
 #include <shellapi.h>
 
 #include <optional>
+#include <unordered_map>
 #include <utility>
 #include <fstream>
 #include <functional>
@@ -333,6 +334,8 @@ public:
     afx_msg void OnReportImageTiers();
     afx_msg void OnViewScale(UINT command_id);
     afx_msg void OnUpdateViewScale(CCmdUI* command_ui);
+    afx_msg void OnSmoothMotion();
+    afx_msg void OnUpdateSmoothMotion(CCmdUI* command_ui);
     afx_msg void OnCreateMaleNorn();
     afx_msg void OnCreateFemaleNorn();
     afx_msg void OnMuteCreatureVoices();
@@ -1439,6 +1442,11 @@ public:
     void set_max_image_detail(creatures1::display::ImageTier tier);
     int eye_view_zoom() const { return sdl_view_ != nullptr ? eye_view_zoom_ : 1; }
     void set_eye_view_zoom(int zoom);
+    // View > Smooth motion: SDL frames between ticks glide the view and
+    // every sprite from where the last tick found them to where it left
+    // them, so the world is drawn one tick behind.  Setting SmoothMotion.
+    bool smooth_motion() const { return smooth_motion_; }
+    void set_smooth_motion(bool on);
     creatures1::display::ImageTierStore& image_tiers() { return image_tiers_; }
     creatures1::display::TierFileSource& tier_files();
     bool write_renderer_dib_rect(
@@ -1659,9 +1667,23 @@ private:
     // hand, and when the last SDL frame was drawn.
     int tick_mouse_world_x_ = 0;
     int tick_mouse_world_y_ = 0;
-    int drawn_mouse_world_x_ = -1;
-    int drawn_mouse_world_y_ = -1;
-    void draw_hand_at_mouse(std::vector<creatures1::display::SceneItem>& scene);
+    int drawn_mouse_client_x_ = -1;
+    int drawn_mouse_client_y_ = -1;
+    // Smooth motion: where the view and each sprite were when the last tick
+    // began, and when it began (QueryPerformanceCounter ms).
+    bool smooth_motion_ = true;
+    bool motion_snapshot_valid_ = false;
+    std::unordered_map<const creatures1::objects::Entity*, std::pair<int, int>>
+        previous_entity_positions_;
+    int previous_view_left_ = 0;
+    int previous_view_top_ = 0;
+    double tick_started_ms_ = 0.0;
+    float drawn_tick_progress_ = 1.0f;
+    void snapshot_motion();
+    // 0 just after a tick, 1 by the next; 1 whenever nothing glides.
+    float tick_progress() const;
+    void draw_hand_at_mouse(std::vector<creatures1::display::SceneItem>& scene,
+                            const creatures1::world::WorldRect& viewport);
     void request_sdl_frame();
     void create_sdl_view(CWnd& view);
     // Which SDL-drawn window, if any, a device context belongs to: the

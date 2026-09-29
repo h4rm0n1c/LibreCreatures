@@ -229,6 +229,39 @@ stays where the world has it, as it always has.
 
 `compare.log` lines now end with `frames=`, the number of SDL frames drawn.
 
-Not done: camera interpolation. Follow still moves the view once per tick.
-Drawing the view between two tick positions would put the world a tick
-behind the mouse, so it needs its own design.
+### Smooth motion
+
+View > Smooth motion (on by default; setting `SmoothMotion`, command 32952,
+all seven languages) glides the view and every sprite between ticks:
+
+- At the start of each tick the view's origin and every entity's position
+  are recorded. Each SDL frame then draws them `progress` of the way from
+  there to where the tick left them, where `progress` is the time since the
+  tick over the tick interval. The world is therefore drawn one tick
+  behind; the hand is not, as it is drawn at the mouse over the view as
+  drawn.
+- The camera alone is not enough: a followed creature still steps once a
+  tick, so a gliding view would make it jitter. Moving both keeps it still
+  on screen.
+- Not glided, shown as they are:
+  - a sprite new since the tick;
+  - anything that moved more than 64 px in one tick (a teleport, the
+    world's wrap);
+  - a view that moved more than half its size (a favourite place, a camera
+    command).
+  - Image frames change per tick as before.
+- Paused, or with the setting off, frames show the world exactly as it is.
+  The frame-dump comparison always draws unglided.
+- While anything glides, the pulse draws a frame every 10 ms.
+- A click still lands on the world as the tick left it, up to one tick's
+  movement from what is drawn.
+
+Checked in the lab:
+- With the camera moved 4 px every other tick by a CAOS script, the view
+  moved in 1 px steps across the tick; with the setting off, in 4 px jumps.
+- The hand, and what it carried, stayed on the same screen pixels while
+  the view glided under it.
+- A followed walking norn stayed still on screen.
+- The frame dump still differs by 0 pixels.
+- Ticks still average 90.00 ms. Their spread widened, as each pulse now
+  draws a frame: 5th to 95th percentile within 1 ms, worst about 107 ms.

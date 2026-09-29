@@ -8,4 +8,5 @@ BEGIN
     32949 "Beim Vergrößern auch doppelt aufgelöste @2x.s32-Grafiken zeigen, wo vorhanden\n@2x-Grafik"
     32950 "Das Betrachtungsfenster in Originalgröße zeigen\nNormale Größe"
     32951 "Das Betrachtungsfenster in doppelter Größe zeigen\nDoppelte Größe"
+    32952 "Ansicht und alles darin zwischen den Schritten der Welt gleiten lassen (einen Schritt verzögert)\nFlüssige Bewegung"
 END

@@ -2047,6 +2047,7 @@ void C1WindowsDocument::update_world_tick() {
     // frames between ticks draw the hand this far from where it now is.
     tick_mouse_world_x_ = mouse_world_x();
     tick_mouse_world_y_ = mouse_world_y();
+    snapshot_motion();
     TickProfiler& profiler = TickProfiler::instance();
     if (!profiler.enabled()) {
         semantic_document_->update_world(*this);
@@ -4031,6 +4032,8 @@ void C1WindowsDocument::load_view_scale_settings() {
             : creatures1::display::ImageTier::s32_2x;
     read_view_setting("EyeViewZoom", value, 1);
     eye_view_zoom_ = value == 2 ? 2 : 1;
+    read_view_setting("SmoothMotion", value, 1);
+    smooth_motion_ = value != 0;
 }
 
 float C1WindowsDocument::world_zoom_factor() const {
@@ -4109,6 +4112,15 @@ void C1WindowsDocument::set_max_image_detail(
     }
 }
 
+void C1WindowsDocument::set_smooth_motion(bool on) {
+    if (sdl_view_ == nullptr) {
+        return;
+    }
+    smooth_motion_ = on;
+    write_view_setting("SmoothMotion", on ? 1 : 0);
+    request_sdl_frame();
+}
+
 void C1WindowsDocument::set_eye_view_zoom(int zoom) {
     if (sdl_view_ == nullptr) {
         return;
@@ -4142,6 +4154,40 @@ void C1WindowsDocument::forget_sdl_textures() {
     }
 }
 
+namespace {
+
+// Further than a sprite walks, falls or rides in one tick: a move this big
+// is a jump and is not glided.
+constexpr int kMaximumGlidePerTick = 64;
+
+// A world x difference taken the short way round the wrapped world.
+int wrapped_world_delta(int delta) {
+    if (delta > creatures1::world::kWorldWidth / 2) {
+        return delta - creatures1::world::kWorldWidth;
+    }
+    if (delta < -creatures1::world::kWorldWidth / 2) {
+        return delta + creatures1::world::kWorldWidth;
+    }
+    return delta;
+}
+
+int glide(int delta, float progress) {
+    return static_cast<int>(std::lround(static_cast<double>(delta) * progress));
+}
+
+double performance_counter_ms() {
+    static const double frequency = [] {
+        LARGE_INTEGER value{};
+        QueryPerformanceFrequency(&value);
+        return static_cast<double>(value.QuadPart);
+    }();
+    LARGE_INTEGER now{};
+    QueryPerformanceCounter(&now);
+    return static_cast<double>(now.QuadPart) * 1000.0 / frequency;
+}
+
+} // namespace
+
 void C1WindowsDocument::present_sdl_frame() {
     sdl_frame_posted_ = false;
     if (sdl_view_ == nullptr || renderer_ == nullptr ||
@@ -4149,21 +4195,109 @@ void C1WindowsDocument::present_sdl_frame() {
         renderer_view_->GetParentFrame()->IsIconic()) {
         return;
     }
-    const creatures1::world::WorldRect viewport{
+    creatures1::world::WorldRect viewport{
         renderer_->viewport_left(), renderer_->viewport_top(),
         renderer_->viewport_right(), renderer_->viewport_bottom()};
-    renderer_->collect_scene(viewport, sdl_scene_);
-    draw_hand_at_mouse(sdl_scene_);
+    const float progress = tick_progress();
+    drawn_tick_progress_ = progress;
+    if (progress >= 1.0f) {
+        renderer_->collect_scene(viewport, sdl_scene_);
+        draw_hand_at_mouse(sdl_scene_, viewport);
+        sdl_view_->render_frame(*this, sdl_scene_, viewport, world_zoom_factor(),
+                                &renderer_->debug_highlight_rect(), nullptr);
+        return;
+    }
+
+    // Smooth motion: the view where it was at the last tick, moved
+    // `progress` of the way to where it is now -- unless it jumped (a
+    // favourite place, a camera command), which is shown as a jump.
+    const int width = viewport.max_x - viewport.min_x;
+    const int height = viewport.max_y - viewport.min_y;
+    const int view_dx = wrapped_world_delta(viewport.min_x - previous_view_left_);
+    const int view_dy = viewport.min_y - previous_view_top_;
+    if (std::abs(view_dx) <= width / 2 && std::abs(view_dy) <= height / 2) {
+        int left = previous_view_left_ + glide(view_dx, progress);
+        if (left < 0) {
+            left += creatures1::world::kWorldWidth;
+        } else if (left >= creatures1::world::kWorldWidth) {
+            left -= creatures1::world::kWorldWidth;
+        }
+        const int top = previous_view_top_ + glide(view_dy, progress);
+        viewport = {left, top, left + width, top + height};
+    }
+    // Everything that could glide into view, then each sprite moved back
+    // along its step.  A sprite that is new since the tick, or moved further
+    // than anything walks or falls in one (a teleport), is shown where it is.
+    const creatures1::world::WorldRect gather{
+        viewport.min_x - kMaximumGlidePerTick,
+        (std::max)(0, viewport.min_y - kMaximumGlidePerTick),
+        viewport.max_x + kMaximumGlidePerTick,
+        (std::min)(creatures1::world::kWorldHeight,
+                   viewport.max_y + kMaximumGlidePerTick)};
+    renderer_->collect_scene(gather, sdl_scene_);
+    for (creatures1::display::SceneItem& item : sdl_scene_) {
+        if (item.entity == nullptr) {
+            continue;
+        }
+        const auto previous = previous_entity_positions_.find(item.entity);
+        if (previous == previous_entity_positions_.end()) {
+            continue;
+        }
+        const int dx = wrapped_world_delta(item.world_x - previous->second.first);
+        const int dy = item.world_y - previous->second.second;
+        if (std::abs(dx) > kMaximumGlidePerTick ||
+            std::abs(dy) > kMaximumGlidePerTick) {
+            continue;
+        }
+        item.world_x = previous->second.first + glide(dx, progress);
+        item.world_y = previous->second.second + glide(dy, progress);
+    }
+    // The hand is drawn at the mouse, over the view as drawn.
+    draw_hand_at_mouse(sdl_scene_, viewport);
     sdl_view_->render_frame(*this, sdl_scene_, viewport, world_zoom_factor(),
                             &renderer_->debug_highlight_rect(), nullptr);
+}
+
+void C1WindowsDocument::snapshot_motion() {
+    previous_entity_positions_.clear();
+    motion_snapshot_valid_ = false;
+    if (sdl_view_ == nullptr || renderer_ == nullptr || !smooth_motion_) {
+        return;
+    }
+    for (std::size_t index = 0; index < entity_count(); ++index) {
+        if (const creatures1::objects::Entity* entity = entity_at(index)) {
+            previous_entity_positions_[entity] = {entity->world_x(),
+                                                  entity->world_y()};
+        }
+    }
+    previous_view_left_ = renderer_->viewport_left();
+    previous_view_top_ = renderer_->viewport_top();
+    tick_started_ms_ = performance_counter_ms();
+    motion_snapshot_valid_ = true;
+}
+
+float C1WindowsDocument::tick_progress() const {
+    // Paused, the world is shown as it is.
+    if (!smooth_motion_ || !motion_snapshot_valid_ || !world_timer_is_armed() ||
+        world_update_timer_interval_ms_ == 0) {
+        return 1.0f;
+    }
+    const double progress = (performance_counter_ms() - tick_started_ms_) /
+                            static_cast<double>(world_update_timer_interval_ms_);
+    return progress >= 1.0 ? 1.0f
+           : progress <= 0.0 ? 0.0f
+                             : static_cast<float>(progress);
 }
 
 void C1WindowsDocument::present_between_ticks() {
     if (sdl_view_ == nullptr || renderer_ == nullptr) {
         return;
     }
-    if (mouse_world_x() == drawn_mouse_world_x_ &&
-        mouse_world_y() == drawn_mouse_world_y_) {
+    // A frame whenever something glides or the mouse has moved, and one
+    // more when a glide has just finished.
+    if (tick_progress() >= 1.0f && drawn_tick_progress_ >= 1.0f &&
+        mouse_client_x() == drawn_mouse_client_x_ &&
+        mouse_client_y() == drawn_mouse_client_y_) {
         return;
     }
     present_sdl_frame();
@@ -4206,26 +4340,21 @@ void collect_object_entities(
 } // namespace
 
 void C1WindowsDocument::draw_hand_at_mouse(
-    std::vector<creatures1::display::SceneItem>& scene) {
-    const int mouse_x = mouse_world_x();
-    const int mouse_y = mouse_world_y();
-    drawn_mouse_world_x_ = mouse_x;
-    drawn_mouse_world_y_ = mouse_y;
+    std::vector<creatures1::display::SceneItem>& scene,
+    const creatures1::world::WorldRect& viewport) {
+    drawn_mouse_client_x_ = mouse_client_x();
+    drawn_mouse_client_y_ = mouse_client_y();
     // Only while the world runs: paused, the hand stays where the world has
     // it, as it always has.
     if (!world_timer_is_armed()) {
         return;
     }
-    int delta_x = mouse_x - tick_mouse_world_x_;
-    const int delta_y = mouse_y - tick_mouse_world_y_;
-    if (delta_x > creatures1::world::kWorldWidth / 2) {
-        delta_x -= creatures1::world::kWorldWidth;
-    } else if (delta_x < -creatures1::world::kWorldWidth / 2) {
-        delta_x += creatures1::world::kWorldWidth;
-    }
-    if (delta_x == 0 && delta_y == 0) {
-        return;
-    }
+    // Where the mouse is over the view as it is drawn (which, with smooth
+    // motion, may be a little behind the world's own view).
+    const int delta_x = wrapped_world_delta(
+        drawn_mouse_client_x_ + viewport.min_x - tick_mouse_world_x_);
+    const int delta_y =
+        drawn_mouse_client_y_ + viewport.min_y - tick_mouse_world_y_;
     // The hand, and whatever follows the mouse with it (a carried object,
     // an object being placed): the objects with an unbounded position.
     std::unordered_set<const creatures1::objects::Entity*> moving;
@@ -4238,10 +4367,11 @@ void C1WindowsDocument::draw_hand_at_mouse(
             collect_object_entities(*object, moving);
         }
     }
+    // From where the tick put them, whatever smooth motion did.
     for (creatures1::display::SceneItem& item : scene) {
         if (item.entity != nullptr && moving.count(item.entity) != 0) {
-            item.world_x += delta_x;
-            item.world_y += delta_y;
+            item.world_x = item.entity->world_x() + delta_x;
+            item.world_y = item.entity->world_y() + delta_y;
         }
     }
 }

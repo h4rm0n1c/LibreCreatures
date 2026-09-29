@@ -75,6 +75,7 @@ BEGIN
             MENUITEM "標準", 32950
             MENUITEM "2倍", 32951
         END
+        MENUITEM "なめらかな動き", 32952
         MENUITEM "", 0
         MENUITEM "CAOS Console\tCtrl+Shift+C", 32896
     END

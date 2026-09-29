@@ -76,6 +76,7 @@ BEGIN
             MENUITEM "&Normal", 32950
             MENUITEM "&Double", 32951
         END
+        MENUITEM "Smooth &motion", 32952
         MENUITEM "", 0
         MENUITEM "CAOS Console\tCtrl+Shift+C", 32896
     END

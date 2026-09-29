@@ -8,4 +8,5 @@ BEGIN
     32949 "Con zoom, mostrar también los gráficos @2x.s32 de doble resolución donde los haya\nGráficos @2x"
     32950 "Mostrar la vista de la criatura a su tamaño original\nTamaño normal"
     32951 "Mostrar la vista de la criatura al doble de tamaño\nTamaño doble"
+    32952 "Deslizar la vista y todo lo que muestra entre los pasos del mundo (con un paso de retraso)\nMovimiento suave"
 END

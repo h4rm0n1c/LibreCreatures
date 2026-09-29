@@ -8,4 +8,5 @@ BEGIN
     32949 "En zoom avant, afficher aussi les images @2x.s32 en double résolution quand il y en a\nImages @2x"
     32950 "Afficher la vue de la créature à sa taille d'origine\nTaille normale"
     32951 "Afficher la vue de la créature deux fois plus grande\nDouble taille"
+    32952 "Faire glisser la vue et tout ce qu'elle montre entre les pas du monde (avec un pas de retard)\nMouvement fluide"
 END

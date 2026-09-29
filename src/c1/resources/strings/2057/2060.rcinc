@@ -8,4 +8,5 @@ BEGIN
     32949 "Also draw double-resolution @2x.s32 art where there is some, when zoomed in\n@2x art"
     32950 "Show the Creature's view at its original size\nNormal size"
     32951 "Show the Creature's view at twice its size\nDouble size"
+    32952 "Glide the view and everything in it between the world's steps (drawn one step behind)\nSmooth motion"
 END

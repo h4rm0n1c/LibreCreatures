@@ -8,4 +8,5 @@ BEGIN
     32949 "Quando ingrandito, mostra anche la grafica @2x.s32 a doppia risoluzione dove c'è\nGrafica @2x"
     32950 "Mostra la visuale della creatura nelle dimensioni originali\nDimensione normale"
     32951 "Mostra la visuale della creatura al doppio delle dimensioni\nDimensione doppia"
+    32952 "Fa scorrere la visuale e tutto ciò che contiene tra i passi del mondo (con un passo di ritardo)\nMovimento fluido"
 END
