@@ -239,6 +239,16 @@ class C1MainFrame final
       public creatures1::application::MainFrameLifecyclePlatform,
       public creatures1::application::MainFramePipeServerPlatform {
 public:
+    // neorender: the world clock, standing in for the native's WM_TIMER 1
+    // with the same meaning (setting it restarts the period, stopping it
+    // pauses the world).  A short pulse timer drives a
+    // QueryPerformanceCounter accumulator, so ticks average exactly the
+    // interval, and between ticks the pulse redraws the SDL view with the
+    // hand where the mouse is.  Being WM_TIMER-driven, it keeps running
+    // inside menus and modal loops as the native timer did.
+    void set_world_clock(std::uint32_t interval_ms);
+    void stop_world_clock();
+
     DECLARE_DYNCREATE(C1MainFrame)
 
     C1MainFrame();
@@ -543,6 +553,11 @@ private:
     private:
         C1MainFrame& frame_;
     };
+
+    void on_world_pulse();
+    std::uint32_t world_clock_interval_ms_ = 0;
+    double world_clock_next_tick_ms_ = 0.0;
+    bool in_world_pulse_ = false;
 
     std::unique_ptr<creatures1::application::CMainFrame> frame_policy_;
     C1MainToolBar main_toolbar_;
@@ -1405,6 +1420,10 @@ public:
     const std::array<creatures1::display::FrameColour, 256>& frame_palette();
     // Draws the main view through SDL (the view's kSdlFrameMessage).
     void present_sdl_frame();
+    // Between world ticks: a new SDL frame if the mouse has moved, with the
+    // hand and anything it carries drawn at the mouse (drawing only; the
+    // world sees the pointer move on the next tick as before).
+    void present_between_ticks();
     bool sdl_view_active() const { return sdl_view_ != nullptr; }
     const std::string& sdl_driver() const { return sdl_driver_; }
     // neorender: View > Zoom, Maximum detail and Creature's view size.
@@ -1628,6 +1647,13 @@ private:
     creatures1::display::ImageTier max_image_detail_ =
         creatures1::display::ImageTier::s32_2x;
     std::vector<creatures1::display::SceneItem> sdl_scene_;
+    // Where the mouse was, in world pixels, when the last tick placed the
+    // hand, and when the last SDL frame was drawn.
+    int tick_mouse_world_x_ = 0;
+    int tick_mouse_world_y_ = 0;
+    int drawn_mouse_world_x_ = -1;
+    int drawn_mouse_world_y_ = -1;
+    void draw_hand_at_mouse(std::vector<creatures1::display::SceneItem>& scene);
     void request_sdl_frame();
     void create_sdl_view(CWnd& view);
     // Which SDL-drawn window, if any, a device context belongs to: the

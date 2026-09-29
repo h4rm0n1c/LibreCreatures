@@ -87,7 +87,7 @@ private:
         void stop_world_update_timer() override {
             if (C1MainFrame* frame = active_main_frame();
                 frame != nullptr && frame->GetSafeHwnd() != nullptr) {
-                frame->KillTimer(1);
+                frame->stop_world_clock();  // timer 1 (neorender)
             }
         }
         void invoke_base_file_open() override { app_.CWinApp::OnFileOpen(); }
@@ -95,7 +95,7 @@ private:
         void restart_world_update_timer(std::uint32_t interval_ms) override {
             C1MainFrame* frame = active_main_frame();
             if (rearm_ && frame != nullptr && frame->GetSafeHwnd() != nullptr) {
-                frame->SetTimer(1, interval_ms, nullptr);
+                frame->set_world_clock(interval_ms);  // timer 1
             }
         }
 

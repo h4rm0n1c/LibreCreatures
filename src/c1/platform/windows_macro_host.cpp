@@ -2586,7 +2586,7 @@ void WindowsMacroHost::report_unsupported_language_version(
     }
     C1MainFrame* frame = active_main_frame();
     if (frame != nullptr && frame->GetSafeHwnd() != nullptr) {
-        ::KillTimer(frame->GetSafeHwnd(), 1);
+        frame->stop_world_clock();  // timer 1 (neorender)
     }
     AfxMessageBox(message, MB_ICONEXCLAMATION, 0);
     document_.set_world_update_timer_interval_ms(0);

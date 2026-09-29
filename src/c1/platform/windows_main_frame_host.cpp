@@ -1167,7 +1167,79 @@ void C1MainFrame::OnUpdateInformativeCreaturesMenu(CCmdUI* command_ui) {
         ui, document->world_timer_is_armed());
 }
 
+namespace {
+
+// The world clock's pulse: often enough to draw the hand smoothly (the
+// system timer rounds it to its own resolution, about 15.6 ms by default).
+constexpr UINT_PTR kWorldPulseTimerId = 0x4e52;
+constexpr UINT kWorldPulseIntervalMs = 10;
+// Ticks one pulse may run to catch up after a stall; any further backlog
+// is dropped, as WM_TIMER drops missed ticks.
+constexpr int kWorldClockMaximumCatchUp = 3;
+
+double performance_counter_ms() {
+    static const double frequency = [] {
+        LARGE_INTEGER value{};
+        QueryPerformanceFrequency(&value);
+        return static_cast<double>(value.QuadPart);
+    }();
+    LARGE_INTEGER now{};
+    QueryPerformanceCounter(&now);
+    return static_cast<double>(now.QuadPart) * 1000.0 / frequency;
+}
+
+} // namespace
+
+void C1MainFrame::set_world_clock(std::uint32_t interval_ms) {
+    if (GetSafeHwnd() == nullptr) {
+        return;
+    }
+    world_clock_interval_ms_ = interval_ms;
+    world_clock_next_tick_ms_ = performance_counter_ms() + interval_ms;
+    SetTimer(kWorldPulseTimerId, kWorldPulseIntervalMs, nullptr);
+}
+
+void C1MainFrame::stop_world_clock() {
+    world_clock_interval_ms_ = 0;
+    if (GetSafeHwnd() != nullptr) {
+        KillTimer(kWorldPulseTimerId);
+    }
+}
+
+void C1MainFrame::on_world_pulse() {
+    // A tick that opens a message box pumps messages; its pulses must not
+    // tick again underneath it.
+    if (in_world_pulse_ || world_clock_interval_ms_ == 0 ||
+        frame_policy_ == nullptr) {
+        return;
+    }
+    in_world_pulse_ = true;
+    const double now = performance_counter_ms();
+    int ticks = 0;
+    while (world_clock_interval_ms_ != 0 && now >= world_clock_next_tick_ms_) {
+        world_clock_next_tick_ms_ += world_clock_interval_ms_;
+        frame_policy_->OnTimer();
+        if (++ticks == kWorldClockMaximumCatchUp) {
+            if (now >= world_clock_next_tick_ms_) {
+                world_clock_next_tick_ms_ = now + world_clock_interval_ms_;
+            }
+            break;
+        }
+    }
+    in_world_pulse_ = false;
+    if (world_clock_interval_ms_ != 0) {
+        if (auto* document =
+                DYNAMIC_DOWNCAST(C1WindowsDocument, GetActiveDocument())) {
+            document->present_between_ticks();
+        }
+    }
+}
+
 void C1MainFrame::OnTimer(UINT_PTR timer_id) {
+    if (timer_id == kWorldPulseTimerId) {
+        on_world_pulse();
+        return;
+    }
     if (timer_id == 1 && frame_policy_ != nullptr) {
         frame_policy_->OnTimer();
     }

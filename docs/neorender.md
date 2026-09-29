@@ -154,3 +154,34 @@ and the hand sits under the mouse. Scale-to-height shows the whole world
 height with the hand under the mouse. The SPR cap at 1x differs from the
 8-bit frame by 0 pixels. The eye view is right at both sizes, both when
 opened and when switched. The settings survive a restart.
+
+## World clock and a smooth hand (phase 4)
+
+The world no longer ticks on `WM_TIMER` 1. Every place that set or killed
+that timer now calls the main frame's world clock (`set_world_clock`,
+`stop_world_clock`), and those keep its meaning: setting restarts the
+period, stopping pauses the world. That covers pause/resume, speed changes,
+file open/save (the world stops while their dialogs are up), macro version
+errors, and kit pause and resume.
+
+A 10 ms pulse timer drives a `QueryPerformanceCounter` accumulator. It runs
+a tick whenever one is due, up to three in a row to catch up after a stall,
+and drops any further backlog as `WM_TIMER` did. It is still a window timer,
+so the world keeps ticking inside menus and modal loops as before. Measured
+in the lab: ticks 90.00 ms apart on average, 5th to 95th percentile within
+0.1 ms, the same as before.
+
+Between ticks, the pulse draws a new SDL frame whenever the mouse has moved:
+about 100 frames a second while it moves, against 11 before. In that frame
+the hand, and anything that follows the mouse with it (a carried object,
+creature or compound object, or an object being placed), is drawn as far
+from its world position as the mouse has moved since the last tick. That is
+drawing only: the world moves the pointer on its next tick exactly as
+before, so `pntr` and the kits see the same values. While paused, the hand
+stays where the world has it, as it always has.
+
+`compare.log` lines now end with `frames=`, the number of SDL frames drawn.
+
+Not done: camera interpolation. Follow still moves the view once per tick.
+Drawing the view between two tick positions would put the world a tick
+behind the mouse, so it needs its own design.

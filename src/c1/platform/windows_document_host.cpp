@@ -13,11 +13,16 @@
 #include "../display/frame_dump.hpp"
 #include "sdl_world_view.hpp"
 
+#include "../creatures/body.hpp"
+#include "../creatures/skeleton.hpp"
+#include "../objects/compound_object.hpp"
+
 #include <limits>
 #include <optional>
 #include <cstdio>
 #include <algorithm>
 #include <cmath>
+#include <unordered_set>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
@@ -1868,11 +1873,21 @@ public:
     std::uintptr_t native_handle() const override {
         return reinterpret_cast<std::uintptr_t>(frame_.GetSafeHwnd());
     }
+    // Timer 1 is the world clock (neorender).
     void kill_timer(std::uint32_t timer_id) override {
-        frame_.KillTimer(timer_id);
+        if (timer_id == 1) {
+            frame_.stop_world_clock();
+        } else {
+            frame_.KillTimer(timer_id);
+        }
     }
     void set_timer(std::uint32_t timer_id, std::uint32_t interval_ms) override {
-        if (rearm_) {
+        if (!rearm_) {
+            return;
+        }
+        if (timer_id == 1) {
+            frame_.set_world_clock(interval_ms);
+        } else {
             frame_.SetTimer(timer_id, interval_ms, nullptr);
         }
     }
@@ -2026,6 +2041,10 @@ void C1WindowsDocument::update_world_tick() {
     if (semantic_document_ == nullptr) {
         return;
     }
+    // neorender: the mouse position this tick places the hand at; SDL
+    // frames between ticks draw the hand this far from where it now is.
+    tick_mouse_world_x_ = mouse_world_x();
+    tick_mouse_world_y_ = mouse_world_y();
     TickProfiler& profiler = TickProfiler::instance();
     if (!profiler.enabled()) {
         semantic_document_->update_world(*this);
@@ -2906,9 +2925,13 @@ void C1WindowsDocument::restore_main_window_title(std::string_view title) {
 }
 
 void C1WindowsDocument::kill_world_update_timer() {
-    CWnd* main_window = AfxGetMainWnd();
-    if (main_window != nullptr && main_window->GetSafeHwnd() != nullptr) {
-        main_window->KillTimer(kWorldUpdateTimerId);
+    // neorender: timer 1 is the main frame's world clock.
+    C1MainFrame* frame = active_main_frame();
+    if (frame == nullptr) {
+        frame = DYNAMIC_DOWNCAST(C1MainFrame, AfxGetMainWnd());
+    }
+    if (frame != nullptr) {
+        frame->stop_world_clock();
     }
 }
 
@@ -3007,8 +3030,8 @@ bool C1WindowsDocument::has_main_frame() const {
 
 void C1WindowsDocument::arm_world_update_timer(std::uint32_t interval_ms) {
     C1MainFrame* frame = active_main_frame();
-    if (frame != nullptr && frame->GetSafeHwnd() != nullptr) {
-        frame->SetTimer(kWorldUpdateTimerId, interval_ms, nullptr);
+    if (frame != nullptr) {
+        frame->set_world_clock(interval_ms);  // timer 1 (neorender)
     }
 }
 
@@ -4128,8 +4151,97 @@ void C1WindowsDocument::present_sdl_frame() {
         renderer_->viewport_left(), renderer_->viewport_top(),
         renderer_->viewport_right(), renderer_->viewport_bottom()};
     renderer_->collect_scene(viewport, sdl_scene_);
+    draw_hand_at_mouse(sdl_scene_);
     sdl_view_->render_frame(*this, sdl_scene_, viewport, world_zoom_factor(),
                             &renderer_->debug_highlight_rect(), nullptr);
+}
+
+void C1WindowsDocument::present_between_ticks() {
+    if (sdl_view_ == nullptr || renderer_ == nullptr) {
+        return;
+    }
+    if (mouse_world_x() == drawn_mouse_world_x_ &&
+        mouse_world_y() == drawn_mouse_world_y_) {
+        return;
+    }
+    present_sdl_frame();
+}
+
+namespace {
+
+// Every sprite an object draws with.  The objects the hand can hold are
+// simple objects, compound objects and creatures.
+void collect_object_entities(
+    const creatures1::objects::Object& object,
+    std::unordered_set<const creatures1::objects::Entity*>& out) {
+    if (const auto* simple =
+            dynamic_cast<const creatures1::objects::SimpleObject*>(&object)) {
+        if (simple->entity() != nullptr) {
+            out.insert(simple->entity());
+        }
+    } else if (const auto* compound =
+                   dynamic_cast<const creatures1::objects::CompoundObject*>(
+                       &object)) {
+        for (int part = 0; part < compound->part_count(); ++part) {
+            if (compound->part(static_cast<std::size_t>(part)).entity != nullptr) {
+                out.insert(compound->part(static_cast<std::size_t>(part)).entity.get());
+            }
+        }
+    } else if (const auto* skeleton =
+                   dynamic_cast<const creatures1::creatures::Skeleton*>(&object)) {
+        if (skeleton->body != nullptr) {
+            out.insert(skeleton->body.get());
+        }
+        for (const creatures1::creatures::LimbPart* limb :
+             skeleton->limb_chain_heads) {
+            for (; limb != nullptr; limb = limb->next_in_chain) {
+                out.insert(limb);
+            }
+        }
+    }
+}
+
+} // namespace
+
+void C1WindowsDocument::draw_hand_at_mouse(
+    std::vector<creatures1::display::SceneItem>& scene) {
+    const int mouse_x = mouse_world_x();
+    const int mouse_y = mouse_world_y();
+    drawn_mouse_world_x_ = mouse_x;
+    drawn_mouse_world_y_ = mouse_y;
+    // Only while the world runs: paused, the hand stays where the world has
+    // it, as it always has.
+    if (!world_timer_is_armed()) {
+        return;
+    }
+    int delta_x = mouse_x - tick_mouse_world_x_;
+    const int delta_y = mouse_y - tick_mouse_world_y_;
+    if (delta_x > creatures1::world::kWorldWidth / 2) {
+        delta_x -= creatures1::world::kWorldWidth;
+    } else if (delta_x < -creatures1::world::kWorldWidth / 2) {
+        delta_x += creatures1::world::kWorldWidth;
+    }
+    if (delta_x == 0 && delta_y == 0) {
+        return;
+    }
+    // The hand, and whatever follows the mouse with it (a carried object,
+    // an object being placed): the objects with an unbounded position.
+    std::unordered_set<const creatures1::objects::Entity*> moving;
+    if (const creatures1::objects::Object* pointer = pointer_tool()) {
+        collect_object_entities(*pointer, moving);
+    }
+    for (std::size_t index = 0; index < object_count(); ++index) {
+        const creatures1::objects::Object* object = object_at(index);
+        if (object != nullptr && object->uses_unbounded_world_position()) {
+            collect_object_entities(*object, moving);
+        }
+    }
+    for (creatures1::display::SceneItem& item : scene) {
+        if (item.entity != nullptr && moving.count(item.entity) != 0) {
+            item.world_x += delta_x;
+            item.world_y += delta_y;
+        }
+    }
 }
 
 const std::uint8_t* C1WindowsDocument::indexed_image_pixels(
@@ -4249,7 +4361,8 @@ void C1WindowsDocument::dump_renderer_frames(const std::string& directory) {
                creatures1::display::crop_frame(gdi, shared_width, shared_height),
                creatures1::display::crop_frame(sdl, shared_width, shared_height))
         << " compared=" << shared_width << "x" << shared_height
-        << " textures=" << sdl_view_->texture_bytes() << "\n";
+        << " textures=" << sdl_view_->texture_bytes()
+        << " frames=" << sdl_view_->frame_count() << "\n";
 }
 
 bool C1WindowsDocument::dump_renderer_frame(const std::string& path) {

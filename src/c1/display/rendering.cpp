@@ -424,7 +424,7 @@ void WorldRenderer::collect_scene(const world::WorldRect& render_rect,
         }
         items.push_back({const_cast<Gallery*>(entity->gallery()),
                          entity->current_image_index(), entity->world_x(),
-                         entity->world_y(), false});
+                         entity->world_y(), false, entity});
     }
 
     if (overlay_gallery_identifier_ == 0) {

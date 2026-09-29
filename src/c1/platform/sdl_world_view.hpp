@@ -52,6 +52,8 @@ public:
 
     const char* driver_name() const;
     std::size_t texture_bytes() const { return texture_bytes_; }
+    // Frames drawn so far.
+    std::uint64_t frame_count() const { return frame_number_; }
 
 private:
     SdlWorldView(SDL_Window* window, SDL_Renderer* renderer);

@@ -178,6 +178,8 @@ struct SceneItem {
     // Background tiles are copied whole: palette index 0 is drawn, not
     // treated as transparent.
     bool opaque = false;
+    // The sprite's entity; null for background tiles and the overlay.
+    const ::creatures1::objects::Entity* entity = nullptr;
 };
 
 class WorldRenderer {

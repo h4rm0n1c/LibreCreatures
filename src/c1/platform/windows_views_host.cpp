@@ -495,7 +495,16 @@ void C1WindowsView::configure_world_update_timer(std::uint32_t command) {
     public:
         void set_timer(std::uintptr_t window_handle, std::uint32_t timer_id,
                        std::uint32_t interval_ms) override {
-            if (window_handle != 0) {
+            if (window_handle == 0) {
+                return;
+            }
+            // neorender: timer 1 is the main frame's world clock.
+            auto* frame = DYNAMIC_DOWNCAST(
+                C1MainFrame,
+                CWnd::FromHandle(reinterpret_cast<HWND>(window_handle)));
+            if (timer_id == 1 && frame != nullptr) {
+                frame->set_world_clock(interval_ms);
+            } else {
                 ::SetTimer(reinterpret_cast<HWND>(window_handle), timer_id,
                            interval_ms, nullptr);
             }
