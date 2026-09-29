@@ -879,6 +879,13 @@ afx_msg void C1WindowsView::OnKillFocus(CWnd* new_focus) {
     creatures1::ui::on_kill_focus(view_state_, *this);
 }
 
+afx_msg LRESULT C1WindowsView::OnSdlFrame(WPARAM, LPARAM) {
+    if (document() != nullptr) {
+        document()->present_sdl_frame();
+    }
+    return 0;
+}
+
 afx_msg void C1WindowsView::OnMouseMove(UINT flags, CPoint point) {
     CView::OnMouseMove(flags, point);
     creatures1::ui::on_mouse_move(view_state_, view_settings_, *this,
@@ -979,6 +986,7 @@ void C1WindowsView::OnDestroy() {
 }
 
 BEGIN_MESSAGE_MAP(C1WindowsView, CView)
+    ON_MESSAGE(kSdlFrameMessage, &C1WindowsView::OnSdlFrame)
     ON_WM_SIZE()
     ON_WM_DESTROY()
     ON_WM_SETFOCUS()

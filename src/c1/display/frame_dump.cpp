@@ -1,5 +1,7 @@
 #include "frame_dump.hpp"
 
+#include <algorithm>
+
 namespace creatures1::display {
 namespace {
 
@@ -85,6 +87,19 @@ std::vector<std::uint8_t> encode_bmp24(const RgbFrame& frame) {
         for (; written < row_bytes; ++written) {
             out.push_back(0);
         }
+    }
+    return out;
+}
+
+RgbFrame crop_frame(const RgbFrame& frame, int width, int height) {
+    RgbFrame out;
+    out.width = std::max(0, std::min(width, frame.width));
+    out.height = std::max(0, std::min(height, frame.height));
+    out.pixels.reserve(static_cast<std::size_t>(out.width) * out.height);
+    for (int y = 0; y < out.height; ++y) {
+        const std::uint32_t* row =
+            frame.pixels.data() + static_cast<std::size_t>(y) * frame.width;
+        out.pixels.insert(out.pixels.end(), row, row + out.width);
     }
     return out;
 }

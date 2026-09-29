@@ -34,6 +34,9 @@ RgbFrame expand_indexed_frame(const std::uint8_t* pixels, int width,
 // bottom-up rows padded to four bytes).
 std::vector<std::uint8_t> encode_bmp24(const RgbFrame& frame);
 
+// The top-left width x height of a frame (clamped to its size).
+RgbFrame crop_frame(const RgbFrame& frame, int width, int height);
+
 // Pixels that differ between two frames of the same size, or -1 when the
 // sizes differ.
 std::ptrdiff_t count_differing_pixels(const RgbFrame& left,

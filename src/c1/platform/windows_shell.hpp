@@ -21,6 +21,7 @@
 #include "../application/main_frame.hpp"
 #include "../application/resource_hosts.hpp"
 #include "../display/font.hpp"
+#include "../display/frame_dump.hpp"
 #include "../display/gallery.hpp"
 #include "../display/image_tiers.hpp"
 #include "../display/palette.hpp"
@@ -124,6 +125,10 @@ inline constexpr std::array<const char*, kResourceDirectoryCount>
 // owner before doing any game initialization.
 
 class C1WindowsDocument;
+class SdlWorldView;
+// neorender: posted to the view to draw one SDL frame; repeated requests
+// before it is handled collapse into that one frame.
+constexpr UINT kSdlFrameMessage = WM_APP + 0x51;
 class C1WindowsView;
 void set_world_view_safe_frame(C1WindowsView* view,
                                std::uint32_t frame_count);
@@ -655,6 +660,8 @@ class C1WindowsDocument final
       public creatures1::platform::RectangleHitTestApi {
 public:
     DECLARE_DYNCREATE(C1WindowsDocument)
+    // Defined where SdlWorldView is complete.
+    ~C1WindowsDocument() override;
 
     void Serialize(CArchive& archive) override;
 
@@ -1366,9 +1373,25 @@ public:
     // through the live game palette, as a 24-bit .bmp.  The reference the
     // renderer back-ends are compared against.
     bool dump_renderer_frame(const std::string& path);
+    // Both back-ends at the same instant: frame-<tick>-gdi.bmp and, with
+    // SDL drawing, frame-<tick>-sdl.bmp, plus a line in compare.log with
+    // the number of pixels that differ.  `directory` ends in a separator.
+    void dump_renderer_frames(const std::string& directory);
     // Developer report (not native): every gallery's drawing tiers and any
     // tier files refused, one line each.
     bool report_image_tiers(const std::string& path);
+    // neorender: what the SDL world view draws with.
+    const std::uint8_t* indexed_image_pixels(creatures1::display::Image& image);
+    creatures1::display::ImageTier draw_tier_for(
+        const creatures1::display::Gallery& gallery, std::size_t index);
+    bool decode_image_tier(const creatures1::display::Gallery& gallery,
+                           std::size_t index,
+                           creatures1::display::ImageTier tier,
+                           creatures1::display::RgbaImage& out);
+    const std::array<creatures1::display::FrameColour, 256>& frame_palette();
+    // Draws the main view through SDL (the view's kSdlFrameMessage).
+    void present_sdl_frame();
+    bool sdl_view_active() const { return sdl_view_ != nullptr; }
     creatures1::display::ImageTierStore& image_tiers() { return image_tiers_; }
     creatures1::display::TierFileSource& tier_files();
     bool write_renderer_dib_rect(
@@ -1566,6 +1589,19 @@ private:
     // world's sprite files.  Forgotten whenever a world is opened or made.
     creatures1::display::ImageTierStore image_tiers_;
     std::unique_ptr<creatures1::display::TierFileSource> tier_files_;
+    // neorender: SDL drawing the main view, when it could be set up and the
+    // Renderer setting doesn't say GDI.  The 8-bit renderer keeps running.
+    std::unique_ptr<SdlWorldView> sdl_view_;
+    bool sdl_frame_posted_ = false;
+    std::array<creatures1::display::FrameColour, 256> frame_palette_{};
+    bool frame_palette_valid_ = false;
+    creatures1::display::ImageTier max_image_detail_ =
+        creatures1::display::ImageTier::s32;
+    std::vector<creatures1::display::SceneItem> sdl_scene_;
+    void request_sdl_frame();
+    void create_sdl_view(CWnd& view);
+    bool presents_through_sdl(void* device_context) const;
+    void forget_sdl_textures();
     creatures1::objects::ObjectEventScheduler event_scheduler_;
     creatures1::creatures::CreatureSelectionState selection_;
     creatures1::creatures::CreatureSelectionEntry* selected_creature_entry_ =
@@ -2403,6 +2439,7 @@ protected:
     afx_msg void OnKillFocus(CWnd* new_focus);
 
     afx_msg void OnMouseMove(UINT flags, CPoint point);
+    afx_msg LRESULT OnSdlFrame(WPARAM, LPARAM);
 
     afx_msg void OnLButtonDown(UINT flags, CPoint point);
 

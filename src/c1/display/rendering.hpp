@@ -5,6 +5,7 @@
 #include "../world/geometry.hpp"
 
 #include <array>
+#include <vector>
 #include <cstddef>
 #include <cstdint>
 
@@ -167,6 +168,18 @@ void symmetric_merge_visible_sprite_record_ranges_by_plane(
     int left_lower_count,
     int right_lower_count);
 
+// One thing to draw, in drawing order (not native: neorender's shared scene,
+// so the 8-bit blitter and the SDL renderer draw exactly the same list).
+struct SceneItem {
+    Gallery* gallery = nullptr;
+    std::size_t image_index = 0;
+    int world_x = 0;
+    int world_y = 0;
+    // Background tiles are copied whole: palette index 0 is drawn, not
+    // treated as transparent.
+    bool opaque = false;
+};
+
 class WorldRenderer {
 public:
     WorldRenderer(WorldRendererHost& host,
@@ -231,10 +244,20 @@ public:
     void set_caos_viewport_height(int height) { viewport_height_ = height; }
     void* create_back_buffer_dib(int width, int height);
     void update_dib_palette();
+    // The background tiles, sprites and overlay that cover `render_rect`,
+    // in the order they are drawn -- the recovered traversal, visibility,
+    // wrapping and plane ordering, shared by every back-end.
+    void collect_scene(const world::WorldRect& render_rect,
+                       std::vector<SceneItem>& items);
 
     const std::uint8_t* dib_pixels() const { return dib_pixels_; }
     int dib_width() const { return dib_width_; }
     int dib_height() const { return dib_height_; }
+
+    // The `sys: edit` debug rectangle (right edge 0 when there is none).
+    const world::WorldRect& debug_highlight_rect() const {
+        return dirty_world_rect_;
+    }
 
     int viewport_left() const { return viewport_left_; }
     int viewport_top() const { return viewport_top_; }
@@ -287,6 +310,7 @@ private:
     int queued_dirty_rect_count_ = 0;
     bool deferred_dirty_rect_rendering_ = false;
     world::WorldRect dirty_world_rect_{};
+    std::vector<SceneItem> scene_items_;
 };
 
 } // namespace creatures1::display

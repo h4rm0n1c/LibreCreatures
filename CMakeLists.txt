@@ -103,6 +103,15 @@ set_target_properties(Creatures PROPERTIES
     LINK_FLAGS "/SUBSYSTEM:WINDOWS,6.00"
 )
 
+# SDL3 (third_party/SDL3, the official x86 VC build) draws the world view.
+# SDL3.dll ships beside Creatures.exe.
+set(SDL3_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/third_party/SDL3)
+target_include_directories(Creatures PRIVATE ${SDL3_ROOT}/include)
+target_link_libraries(Creatures PRIVATE ${SDL3_ROOT}/lib/x86/SDL3.lib)
+add_custom_command(TARGET Creatures POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${SDL3_ROOT}/lib/x86/SDL3.dll $<TARGET_FILE_DIR:Creatures>)
+
 # Group sources by their real subdirectory in generated IDEs (Visual Studio,
 # CLion) instead of one flat list -- purely cosmetic, no effect on the build.
 source_group(TREE ${SOURCE_ROOT} FILES ${C1_SOURCES} ${C1_RESOURCE_SCRIPT})

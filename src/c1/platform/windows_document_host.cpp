@@ -11,6 +11,7 @@
 #include "../archive/funeral_kit.hpp"
 #include "../creatures/egg.hpp"
 #include "../display/frame_dump.hpp"
+#include "sdl_world_view.hpp"
 
 #include <limits>
 #include <optional>
@@ -565,6 +566,7 @@ void C1WindowsDocument::construct_semantic_document() {
 
 BOOL C1WindowsDocument::OnOpenDocument(LPCTSTR path) {
     image_tiers_.clear();
+    forget_sdl_textures();
     if (path == nullptr) {
         return FALSE;
     }
@@ -629,6 +631,7 @@ BOOL C1WindowsDocument::OnSaveDocument(LPCTSTR path) {
 
 BOOL C1WindowsDocument::OnNewDocument() {
     image_tiers_.clear();
+    forget_sdl_textures();
     // A new world is not backed by the previously opened save directory.
     // Clear this before MFC drains the old document so the next resource-host
     // construction cannot retain the old world's Images/Genetics tree.
@@ -2918,6 +2921,8 @@ bool C1WindowsDocument::initialize_game_palette() {
     if (palette_platform_ == nullptr || palette_files_ == nullptr) {
         return false;
     }
+    // A new palette changes every indexed image's colours.
+    forget_sdl_textures();
     return creatures1::display::initialize_game_palette(
         game_palette_, *palette_files_, *palette_platform_,
         resource_paths_[kPaletteDirectoryIndex]);
@@ -3820,6 +3825,9 @@ void C1WindowsDocument::renderer_stored_viewport_size(int& width, int& height) c
 }
 
 void C1WindowsDocument::destroy_world_renderer() {
+    // SDL lets go of the view's window before the view goes.
+    sdl_view_.reset();
+    sdl_frame_posted_ = false;
     renderer_.reset();
     gdi_host_.reset();
     renderer_view_ = nullptr;
@@ -3909,6 +3917,120 @@ public:
 
 } // namespace
 
+C1WindowsDocument::~C1WindowsDocument() = default;
+
+// --- neorender: SDL world view ----------------------------------------------
+
+void C1WindowsDocument::create_sdl_view(CWnd& view) {
+    // C1_RENDERER, then the Renderer setting: "gdi" keeps the 8-bit GDI
+    // path; anything else names an SDL render driver, empty lets SDL choose.
+    std::string choice;
+    char environment_value[64] = {};
+    const DWORD length = GetEnvironmentVariableA("C1_RENDERER",
+                                                 environment_value,
+                                                 sizeof environment_value);
+    if (length > 0 && length < sizeof environment_value) {
+        choice = environment_value;
+    } else {
+        HKEY key = nullptr;
+        if (open_c1_secondary_registry(key, KEY_READ)) {
+            read_registry_string(key, "Renderer", choice);
+            RegCloseKey(key);
+        }
+    }
+    if (_stricmp(choice.c_str(), "gdi") == 0) {
+        return;
+    }
+    sdl_view_ = SdlWorldView::create(view.GetSafeHwnd(), choice);
+    C1DebugConsoleDialog* console = active_debug_console();
+    if (console != nullptr) {
+        creatures1::common::debug_log(
+            *console, 0x2,
+            sdl_view_ != nullptr
+                ? (std::string("World view drawn with SDL (") +
+                   sdl_view_->driver_name() + ")\n").c_str()
+                : "SDL unavailable; world view drawn with GDI\n");
+    }
+}
+
+bool C1WindowsDocument::presents_through_sdl(void* device_context) const {
+    return sdl_view_ != nullptr && renderer_view_ != nullptr &&
+           device_context != nullptr &&
+           WindowFromDC(static_cast<HDC>(device_context)) ==
+               renderer_view_->GetSafeHwnd();
+}
+
+void C1WindowsDocument::request_sdl_frame() {
+    if (sdl_frame_posted_ || renderer_view_ == nullptr) {
+        return;
+    }
+    sdl_frame_posted_ =
+        renderer_view_->PostMessage(kSdlFrameMessage) != FALSE;
+}
+
+void C1WindowsDocument::forget_sdl_textures() {
+    frame_palette_valid_ = false;
+    if (sdl_view_ != nullptr) {
+        sdl_view_->clear_textures();
+    }
+}
+
+void C1WindowsDocument::present_sdl_frame() {
+    sdl_frame_posted_ = false;
+    if (sdl_view_ == nullptr || renderer_ == nullptr ||
+        renderer_view_ == nullptr || renderer_view_->GetParentFrame() == nullptr ||
+        renderer_view_->GetParentFrame()->IsIconic()) {
+        return;
+    }
+    const creatures1::world::WorldRect viewport{
+        renderer_->viewport_left(), renderer_->viewport_top(),
+        renderer_->viewport_right(), renderer_->viewport_bottom()};
+    renderer_->collect_scene(viewport, sdl_scene_);
+    sdl_view_->render_frame(*this, sdl_scene_, viewport, 1.0f,
+                            &renderer_->debug_highlight_rect(), nullptr);
+}
+
+const std::uint8_t* C1WindowsDocument::indexed_image_pixels(
+    creatures1::display::Image& image) {
+    if (resources_ == nullptr) {
+        return nullptr;
+    }
+    return image.get_pixel_data(pixel_cache_, sprite_files_,
+                                sprite_file_search_paths(), *resources_);
+}
+
+creatures1::display::ImageTier C1WindowsDocument::draw_tier_for(
+    const creatures1::display::Gallery& gallery, std::size_t index) {
+    // @2x only pays when the view is magnified; at 1x the .s32 is the most
+    // that is drawn.  (Zoom arrives in phase 3.)
+    const creatures1::display::ImageTier cap =
+        max_image_detail_ > creatures1::display::ImageTier::s32
+            ? creatures1::display::ImageTier::s32
+            : max_image_detail_;
+    return image_tiers_.best_tier(gallery, index, cap,
+                                  sprite_file_search_paths(), tier_files());
+}
+
+bool C1WindowsDocument::decode_image_tier(
+    const creatures1::display::Gallery& gallery, std::size_t index,
+    creatures1::display::ImageTier tier, creatures1::display::RgbaImage& out) {
+    return image_tiers_.decode(gallery, index, tier,
+                               sprite_file_search_paths(), tier_files(), out);
+}
+
+const std::array<creatures1::display::FrameColour, 256>&
+C1WindowsDocument::frame_palette() {
+    if (!frame_palette_valid_ && gdi_host_ != nullptr) {
+        const auto entries = gdi_host_->read_palette_entries(game_palette());
+        for (std::size_t index = 0; index < frame_palette_.size(); ++index) {
+            frame_palette_[index] = {entries[index].red, entries[index].green,
+                                     entries[index].blue};
+        }
+        frame_palette_valid_ = game_palette() != nullptr;
+    }
+    return frame_palette_;
+}
+
 creatures1::display::TierFileSource& C1WindowsDocument::tier_files() {
     if (tier_files_ == nullptr) {
         tier_files_ = std::make_unique<WindowsTierFiles>();
@@ -3942,6 +4064,49 @@ bool C1WindowsDocument::report_image_tiers(const std::string& path) {
         out << "refused: " << message << "\n";
     }
     return static_cast<bool>(out);
+}
+
+void C1WindowsDocument::dump_renderer_frames(const std::string& directory) {
+    const std::string stem =
+        directory + "frame-" + std::to_string(world_tick_count());
+    dump_renderer_frame(stem + "-gdi.bmp");
+    if (sdl_view_ == nullptr || renderer_ == nullptr ||
+        renderer_->dib_pixels() == nullptr) {
+        return;
+    }
+    // The 8-bit back buffer, expanded, against an SDL frame drawn now from
+    // the same scene.
+    const auto& palette = frame_palette();
+    const creatures1::display::RgbFrame gdi =
+        creatures1::display::expand_indexed_frame(
+            renderer_->dib_pixels(), renderer_->dib_width(),
+            renderer_->dib_height(), (renderer_->dib_width() + 3) & ~3,
+            palette);
+    const creatures1::world::WorldRect viewport{
+        renderer_->viewport_left(), renderer_->viewport_top(),
+        renderer_->viewport_right(), renderer_->viewport_bottom()};
+    renderer_->collect_scene(viewport, sdl_scene_);
+    creatures1::display::RgbFrame sdl;
+    sdl_view_->render_frame(*this, sdl_scene_, viewport, 1.0f,
+                            &renderer_->debug_highlight_rect(), &sdl);
+    const std::vector<std::uint8_t> bmp = creatures1::display::encode_bmp24(sdl);
+    std::ofstream(stem + "-sdl.bmp", std::ios::binary)
+        .write(reinterpret_cast<const char*>(bmp.data()),
+               static_cast<std::streamsize>(bmp.size()));
+    // SDL can only read back the window's client area, which may be a
+    // pixel or so narrower than the 4-aligned back buffer: compare the
+    // area both have.
+    const int shared_width = (std::min)(gdi.width, sdl.width);
+    const int shared_height = (std::min)(gdi.height, sdl.height);
+    std::ofstream log(directory + "compare.log", std::ios::app);
+    log << "tick=" << world_tick_count() << " driver=" << sdl_view_->driver_name()
+        << " gdi=" << gdi.width << "x" << gdi.height << " sdl=" << sdl.width
+        << "x" << sdl.height << " differing="
+        << creatures1::display::count_differing_pixels(
+               creatures1::display::crop_frame(gdi, shared_width, shared_height),
+               creatures1::display::crop_frame(sdl, shared_width, shared_height))
+        << " compared=" << shared_width << "x" << shared_height
+        << " textures=" << sdl_view_->texture_bytes() << "\n";
 }
 
 bool C1WindowsDocument::dump_renderer_frame(const std::string& path) {
@@ -4450,6 +4615,12 @@ void C1WindowsDocument::delete_dc(void* memory_dc) {
 }
 
 void C1WindowsDocument::bit_blt(void* target_context, int destination_x, int destination_y, int width, int height, void* source_context, int source_x, int source_y, std::uint32_t raster_operation) {
+    // neorender: the 8-bit renderer has updated its back buffer; with SDL
+    // drawing the main view, that becomes one SDL frame instead of a blit.
+    if (presents_through_sdl(target_context)) {
+        request_sdl_frame();
+        return;
+    }
     if (gdi_host_ != nullptr) {
         gdi_host_->bit_blt(target_context, destination_x, destination_y,
                            width, height, source_context, source_x,
@@ -4458,6 +4629,9 @@ void C1WindowsDocument::bit_blt(void* target_context, int destination_x, int des
 }
 
 void C1WindowsDocument::draw_dirty_world_outline( void* target_context, const creatures1::world::WorldRect& dirty_world_rect, const creatures1::world::WorldRect& viewport_rect) {
+    if (presents_through_sdl(target_context)) {
+        return;  // the SDL frame draws the outline
+    }
     if (gdi_host_ != nullptr) {
         gdi_host_->draw_dirty_world_outline(target_context,
                                             dirty_world_rect,
@@ -4479,6 +4653,10 @@ void C1WindowsDocument::set_dib_colour_table( void* memory_dc, const std::array<
 }
 
 void C1WindowsDocument::fill_client_background_black(void* device_context) {
+    if (presents_through_sdl(device_context)) {
+        request_sdl_frame();  // a GDI fill would only flash over the frame
+        return;
+    }
     if (gdi_host_ != nullptr) {
         gdi_host_->fill_client_background_black(device_context);
     }
@@ -4745,6 +4923,7 @@ void C1WindowsDocument::ensure_renderer(CWnd& view, bool smooth_scrolling_enable
         view.GetSafeHwnd(), (std::max)(1, client_rect.Width()),
         (std::max)(1, client_rect.Height()));
     renderer_->realize_palette();
+    create_sdl_view(view);
     if (pending_renderer_origin_.has_value()) {
         const auto [origin_x, origin_y] = *pending_renderer_origin_;
         pending_renderer_origin_.reset();

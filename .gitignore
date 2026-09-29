@@ -19,6 +19,7 @@
 *.res
 *.exp
 *.lib
+!third_party/**/*.lib
 *.map
 *.log
 *.sha256

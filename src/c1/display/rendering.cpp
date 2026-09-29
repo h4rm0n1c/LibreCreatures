@@ -313,10 +313,9 @@ void WorldRenderer::set_smooth_scrolling_enabled(bool enabled) {
     reset_navigation();
 }
 
-void WorldRenderer::render_world_rect_to_dib(
-    const world::WorldRect& render_rect) {
-    const world::WorldRect viewport_rect{
-        viewport_left_, viewport_top_, viewport_right_, viewport_bottom_};
+void WorldRenderer::collect_scene(const world::WorldRect& render_rect,
+                                  std::vector<SceneItem>& items) {
+    items.clear();
 
     // The map gallery is a 58-column by 8-row tile sheet stored column major:
     // a column's eight tiles are consecutive, so the image index is
@@ -342,10 +341,8 @@ void WorldRenderer::render_world_rect_to_dib(
                 if (image_index >= background->image_count) {
                     continue;
                 }
-                host_.blit_image_to_dib(
-                    background->images[image_index], dib_pixels_,
-                    wrapped_column * 144, row * 150, render_rect,
-                    viewport_rect, true);
+                items.push_back({background, image_index,
+                                 wrapped_column * 144, row * 150, true});
             }
         }
     }
@@ -425,10 +422,9 @@ void WorldRenderer::render_world_rect_to_dib(
         if (!valid_sprite_image(*entity, host_)) {
             continue;
         }
-        host_.blit_image_to_dib(
-            entity->gallery()->images[entity->current_image_index()],
-            dib_pixels_, entity->world_x(), entity->world_y(), render_rect,
-            viewport_rect, false);
+        items.push_back({const_cast<Gallery*>(entity->gallery()),
+                         entity->current_image_index(), entity->world_x(),
+                         entity->world_y(), false});
     }
 
     if (overlay_gallery_identifier_ == 0) {
@@ -443,9 +439,20 @@ void WorldRenderer::render_world_rect_to_dib(
         }
     }
     if (overlay_image_->image_count != 0 && overlay_image_->images != nullptr) {
-        host_.blit_image_to_dib(
-            overlay_image_->images[0], dib_pixels_, viewport_left_,
-            viewport_top_, render_rect, viewport_rect, false);
+        items.push_back({overlay_image_, 0, viewport_left_, viewport_top_,
+                         false});
+    }
+}
+
+void WorldRenderer::render_world_rect_to_dib(
+    const world::WorldRect& render_rect) {
+    const world::WorldRect viewport_rect{
+        viewport_left_, viewport_top_, viewport_right_, viewport_bottom_};
+    collect_scene(render_rect, scene_items_);
+    for (const SceneItem& item : scene_items_) {
+        host_.blit_image_to_dib(item.gallery->images[item.image_index],
+                                dib_pixels_, item.world_x, item.world_y,
+                                render_rect, viewport_rect, item.opaque);
     }
 }
 

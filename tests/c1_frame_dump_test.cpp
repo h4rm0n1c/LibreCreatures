@@ -65,6 +65,12 @@ int main() {
     smaller.width = 2;
     assert(display::count_differing_pixels(frame, smaller) == -1);
 
+    // Cropping to the area two frames share.
+    const display::RgbFrame cropped = display::crop_frame(frame, 2, 1);
+    assert(cropped.width == 2 && cropped.height == 1);
+    assert(cropped.pixels[0] == 0x112233u && cropped.pixels[1] == 0xaabbccu);
+    assert(display::crop_frame(frame, 99, 99).width == 3);
+
     std::puts("c1_frame_dump_test: ok");
     return 0;
 }

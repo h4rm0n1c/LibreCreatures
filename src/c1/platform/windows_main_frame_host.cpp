@@ -1341,8 +1341,7 @@ void C1MainFrame::OnDumpRendererFrame() {
     if (path.back() != '\\' && path.back() != '/') {
         path.push_back('\\');
     }
-    path += "frame-" + std::to_string(document->world_tick_count()) + "-gdi.bmp";
-    document->dump_renderer_frame(path);
+    document->dump_renderer_frames(path);
 }
 
 void C1MainFrame::OnReportImageTiers() {

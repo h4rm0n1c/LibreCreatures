@@ -7,9 +7,11 @@ entries 10..245 scaled from 6 to 8 bits (<< 2), the Windows static colours at
 0..9 and 246..255 -- with index 0 transparent, and written as one PNG per
 frame in an S32 container.  --scale 2 makes NAME@2x.s32 by nearest-neighbour
 doubling, so the result is pixel-for-pixel what the .spr draws, just bigger:
-useful to prove a tier is found and drawn, not as real HD art.
+useful to prove a tier is found and drawn, not as real HD art.  --mark
+outlines every frame in magenta, so a screenshot shows at a glance which
+frames came from the tier.
 
-  spr_to_s32.py Images/back.spr Palettes/palette.dta out/ [--scale 1|2]
+  spr_to_s32.py Images/back.spr Palettes/palette.dta out/ [--scale 1|2] [--mark]
 """
 
 import argparse
@@ -59,7 +61,7 @@ def read_spr(path):
     return frames
 
 
-def frame_png(width, height, pixels, palette, scale):
+def frame_png(width, height, pixels, palette, scale, mark):
     rgba = bytearray()
     for value in pixels:
         r, g, b = palette[value]
@@ -67,6 +69,14 @@ def frame_png(width, height, pixels, palette, scale):
     image = Image.frombytes('RGBA', (width, height), bytes(rgba))
     if scale != 1:
         image = image.resize((width * scale, height * scale), Image.NEAREST)
+    if mark:
+        w, h = image.size
+        for x in range(w):
+            image.putpixel((x, 0), (255, 0, 255, 255))
+            image.putpixel((x, h - 1), (255, 0, 255, 255))
+        for y in range(h):
+            image.putpixel((0, y), (255, 0, 255, 255))
+            image.putpixel((w - 1, y), (255, 0, 255, 255))
     out = io.BytesIO()
     image.save(out, 'PNG', optimize=True)
     return out.getvalue()
@@ -89,11 +99,13 @@ def main():
     parser.add_argument('palette')
     parser.add_argument('output_directory')
     parser.add_argument('--scale', type=int, choices=(1, 2), default=1)
+    parser.add_argument('--mark', action='store_true',
+                        help='outline every frame in magenta')
     args = parser.parse_args()
 
     palette = load_palette(args.palette)
     frames = read_spr(args.spr)
-    pngs = [frame_png(w, h, p, palette, args.scale) for w, h, p in frames]
+    pngs = [frame_png(w, h, p, palette, args.scale, args.mark) for w, h, p in frames]
     stem = os.path.splitext(os.path.basename(args.spr))[0]
     name = stem + ('@2x.s32' if args.scale == 2 else '.s32')
     os.makedirs(args.output_directory, exist_ok=True)

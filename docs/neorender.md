@@ -36,7 +36,10 @@ here still loads in the original game.
 **Frame dumps.** With `C1_FRAME_DUMP_DIR` set, `sys: cmnd 32940` writes the
 current view as `frame-<tick>-gdi.bmp` in that directory, expanded through
 the game palette. It is the reference every new renderer back-end is
-compared against (`display/frame_dump`).
+compared against (`display/frame_dump`). When the view is drawn with SDL the
+same command also reads that frame back as `frame-<tick>-sdl.bmp` and
+appends a line to `compare.log`: the driver, both sizes, how many pixels
+differ over the area they share, and the texture memory in use.
 
 **Tick timing.** `C1_TRACE_TICK=1`, or a `trace_tick` file in the world
 folder, appends a summary line to `Creatures.tick.log` every 110 ticks.
@@ -82,3 +85,36 @@ frame's size and its offset in the `.spr`, and game logic, hit tests and the
 8-bit renderer all use the `.spr`'s pixels, so that case needs the `.s32`
 quantised to the palette for them. It also would not load in the original
 game, which needs the `.spr`.
+
+## SDL world view (phase 2)
+
+The world view is drawn with SDL3 (`third_party/SDL3`, `SDL3.dll` beside the
+exe) inside the MFC view window: SDL wraps the view's existing window and
+only draws. MFC keeps the message loop, the mouse, menus, dialogs and the
+kit protocol.
+
+`WorldRenderer::collect_scene` walks the world exactly as the 8-bit
+renderer always has (background tiles, sprites in plane order, the overlay)
+into a list of `SceneItem`s. The 8-bit renderer blits that list into its
+back buffer, which still backs snapshots (`temp.spr` is unchanged) and every
+native dirty-rectangle call. `platform/sdl_world_view` draws the same list
+as textures, one whole frame at a time, whenever the game would have copied
+dirty rectangles to the screen.
+
+- Palette images upload through the current game palette; index 0 is
+  transparent on sprites and black on background tiles, as the blitter
+  treats it. A texture is rebuilt when the game draws into its image, and
+  every texture is dropped on a new world or palette. Textures past 256 MB
+  go least recently drawn first.
+- Tiers: at 1x, `.s32` is drawn where it exists and `.spr` otherwise; `@2x`
+  waits for zoom (phase 3).
+- `C1_RENDERER`, or the `Renderer` string under the game's user registry
+  key, picks the SDL driver (`direct3d11`, `opengl`, `software`, ...); `gdi`
+  keeps the old GDI path, and so does any failure to start SDL.
+
+Checked in the lab (Wine, `direct3d` driver), with no `.s32` files: the SDL
+frame equals the 8-bit frame, 0 pixels differing, in the kitchen with two
+norns and at four other camera positions, including across the wrap seam.
+With a `back.s32` whose frames are outlined (`spr_to_s32.py --mark`), the
+only differing pixels are the outlines. Clicks, pick-up and carrying, menus
+and the tip dialog behave as under GDI.
