@@ -3562,6 +3562,33 @@ void C1WindowsDocument::add_to_event_bar(
 }
 
 void C1WindowsDocument::purge_destroy_when_finished_macros( creatures1::objects::Object& object) {
+    // LibreCreatures deviation (the egg in the sky, continued).  A script
+    // paused only because new:/sys:/dde:/app: ended its turn has not finished
+    // what it started: an egg-laying norn's script has made the egg with
+    // `new: simp` but not yet classified it or moved it off the world origin.
+    // Native purged such a script outright when its owner died, was removed
+    // or was killed in that one-tick gap, leaving the egg in the sky.  Give
+    // each one its remaining turn first; it runs to its next pause or its
+    // end, and then the purge takes whatever is left.
+    std::vector<creatures1::scripting::Macro*> paused;
+    for (creatures1::scripting::Macro* macro :
+         creatures1::scripting::g_running_macros) {
+        if (macro != nullptr && macro->object_context.script_owner == &object &&
+            macro->destroy_when_finished && macro->paused_by_prefixed_command) {
+            paused.push_back(macro);
+        }
+    }
+    for (creatures1::scripting::Macro* macro : paused) {
+        // Still scheduled and still waiting for its turn: a turn given before
+        // it may have ended it.
+        const auto& running = creatures1::scripting::g_running_macros;
+        if (std::find(running.begin(), running.end(), macro) == running.end() ||
+            !macro->paused_by_prefixed_command) {
+            continue;
+        }
+        WindowsMacroHost host(*this);
+        macro->execute_interpreter(host.interpreter_bindings());
+    }
     creatures1::scripting::purge_destroy_when_finished_macros_for_owner(
         &object);
 }
