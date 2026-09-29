@@ -8,8 +8,8 @@ entries 10..245 scaled from 6 to 8 bits (<< 2), the Windows static colours at
 frame in an S32 container.  --scale 2 makes NAME@2x.s32 by nearest-neighbour
 doubling, so the result is pixel-for-pixel what the .spr draws, just bigger:
 useful to prove a tier is found and drawn, not as real HD art.  --mark
-outlines every frame in magenta, so a screenshot shows at a glance which
-frames came from the tier.
+outlines every frame, magenta in a .s32 and cyan in an @2x.s32, so a
+screenshot shows at a glance which tier each frame came from.
 
   spr_to_s32.py Images/back.spr Palettes/palette.dta out/ [--scale 1|2] [--mark]
 """
@@ -70,13 +70,14 @@ def frame_png(width, height, pixels, palette, scale, mark):
     if scale != 1:
         image = image.resize((width * scale, height * scale), Image.NEAREST)
     if mark:
+        colour = (0, 255, 255, 255) if scale == 2 else (255, 0, 255, 255)
         w, h = image.size
         for x in range(w):
-            image.putpixel((x, 0), (255, 0, 255, 255))
-            image.putpixel((x, h - 1), (255, 0, 255, 255))
+            image.putpixel((x, 0), colour)
+            image.putpixel((x, h - 1), colour)
         for y in range(h):
-            image.putpixel((0, y), (255, 0, 255, 255))
-            image.putpixel((w - 1, y), (255, 0, 255, 255))
+            image.putpixel((0, y), colour)
+            image.putpixel((w - 1, y), colour)
     out = io.BytesIO()
     image.save(out, 'PNG', optimize=True)
     return out.getvalue()
@@ -100,7 +101,7 @@ def main():
     parser.add_argument('output_directory')
     parser.add_argument('--scale', type=int, choices=(1, 2), default=1)
     parser.add_argument('--mark', action='store_true',
-                        help='outline every frame in magenta')
+                        help='outline every frame (magenta 1x, cyan 2x)')
     args = parser.parse_args()
 
     palette = load_palette(args.palette)

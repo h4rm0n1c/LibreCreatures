@@ -58,6 +58,24 @@ BEGIN
         MENUITEM "ツールバー", 59392
         MENUITEM "ステータスバー", 59393
         MENUITEM "", 0
+        POPUP "ズーム"
+        BEGIN
+            MENUITEM "1倍", 32944
+            MENUITEM "2倍", 32945
+            MENUITEM "世界の高さをウィンドウに合わせる", 32946
+        END
+        POPUP "最大の詳細度"
+        BEGIN
+            MENUITEM "SPR（オリジナルの絵）", 32947
+            MENUITEM "S32", 32948
+            MENUITEM "@2x S32", 32949
+        END
+        POPUP "ビューウィンドウの大きさ"
+        BEGIN
+            MENUITEM "標準", 32950
+            MENUITEM "2倍", 32951
+        END
+        MENUITEM "", 0
         MENUITEM "CAOS Console\tCtrl+Shift+C", 32896
     END
     POPUP "_IDS_CAMERA_MENU_"

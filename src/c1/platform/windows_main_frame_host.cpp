@@ -404,6 +404,10 @@ BEGIN_MESSAGE_MAP(C1MainFrame, CFrameWnd)
     // tiers.  Reachable from CAOS as `sys: cmnd 32940` / `sys: cmnd 32941`.
     ON_COMMAND(32940, &C1MainFrame::OnDumpRendererFrame)
     ON_COMMAND(32941, &C1MainFrame::OnReportImageTiers)
+    // Not native (neorender): View > Zoom 32944-32946, Maximum detail
+    // 32947-32949, Creature's view size 32950-32951.
+    ON_COMMAND_RANGE(32944, 32951, &C1MainFrame::OnViewScale)
+    ON_UPDATE_COMMAND_UI_RANGE(32944, 32951, &C1MainFrame::OnUpdateViewScale)
     ON_COMMAND(32804, &C1MainFrame::OnCreateMaleNorn)
     ON_COMMAND(32805, &C1MainFrame::OnCreateFemaleNorn)
     ON_COMMAND(32897, &C1MainFrame::OnMuteCreatureVoices)
@@ -1357,6 +1361,46 @@ void C1MainFrame::OnReportImageTiers() {
         path.push_back('\\');
     }
     document->report_image_tiers(path + "tiers.txt");
+}
+
+void C1MainFrame::OnViewScale(UINT command_id) {
+    auto* document = DYNAMIC_DOWNCAST(C1WindowsDocument, GetActiveDocument());
+    if (document == nullptr) {
+        return;
+    }
+    if (command_id >= kViewZoomFirst && command_id <= kViewZoomFirst + 2) {
+        document->set_world_zoom(static_cast<WorldZoom>(command_id - kViewZoomFirst));
+    } else if (command_id >= kViewDetailFirst && command_id <= kViewDetailFirst + 2) {
+        document->set_max_image_detail(
+            static_cast<creatures1::display::ImageTier>(command_id -
+                                                        kViewDetailFirst));
+    } else if (command_id >= kViewEyeZoomFirst &&
+               command_id <= kViewEyeZoomFirst + 1) {
+        document->set_eye_view_zoom(static_cast<int>(command_id - kViewEyeZoomFirst) + 1);
+    }
+}
+
+void C1MainFrame::OnUpdateViewScale(CCmdUI* command_ui) {
+    auto* document = DYNAMIC_DOWNCAST(C1WindowsDocument, GetActiveDocument());
+    // Everything here is drawing done by SDL; the GDI view stays as it was.
+    const bool available = document != nullptr && document->sdl_view_active();
+    command_ui->Enable(available ? TRUE : FALSE);
+    if (!available) {
+        command_ui->SetRadio(FALSE);
+        return;
+    }
+    const UINT id = command_ui->m_nID;
+    bool selected = false;
+    if (id >= kViewZoomFirst && id <= kViewZoomFirst + 2) {
+        selected = static_cast<UINT>(document->world_zoom()) == id - kViewZoomFirst;
+    } else if (id >= kViewDetailFirst && id <= kViewDetailFirst + 2) {
+        selected = static_cast<UINT>(document->max_image_detail()) ==
+                   id - kViewDetailFirst;
+    } else if (id >= kViewEyeZoomFirst && id <= kViewEyeZoomFirst + 1) {
+        selected = static_cast<UINT>(document->eye_view_zoom()) ==
+                   id - kViewEyeZoomFirst + 1;
+    }
+    command_ui->SetRadio(selected ? TRUE : FALSE);
 }
 
 void C1MainFrame::OnImportEgg() {

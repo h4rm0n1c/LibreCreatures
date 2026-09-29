@@ -129,6 +129,14 @@ class SdlWorldView;
 // neorender: posted to the view to draw one SDL frame; repeated requests
 // before it is handled collapse into that one frame.
 constexpr UINT kSdlFrameMessage = WM_APP + 0x51;
+// neorender: how the main view is magnified (View > Zoom).  Stored as the
+// Zoom setting.
+enum class WorldZoom : std::uint32_t { one = 0, two = 1, fit_height = 2 };
+// The View menu commands for it, the Maximum detail cap (in ImageTier
+// order) and the Creature's view size (1x, 2x).
+constexpr UINT kViewZoomFirst = 32944;
+constexpr UINT kViewDetailFirst = 32947;
+constexpr UINT kViewEyeZoomFirst = 32950;
 class C1WindowsView;
 void set_world_view_safe_frame(C1WindowsView* view,
                                std::uint32_t frame_count);
@@ -312,6 +320,8 @@ public:
     afx_msg void OnImportEgg();
     afx_msg void OnDumpRendererFrame();
     afx_msg void OnReportImageTiers();
+    afx_msg void OnViewScale(UINT command_id);
+    afx_msg void OnUpdateViewScale(CCmdUI* command_ui);
     afx_msg void OnCreateMaleNorn();
     afx_msg void OnCreateFemaleNorn();
     afx_msg void OnMuteCreatureVoices();
@@ -1382,8 +1392,12 @@ public:
     bool report_image_tiers(const std::string& path);
     // neorender: what the SDL world view draws with.
     const std::uint8_t* indexed_image_pixels(creatures1::display::Image& image);
+    // The tier to draw an image with at `zoom` screen pixels per world
+    // pixel: the best under the Maximum detail setting, and @2x only when
+    // magnified.
     creatures1::display::ImageTier draw_tier_for(
-        const creatures1::display::Gallery& gallery, std::size_t index);
+        const creatures1::display::Gallery& gallery, std::size_t index,
+        float zoom);
     bool decode_image_tier(const creatures1::display::Gallery& gallery,
                            std::size_t index,
                            creatures1::display::ImageTier tier,
@@ -1392,6 +1406,19 @@ public:
     // Draws the main view through SDL (the view's kSdlFrameMessage).
     void present_sdl_frame();
     bool sdl_view_active() const { return sdl_view_ != nullptr; }
+    const std::string& sdl_driver() const { return sdl_driver_; }
+    // neorender: View > Zoom, Maximum detail and Creature's view size.
+    // Zoom and the eye view's size need SDL; without it both stay 1x.
+    WorldZoom world_zoom() const { return world_zoom_; }
+    void set_world_zoom(WorldZoom zoom);
+    // Screen pixels per world pixel in the main view.
+    float world_zoom_factor() const;
+    creatures1::display::ImageTier max_image_detail() const {
+        return max_image_detail_;
+    }
+    void set_max_image_detail(creatures1::display::ImageTier tier);
+    int eye_view_zoom() const { return sdl_view_ != nullptr ? eye_view_zoom_ : 1; }
+    void set_eye_view_zoom(int zoom);
     creatures1::display::ImageTierStore& image_tiers() { return image_tiers_; }
     creatures1::display::TierFileSource& tier_files();
     bool write_renderer_dib_rect(
@@ -1592,15 +1619,28 @@ private:
     // neorender: SDL drawing the main view, when it could be set up and the
     // Renderer setting doesn't say GDI.  The 8-bit renderer keeps running.
     std::unique_ptr<SdlWorldView> sdl_view_;
+    std::string sdl_driver_;
     bool sdl_frame_posted_ = false;
+    WorldZoom world_zoom_ = WorldZoom::one;
+    int eye_view_zoom_ = 1;
     std::array<creatures1::display::FrameColour, 256> frame_palette_{};
     bool frame_palette_valid_ = false;
     creatures1::display::ImageTier max_image_detail_ =
-        creatures1::display::ImageTier::s32;
+        creatures1::display::ImageTier::s32_2x;
     std::vector<creatures1::display::SceneItem> sdl_scene_;
     void request_sdl_frame();
     void create_sdl_view(CWnd& view);
-    bool presents_through_sdl(void* device_context) const;
+    // Which SDL-drawn window, if any, a device context belongs to: the
+    // renderers still hand their finished back buffers to bit_blt, and for
+    // these windows that becomes a request for an SDL frame instead.
+    enum class SdlTarget { none, main_view, eye_view };
+    SdlTarget sdl_target(void* device_context) const;
+    bool presents_through_sdl(void* device_context) const {
+        return sdl_target(device_context) != SdlTarget::none;
+    }
+    void request_sdl_frame_for(void* device_context);
+    void load_view_scale_settings();
+    void apply_world_zoom();
     void forget_sdl_textures();
     creatures1::objects::ObjectEventScheduler event_scheduler_;
     creatures1::creatures::CreatureSelectionState selection_;
@@ -1987,8 +2027,8 @@ class C1EyeViewWindow final : public CWnd,
                               public creatures1::ui::EyeViewHost,
                               public creatures1::ui::FollowViewportHost {
 public:
-    explicit C1EyeViewWindow(C1WindowsDocument& document)
-        : document_(document) {}
+    // Both defined where SdlWorldView is complete.
+    explicit C1EyeViewWindow(C1WindowsDocument& document);
     ~C1EyeViewWindow() override;
 
     bool create(
@@ -2048,8 +2088,20 @@ public:
     // is the actual repaint path for this window.
     void present_world_rect(const creatures1::world::WorldRect& rect);
 
+    // neorender: with SDL drawing the main view, the eye view is drawn
+    // with SDL too, at eye_view_zoom() screen pixels per world pixel.
+    bool draws_with_sdl() const { return sdl_ != nullptr; }
+    // Whether it is meant to be (the main view is, and SDL started here).
+    bool uses_sdl() const {
+        return document_.sdl_view_active() && !sdl_unavailable_;
+    }
+    void request_sdl_frame();
+    void forget_sdl_textures();
+
 protected:
     afx_msg void OnSize(UINT size_type, int client_width, int client_height);
+    afx_msg LRESULT OnSdlFrame(WPARAM, LPARAM);
+    afx_msg void OnDestroy();
     afx_msg void OnClose();
     afx_msg void OnPaint();
     afx_msg void OnPaletteChanged(CWnd* palette_focus_window);
@@ -2070,6 +2122,10 @@ private:
     int follow_center_x_ = 0;
     int follow_center_y_ = 0;
     bool follow_valid_ = false;
+    std::unique_ptr<SdlWorldView> sdl_;
+    bool sdl_unavailable_ = false;
+    bool sdl_frame_posted_ = false;
+    std::vector<creatures1::display::SceneItem> sdl_scene_;
 };
 
 
@@ -2440,6 +2496,9 @@ protected:
 
     afx_msg void OnMouseMove(UINT flags, CPoint point);
     afx_msg LRESULT OnSdlFrame(WPARAM, LPARAM);
+    // neorender: a client point in world pixels (the client point divided
+    // by the zoom), which is what the view's mouse handling works in.
+    CPoint world_pixel_point(CPoint point) const;
 
     afx_msg void OnLButtonDown(UINT flags, CPoint point);
 

@@ -1,0 +1,11 @@
+STRINGTABLE
+BEGIN
+    32944 "Die Welt in Originalgröße zeigen\nVergrößerung 1x"
+    32945 "Die Welt in doppelter Größe zeigen\nVergrößerung 2x"
+    32946 "Die ganze Höhe der Welt ins Fenster einpassen\nAn Fenster anpassen"
+    32947 "Nur die originalen .spr-Grafiken zeigen\nOriginalgrafik"
+    32948 ".s32-Grafiken zeigen, wo vorhanden\nS32-Grafik"
+    32949 "Beim Vergrößern auch doppelt aufgelöste @2x.s32-Grafiken zeigen, wo vorhanden\n@2x-Grafik"
+    32950 "Das Betrachtungsfenster in Originalgröße zeigen\nNormale Größe"
+    32951 "Das Betrachtungsfenster in doppelter Größe zeigen\nDoppelte Größe"
+END

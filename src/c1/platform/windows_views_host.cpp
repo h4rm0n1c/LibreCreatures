@@ -1,7 +1,10 @@
 #include "windows_shell.hpp"
 
+#include "sdl_world_view.hpp"
+
 #include "../scripting/macro.hpp"
 
+#include <cmath>
 #include <map>
 #include <tuple>
 
@@ -423,7 +426,12 @@ void C1WindowsView::update_classifier_tip(std::string_view text,
     if (classifier_tip_.GetSafeHwnd() == nullptr) {
         return;
     }
-    CPoint screen_point(client_x, client_y);
+    // The view's mouse handling works in world pixels; the tip goes where
+    // the pointer is on screen.
+    const float zoom =
+        document() == nullptr ? 1.0f : document()->world_zoom_factor();
+    CPoint screen_point(static_cast<int>(static_cast<float>(client_x) * zoom),
+                        static_cast<int>(static_cast<float>(client_y) * zoom));
     ClientToScreen(&screen_point);
     creatures1::ui::update_classifier_tip(*this, text, screen_point.x,
                                           screen_point.y);
@@ -886,14 +894,26 @@ afx_msg LRESULT C1WindowsView::OnSdlFrame(WPARAM, LPARAM) {
     return 0;
 }
 
+CPoint C1WindowsView::world_pixel_point(CPoint point) const {
+    const float zoom =
+        document() == nullptr ? 1.0f : document()->world_zoom_factor();
+    if (zoom == 1.0f || zoom <= 0.0f) {
+        return point;
+    }
+    return CPoint(static_cast<int>(std::floor(static_cast<float>(point.x) / zoom)),
+                  static_cast<int>(std::floor(static_cast<float>(point.y) / zoom)));
+}
+
 afx_msg void C1WindowsView::OnMouseMove(UINT flags, CPoint point) {
     CView::OnMouseMove(flags, point);
+    point = world_pixel_point(point);
     creatures1::ui::on_mouse_move(view_state_, view_settings_, *this,
                                   flags, point.x, point.y);
 }
 
 afx_msg void C1WindowsView::OnLButtonDown(UINT flags, CPoint point) {
     CView::OnLButtonDown(flags, point);
+    point = world_pixel_point(point);
     const std::uint32_t privilege =
         g_active_app_state == nullptr
             ? 0
@@ -905,18 +925,21 @@ afx_msg void C1WindowsView::OnLButtonDown(UINT flags, CPoint point) {
 
 afx_msg void C1WindowsView::OnRButtonDown(UINT flags, CPoint point) {
     CView::OnRButtonDown(flags, point);
+    point = world_pixel_point(point);
     creatures1::ui::on_right_button_down(view_state_, *this, flags,
                                          point.x, point.y);
 }
 
 afx_msg void C1WindowsView::OnLButtonUp(UINT flags, CPoint point) {
     CView::OnLButtonUp(flags, point);
+    point = world_pixel_point(point);
     creatures1::ui::on_mouse_button_release(view_state_, *this, flags,
                                             point.x, point.y);
 }
 
 afx_msg void C1WindowsView::OnRButtonUp(UINT flags, CPoint point) {
     CView::OnRButtonUp(flags, point);
+    point = world_pixel_point(point);
     creatures1::ui::on_mouse_button_release(view_state_, *this, flags,
                                             point.x, point.y);
 }
@@ -1032,14 +1055,20 @@ IMPLEMENT_DYNCREATE(C1WindowsView, CView)
 // --- C1EyeViewWindow: the concrete CEyeView @ 00417440 -------------------
 
 BEGIN_MESSAGE_MAP(C1EyeViewWindow, CWnd)
+    ON_MESSAGE(kSdlFrameMessage, &C1EyeViewWindow::OnSdlFrame)
     ON_WM_SIZE()
+    ON_WM_DESTROY()
     ON_WM_CLOSE()
     ON_WM_PAINT()
     ON_WM_PALETTECHANGED()
     ON_WM_QUERYNEWPALETTE()
 END_MESSAGE_MAP()
 
+C1EyeViewWindow::C1EyeViewWindow(C1WindowsDocument& document)
+    : document_(document) {}
+
 C1EyeViewWindow::~C1EyeViewWindow() {
+    sdl_.reset();
     renderer_.reset();
     gdi_host_.reset();
 }
@@ -1055,7 +1084,24 @@ bool C1EyeViewWindow::create(
     viewport_height_ = parameters.viewport_height;
     smooth_scrolling_enabled_ = parameters.smooth_scrolling;
     overlay_gallery_identifier_ = parameters.overlay_gallery_identifier;
-    return creatures1::ui::create_eye_view_window(*this, title);
+    const bool created = creatures1::ui::create_eye_view_window(*this, title);
+    // neorender: drawn with SDL whenever the main view is, once the window
+    // has its size (SDL's software renderer made for a 0x0 window never
+    // drew), and by the software renderer: at most 256x192, it needs no
+    // second GPU device, and under Wine a second Direct3D renderer beside
+    // the main view's failed an assertion in vkAllocateDescriptorSets.
+    if (created && GetSafeHwnd() != nullptr && uses_sdl()) {
+        sdl_ = creatures1::platform::SdlWorldView::create(GetSafeHwnd(),
+                                                          "software");
+        if (sdl_ == nullptr) {
+            sdl_unavailable_ = true;  // back to GDI at 1x
+            const creatures1::ui::EyeViewPosition position = window_position();
+            move_eye_view_window(position.x, position.y, 0x80, 0x60, true);
+        } else {
+            request_sdl_frame();
+        }
+    }
+    return created;
 }
 
 bool C1EyeViewWindow::create_native_eye_window(std::string_view title,
@@ -1156,8 +1202,9 @@ bool C1EyeViewWindow::read_saved_eye_view_position(
 creatures1::ui::EyeViewRect C1EyeViewWindow::default_eye_view_rect() const {
     // g_eye_default_rect in the native; the recovered window is 128x96 of
     // world pixels doubled, matching the follow viewport's 0x40/0x30 half
-    // extents.
-    return {0, 0, 0x80, 0x60};
+    // extents.  neorender: times the eye view zoom when SDL draws it.
+    const int zoom = uses_sdl() ? document_.eye_view_zoom() : 1;
+    return {0, 0, 0x80 * zoom, 0x60 * zoom};
 }
 
 creatures1::ui::EyeViewPosition
@@ -1216,11 +1263,21 @@ std::uint32_t C1EyeViewWindow::realize_world_renderer_palette() {
 
 void C1EyeViewWindow::resize_world_renderer(int client_width,
                                             int client_height) {
-    if (renderer_ != nullptr) {
-        renderer_->resize_back_buffer_for_viewport(
-            GetSafeHwnd(), (std::max)(1, client_width),
-            (std::max)(1, client_height));
+    if (renderer_ == nullptr) {
+        return;
     }
+    if (uses_sdl()) {
+        // neorender: SDL scales the eye view to the window, so the back
+        // buffer stays the follow viewport's size in world pixels.  Blits
+        // fill the whole viewport, so the buffer must never be smaller.
+        renderer_->resize_back_buffer_for_viewport(
+            GetSafeHwnd(), viewport_width_ > 0 ? viewport_width_ : 0x80,
+            viewport_height_ > 0 ? viewport_height_ : 0x60);
+        return;
+    }
+    renderer_->resize_back_buffer_for_viewport(
+        GetSafeHwnd(), (std::max)(1, client_width),
+        (std::max)(1, client_height));
 }
 
 bool C1EyeViewWindow::selected_creature(
@@ -1274,6 +1331,39 @@ void C1EyeViewWindow::OnSize(UINT size_type, int client_width,
                              int client_height) {
     creatures1::ui::resize_eye_view(*this, size_type, client_width,
                                     client_height);
+}
+
+LRESULT C1EyeViewWindow::OnSdlFrame(WPARAM, LPARAM) {
+    sdl_frame_posted_ = false;
+    if (sdl_ == nullptr || renderer_ == nullptr || IsIconic()) {
+        return 0;
+    }
+    const creatures1::world::WorldRect viewport{
+        renderer_->viewport_left(), renderer_->viewport_top(),
+        renderer_->viewport_right(), renderer_->viewport_bottom()};
+    renderer_->collect_scene(viewport, sdl_scene_);
+    sdl_->render_frame(document_, sdl_scene_, viewport,
+                       static_cast<float>(document_.eye_view_zoom()), nullptr,
+                       nullptr);
+    return 0;
+}
+
+void C1EyeViewWindow::request_sdl_frame() {
+    if (!sdl_frame_posted_ && GetSafeHwnd() != nullptr) {
+        sdl_frame_posted_ = PostMessage(kSdlFrameMessage) != FALSE;
+    }
+}
+
+void C1EyeViewWindow::forget_sdl_textures() {
+    if (sdl_ != nullptr) {
+        sdl_->clear_textures();
+    }
+}
+
+void C1EyeViewWindow::OnDestroy() {
+    // SDL lets go of the window while it still exists.
+    sdl_.reset();
+    CWnd::OnDestroy();
 }
 
 void C1EyeViewWindow::OnClose() {

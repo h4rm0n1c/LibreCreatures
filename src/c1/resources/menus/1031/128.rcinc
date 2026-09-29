@@ -58,6 +58,24 @@ BEGIN
         MENUITEM "&Klickleiste", 59392
         MENUITEM "Status-Leist&e", 59393
         MENUITEM "", 0
+        POPUP "&Vergrößerung"
+        BEGIN
+            MENUITEM "&1x", 32944
+            MENUITEM "&2x", 32945
+            MENUITEM "Welthöhe an &Fenster anpassen", 32946
+        END
+        POPUP "Maximale &Detailstufe"
+        BEGIN
+            MENUITEM "&SPR (Originalgrafik)", 32947
+            MENUITEM "S&32", 32948
+            MENUITEM "@&2x S32", 32949
+        END
+        POPUP "&Größe des Betrachtungsfensters"
+        BEGIN
+            MENUITEM "&Normal", 32950
+            MENUITEM "&Doppelt", 32951
+        END
+        MENUITEM "", 0
         MENUITEM "CAOS Console\tCtrl+Shift+C", 32896
     END
     POPUP "_IDS_CAMERA_MENU_"

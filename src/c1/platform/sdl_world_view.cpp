@@ -5,6 +5,7 @@
 #include <SDL3/SDL.h>
 
 #include <algorithm>
+#include <cmath>
 #include <vector>
 
 namespace creatures1::platform {
@@ -226,7 +227,7 @@ void SdlWorldView::render_frame(C1WindowsDocument& document,
             continue;
         }
         display::ImageTier tier =
-            document.draw_tier_for(*gallery, item.image_index);
+            document.draw_tier_for(*gallery, item.image_index, zoom);
         SDL_Texture* texture = texture_for(document, *gallery, item.image_index,
                                            tier, item.opaque);
         if (texture == nullptr && tier != display::ImageTier::spr) {
@@ -237,18 +238,24 @@ void SdlWorldView::render_frame(C1WindowsDocument& document,
         if (texture == nullptr) {
             continue;
         }
-        // A tier drawn at its own pixel scale stays crisp; one drawn larger
-        // or smaller than its pixels is filtered.
+        // Whole-number magnification of a tier's pixels stays crisp
+        // (nearest); anything else is filtered.
         const float scale =
             zoom / static_cast<float>(display::tier_scale(tier));
-        SDL_SetTextureScaleMode(texture, scale == 1.0f ? SDL_SCALEMODE_NEAREST
-                                                       : SDL_SCALEMODE_LINEAR);
+        SDL_SetTextureScaleMode(texture,
+                                scale >= 1.0f && scale == std::floor(scale)
+                                    ? SDL_SCALEMODE_NEAREST
+                                    : SDL_SCALEMODE_LINEAR);
         const int x = wrapped_screen_x(item.world_x, width, viewport);
         const int y = item.world_y - viewport.min_y;
+        // Edges on whole screen pixels, so neighbouring background tiles
+        // meet exactly at any zoom.
+        const float left = std::round(static_cast<float>(x) * zoom);
+        const float top = std::round(static_cast<float>(y) * zoom);
         const SDL_FRect destination{
-            static_cast<float>(x) * zoom, static_cast<float>(y) * zoom,
-            static_cast<float>(width) * zoom,
-            static_cast<float>(height) * zoom};
+            left, top,
+            std::round(static_cast<float>(x + width) * zoom) - left,
+            std::round(static_cast<float>(y + height) * zoom) - top};
         SDL_RenderTexture(renderer_, texture, nullptr, &destination);
     }
 

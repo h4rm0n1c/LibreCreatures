@@ -106,8 +106,8 @@ dirty rectangles to the screen.
   treats it. A texture is rebuilt when the game draws into its image, and
   every texture is dropped on a new world or palette. Textures past 256 MB
   go least recently drawn first.
-- Tiers: at 1x, `.s32` is drawn where it exists and `.spr` otherwise; `@2x`
-  waits for zoom (phase 3).
+- Tiers: at 1x or smaller, `.s32` is drawn where it exists and `.spr`
+  otherwise; `@2x` only when the view is magnified (phase 3).
 - `C1_RENDERER`, or the `Renderer` string under the game's user registry
   key, picks the SDL driver (`direct3d11`, `opengl`, `software`, ...); `gdi`
   keeps the old GDI path, and so does any failure to start SDL.
@@ -118,3 +118,39 @@ norns and at four other camera positions, including across the wrap seam.
 With a `back.s32` whose frames are outlined (`spr_to_s32.py --mark`), the
 only differing pixels are the outlines. Clicks, pick-up and carrying, menus
 and the tip dialog behave as under GDI.
+
+## Zoom and detail (phase 3)
+
+View menu, all seven languages, command IDs 32944-32951 (clear of the kit
+tools' range):
+
+- **Zoom**: 1x, 2x, or *Scale world height to window* (window height / 1200,
+  so the whole world height fits, smaller or larger than 1x).
+- **Maximum detail**: SPR, S32 or @2x S32. Drawing takes the best tier at or
+  under this; @2x is used only while magnified.
+- **Creature's view size**: Normal (128x96) or Double (256x192).
+
+Settings `Zoom`, `MaxImageDetail` and `EyeViewZoom` sit beside the game's
+other view settings in the registry. All three need SDL; with the GDI
+renderer the items are greyed and the view stays 1x.
+
+The renderer, the scroll bars, follow and every game rule stay in world
+pixels. The view divides each mouse point by the zoom before the game sees
+it, and the renderer's viewport is the client size divided by the zoom
+(rounded up). SDL scales on the way to the screen: nearest-neighbour when
+a tier's pixels are magnified a whole number of times, linear otherwise,
+with every edge rounded to a whole screen pixel so background tiles meet
+exactly. Changing the zoom keeps the middle of the view where it was.
+
+The eye view is drawn by SDL too, with SDL's software renderer (the view is
+at most 256x192, and under Wine a second Direct3D renderer beside the main
+view's failed an assertion in `vkAllocateDescriptorSets`). Its back buffer
+always stays the 128x96 follow viewport. Changing its size closes and
+reopens it; resizing the open window left it short by a caption's height
+under Wine.
+
+Checked in the lab: 2x draws the `@2x` tier (an outlined `back@2x.s32`),
+and the hand sits under the mouse. Scale-to-height shows the whole world
+height with the hand under the mouse. The SPR cap at 1x differs from the
+8-bit frame by 0 pixels. The eye view is right at both sizes, both when
+opened and when switched. The settings survive a restart.

@@ -58,6 +58,24 @@ BEGIN
         MENUITEM "&Barra degli strumenti", 59392
         MENUITEM "&Barra di stato", 59393
         MENUITEM "", 0
+        POPUP "&Zoom"
+        BEGIN
+            MENUITEM "&1x", 32944
+            MENUITEM "&2x", 32945
+            MENUITEM "Adatta l'altezza del mondo alla &finestra", 32946
+        END
+        POPUP "&Dettaglio massimo"
+        BEGIN
+            MENUITEM "&SPR (grafica originale)", 32947
+            MENUITEM "S&32", 32948
+            MENUITEM "@&2x S32", 32949
+        END
+        POPUP "Dimensione della &visuale della creatura"
+        BEGIN
+            MENUITEM "&Normale", 32950
+            MENUITEM "&Doppia", 32951
+        END
+        MENUITEM "", 0
         MENUITEM "CAOS Console\tCtrl+Shift+C", 32896
     END
     POPUP "_IDS_CAMERA_MENU_"

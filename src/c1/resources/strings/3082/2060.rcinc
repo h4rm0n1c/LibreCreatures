@@ -1,0 +1,11 @@
+STRINGTABLE
+BEGIN
+    32944 "Mostrar el mundo a su tamaño original\nZoom 1x"
+    32945 "Mostrar el mundo al doble de tamaño\nZoom 2x"
+    32946 "Ajustar toda la altura del mundo a la ventana\nAjustar a la ventana"
+    32947 "Mostrar solo los gráficos .spr originales\nGráficos originales"
+    32948 "Mostrar los gráficos .s32 donde los haya\nGráficos S32"
+    32949 "Con zoom, mostrar también los gráficos @2x.s32 de doble resolución donde los haya\nGráficos @2x"
+    32950 "Mostrar la vista de la criatura a su tamaño original\nTamaño normal"
+    32951 "Mostrar la vista de la criatura al doble de tamaño\nTamaño doble"
+END

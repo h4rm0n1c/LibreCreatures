@@ -59,6 +59,24 @@ BEGIN
         MENUITEM "&Toolbar", 59392
         MENUITEM "&Status Bar", 59393
         MENUITEM "", 0
+        POPUP "&Zoom"
+        BEGIN
+            MENUITEM "&1x", 32944
+            MENUITEM "&2x", 32945
+            MENUITEM "&Scale world height to window", 32946
+        END
+        POPUP "Maximum &detail"
+        BEGIN
+            MENUITEM "&SPR (original art)", 32947
+            MENUITEM "S&32", 32948
+            MENUITEM "@&2x S32", 32949
+        END
+        POPUP "&Creature's view size"
+        BEGIN
+            MENUITEM "&Normal", 32950
+            MENUITEM "&Double", 32951
+        END
+        MENUITEM "", 0
         MENUITEM "CAOS Console\tCtrl+Shift+C", 32896
     END
     POPUP "_IDS_CAMERA_MENU_"

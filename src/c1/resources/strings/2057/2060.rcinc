@@ -1,0 +1,11 @@
+STRINGTABLE
+BEGIN
+    32944 "Draw the world at its original size\nZoom 1x"
+    32945 "Draw the world at twice its size\nZoom 2x"
+    32946 "Fit the whole height of the world in the window\nScale to window"
+    32947 "Draw only the original .spr art\nOriginal art"
+    32948 "Draw .s32 art where there is some\nS32 art"
+    32949 "Also draw double-resolution @2x.s32 art where there is some, when zoomed in\n@2x art"
+    32950 "Show the Creature's view at its original size\nNormal size"
+    32951 "Show the Creature's view at twice its size\nDouble size"
+END

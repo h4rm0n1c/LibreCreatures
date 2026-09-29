@@ -17,6 +17,7 @@
 #include <optional>
 #include <cstdio>
 #include <algorithm>
+#include <cmath>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
@@ -3941,7 +3942,11 @@ void C1WindowsDocument::create_sdl_view(CWnd& view) {
     if (_stricmp(choice.c_str(), "gdi") == 0) {
         return;
     }
+    sdl_driver_ = choice;
     sdl_view_ = SdlWorldView::create(view.GetSafeHwnd(), choice);
+    if (sdl_view_ != nullptr) {
+        load_view_scale_settings();
+    }
     C1DebugConsoleDialog* console = active_debug_console();
     if (console != nullptr) {
         creatures1::common::debug_log(
@@ -3953,11 +3958,145 @@ void C1WindowsDocument::create_sdl_view(CWnd& view) {
     }
 }
 
-bool C1WindowsDocument::presents_through_sdl(void* device_context) const {
-    return sdl_view_ != nullptr && renderer_view_ != nullptr &&
-           device_context != nullptr &&
-           WindowFromDC(static_cast<HDC>(device_context)) ==
-               renderer_view_->GetSafeHwnd();
+C1WindowsDocument::SdlTarget C1WindowsDocument::sdl_target(
+    void* device_context) const {
+    if (sdl_view_ == nullptr || device_context == nullptr) {
+        return SdlTarget::none;
+    }
+    const HWND window = WindowFromDC(static_cast<HDC>(device_context));
+    if (window == nullptr) {
+        return SdlTarget::none;
+    }
+    if (renderer_view_ != nullptr && window == renderer_view_->GetSafeHwnd()) {
+        return SdlTarget::main_view;
+    }
+    if (eye_view_ != nullptr && eye_view_->draws_with_sdl() &&
+        window == eye_view_->GetSafeHwnd()) {
+        return SdlTarget::eye_view;
+    }
+    return SdlTarget::none;
+}
+
+void C1WindowsDocument::request_sdl_frame_for(void* device_context) {
+    switch (sdl_target(device_context)) {
+    case SdlTarget::main_view:
+        request_sdl_frame();
+        break;
+    case SdlTarget::eye_view:
+        eye_view_->request_sdl_frame();
+        break;
+    case SdlTarget::none:
+        break;
+    }
+}
+
+void C1WindowsDocument::load_view_scale_settings() {
+    std::uint32_t value = 0;
+    read_view_setting("Zoom", value, 0);
+    world_zoom_ = value <= static_cast<std::uint32_t>(WorldZoom::fit_height)
+                      ? static_cast<WorldZoom>(value)
+                      : WorldZoom::one;
+    read_view_setting("MaxImageDetail", value,
+                      static_cast<std::uint32_t>(
+                          creatures1::display::ImageTier::s32_2x));
+    max_image_detail_ =
+        value <= static_cast<std::uint32_t>(
+                     creatures1::display::ImageTier::s32_2x)
+            ? static_cast<creatures1::display::ImageTier>(value)
+            : creatures1::display::ImageTier::s32_2x;
+    read_view_setting("EyeViewZoom", value, 1);
+    eye_view_zoom_ = value == 2 ? 2 : 1;
+}
+
+float C1WindowsDocument::world_zoom_factor() const {
+    if (sdl_view_ == nullptr) {
+        return 1.0f;
+    }
+    switch (world_zoom_) {
+    case WorldZoom::two:
+        return 2.0f;
+    case WorldZoom::fit_height: {
+        if (renderer_view_ == nullptr || renderer_view_->GetSafeHwnd() == nullptr) {
+            return 1.0f;
+        }
+        CRect client;
+        renderer_view_->GetClientRect(&client);
+        return client.Height() > 0
+                   ? static_cast<float>(client.Height()) /
+                         static_cast<float>(creatures1::world::kWorldHeight)
+                   : 1.0f;
+    }
+    case WorldZoom::one:
+        break;
+    }
+    return 1.0f;
+}
+
+void C1WindowsDocument::set_world_zoom(WorldZoom zoom) {
+    if (sdl_view_ == nullptr) {
+        return;
+    }
+    world_zoom_ = zoom;
+    write_view_setting("Zoom", static_cast<std::uint32_t>(zoom));
+    apply_world_zoom();
+}
+
+void C1WindowsDocument::apply_world_zoom() {
+    if (renderer_view_ == nullptr || renderer_view_->GetSafeHwnd() == nullptr) {
+        return;
+    }
+    // Keep the middle of the view where it was.
+    const int centre_x =
+        renderer_ == nullptr
+            ? 0
+            : (renderer_->viewport_left() + renderer_->viewport_right()) / 2;
+    const int centre_y =
+        renderer_ == nullptr
+            ? 0
+            : (renderer_->viewport_top() + renderer_->viewport_bottom()) / 2;
+    CRect client;
+    renderer_view_->GetClientRect(&client);
+    resize_renderer_for_view(*renderer_view_, client.Width(), client.Height());
+    if (renderer_ != nullptr) {
+        const int width = renderer_->viewport_right() - renderer_->viewport_left();
+        const int height = renderer_->viewport_bottom() - renderer_->viewport_top();
+        int left = centre_x - width / 2;
+        if (left < 0) {
+            left += creatures1::world::kWorldWidth;
+        } else if (left >= creatures1::world::kWorldWidth) {
+            left -= creatures1::world::kWorldWidth;
+        }
+        int top = (std::max)(0, centre_y - height / 2);
+        top = (std::min)(top, (std::max)(0, creatures1::world::kWorldHeight - height));
+        renderer_->set_viewport_edges(left, top, left + width, top + height);
+    }
+    set_full_redraw_pending(true);
+    request_sdl_frame();
+}
+
+void C1WindowsDocument::set_max_image_detail(
+    creatures1::display::ImageTier tier) {
+    max_image_detail_ = tier;
+    write_view_setting("MaxImageDetail", static_cast<std::uint32_t>(tier));
+    request_sdl_frame();
+    if (eye_view_ != nullptr) {
+        eye_view_->request_sdl_frame();
+    }
+}
+
+void C1WindowsDocument::set_eye_view_zoom(int zoom) {
+    if (sdl_view_ == nullptr) {
+        return;
+    }
+    eye_view_zoom_ = zoom == 2 ? 2 : 1;
+    write_view_setting("EyeViewZoom", static_cast<std::uint32_t>(eye_view_zoom_));
+    if (eye_view_ != nullptr) {
+        // Closed and opened again at the new size: resizing the open window
+        // left it a caption's height short under Wine (Xvfb, no window
+        // manager), and a new window comes up right.
+        creatures1::application::toggle_eye_view(*this);
+        creatures1::application::toggle_eye_view(*this);
+    }
 }
 
 void C1WindowsDocument::request_sdl_frame() {
@@ -3973,6 +4112,9 @@ void C1WindowsDocument::forget_sdl_textures() {
     if (sdl_view_ != nullptr) {
         sdl_view_->clear_textures();
     }
+    if (eye_view_ != nullptr) {
+        eye_view_->forget_sdl_textures();
+    }
 }
 
 void C1WindowsDocument::present_sdl_frame() {
@@ -3986,7 +4128,7 @@ void C1WindowsDocument::present_sdl_frame() {
         renderer_->viewport_left(), renderer_->viewport_top(),
         renderer_->viewport_right(), renderer_->viewport_bottom()};
     renderer_->collect_scene(viewport, sdl_scene_);
-    sdl_view_->render_frame(*this, sdl_scene_, viewport, 1.0f,
+    sdl_view_->render_frame(*this, sdl_scene_, viewport, world_zoom_factor(),
                             &renderer_->debug_highlight_rect(), nullptr);
 }
 
@@ -4000,11 +4142,12 @@ const std::uint8_t* C1WindowsDocument::indexed_image_pixels(
 }
 
 creatures1::display::ImageTier C1WindowsDocument::draw_tier_for(
-    const creatures1::display::Gallery& gallery, std::size_t index) {
-    // @2x only pays when the view is magnified; at 1x the .s32 is the most
-    // that is drawn.  (Zoom arrives in phase 3.)
+    const creatures1::display::Gallery& gallery, std::size_t index,
+    float zoom) {
+    // @2x only pays when the view is magnified; at 1x or smaller the .s32
+    // is the most that is drawn.
     const creatures1::display::ImageTier cap =
-        max_image_detail_ > creatures1::display::ImageTier::s32
+        zoom <= 1.0f && max_image_detail_ > creatures1::display::ImageTier::s32
             ? creatures1::display::ImageTier::s32
             : max_image_detail_;
     return image_tiers_.best_tier(gallery, index, cap,
@@ -4476,6 +4619,18 @@ void C1WindowsDocument::write_view_setting_pair(std::string_view name, const std
 void C1WindowsDocument::resize_renderer_for_view(CWnd& view, int client_width, int client_height) {
     ensure_renderer(view);
     if (renderer_ != nullptr) {
+        // neorender: the renderer works in world pixels; with the view
+        // zoomed, that is the client size divided by the zoom, rounded up
+        // so the last partly shown world pixel is still drawn.
+        const float zoom = world_zoom_factor();
+        if (zoom != 1.0f && zoom > 0.0f && client_width > 0 && client_height > 0) {
+            client_width = (std::max)(
+                1, static_cast<int>(std::ceil(
+                       static_cast<float>(client_width) / zoom - 0.001f)));
+            client_height = (std::max)(
+                1, static_cast<int>(std::ceil(
+                       static_cast<float>(client_height) / zoom - 0.001f)));
+        }
         renderer_->resize_back_buffer_for_viewport(
             view.GetSafeHwnd(), client_width, client_height);
     }
@@ -4618,7 +4773,7 @@ void C1WindowsDocument::bit_blt(void* target_context, int destination_x, int des
     // neorender: the 8-bit renderer has updated its back buffer; with SDL
     // drawing the main view, that becomes one SDL frame instead of a blit.
     if (presents_through_sdl(target_context)) {
-        request_sdl_frame();
+        request_sdl_frame_for(target_context);
         return;
     }
     if (gdi_host_ != nullptr) {
@@ -4654,7 +4809,7 @@ void C1WindowsDocument::set_dib_colour_table( void* memory_dc, const std::array<
 
 void C1WindowsDocument::fill_client_background_black(void* device_context) {
     if (presents_through_sdl(device_context)) {
-        request_sdl_frame();  // a GDI fill would only flash over the frame
+        request_sdl_frame_for(device_context);  // a GDI fill would only flash
         return;
     }
     if (gdi_host_ != nullptr) {
