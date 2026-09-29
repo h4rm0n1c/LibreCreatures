@@ -8,142 +8,274 @@ namespace c1kitshell {
 namespace {
 
 enum : UINT {
-    kControlShopList = 3900,
-    kControlShopPicture,
-    kControlShopAdd,
+    kControlShopShelf = 3900,
     kControlShopStatus,
 };
+
+// The shelf's look.
+constexpr int kCardGap = 10;
+constexpr int kCardPadding = 10;
+constexpr int kMinimumCardWidth = 140;
+constexpr int kMaximumCardWidth = 260;
+constexpr int kMaximumPictureScale = 3;
+constexpr COLORREF kCardFace = RGB(255, 255, 255);
+constexpr COLORREF kCardEdge = RGB(200, 200, 205);
+constexpr COLORREF kCardEdgeHot = RGB(0, 120, 215);
+constexpr COLORREF kWell = RGB(24, 24, 28);
+constexpr COLORREF kNameColour = RGB(20, 40, 90);
+constexpr COLORREF kWordsColour = RGB(90, 90, 90);
+constexpr COLORREF kStockColour = RGB(40, 120, 60);
+constexpr COLORREF kSoldOutColour = RGB(200, 40, 40);
 
 CString text(const std::string& value) {
     return CString(value.c_str());
 }
 
-} // namespace
+CString stock_text(int quantity) {
+    CString line;
+    if (quantity > 0) {
+        line.Format(_T("%d left"), quantity);
+    } else {
+        line = _T("None left");
+    }
+    return line;
+}
 
-BEGIN_MESSAGE_MAP(ShopPage, LayoutPage)
-    ON_LBN_SELCHANGE(kControlShopList, &ShopPage::OnSelectionChanged)
-    ON_BN_CLICKED(kControlShopAdd, &ShopPage::OnAddToWorld)
-END_MESSAGE_MAP()
+const TCHAR kPutOne[] = _T("Put one in the world");
+
+} // namespace
 
 ShopPage::ShopPage(KitSheet& sheet, ShopHost& host, UINT blank_dialog, UINT title_string)
     : LayoutPage(sheet, blank_dialog, title_string), host_(host) {}
 
 void ShopPage::create_controls() {
-    make(items_, _T("LISTBOX"), _T(""), LBS_NOTIFY | WS_BORDER | WS_VSCROLL | WS_TABSTOP,
-         kControlShopList);
-    picture_.create(*this, kControlShopPicture,
-                    [this](CDC& dc, const CRect& rect) { draw_picture(dc, rect); });
-    make(add_, _T("BUTTON"), _T("Put one in the world"), BS_PUSHBUTTON | WS_TABSTOP,
-         kControlShopAdd);
-    make(status_, _T("STATIC"), _T(""), SS_LEFT, kControlShopStatus);
-    fill_list();
-    items_.SetCurSel(host_.shop_items().empty() ? -1 : 0);
-    show_selected();
+    LOGFONT font = {};
+    GetFont()->GetLogFont(&font);
+    font.lfWeight = FW_BOLD;
+    name_font_.CreateFontIndirect(&font);
+    shelf_.create(*this, kControlShopShelf,
+                  [this](CDC& dc, const CRect& rect) { draw_shelf(dc, rect); });
+    shelf_.set_mouse_handler([this](CPoint point, bool clicked) { on_mouse(point, clicked); });
+    make(status_, _T("STATIC"), _T(""), SS_LEFT | SS_ENDELLIPSIS, kControlShopStatus);
 }
 
 void ShopPage::layout(int width, int height) {
-    const int list_width = (std::min)(200, width / 3);
     const int bottom = height - 2 * kMargin - button_height();
-    place(items_, kMargin, kMargin, list_width, bottom - kMargin);
-    const int left = 2 * kMargin + list_width;
-    place(picture_, left, kMargin, width - left - kMargin,
-          bottom - 3 * kMargin - 2 * button_height());
-    place(add_, left, bottom - 2 * button_height() - kMargin, 160, button_height());
-    place(status_, left, bottom - button_height(), width - left - kMargin, text_height());
+    place(shelf_, kMargin, kMargin, width - 2 * kMargin,
+          bottom - 2 * kMargin - text_height());
+    place(status_, kMargin, bottom - text_height(), width - 2 * kMargin, text_height());
     place_close(width, height);
+    arrange_cards();
 }
 
 void ShopPage::refresh() {
     if (created_) {
-        fill_list();
-        show_selected();
+        arrange_cards();
+        shelf_.redraw();
     }
 }
 
-void ShopPage::fill_list() {
-    const int selected = items_.GetCurSel();
-    items_.ResetContent();
-    for (const c1kit::ShopItem& item : host_.shop_items()) {
-        CString line;
-        line.Format(_T("%s  (%d left)"), text(item.name).GetString(), item.quantity);
-        items_.AddString(line);
+int ShopPage::picture_scale(const c1kit::ShopItem& item) const {
+    const c1kit::PhotoBitmap& picture = item.picture;
+    if (picture.width <= 0 || picture.height <= 0) {
+        return 0;
     }
-    if (selected >= 0 && selected < items_.GetCount()) {
-        items_.SetCurSel(selected);
-    }
+    return (std::max)(1, (std::min)(kMaximumPictureScale,
+                                    (card_width_ - 2 * kCardPadding) / picture.width));
 }
 
-void ShopPage::OnSelectionChanged() {
-    status_.SetWindowText(_T(""));
-    show_selected();
-}
-
-void ShopPage::show_selected() {
-    const int index = items_.GetCurSel();
-    const std::vector<c1kit::ShopItem>& items = host_.shop_items();
-    const bool valid = index >= 0 && index < static_cast<int>(items.size());
-    add_.EnableWindow(valid && items[static_cast<std::size_t>(index)].quantity > 0);
-    picture_.redraw();
-}
-
-void ShopPage::draw_picture(CDC& dc, const CRect& rect) {
-    dc.FillSolidRect(rect, RGB(24, 24, 28));
-    dc.SetBkMode(TRANSPARENT);
-    const std::vector<c1kit::ShopItem>& items = host_.shop_items();
-    const int index = items_.GetSafeHwnd() != nullptr ? items_.GetCurSel() : -1;
-    if (index < 0 || index >= static_cast<int>(items.size())) {
-        dc.SetTextColor(RGB(200, 200, 200));
-        dc.TextOut(rect.left + 12, rect.top + 12,
-                   items.empty() ? CString(_T("The shop file (")) + CString(host_.shop_file_name()) +
-                                       _T(") could not be read.")
-                                 : CString(_T("Pick something from the list.")));
+void ShopPage::arrange_cards() {
+    cards_.clear();
+    buttons_.clear();
+    if (shelf_.GetSafeHwnd() == nullptr) {
         return;
     }
-    const c1kit::ShopItem& item = items[static_cast<std::size_t>(index)];
-    // The picture, scaled up to fit, above its name and description.
-    const int text_space = 60;
+    const std::vector<c1kit::ShopItem>& items = host_.shop_items();
+    CClientDC dc(&shelf_);
+    CFont* previous = dc.SelectObject(GetFont());
+    // Laid out once to see whether a scroll bar is needed, then again in the
+    // width that leaves.
+    CRect client;
+    shelf_.GetClientRect(&client);
+    int available = client.Width() + (shelf_.GetStyle() & WS_VSCROLL
+                                          ? ::GetSystemMetrics(SM_CXVSCROLL)
+                                          : 0);
+    int content_height = 0;
+    for (int pass = 0; pass < 2; ++pass) {
+        cards_.clear();
+        buttons_.clear();
+        // As many columns as fit, but no more than there are items, so a
+        // short shelf is centred rather than left half empty.
+        const int columns = (std::max)(
+            1, (std::min)(static_cast<int>(items.size()),
+                          (available - kCardGap) / (kMinimumCardWidth + kCardGap)));
+        card_width_ = (std::min)(kMaximumCardWidth,
+                                 (available - kCardGap * (columns + 1)) / columns);
+        picture_height_ = 0;
+        int words_height = 0;
+        for (const c1kit::ShopItem& item : items) {
+            const int scale = picture_scale(item);
+            picture_height_ = (std::max)(picture_height_, item.picture.height * scale);
+            CRect words(0, 0, card_width_ - 2 * kCardPadding, 0);
+            dc.DrawText(text(item.description), words, DT_CALCRECT | DT_WORDBREAK | DT_NOPREFIX);
+            words_height = (std::max)(words_height, words.Height());
+        }
+        picture_height_ += 2 * kCardPadding;
+        const int line = text_height();
+        const int card_height = kCardPadding + picture_height_ + kCardPadding + line + 4 +
+                                words_height + 6 + line + 8 + button_height() + kCardPadding;
+        // Centred as a block when there is room to spare.
+        const int used = columns * card_width_ + (columns - 1) * kCardGap;
+        const int left = (std::max)(kCardGap, (available - used) / 2);
+        for (std::size_t i = 0; i < items.size(); ++i) {
+            const int column = static_cast<int>(i) % columns;
+            const int row = static_cast<int>(i) / columns;
+            const int x = left + column * (card_width_ + kCardGap);
+            const int y = kCardGap + row * (card_height + kCardGap);
+            const CRect card(x, y, x + card_width_, y + card_height);
+            cards_.push_back(card);
+            buttons_.emplace_back(card.left + kCardPadding,
+                                  card.bottom - kCardPadding - button_height(),
+                                  card.right - kCardPadding, card.bottom - kCardPadding);
+        }
+        const int rows = items.empty() ? 0 : (static_cast<int>(items.size()) + columns - 1) / columns;
+        content_height = kCardGap + rows * (card_height + kCardGap);
+        if (content_height <= client.Height() || pass == 1) {
+            break;
+        }
+        available -= ::GetSystemMetrics(SM_CXVSCROLL);
+    }
+    dc.SelectObject(previous);
+    shelf_.set_content_size(content_height > client.Height() ? CSize(0, content_height)
+                                                              : CSize(0, 0));
+}
+
+void ShopPage::draw_shelf(CDC& dc, const CRect& rect) {
+    dc.FillSolidRect(rect, ::GetSysColor(COLOR_3DFACE));
+    dc.SetBkMode(TRANSPARENT);
+    const std::vector<c1kit::ShopItem>& items = host_.shop_items();
+    if (items.empty()) {
+        dc.SetTextColor(kWordsColour);
+        dc.TextOut(rect.left + 12, rect.top + 12,
+                   CString(_T("The shop file (")) + CString(host_.shop_file_name()) +
+                       _T(") could not be read, or has nothing in it."));
+        return;
+    }
+    const CPoint scroll = shelf_.scroll_position();
+    for (std::size_t i = 0; i < cards_.size() && i < items.size(); ++i) {
+        CRect card = cards_[i];
+        card.OffsetRect(-scroll);
+        if (card.bottom >= rect.top && card.top <= rect.bottom) {
+            draw_card(dc, i, card);
+        }
+    }
+}
+
+void ShopPage::draw_card(CDC& dc, std::size_t index, const CRect& card) {
+    const c1kit::ShopItem& item = host_.shop_items()[index];
+    const bool hot = static_cast<int>(index) == hover_;
+    const bool in_stock = item.quantity > 0;
+    // The button where this card is drawn (the layout is unscrolled).
+    CRect button = buttons_[index];
+    button.OffsetRect(card.TopLeft() - cards_[index].TopLeft());
+
+    // The card, its edge lit while its button is under the mouse.
+    CPen edge(PS_SOLID, 1, hot && in_stock ? kCardEdgeHot : kCardEdge);
+    CBrush face(kCardFace);
+    CPen* previous_pen = dc.SelectObject(&edge);
+    CBrush* previous_brush = dc.SelectObject(&face);
+    dc.RoundRect(card, CPoint(8, 8));
+    dc.SelectObject(previous_brush);
+    dc.SelectObject(previous_pen);
+
+    // The picture in a well of its own background colour (its corner
+    // pixel), so the art's frame doesn't show.
+    const CRect well(card.left + kCardPadding, card.top + kCardPadding,
+                     card.right - kCardPadding, card.top + kCardPadding + picture_height_);
     const c1kit::PhotoBitmap& picture = item.picture;
-    if (picture.width > 0 && picture.height > 0 && canvas_.create(picture.width, picture.height)) {
+    COLORREF ground = kWell;
+    if (picture.width > 0 && picture.height > 0 &&
+        picture.pixels.size() >= static_cast<std::size_t>(picture.stride)) {
+        const std::uint32_t colour = host_.shop_palette().colour(picture.pixels[0]);
+        ground = RGB((colour >> 16) & 0xff, (colour >> 8) & 0xff, colour & 0xff);
+    }
+    dc.FillSolidRect(well, ground);
+    const int scale = picture_scale(item);
+    if (scale > 0 && canvas_.create(picture.width, picture.height)) {
         canvas_.fill(0);
         canvas_.draw_indexed(picture.pixels.data(), picture.width, picture.height, picture.stride,
                              true, 0, 0, host_.shop_palette());
-        const int scale = (std::max)(1, (std::min)((rect.Width() - 20) / picture.width,
-                                                   (rect.Height() - text_space - 20) / picture.height));
-        const int w = picture.width * scale;
-        const int h = picture.height * scale;
         CDC source;
         source.CreateCompatibleDC(&dc);
         CBitmap bitmap;
         bitmap.CreateCompatibleBitmap(&dc, picture.width, picture.height);
         CBitmap* previous = source.SelectObject(&bitmap);
         canvas_.present(source, 0, 0, picture.width, picture.height);
+        const int w = picture.width * scale;
+        const int h = picture.height * scale;
         dc.SetStretchBltMode(COLORONCOLOR);
-        dc.StretchBlt(rect.left + (rect.Width() - w) / 2, rect.top + 10, w, h, &source, 0, 0,
-                      picture.width, picture.height, SRCCOPY);
+        dc.StretchBlt(well.left + (well.Width() - w) / 2, well.top + (well.Height() - h) / 2, w,
+                      h, &source, 0, 0, picture.width, picture.height, SRCCOPY);
         source.SelectObject(previous);
     }
-    const CRect words(rect.left + 10, rect.bottom - text_space, rect.right - 10, rect.bottom - 4);
-    dc.SetTextColor(RGB(255, 255, 255));
-    CString count;
-    count.Format(_T("   (%d left)"), item.quantity);
-    dc.DrawText(text(item.name) + count, CRect(words.left, words.top, words.right, words.top + 20),
-                DT_CENTER | DT_SINGLELINE | DT_NOPREFIX);
-    dc.SetTextColor(RGB(200, 200, 200));
-    dc.DrawText(text(item.description),
-                CRect(words.left, words.top + 22, words.right, words.bottom),
-                DT_CENTER | DT_WORDBREAK | DT_NOPREFIX);
+
+    // Name, what it does, how many are left.
+    const int line = text_height();
+    int y = well.bottom + kCardPadding;
+    CFont* previous_font = dc.SelectObject(&name_font_);
+    dc.SetTextColor(kNameColour);
+    dc.DrawText(text(item.name), CRect(well.left, y, well.right, y + line),
+                DT_LEFT | DT_SINGLELINE | DT_NOPREFIX | DT_END_ELLIPSIS);
+    dc.SelectObject(previous_font);
+    y += line + 4;
+    const CRect stock_line(well.left, button.top - 8 - line, well.right, button.top - 8);
+    dc.SetTextColor(kWordsColour);
+    dc.DrawText(text(item.description), CRect(well.left, y, well.right, stock_line.top - 6),
+                DT_LEFT | DT_WORDBREAK | DT_NOPREFIX);
+    dc.SetTextColor(in_stock ? kStockColour : kSoldOutColour);
+    dc.DrawText(stock_text(item.quantity), CRect(stock_line), DT_LEFT | DT_SINGLELINE | DT_NOPREFIX);
+
+    // Its button.
+    UINT state = DFCS_BUTTONPUSH;
+    if (!in_stock) {
+        state |= DFCS_INACTIVE;
+    } else if (hot) {
+        state |= DFCS_HOT;
+    }
+    dc.DrawFrameControl(button, DFC_BUTTON, state);
+    dc.SetTextColor(::GetSysColor(in_stock ? COLOR_BTNTEXT : COLOR_GRAYTEXT));
+    dc.DrawText(kPutOne, button, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
+}
+
+void ShopPage::on_mouse(CPoint point, bool clicked) {
+    int over = -1;
+    if (point.x >= 0) {
+        const CPoint at = point + shelf_.scroll_position();
+        for (std::size_t i = 0; i < buttons_.size(); ++i) {
+            if (buttons_[i].PtInRect(at)) {
+                over = static_cast<int>(i);
+                break;
+            }
+        }
+    }
+    if (over != hover_) {
+        hover_ = over;
+        shelf_.redraw();
+    }
+    if (clicked && over >= 0) {
+        put_one_in_world(static_cast<std::size_t>(over));
+    }
 }
 
 // SubmitSelectedHealthValue (Health Kit @ 0x00405c80): run the item's CAOS,
 // which makes the object and puts it in the pointer's hand, then take one
 // off and save the stock.
-void ShopPage::OnAddToWorld() {
-    const int index = items_.GetCurSel();
+void ShopPage::put_one_in_world(std::size_t index) {
     std::vector<c1kit::ShopItem>& items = host_.shop_items();
-    if (index < 0 || index >= static_cast<int>(items.size())) {
+    if (index >= items.size()) {
         return;
     }
-    c1kit::ShopItem& item = items[static_cast<std::size_t>(index)];
+    c1kit::ShopItem& item = items[index];
     if (item.quantity <= 0) {
         return;
     }
@@ -153,8 +285,7 @@ void ShopPage::OnAddToWorld() {
     }
     --item.quantity;
     host_.save_shop();
-    fill_list();
-    show_selected();
+    shelf_.redraw();
     status_.SetWindowText(text(item.name) + _T(" is on the pointer: click in the world to drop it."));
 }
 

@@ -63,8 +63,9 @@ This build adds `Size`.
   frame (`Shop.bmp`), with arrows, its name, how many are left and what it
   does; the middle button runs the item's CAOS and takes one off
   (SubmitSelectedHealthValue @ 0x00405c80).
-  *This build:* every item in a list, the selected one's picture drawn large
-  with its details, and "Put one in the world".
+  *This build:* the whole stock on a shelf at once, a card per item with
+  its picture, name, what it does, how many are left and its own "Put one
+  in the world" button (greyed when none are left).
 
 ## The shop file
 
