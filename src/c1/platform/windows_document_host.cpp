@@ -4127,6 +4127,10 @@ void C1WindowsDocument::apply_world_zoom() {
     }
     set_full_redraw_pending(true);
     request_sdl_frame();
+    // The vertical scroll range depends on how much of the world is shown.
+    if (auto* view = dynamic_cast<C1WindowsView*>(renderer_view_)) {
+        view->refresh_scroll_range();
+    }
 }
 
 void C1WindowsDocument::set_max_image_detail(

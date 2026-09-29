@@ -2363,6 +2363,11 @@ public:
     void toggle_camera_tracking();
 
     void toggle_infinite_world();
+    // neorender: the view settings the scroll handling uses, with the
+    // vertical range widened while zoomed (see the definition), and the
+    // scroll bars reset to that range (on a zoom or size change).
+    creatures1::ui::WorldViewSettings scroll_settings() const;
+    void refresh_scroll_range();
 
     void toggle_smooth_scrolling();
 

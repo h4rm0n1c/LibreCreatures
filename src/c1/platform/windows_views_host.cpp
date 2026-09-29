@@ -15,9 +15,33 @@ void C1WindowsView::toggle_camera_tracking() {
         view_state_, view_settings_, *this);
 }
 
+creatures1::ui::WorldViewSettings C1WindowsView::scroll_settings() const {
+    // neorender: the vertical scroll bar moves the view up to half_height
+    // world pixels either way from where it was last centred -- 350 for a
+    // player, sized for a 1x view about 358 high.  Zoomed in, the view shows
+    // fewer world pixels, so that range stops short of the world's top and
+    // bottom; widen it to the world height less what is on screen.  At 1x
+    // nothing changes.
+    creatures1::ui::WorldViewSettings settings = view_settings_;
+    const C1WindowsDocument* current = document();
+    if (current != nullptr && current->world_zoom_factor() != 1.0f) {
+        const int shown = current->renderer_viewport_height();
+        settings.half_height = (std::max)(
+            settings.half_height, creatures1::world::kWorldHeight - shown);
+    }
+    return settings;
+}
+
+void C1WindowsView::refresh_scroll_range() {
+    const creatures1::ui::WorldViewSettings settings = scroll_settings();
+    creatures1::ui::reset_world_scrollbars(*this, settings.half_width,
+                                           settings.half_height);
+}
+
 void C1WindowsView::toggle_infinite_world() {
     creatures1::ui::toggle_infinite_scroll_world_size(
         *this, view_settings_);
+    refresh_scroll_range();
     if (document() != nullptr) {
         document()->invalidate_renderer_view();
     }
@@ -76,8 +100,9 @@ void C1WindowsView::return_viewport_navigation_to_selected_creature() {
     // Native SFCView::ReturnViewportNavigationToSelectedCreature resets the
     // scrollbars, switches to follow mode, and asks the renderer to centre the
     // selected creature whenever navigation is enabled.
+    creatures1::ui::WorldViewSettings settings = scroll_settings();
     creatures1::ui::return_viewport_navigation_to_selected_creature(
-        *this, view_settings_, view_state_.viewport_navigation_mode);
+        *this, settings, view_state_.viewport_navigation_mode);
 }
 
 void C1WindowsView::apply_sound_policy(
@@ -107,7 +132,7 @@ std::uint32_t C1WindowsView::sound_settings_for_macro() const {
 
 void C1WindowsView::update_keyboard_scroll_for_world_tick() {
     creatures1::ui::update_keyboard_scroll(
-        view_state_, view_settings_, *this);
+        view_state_, scroll_settings(), *this);
 }
 
 bool C1WindowsView::manual_navigation_for_world_tick() const {
@@ -129,8 +154,7 @@ void C1WindowsView::resume_follow_navigation_for_world_tick() {
 }
 
 void C1WindowsView::reset_world_scrollbars_for_world_tick() {
-    creatures1::ui::reset_world_scrollbars(
-        *this, view_settings_.half_width, view_settings_.half_height);
+    refresh_scroll_range();
 }
 
 void C1WindowsView::load_view_settings(creatures1::ui::WorldViewSettings& settings, creatures1::ui::SfcViewState& state) {
@@ -884,6 +908,11 @@ afx_msg void C1WindowsView::OnSize(UINT resize_type, int client_width, int clien
     CView::OnSize(resize_type, client_width, client_height);
     creatures1::ui::on_size(*this, resize_type, client_width,
                             client_height);
+    // Zoomed, the world shown (and so the vertical scroll range) follows
+    // the window's size.
+    if (document() != nullptr && document()->world_zoom_factor() != 1.0f) {
+        refresh_scroll_range();
+    }
 }
 
 afx_msg void C1WindowsView::OnSetFocus(CWnd* old_focus) {
@@ -916,7 +945,7 @@ CPoint C1WindowsView::world_pixel_point(CPoint point) const {
 afx_msg void C1WindowsView::OnMouseMove(UINT flags, CPoint point) {
     CView::OnMouseMove(flags, point);
     point = world_pixel_point(point);
-    creatures1::ui::on_mouse_move(view_state_, view_settings_, *this,
+    creatures1::ui::on_mouse_move(view_state_, scroll_settings(), *this,
                                   flags, point.x, point.y);
 }
 
@@ -960,7 +989,8 @@ afx_msg void C1WindowsView::OnHScroll(UINT code, UINT position, CScrollBar*) {
 }
 
 afx_msg void C1WindowsView::OnVScroll(UINT code, UINT position, CScrollBar*) {
-    creatures1::ui::on_vertical_scroll(view_state_, view_settings_, *this,
+    creatures1::ui::WorldViewSettings settings = scroll_settings();
+    creatures1::ui::on_vertical_scroll(view_state_, settings, *this,
                                        code, static_cast<int>(position));
 }
 
