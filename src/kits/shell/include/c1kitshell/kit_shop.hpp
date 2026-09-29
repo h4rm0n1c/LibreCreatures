@@ -4,9 +4,10 @@
 // the Breeder's Kit ("Aphrodisiac page", "Aphro") share.  The 1996 kits
 // showed one item at a time in a picture frame with arrows, its name, how
 // many are left and what it does; the middle button ran the item's CAOS and
-// took one off (CAddObjectPage, in both).  Here every item is in a list, the
-// selected one drawn large with its details, and "Put one in the world"
-// does the same.
+// took one off (CAddObjectPage, in both).  Here the whole stock is on a
+// shelf at once: a card per item with its picture, name, what it does and
+// how many are left, and its own "Put one in the world" button that does
+// the same.
 
 #include "c1kitshell/kit_art.hpp"
 #include "c1kitshell/kit_shell.hpp"
@@ -41,21 +42,30 @@ public:
 protected:
     void create_controls() override;
     void layout(int width, int height) override;
-    afx_msg void OnSelectionChanged();
-    afx_msg void OnAddToWorld();
-    DECLARE_MESSAGE_MAP()
 
 private:
-    void fill_list();
-    void show_selected();
-    void draw_picture(CDC& dc, const CRect& rect);
+    // Lays the cards out across the shelf's width: as many columns as fit,
+    // every card as tall as the tallest.  Rectangles are in shelf content
+    // coordinates (before scrolling).
+    void arrange_cards();
+    void draw_shelf(CDC& dc, const CRect& rect);
+    void draw_card(CDC& dc, std::size_t index, const CRect& card);
+    void on_mouse(CPoint point, bool clicked);
+    // SubmitSelectedHealthValue: run the item's CAOS, take one off, save.
+    void put_one_in_world(std::size_t index);
+    // The picture's whole-number scale on a card.
+    int picture_scale(const c1kit::ShopItem& item) const;
 
     ShopHost& host_;
-    CListBox items_;
-    PaintedView picture_;
-    CButton add_;
+    PaintedView shelf_;
     CStatic status_;
     Canvas canvas_;
+    CFont name_font_;
+    std::vector<CRect> cards_;
+    std::vector<CRect> buttons_;
+    int card_width_ = 0;
+    int picture_height_ = 0;  // the tallest scaled picture's well
+    int hover_ = -1;          // the button under the mouse
 };
 
 // The classic look's shop page: the 1996 CAddObjectPage itself (dialog 142

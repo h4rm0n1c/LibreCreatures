@@ -49,8 +49,8 @@ This build adds `Size`.
   them over the last minutes.
 - **Aphrodisiac page** (CAddObjectPage, CBreedersKitPage8E, dialog 142): the
   Health Kit's shop page on the stock file `Aphro` (Tomato, Ugly Tomato).
-  *This build:* the shop page the Health Kit shares (every item in a list,
-  the selected one drawn large, "Put one in the world").
+  *This build:* the shop page the Health Kit shares (a shelf with a card
+  per item, each with its own "Put one in the world").
 
 A third page, CPregnancyPage (CBreedersKitPage8D), is constructed but never
 added to the sheet. Its start-up (StartBreedingCycle @ 0x00402820) would
