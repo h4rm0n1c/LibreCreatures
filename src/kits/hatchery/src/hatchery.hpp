@@ -8,9 +8,11 @@
 // showing the incubator machine with the eggs in its nest, animated fans
 // and a scanner; a double-click on an egg hatched it and closed the kit.
 // This build shows the six eggs in a lamp-lit nest, drawn from the game's
-// own egg sprites (Images\eggs.spr) at a whole-number scale, each with its
+// own egg sprites (Images\eggs.spr, or eggs.s32 / eggs@2x.s32 where the
+// game has them) at a whole-number scale, each with its
 // sex; it hatches on a double-click or a button, and stays open.  No sound.
 
+#include "c1kitshell/game_art.hpp"
 #include "c1kitshell/kit_art.hpp"
 #include "c1kitshell/kit_shell.hpp"
 #include "c1kitshell/kit_sound.hpp"
@@ -114,6 +116,8 @@ private:
     CButton refill_;
     CStatic status_;
     HBITMAP egg_art_[c1kit::kEggCount][kLooks] = {};
+    // From eggs@2x.s32, drawn instead when the eggs are at least doubled.
+    HBITMAP egg_art_2x_[c1kit::kEggCount][kLooks] = {};
     CSize egg_size_;  // one frame, unscaled
     CRect view_rect_;
     int scale_ = 1;

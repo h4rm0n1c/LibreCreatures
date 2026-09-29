@@ -111,8 +111,27 @@ Checked:
   and the SDL frame from the `.s32` differ by 0 pixels.
 
 Such a world will not load in the original game, which needs the `.spr`.
-The kits read `.spr` files themselves, so they can't see these galleries
-yet.
+
+### In the kits
+
+The kits read game art through `c1kitshell/game_art` (kit shell). It
+follows the same rules:
+- The world's `Images` first, then the installation's.
+- `.s32` in true colour where it fits the `.spr`'s frames, or on its own.
+- `@2x.s32` when the kit draws at double size or more.
+
+It uses the game's own S32 reader and PNG decoder
+(`shell/src/game_art_decoders.cpp` compiles `src/c1/display/s32.cpp` and
+`png_decode.cpp` into each kit). The Hatchery's eggs are the kits' only
+game art (the kits' own `.spr` pictures are a different, kit-only format).
+
+Tests: `src/kits/shell/tests/game_art_test.cpp`.
+
+Checked in the lab:
+- Outlined `eggs.s32` and `eggs@2x.s32` in the world's `Images`: the
+  Hatchery (eggs at 2x) draws the `@2x` art.
+- With the installation's `eggs.spr` set aside and only `eggs.s32` present,
+  it draws the `.s32`.
 
 ## SDL world view (phase 2)
 

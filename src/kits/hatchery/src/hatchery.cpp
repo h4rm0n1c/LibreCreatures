@@ -90,9 +90,9 @@ void draw_keyed(CDC& dc, HBITMAP bitmap, const CRect& target, int fade_percent, 
 
 namespace {
 
-// A game sprite frame as a bitmap whose transparent pixels are the key
-// colour, for draw_keyed.
-HBITMAP sprite_bitmap(const c1kit::GameSprite& sprite, const c1kit::GamePalette& palette) {
+// A game art frame as a bitmap whose transparent pixels (alpha under half)
+// are the key colour, for draw_keyed.
+HBITMAP sprite_bitmap(const c1kitshell::GameImage& sprite) {
     BITMAPINFO info = {};
     info.bmiHeader.biSize = sizeof(info.bmiHeader);
     info.bmiHeader.biWidth = sprite.width;
@@ -105,13 +105,14 @@ HBITMAP sprite_bitmap(const c1kit::GameSprite& sprite, const c1kit::GamePalette&
     if (bitmap == nullptr || bits == nullptr) {
         return bitmap;
     }
+    constexpr std::uint32_t kKey = 0x0000ff00u;  // RGB(0, 255, 0)
     auto* out = static_cast<std::uint32_t*>(bits);
     for (std::size_t i = 0; i < sprite.pixels.size(); ++i) {
-        const std::uint8_t index = sprite.pixels[i];
-        const c1kit::PaletteColour c = palette[index];
-        out[i] = index == 0 ? 0x0000ff00u  // the key, RGB(0, 255, 0)
-                            : (static_cast<std::uint32_t>(c.red) << 16) |
-                                  (static_cast<std::uint32_t>(c.green) << 8) | c.blue;
+        const std::uint32_t pixel = sprite.pixels[i];
+        const std::uint32_t colour = pixel & 0x00ffffffu;
+        out[i] = (pixel >> 24) < 128 ? kKey
+                 : colour == kKey    ? 0x0000fe00u  // true-colour art's own pure green
+                                     : colour;
     }
     return bitmap;
 }
@@ -208,35 +209,64 @@ NestPage::NestPage(HatcherySheet& sheet)
     : LayoutPage(sheet, kDialogPage, kStringNestTab), sheet_(sheet) {}
 
 NestPage::~NestPage() {
-    for (auto& looks : egg_art_) {
-        for (HBITMAP& bitmap : looks) {
-            if (bitmap != nullptr) ::DeleteObject(bitmap);
+    for (auto* art : {&egg_art_, &egg_art_2x_}) {
+        for (auto& looks : *art) {
+            for (HBITMAP& bitmap : looks) {
+                if (bitmap != nullptr) ::DeleteObject(bitmap);
+            }
         }
     }
 }
 
-// The eggs from the player's own Images\eggs.spr in the game's palette.
+// The eggs as the game draws them: eggs.spr in the game's palette, or
+// eggs.s32 in true colour, from the world's Images or the installation's;
+// eggs@2x.s32 too, for when they are shown at double size or more.
 void NestPage::load_art() {
-    std::vector<c1kit::GameSprite> sprites;
-    c1kit::GamePalette palette;
-    if (!c1kit::parse_game_sprites(read_file(sheet_.game_file("Images\\eggs.spr")), sprites) ||
-        !c1kit::parse_palette_dta(read_file(sheet_.game_file("Palettes\\palette.dta")),
-                                  palette) ||
-        sprites.size() <
-            static_cast<std::size_t>(c1kit::kEggCount * c1kit::kEggSpriteFramesPerEgg)) {
+    constexpr std::size_t kFrames =
+        static_cast<std::size_t>(c1kit::kEggCount * c1kit::kEggSpriteFramesPerEgg);
+    // The palette the game uses, and the Images folders it looks in: the
+    // world's, then the installation's.
+    CString palettes = c1kitshell::game_directory_setting("Palette Directory");
+    if (palettes.IsEmpty()) {
+        palettes = CString(sheet_.game_file("Palettes\\").c_str());
+    }
+    c1kit::GamePalette palette{};
+    const bool have_palette = c1kit::parse_palette_dta(
+        read_file(std::string(CStringA(palettes)) + "palette.dta"), palette);
+    std::vector<std::string> images;
+    for (const c1kit::GameDirectory which :
+         {c1kit::GameDirectory::world, c1kit::GameDirectory::installation}) {
+        const std::string directory(CStringA(c1kitshell::game_directory_setting("Image Directory", which)));
+        if (!directory.empty() &&
+            std::find(images.begin(), images.end(), directory) == images.end()) {
+            images.push_back(directory);
+        }
+    }
+    images.push_back(sheet_.game_file("Images\\"));  // as before, if no setting
+    c1kitshell::GameArt art;
+    if (!c1kitshell::load_game_art(images, "eggs", palette, false, art) ||
+        art.frames.size() < kFrames ||
+        (art.tier == c1kitshell::GameArtTier::spr && !have_palette)) {
         return;  // drawn as empty slots
     }
+    c1kitshell::GameArt art_2x;
+    const bool have_2x = c1kitshell::load_game_art(images, "eggs", palette, true, art_2x) &&
+                         art_2x.tier == c1kitshell::GameArtTier::s32_2x &&
+                         art_2x.frames.size() >= kFrames;
     const int stages[kLooks] = {c1kit::kEggSpriteWhole, c1kit::kEggSpriteIncubating,
                                 c1kit::kEggSpriteCracked};
     for (int egg = 0; egg < c1kit::kEggCount; ++egg) {
         for (int look = 0; look < kLooks; ++look) {
-            const c1kit::GameSprite& sprite =
-                sprites[static_cast<std::size_t>(c1kit::egg_sprite_frame(egg, stages[look]))];
-            egg_art_[egg][look] = sprite_bitmap(sprite, palette);
+            const auto frame =
+                static_cast<std::size_t>(c1kit::egg_sprite_frame(egg, stages[look]));
+            egg_art_[egg][look] = sprite_bitmap(art.frames[frame]);
+            if (have_2x) {
+                egg_art_2x_[egg][look] = sprite_bitmap(art_2x.frames[frame]);
+            }
         }
     }
-    const c1kit::GameSprite& first =
-        sprites[static_cast<std::size_t>(c1kit::egg_sprite_frame(0, c1kit::kEggSpriteWhole))];
+    const c1kitshell::GameImage& first =
+        art.frames[static_cast<std::size_t>(c1kit::egg_sprite_frame(0, c1kit::kEggSpriteWhole))];
     egg_size_ = CSize(first.width, first.height);
 }
 
@@ -437,7 +467,9 @@ void NestPage::draw(CDC& dc, const CRect& rect) {
     for (int i = 0; i < c1kit::kEggCount; ++i) {
         const bool taken = nest.eggs[i] == c1kit::EggState::taken;
         const Look look = taken ? kCracked : i == selected_ ? kIncubating : kWhole;
-        draw_keyed(dc, egg_art_[i][look], egg_rect(i), taken ? 45 : 0, kPanelMid);
+        HBITMAP art = scale_ >= 2 && egg_art_2x_[i][look] != nullptr ? egg_art_2x_[i][look]
+                                                                      : egg_art_[i][look];
+        draw_keyed(dc, art, egg_rect(i), taken ? 45 : 0, kPanelMid);
         // The sex beside its symbol (drawn in the panel), or "Hatched".
         const CString word = taken ? _T("Hatched")
                                    : nest.eggs[i] == c1kit::EggState::female ? _T("Female")
