@@ -69,7 +69,6 @@ BEGIN_MESSAGE_MAP(ScienceSheet, c1kitshell::KitSheet)
     ON_WM_SIZE()
     ON_WM_CLOSE()
     ON_WM_DESTROY()
-    ON_WM_SYSCOMMAND()
 END_MESSAGE_MAP()
 
 // The original opened on a cover page and played sound; neither is in this
@@ -149,14 +148,10 @@ BOOL ScienceSheet::OnInitDialog() {
     const BOOL result = c1kitshell::KitSheet::OnInitDialog();
     if (classic_) {
         fit_tabs();
-        enable_ambience(registry_, kAmbience, kAmbienceVolume);
     } else {
         enable_resizing(CSize(kDefaultPageWidthDlu, kDefaultPageHeightDlu));
-    }
-    if (CMenu* menu = GetSystemMenu(FALSE)) {
-        menu->AppendMenu(MF_SEPARATOR);
-        menu->AppendMenu(MF_STRING, kSysCommandOnTop, _T("Always on &top"));
-    }
+    }    install_options(registry_, classic_ != nullptr);
+    enable_ambience(kAmbience, kAmbienceVolume);
     load_preferences();
     return result;
 }
@@ -237,18 +232,14 @@ void ScienceSheet::load_preferences() {
                                 sizeof(location))) {
         location = {0x100, 0x80};
     }
-    registry_->read_dword(c1kit::SettingsScope::user, "On Top", always_on_top_);
     // "Page" counts the original's cover as page 0 (the key is shared).
     std::uint32_t page = 1;
     registry_->read_dword(c1kit::SettingsScope::user, "Page", page);
     saved_page_ = classic_ ? static_cast<int>(page) : page > 0 ? static_cast<int>(page) - 1 : 0;
     const int left = location.left < max_left ? location.left : max_left;
     const int top = location.top < max_top ? location.top : max_top;
-    SetWindowPos(always_on_top_ != 0 ? &wndTopMost : &wndNoTopMost, left < 0 ? 0 : left,
+    SetWindowPos(always_on_top() ? &wndTopMost : &wndNoTopMost, left < 0 ? 0 : left,
                  top < 0 ? 0 : top, 0, 0, SWP_NOSIZE | SWP_SHOWWINDOW);
-    if (CMenu* menu = GetSystemMenu(FALSE)) {
-        menu->CheckMenuItem(kSysCommandOnTop, always_on_top_ != 0 ? MF_CHECKED : MF_UNCHECKED);
-    }
     SetTimer(kTimerStartup, kStartupDelayMs, nullptr);
 }
 
@@ -266,7 +257,6 @@ void ScienceSheet::save_preferences() {
     if (!classic_) {
         registry_->write_binary("Size", &size, sizeof(size));  // the classic window is fixed
     }
-    registry_->write_dword("On Top", always_on_top_);
     registry_->write_dword("Page", static_cast<std::uint32_t>(GetActiveIndex() + (classic_ ? 0 : 1)));
 }
 
@@ -452,23 +442,8 @@ void ScienceSheet::OnSize(UINT type, int cx, int cy) {
     }
 }
 
-void ScienceSheet::set_always_on_top(bool on) {
-    always_on_top_ = on ? 1 : 0;
-    SetWindowPos(on ? &wndTopMost : &wndNoTopMost, 0, 0, 0, 0,
-                 SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-    if (CMenu* menu = GetSystemMenu(FALSE)) {
-        menu->CheckMenuItem(kSysCommandOnTop, on ? MF_CHECKED : MF_UNCHECKED);
-    }
-}
-
-// Fix (bug 3): "Always on top" on the system menu; the original's menu for
-// it (143) was never loaded.
-void ScienceSheet::OnSysCommand(UINT id, LPARAM lparam) {
-    if ((id & 0xfff0) == kSysCommandOnTop) {
-        set_always_on_top(always_on_top_ == 0);
-        return;
-    }
-    c1kitshell::KitSheet::OnSysCommand(id, lparam);
+void ScienceSheet::before_skin_change() {
+    save_preferences();
 }
 
 void ScienceSheet::before_game_quit() {

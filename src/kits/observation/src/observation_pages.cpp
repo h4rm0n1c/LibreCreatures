@@ -235,7 +235,6 @@ void WarnLevelEdit::OnChar(UINT character, UINT repeat, UINT flags) {
 
 BEGIN_MESSAGE_MAP(OptionsPage, CPropertyPage)
     ON_BN_CLICKED(kControlClose, &OptionsPage::OnCloseKit)
-    ON_BN_CLICKED(kControlOnTop, &OptionsPage::OnAlwaysOnTop)
     ON_BN_CLICKED(kControlAbout, &OptionsPage::OnAbout)
     ON_BN_CLICKED(kControlAlertNearDeath, &OptionsPage::OnSettingChanged)
     ON_BN_CLICKED(kControlAlertBirth, &OptionsPage::OnSettingChanged)
@@ -261,7 +260,10 @@ BOOL OptionsPage::OnInitDialog() {
     warn_edit_.SetLimitText(2);
     spin_.SetRange(0, 99);
     anchors_.capture(*this);
-    anchors_.add(*this, kControlOnTop, c1kitshell::ControlAnchors::kMoveY);
+    // Always on top is on the Options menu now, with every kit's.
+    if (CWnd* on_top = GetDlgItem(kControlOnTop)) {
+        on_top->ShowWindow(SW_HIDE);
+    }
     anchors_.add(*this, kControlAbout,
                  c1kitshell::ControlAnchors::kMoveX |
                      c1kitshell::ControlAnchors::kMoveY);
@@ -282,8 +284,6 @@ void OptionsPage::show_settings() {
     }
     showing_ = true;
     const AlertSettings& settings = sheet_.settings();
-    CheckDlgButton(kControlOnTop, sheet_.always_on_top() ? BST_CHECKED
-                                                         : BST_UNCHECKED);
     CheckDlgButton(kControlAlertNearDeath, settings.alert_near_death != 0);
     CheckDlgButton(kControlAlertPregnancy, settings.alert_on_pregnancy != 0);
     CheckDlgButton(kControlAlertBirth, settings.alert_on_birth != 0);
@@ -325,11 +325,6 @@ BOOL OptionsPage::OnKillActive() {
 
 void OptionsPage::OnSettingChanged() {
     store_settings();
-}
-
-// ToggleOverviewAlwaysOnTop @ 0x00401340.
-void OptionsPage::OnAlwaysOnTop() {
-    sheet_.set_always_on_top(IsDlgButtonChecked(kControlOnTop) == BST_CHECKED);
 }
 
 // COverviewOptionsPage::OnAbout @ 0x00401370.

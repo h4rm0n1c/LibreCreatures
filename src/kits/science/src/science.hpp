@@ -488,12 +488,12 @@ protected:
     BOOL OnInitDialog() override;
     void on_control_state(std::uint8_t state) override;
     void before_game_quit() override;
+    void before_skin_change() override;
     afx_msg int OnCreate(LPCREATESTRUCT create);
     afx_msg void OnTimer(UINT_PTR timer_id);
     afx_msg void OnSize(UINT type, int cx, int cy);
     afx_msg void OnClose();
     afx_msg void OnDestroy();
-    afx_msg void OnSysCommand(UINT id, LPARAM lparam);
     DECLARE_MESSAGE_MAP()
 
 private:
@@ -503,7 +503,6 @@ private:
     void connect();
     void take_subject();
     void update_title();
-    void set_always_on_top(bool on);
 
     CFont& default_font_;
     std::unique_ptr<c1kitshell::ClassicArt> classic_;
@@ -528,7 +527,6 @@ private:
     std::vector<c1kit::ChemicalTheme> themes_;
     std::vector<c1kit::OwnerRecord> register_;
     std::vector<c1kit::LobeLayout> lobes_;
-    std::uint32_t always_on_top_ = 0;
     int saved_page_ = 0;
     unsigned poll_count_ = 0;
     bool connected_ = false;

@@ -38,6 +38,15 @@ struct KitDefinition {
 
 const KitDefinition& kit_definition();
 
+// Options > Skin: the kit's own look or the 1996 one (see ClassicArt).
+enum class KitSkin : std::uint32_t { automatic = 0, libre = 1, classic = 2 };
+KitSkin skin_preference();
+void set_skin_preference(KitSkin skin);
+// Whether the last ClassicArt::find found the original's art, whatever the
+// preference: Options > Skin offers the 1996 look only then.
+bool classic_art_available();
+void note_classic_art_available(bool available);  // ClassicArt::find's record
+
 // ---------------------------------------------------------------------------
 // Application
 // ---------------------------------------------------------------------------
@@ -51,11 +60,17 @@ public:
 
     CFont& default_font() { return default_font_; }
 
+    // Options > Skin: builds the main window again in the chosen look and
+    // closes `old` without telling the game the kit has quit.  The new
+    // window keeps the game's tool id; it connects afresh.
+    void rebuild_main_window(KitSheet& old);
+
 private:
     bool on_communicate(std::int32_t header, std::int32_t payload) override;
 
     c1kit::KitServer* server_ = nullptr;
     CFont default_font_;
+    std::vector<std::unique_ptr<KitSheet>> retired_windows_;
 };
 
 // ---------------------------------------------------------------------------
@@ -75,6 +90,7 @@ public:
     c1kit::MacroTransport* transport() const { return transport_; }
     bool quitting() const { return quitting_; }
     int tool_id() const { return tool_id_; }
+    void adopt_tool_id(int tool_id) { tool_id_ = tool_id; }
 
     // "inst,app: quit <tool id>,endm" through a fresh scheduler holder, or a
     // plain application exit if the kit never connected; then close
@@ -110,16 +126,11 @@ protected:
     // SetActivePage too.
     void layout_pages();
 
-    // The classic look's continuous sound: the game's Sounds\<sound>.wav,
-    // looped at `volume` (hundredths of a decibel below full) while the kit
-    // is open, with a "Mute ambient sound" checkbox under the pages whose
-    // setting is kept as "Mute Ambient" in `settings`.  For a fixed-size
-    // sheet; call it from OnInitDialog.  A kit with a menu passes
-    // `checkbox` false and offers set_ambience_muted there instead.
-    void enable_ambience(c1kit::KitSettings* settings, const char* sound, int volume,
-                         bool checkbox = true);
-    bool ambience_muted() const { return ambience_muted_; }
-    void set_ambience_muted(bool muted);
+    // The kit's continuous sound: the game's Sounds\<sound>.wav, looped at
+    // `volume` (hundredths of a decibel below full, the 1996 kit's) while
+    // the kit is open and sounds are not muted.  Call from OnInitDialog,
+    // after install_options.
+    void enable_ambience(const char* sound, int volume);
     // For a fixed-size sheet: widens the window and its tab strip until
     // every tab fits on one row (the 1996 sheets had the room; a narrower
     // one would hide tabs behind scroll arrows).  Call from OnInitDialog,
@@ -127,11 +138,40 @@ protected:
     void fit_tabs();
 
     BOOL OnCommand(WPARAM wparam, LPARAM lparam) override;
+    LRESULT WindowProc(UINT message, WPARAM wparam, LPARAM lparam) override;
     BOOL OnNotify(WPARAM wparam, LPARAM lparam, LRESULT* result) override;
     afx_msg void OnSize(UINT type, int cx, int cy);
     afx_msg void OnGetMinMaxInfo(MINMAXINFO* info);
     afx_msg LRESULT OnDeferredLayout(WPARAM, LPARAM);
     DECLARE_MESSAGE_MAP()
+
+    // Options and Help, the same in every kit: a menu bar on the kit's own
+    // look, and the window's system menu on the 1996 look (which had no
+    // menu bar).  Options holds Always on top, Mute sounds, Skin, and then
+    // whatever add_kit_options adds; Help holds About.  Reads "On Top" and
+    // "Mute Sounds" from `settings` (and the older "Keep on top" and "Mute
+    // Ambient" once), sets the window's Z-order, and sets the sound volume
+    // for the look.  Call from OnInitDialog once the settings are open.
+    void install_options(c1kit::KitSettings* settings, bool classic,
+                         bool on_top_by_default = false);
+    bool always_on_top() const { return always_on_top_; }
+    // Kit-specific Options items.  Ids from kKitOptionFirst, in steps of
+    // kKitOptionStep (the system menu keeps the low four bits).
+    static constexpr UINT kKitOptionFirst = 0x0200;
+    static constexpr UINT kKitOptionStep = 0x10;
+    virtual void add_kit_options(CMenu& /*options*/) {}
+    virtual bool on_kit_option(UINT /*id*/) { return false; }
+    // Check or grey a kit item on whichever menu holds it.
+    void check_kit_option(UINT id, bool checked);
+    void enable_kit_option(UINT id, bool enabled);
+    // Saves the window's settings before a skin change rebuilds it.
+    virtual void before_skin_change() {}
+    // After Options > Mute sounds: a kit playing its own sounds (loops the
+    // mute stopped) starts them again here when sounds come back on.
+    virtual void on_sounds_muted_changed() {}
+    // Help > About: the kit's name and build.  A kit with its own About
+    // box (the 1996 Observation Kit's) shows that instead.
+    virtual void show_about();
 
     // The paused title: caption + suffix, and back
     // (Begin/CompleteOverviewWindowDisplayTransition @ 0x00403ee0/0x00403fb0).
@@ -147,14 +187,21 @@ private:
     bool resizable_ = false;
     CSize min_track_{0, 0};
     void apply_ambience();
-    void add_mute_checkbox();
+    bool handle_option(UINT id);
+    CMenu* options_menu();
+    void set_always_on_top(bool on_top);
+    void set_sounds_muted(bool muted);
+    void change_skin(KitSkin skin);
+    void refresh_option_checks();
+    c1kit::KitSettings* option_settings_ = nullptr;
+    bool classic_look_ = false;
+    bool always_on_top_ = false;
+    CMenu menu_bar_;
     std::unique_ptr<KitSound> ambience_;
-    c1kit::KitSettings* ambience_settings_ = nullptr;
     std::string ambience_sound_;
     int ambience_volume_ = 0;
     int ambience_channel_ = -1;
-    bool ambience_muted_ = false;
-    CButton mute_check_;
+
     CRect tab_margins_{0, 0, 0, 0};  // tab control inset from the client area
 };
 
@@ -222,12 +269,12 @@ private:
 // The classic look: the 1996 art, from the player's own original kit
 // ---------------------------------------------------------------------------
 
-// A kit can wear its 1996 interface.  It does when the player's original
+// A kit can wear its 1996 interface.  It can when the player's original
 // kit sits beside it renamed "<name>.old" (or "<name>.exe.old") -- the 1996
 // release, the later one, or GOG's -- and holds the art the classic pages
 // use.  The art is read from that file as data (nothing in it runs), so
-// this kit carries none of it.  There is no other switch: the file being
-// there is the choice.
+// this kit carries none of it.  Options > Skin chooses between the two;
+// until the player picks, the file being there is the choice.
 class ClassicArt {
 public:
     // Opens the original beside this kit if it holds every bitmap and icon

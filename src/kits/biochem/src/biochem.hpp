@@ -268,7 +268,6 @@ public:
     bool create_window();
     bool classic() const { return classic_ != nullptr; }
     // The classic row's Show Tooltips, seen only with the Biochemistry page.
-    void show_tooltips_check(bool shown);
     bool query(const std::string& script, std::string& reply);
     bool subject_present() const { return subject_present_; }
     std::vector<std::string>& chemical_names() { return chemical_names_; }
@@ -281,14 +280,13 @@ protected:
     BOOL OnInitDialog() override;
     void on_control_state(std::uint8_t state) override;
     void before_game_quit() override;
+    void before_skin_change() override;
+    void add_kit_options(CMenu& options) override;
+    bool on_kit_option(UINT id) override;
     afx_msg int OnCreate(LPCREATESTRUCT create);
     afx_msg void OnTimer(UINT_PTR timer_id);
     afx_msg void OnClose();
     afx_msg void OnDestroy();
-    afx_msg void OnSysCommand(UINT id, LPARAM lparam);
-    afx_msg void OnOnTopClicked();
-    afx_msg void OnTooltipsClicked();
-    afx_msg void OnMuteClicked();
     DECLARE_MESSAGE_MAP()
 
 private:
@@ -296,7 +294,6 @@ private:
     void load_preferences();
     void save_preferences();
     void take_subject();
-    void set_always_on_top(bool on);
     std::string game_file(const std::string& name) const;
 
     CFont& default_font_;
@@ -305,10 +302,6 @@ private:
     std::unique_ptr<ClassicMonitorPage> classic_monitor_;
     std::unique_ptr<ClassicInjectPage> classic_inject_;
     std::unique_ptr<ClassicNamesPage> classic_names_;
-    CButton on_top_check_;
-    CButton tooltips_check_;
-    CButton mute_check_;
-    CStatic version_;
     std::uint32_t tooltips_ = 1;
     MonitorPage monitor_page_;
     InjectPage inject_page_;
@@ -318,7 +311,6 @@ private:
     std::vector<std::string> chemical_names_;
     std::string subject_name_;
     bool subject_present_ = false;
-    std::uint32_t always_on_top_ = 0;
     int saved_page_ = 0;
     bool connected_ = false;
     bool game_paused_ = false;

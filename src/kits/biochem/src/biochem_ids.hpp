@@ -41,7 +41,6 @@ constexpr int kDefaultPageHeightDlu = 250;
 // The graph's channels (CMonitorChannelRecord[32]).
 constexpr int kMaxChannels = 32;
 
-constexpr unsigned kSysCommandOnTop = 0x0020;
 
 enum : unsigned {
     kControlFilter = 3000,
@@ -69,14 +68,12 @@ enum : unsigned {
     kControlRename,
     kControlSaveNames,
     kControlLabel,
-    // The classic look's: the syringe, the Injections page's extra labels,
-    // and the sheet's row (Always on Top, Show Tooltips, Mute, the version).
+    // The classic look's: the syringe and the Injections page's extra labels.
     kControlSyringe,
     kControlRemaining,
-    kControlOnTopCheck,
-    kControlTooltipsCheck,
-    kControlMuteCheck,
-    kControlVersion,
 };
+
+// Options > Show tooltips (the classic look's; the v1.2 kit's checkbox).
+constexpr unsigned kOptionTooltips = 0x0200;
 
 } // namespace biochem

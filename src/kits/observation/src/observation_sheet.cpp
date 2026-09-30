@@ -94,6 +94,7 @@ BOOL ObservationSheet::OnInitDialog() {
     const BOOL result = c1kitshell::KitSheet::OnInitDialog();
     // The classic look keeps the 1996 size; the modern one opens larger.
     enable_resizing(classic_ ? CSize(0, 0) : CSize(kDefaultPageWidthDlu, kDefaultPageHeightDlu));
+    install_options(registry_, classic_ != nullptr, /*on_top_by_default=*/true);
     load_preferences();
     return result;
 }
@@ -120,7 +121,6 @@ void ObservationSheet::load_preferences() {
                                 &location, sizeof(location))) {
         location = {0x100, 0x80};
     }
-    registry_->read_dword(c1kit::SettingsScope::user, "On Top", always_on_top_);
     registry_->read_dword(c1kit::SettingsScope::user, "Alert near Death",
                           settings_.alert_near_death);
     registry_->read_dword(c1kit::SettingsScope::user, "Alert on Pregnancy",
@@ -142,7 +142,7 @@ void ObservationSheet::load_preferences() {
 
     const int left = location.left < max_left ? location.left : max_left;
     const int top = location.top < max_top ? location.top : max_top;
-    SetWindowPos(always_on_top_ != 0 ? &wndTopMost : &wndNoTopMost,
+    SetWindowPos(always_on_top() ? &wndTopMost : &wndNoTopMost,
                  left < 0 ? 0 : left, top < 0 ? 0 : top, 0, 0,
                  SWP_NOSIZE | SWP_SHOWWINDOW);
     SetTimer(kTimerStartup, kStartupDelayMs, nullptr);
@@ -168,7 +168,6 @@ void ObservationSheet::save_preferences() {
     const WindowSize size = {window.Width(), window.Height()};
     registry_->write_binary("Location", &location, sizeof(location));
     registry_->write_binary(size_key(), &size, sizeof(size));
-    registry_->write_dword("On Top", always_on_top_);
     registry_->write_dword("Alert near Death", settings_.alert_near_death);
     registry_->write_dword("Alert on Pregnancy", settings_.alert_on_pregnancy);
     registry_->write_dword("Alert on Birth", settings_.alert_on_birth);
@@ -264,11 +263,14 @@ void ObservationSheet::initialize_pages() {
     SetTimer(kTimerPoll, kPollIntervalMs, nullptr);
 }
 
-// ApplyOverviewAlwaysOnTop @ 0x00403cb0.
-void ObservationSheet::set_always_on_top(bool on) {
-    always_on_top_ = on ? 1 : 0;
-    SetWindowPos(on ? &wndTopMost : &wndNoTopMost, 0, 0, 0, 0,
-                 SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+// Help > About: the 1996 kit's own About box.
+void ObservationSheet::show_about() {
+    AboutDialog about;
+    about.DoModal();
+}
+
+void ObservationSheet::before_skin_change() {
+    save_preferences();
 }
 
 // Resuming polls at once rather than waiting for the next tick.

@@ -72,7 +72,6 @@ void draw_keyed_part(CDC& dc, HBITMAP bitmap, CPoint at, CRect part, COLORREF ke
                CRect(at, part.Size()), 0, RGB(0, 0, 0), key);
 }
 
-const char* const kSounds[] = {"hfan", "hdsk", "hlgt", "hegg", "hmle", "hfml", "hslt"};
 
 } // namespace
 
@@ -115,9 +114,6 @@ void MachinePage::load_art() {
     for (int i = 0; i < c1kit::kEggCount; ++i) eggs_[i] = picture("egg" + std::to_string(i) + ".bmp");
     for (int i = 0; i < 4; ++i) fans_[i] = picture("fan" + std::to_string(i) + ".bmp");
     for (int i = 0; i < 6; ++i) scans_[i] = picture("scan" + std::to_string(i) + ".bmp");
-    for (const char* name : kSounds) {
-        sheet_.sound().load(name, sheet_.game_file(std::string("Sounds\\") + name + ".wav"));
-    }
 }
 
 BOOL MachinePage::OnInitDialog() {

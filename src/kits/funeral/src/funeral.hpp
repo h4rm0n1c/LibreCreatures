@@ -162,11 +162,11 @@ protected:
     BOOL OnInitDialog() override;
     void on_integer_message(std::int32_t payload) override;
     void before_game_quit() override;
+    void before_skin_change() override;
     afx_msg int OnCreate(LPCREATESTRUCT create);
     afx_msg void OnTimer(UINT_PTR timer_id);
     afx_msg void OnClose();
     afx_msg void OnDestroy();
-    afx_msg void OnSysCommand(UINT id, LPARAM lparam);
     DECLARE_MESSAGE_MAP()
 
 private:
@@ -182,7 +182,6 @@ private:
     int add_unmarked_page(const std::string& moniker, const std::string& death_time);
     int page_index_for(const std::string& moniker);
     void commit_epitaphs();
-    void set_always_on_top(bool on);
 
     CFont& default_font_;
     std::unique_ptr<c1kitshell::ClassicArt> classic_;
@@ -195,7 +194,6 @@ private:
     std::vector<c1kit::OwnerRecord> register_;
     std::vector<c1kit::Grave> graves_;
     std::vector<std::int32_t> early_deaths_;  // reported before the window was ready
-    std::uint32_t always_on_top_ = 0;
     bool ready_ = false;
 };
 

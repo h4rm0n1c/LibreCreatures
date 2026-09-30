@@ -20,11 +20,11 @@ constexpr unsigned kCommandBufferBytes = 0x1000;
 constexpr int kDefaultPageWidthDlu = 440;
 constexpr int kDefaultPageHeightDlu = 220;
 
-constexpr unsigned kSysCommandOnTop = 0x0020;
-
+constexpr unsigned kOptionRefill = 0x0200;  // Options > Refill the nest
+// The 1996 kit's sounds (the game's Sounds folder), loaded for both looks.
+constexpr const char* kHatcherySounds[] = {"hfan", "hdsk", "hlgt", "hegg", "hmle", "hfml", "hslt"};
+constexpr int kLibreFanVolume = -1000;  // the fan under the nest, quieter than the machine's
 // The classic look's menu (1996: Help > About Hatchery, ID_APP_ABOUT).
-constexpr unsigned kCommandMute = 0x8101;
-constexpr unsigned kCommandRefill = 0x8102;
 constexpr unsigned kCommandAbout = 57664;
 constexpr unsigned kTimerMachine = 2;
 constexpr unsigned kMachineTickMs = 75;  // the 1996 view's timer

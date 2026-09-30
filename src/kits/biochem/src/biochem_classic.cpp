@@ -118,12 +118,10 @@ BOOL ClassicMonitorPage::OnInitDialog() {
 }
 
 BOOL ClassicMonitorPage::OnSetActive() {
-    sheet_.show_tooltips_check(true);
     return CPropertyPage::OnSetActive();
 }
 
 BOOL ClassicMonitorPage::OnKillActive() {
-    sheet_.show_tooltips_check(false);
     return CPropertyPage::OnKillActive();
 }
 

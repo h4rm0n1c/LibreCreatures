@@ -145,12 +145,12 @@ protected:
     BOOL OnInitDialog() override;
     void on_control_state(std::uint8_t state) override;
     void before_game_quit() override;
+    void before_skin_change() override;
     afx_msg int OnCreate(LPCREATESTRUCT create);
     afx_msg void OnTimer(UINT_PTR timer_id);
     afx_msg void OnSize(UINT type, int cx, int cy);
     afx_msg void OnClose();
     afx_msg void OnDestroy();
-    afx_msg void OnSysCommand(UINT id, LPARAM lparam);
     DECLARE_MESSAGE_MAP()
 
 private:
@@ -167,7 +167,6 @@ private:
     void show_all();
     void update_title();
     bool paused() const { return game_paused_ || minimised_; }
-    void set_always_on_top(bool on);
     std::string world_file(const std::string& name) const;
 
     CFont& default_font_;
@@ -184,7 +183,6 @@ private:
     std::vector<c1kit::Photo> photos_;
     int selected_photo_ = 0;
     std::uint32_t saved_photo_ = 0;
-    std::uint32_t always_on_top_ = 0;
     int saved_page_ = 0;
     bool connected_ = false;
     bool game_paused_ = false;

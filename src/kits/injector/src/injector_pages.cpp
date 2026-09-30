@@ -126,8 +126,6 @@ BEGIN_MESSAGE_MAP(CobsPage, CobListPage)
     ON_BN_CLICKED(kControlRemove, &CobsPage::OnRemove)
     ON_BN_CLICKED(kControlRefresh, &CobsPage::OnRefresh)
     ON_BN_CLICKED(kControlBrowse, &CobsPage::OnBrowse)
-    ON_BN_CLICKED(kControlIgnoreAmount, &CobsPage::OnIgnoreAmount)
-    ON_BN_CLICKED(kControlAllowWithout, &CobsPage::OnAllowWithout)
 END_MESSAGE_MAP()
 
 CobsPage::CobsPage(InjectorSheet& sheet) : CobListPage(sheet, kStringCobsTab) {}
@@ -143,13 +141,6 @@ void CobsPage::create_controls() {
     make(browse_, _T("BUTTON"), _T("Browse..."), BS_PUSHBUTTON | WS_TABSTOP, kControlBrowse);
     make(quantity_, _T("STATIC"), _T(""), SS_LEFT, kControlQuantity);
     make(folder_, _T("STATIC"), _T(""), SS_LEFT | SS_PATHELLIPSIS, kControlFolder);
-    // The original's Advanced menu, as two ticks.
-    make(ignore_amount_, _T("BUTTON"), _T("Ignore amount remaining"), BS_AUTOCHECKBOX | WS_TABSTOP,
-         kControlIgnoreAmount);
-    make(allow_without_, _T("BUTTON"), _T("Allow without a creature"), BS_AUTOCHECKBOX | WS_TABSTOP,
-         kControlAllowWithout);
-    ignore_amount_.SetCheck(sheet_.ignore_amount() ? BST_CHECKED : BST_UNCHECKED);
-    allow_without_.SetCheck(sheet_.allow_without_subject() ? BST_CHECKED : BST_UNCHECKED);
     show_selected();
 }
 
@@ -159,15 +150,13 @@ void CobsPage::layout(int width, int height) {
     const int list_width = (std::max)(170, width * 2 / 5);
     const int bottom = height - m - row;  // the last row: Browse, the folder, Close
     const int actions = bottom - m - row;  // Inject, Remove, Refresh
-    const int ticks = actions - m - text_height();
-    place_list(m, m, list_width, ticks - 2 * m);
+    const int upper = actions;  // the list and the description reach the actions row
+    place_list(m, m, list_width, upper - 2 * m);
     const int right = 2 * m + list_width;
     const int right_width = width - right - m;
-    const int picture_height = (ticks - 2 * m) * 2 / 5;
+    const int picture_height = (upper - 2 * m) * 2 / 5;
     place(picture_, right, m, right_width, picture_height);
-    place(description_, right, 2 * m + picture_height, right_width, ticks - 3 * m - picture_height);
-    place(ignore_amount_, m, ticks, 160, text_height() + 2);
-    place(allow_without_, m + 170, ticks, 170, text_height() + 2);
+    place(description_, right, 2 * m + picture_height, right_width, upper - 3 * m - picture_height);
     place(inject_, m, actions, 70, row);
     place(remove_, 2 * m + 70, actions, 70, row);
     place(refresh_, 3 * m + 140, actions, 70, row);
@@ -287,14 +276,6 @@ void CobsPage::OnBrowse() {
         sheet_.set_folder(path);
     }
     ::CoTaskMemFree(chosen);
-}
-
-void CobsPage::OnIgnoreAmount() {
-    sheet_.set_ignore_amount(ignore_amount_.GetCheck() == BST_CHECKED);
-}
-
-void CobsPage::OnAllowWithout() {
-    sheet_.set_allow_without_subject(allow_without_.GetCheck() == BST_CHECKED);
 }
 
 // ===========================================================================

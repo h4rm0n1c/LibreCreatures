@@ -72,6 +72,23 @@ BOOL KitApp::InitInstance() {
     return TRUE;
 }
 
+void KitApp::rebuild_main_window(KitSheet& old) {
+    const KitDefinition& kit = kit_definition();
+    if (kit.create_main_window == nullptr) {
+        return;
+    }
+    KitSheet* next = kit.create_main_window(default_font_);
+    if (next == nullptr) {
+        return;
+    }
+    next->adopt_tool_id(old.tool_id());
+    // The new window is the main one before the old goes, or MFC would take
+    // the old one's destruction for the end of the application.
+    m_pMainWnd = next;
+    old.DestroyWindow();
+    retired_windows_.emplace_back(&old);
+}
+
 int KitApp::ExitInstance() {
     if (server_ != nullptr) {
         server_->revoke_class_object();

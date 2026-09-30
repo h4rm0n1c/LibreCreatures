@@ -46,9 +46,6 @@ constexpr unsigned kCommandBufferBytes = 0x1000;
 constexpr int kDefaultPageWidthDlu = 330;
 constexpr int kDefaultPageHeightDlu = 250;
 
-// System menu item: Always on top (the original's menu 143, never loaded).
-constexpr unsigned kSysCommandOnTop = 0x0020;
-
 // Controls made in code.
 enum : unsigned {
     kControlVitals = 3000,

@@ -70,8 +70,6 @@ protected:
     afx_msg void OnRemove();
     afx_msg void OnRefresh();
     afx_msg void OnBrowse();
-    afx_msg void OnIgnoreAmount();
-    afx_msg void OnAllowWithout();
     DECLARE_MESSAGE_MAP()
 
 private:
@@ -87,8 +85,6 @@ private:
     CButton browse_;
     CStatic quantity_;
     CStatic folder_;
-    CButton ignore_amount_;
-    CButton allow_without_;
 };
 
 // Analysis: everything the COB's scripts do, as a tree.
@@ -198,19 +194,19 @@ protected:
     BOOL OnInitDialog() override;
     void on_control_state(std::uint8_t state) override;
     void before_game_quit() override;
+    void before_skin_change() override;
+    void add_kit_options(CMenu& options) override;
+    bool on_kit_option(UINT id) override;
     afx_msg int OnCreate(LPCREATESTRUCT create);
     afx_msg void OnTimer(UINT_PTR timer_id);
     afx_msg void OnClose();
     afx_msg void OnDestroy();
-    afx_msg void OnSysCommand(UINT id, LPARAM lparam);
     afx_msg void OnInitMenuPopup(CMenu* menu, UINT index, BOOL system_menu);
     afx_msg void OnSetFolder();
     afx_msg void OnRefreshCobs();
-    afx_msg void OnToggleOnTop();
     afx_msg void OnHide();
     afx_msg void OnToggleIgnoreAmount();
     afx_msg void OnToggleAllowWithout();
-    afx_msg void OnToggleMute();
     afx_msg void OnAbout();
     afx_msg void OnCloseCommand();
     DECLARE_MESSAGE_MAP()
@@ -222,7 +218,6 @@ private:
     void update_title();
     bool run(const std::string& script);
     bool creature_selected();
-    void set_always_on_top(bool on);
     std::string game_file(const std::string& name) const;
 
     CFont& default_font_;
@@ -231,7 +226,6 @@ private:
     std::unique_ptr<ClassicCobsPage> classic_cobs_;
     std::unique_ptr<ClassicAnalysisPage> classic_analysis_;
     CMenu classic_menu_;
-    CButton on_top_check_;
     CButton hide_;
     CButton close_kit_;
     CobsPage cobs_page_;
@@ -246,7 +240,6 @@ private:
     std::string subject_name_;
     std::uint32_t ignore_amount_ = 0;
     std::uint32_t allow_without_ = 0;
-    std::uint32_t always_on_top_ = 0;
     int saved_page_ = 0;
     bool connected_ = false;
 };
