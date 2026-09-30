@@ -230,6 +230,8 @@ public:
     void move_by_and_redraw(int delta_x, int delta_y,
                             SimpleObjectMoveRedrawHost& renderer);
     bool get_bounds(world::WorldRect* out_bounds) const override;
+    // Ticks until a drop's fall lands; 0 when not falling (not native).
+    int ticks_until_landing() const override;
     int render_plane() const override;
 
     ObjectEventId click_event_id_at_world_position(
@@ -287,9 +289,12 @@ private:
     bool falling_ = false;
     int fall_rest_y_ = 0;
     int fall_expected_y_ = 0;
-    int fall_speed_ = 0;
+    int fall_velocity_ = 0;  // px per tick
     void advance_fall(SimpleObjectTickHost& host);
     void finish_fall();
+    // One tick of the fall: how far it moves, `velocity` updated.
+    static int next_fall_step(int& velocity);
+
 };
 
 } // namespace creatures1::objects
