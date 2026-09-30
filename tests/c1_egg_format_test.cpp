@@ -97,6 +97,7 @@ int main() {
     assert(!ok(with(10, 1)));            // version 1
     assert(!ok(with(14, 0x02060200u)));  // not an egg
     assert(!ok(with(18, 3)));            // no such sex
+    assert(ok(with(18, 0)));             // a laid egg: sex chosen at hatching
     assert(!ok(with(22, 0xffffffffu)));  // a huge genome it does not have
     assert(!ok(with(43, 0xffffffffu)));  // CGenome disagrees
     assert(!ok(with(26, 0)));            // wrong CRC
