@@ -2301,7 +2301,15 @@ void C1WindowsDocument::commit_text_input() {
         C1WindowsView* view =
             frame == nullptr ? nullptr : active_c1_view(*frame);
         WindowsPointerToolRuntimeHost runtime(*this, view);
-        pointer_tool_->set_text_with_toolbar_update(text, runtime);
+        // Not native: Enter with nothing typed (or only spaces) says nothing.
+        // The native said it anyway -- an empty speech bubble over the hand,
+        // and an empty word for every creature in earshot.  Only the typing
+        // bubble, if one is up, is put away.
+        if (text.find_first_not_of(' ') == std::string::npos) {
+            pointer_tool_->set_persistent_bubble_text({}, runtime);
+        } else {
+            pointer_tool_->set_text_with_toolbar_update(text, runtime);
+        }
     }
     clear_text_input_buffer();
 }
