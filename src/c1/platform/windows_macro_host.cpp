@@ -671,9 +671,15 @@ void WindowsMacroHost::remove_object_from_event_bar(
 }
 
 void WindowsMacroHost::note_egg_state_change() {
-    // The native only marks the world dirty; the document already tracks that
-    // through its own modified flag.
-    document_.SetModifiedFlag(TRUE);
+    // Macro::AssignLValue @ 0x0041b9f0 (`setv baby`) only logs this.  It never
+    // sets the document's modified flag: setting it here made quitting ask
+    // "Save changes to world.sfc?" once a norn had laid, in GreenTea too,
+    // where the world saves itself on close.
+    C1DebugConsoleDialog* console = active_debug_console();
+    if (console != nullptr) {
+        creatures1::common::debug_log(
+            *console, 0x400, "Egg has been laid (or pregnancy miscarried)\n");
+    }
 }
 
 std::uint32_t WindowsMacroHost::select_creature_target_pose_for_motion(
