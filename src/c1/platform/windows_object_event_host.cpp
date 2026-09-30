@@ -527,6 +527,12 @@ void WindowsSimpleObjectInteractionHost::find_nearest_room_bounds_at_point(
     document_.find_nearest_room_bounds_at_point(world_x, world_y, out_bounds);
 }
 
+bool WindowsSimpleObjectInteractionHost::find_floor_room_below(
+    int world_x, int world_y,
+    creatures1::world::WorldRect& out_bounds) const {
+    return document_.find_floor_room_below(world_x, world_y, out_bounds);
+}
+
 creatures1::world::WorldRect
 WindowsSimpleObjectInteractionHost::vehicle_local_bounds(
     const creatures1::objects::Object& vehicle) const {

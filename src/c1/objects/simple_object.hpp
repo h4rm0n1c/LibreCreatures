@@ -277,6 +277,19 @@ private:
     static int wrap_world_x_once(int x);
 
     std::unique_ptr<Entity> entity_;
+
+    // Not native (LibreCreatures): a dropped object falls to where it comes
+    // to rest instead of appearing there.  While `falling_` is set, each
+    // tick moves it down, a little faster each time, to `fall_rest_y_`.  A
+    // fall ends early if anything else moves the object (a script, the
+    // hand), which `fall_expected_y_` detects.  Not saved: a save finishes
+    // the fall first.
+    bool falling_ = false;
+    int fall_rest_y_ = 0;
+    int fall_expected_y_ = 0;
+    int fall_speed_ = 0;
+    void advance_fall(SimpleObjectTickHost& host);
+    void finish_fall();
 };
 
 } // namespace creatures1::objects

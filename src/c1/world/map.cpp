@@ -137,6 +137,25 @@ void find_nearest_room_bounds_at_point(const MapRoomTable& room_table,
     }
 }
 
+bool find_floor_room_below(const MapRoomTable& room_table,
+                           std::int32_t world_x, std::int32_t world_y,
+                           MapRectangle& output_bounds) {
+    bool found = false;
+    for (std::size_t room_index = 0; room_index < room_table.room_count;
+         ++room_index) {
+        const MapRectangle& room_bounds = room_table.rooms[room_index].bounds;
+        if (room_bounds.left > world_x || world_x > room_bounds.right ||
+            room_bounds.bottom < world_y) {
+            continue;
+        }
+        if (!found || room_bounds.bottom < output_bounds.bottom) {
+            output_bounds = room_bounds;
+            found = true;
+        }
+    }
+    return found;
+}
+
 const MapRoom* find_room_containing_point(
     const MapRoomTable& room_table,
     std::int32_t world_x,

@@ -3835,6 +3835,19 @@ void C1WindowsDocument::find_nearest_room_bounds_at_point( int world_x, int worl
                   map_bounds.bottom};
 }
 
+bool C1WindowsDocument::find_floor_room_below(int world_x, int world_y, creatures1::world::WorldRect& out_bounds) const {
+    creatures1::world::MapRectangle map_bounds{};
+    if (world_runtime_ == nullptr ||
+        !creatures1::world::find_floor_room_below(
+            world_runtime_->map_data().room_table(), world_x, world_y,
+            map_bounds)) {
+        return false;
+    }
+    out_bounds = {map_bounds.left, map_bounds.top, map_bounds.right,
+                  map_bounds.bottom};
+    return true;
+}
+
 creatures1::world::WorldRect C1WindowsDocument::vehicle_local_bounds( const creatures1::objects::Object& object) const {
     const auto* vehicle = dynamic_cast<const creatures1::objects::Vehicle*>(&object);
     return vehicle == nullptr ? creatures1::world::WorldRect{}
