@@ -102,6 +102,11 @@ public:
         const Object& object,
         const creatures1::creatures::Creature* creature = nullptr);
 
+    // Not native: drop the immediate events of one kind that `source` has
+    // queued and that have not been handled yet, keeping the rest in order.
+    void cancel_immediate_events_from(const Object& source,
+                                      ObjectEventId event_id);
+
     // Read-only lifetime inspection used by SFCDoc's save/delete policy.
     // The scheduler remains the sole owner of queue storage and mutation.
     std::size_t immediate_event_count() const;

@@ -180,6 +180,26 @@ void ObjectEventScheduler::process_queued_events(
     }
 }
 
+void ObjectEventScheduler::cancel_immediate_events_from(
+    const Object& source, ObjectEventId event_id) {
+    ObjectEventQueue retained{};
+    std::size_t retained_count = 0;
+    for (std::size_t cursor = immediate_read_; cursor != immediate_write_;
+         cursor = (cursor + 1) % kObjectEventQueueCapacity) {
+        const QueuedObjectEvent& event = immediate_events_[cursor];
+        if (event.source == &source && event.event_id == event_id) {
+            continue;
+        }
+        retained[retained_count++] = event;
+    }
+    for (std::size_t index = 0; index < retained_count; ++index) {
+        immediate_events_[(immediate_read_ + index) %
+                          kObjectEventQueueCapacity] = retained[index];
+    }
+    immediate_write_ = (immediate_read_ + retained_count) %
+                       kObjectEventQueueCapacity;
+}
+
 void ObjectEventScheduler::purge_object_references(
     const Object& object, const creatures1::creatures::Creature* creature) {
     ObjectEventQueue retained_immediate{};

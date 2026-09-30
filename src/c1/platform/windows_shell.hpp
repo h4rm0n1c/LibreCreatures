@@ -1263,6 +1263,11 @@ public:
     // Creature policies walk the non-scenery registry through it.
     creatures1::objects::ObjectRegistryHost& object_registry();
     // The document owns the event scheduler; this is the immediate ring.
+    void cancel_immediate_object_events_from(
+        const creatures1::objects::Object& source,
+        creatures1::objects::ObjectEventId event_id) {
+        event_scheduler_.cancel_immediate_events_from(source, event_id);
+    }
     void queue_immediate_object_event(
         creatures1::objects::Object& source,
         creatures1::objects::Object& target,

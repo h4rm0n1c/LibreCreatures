@@ -998,6 +998,15 @@ void WindowsMacroHost::drive_presentation_for_bound_creatures(
     if (((target.classifier_base() >> 24) & 0xff) != 3) {
         return;
     }
+    // LibreCreatures deviation.  `gpas` only queues its pickups (event 4);
+    // they are handled in the next event phase.  A lift called to the floor
+    // it is already on arrives at once, and its arrival script's `dpas` ran
+    // before those pickups landed -- it found nobody aboard, then the
+    // pickups bound everyone in the cabin to a lift that had already
+    // arrived, for good: norns stuck in the lift.  Everyone off means the
+    // pickups still waiting are off too.
+    document_.cancel_immediate_object_events_from(
+        target, creatures1::objects::ObjectEventId::event_4);
     for (std::size_t index = 0; index < document_.creature_count(); ++index) {
         auto* creature = dynamic_cast<creatures1::creatures::Creature*>(
             document_.creature_at(index));
