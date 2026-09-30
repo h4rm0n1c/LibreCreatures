@@ -1676,6 +1676,10 @@ private:
     bool motion_snapshot_valid_ = false;
     std::unordered_map<const creatures1::objects::Entity*, std::pair<int, int>>
         previous_entity_positions_;
+    // Each creature body's frame when the last tick began.
+    std::unordered_map<const creatures1::objects::Entity*, int>
+        previous_body_frames_;
+    static int body_frame_of(const creatures1::objects::Entity& body);
     int previous_view_left_ = 0;
     int previous_view_top_ = 0;
     double tick_started_ms_ = 0.0;

@@ -4306,6 +4306,15 @@ void C1WindowsDocument::snapshot_motion() {
                                                   entity->world_y()};
         }
     }
+    previous_body_frames_.clear();
+    for (std::size_t index = 0; index < object_count(); ++index) {
+        if (const auto* skeleton = dynamic_cast<const creatures1::creatures::Skeleton*>(
+                object_at(index));
+            skeleton != nullptr && skeleton->body != nullptr) {
+            previous_body_frames_[skeleton->body.get()] =
+                body_frame_of(*skeleton->body);
+        }
+    }
     previous_view_left_ = renderer_->viewport_left();
     previous_view_top_ = renderer_->viewport_top();
     tick_started_ms_ = performance_counter_ms();
@@ -4393,6 +4402,10 @@ creatures1::objects::Entity* main_entity_of(
 
 } // namespace
 
+int C1WindowsDocument::body_frame_of(const creatures1::objects::Entity& body) {
+    return body.image_index_base() * 256 + body.current_image_index();
+}
+
 void C1WindowsDocument::glide_scene_items(
     std::vector<creatures1::display::SceneItem>& scene, float progress) {
     // Each object glides as one rigid piece: every sprite it draws with
@@ -4415,6 +4428,15 @@ void C1WindowsDocument::glide_scene_items(
         if (main == nullptr) {
             continue;
         }
+        // A creature whose body changed frame (turning, stopping, a new
+        // gait) is shown where the tick left it, as the native does: its
+        // body shifts against the planted foot, and gliding that shift
+        // slid the whole norn sideways and back.
+        if (const auto frame = previous_body_frames_.find(main);
+            frame != previous_body_frames_.end() &&
+            frame->second != body_frame_of(*main)) {
+            main = nullptr;
+        }
         sprites.clear();
         collect_object_entities(*object, sprites);
         for (const creatures1::objects::Entity* sprite : sprites) {
@@ -4428,6 +4450,9 @@ void C1WindowsDocument::glide_scene_items(
         const auto owner = main_sprite.find(item.entity);
         const creatures1::objects::Entity* reference =
             owner == main_sprite.end() ? item.entity : owner->second;
+        if (reference == nullptr) {
+            continue;
+        }
         const auto previous = previous_entity_positions_.find(reference);
         if (previous == previous_entity_positions_.end()) {
             continue;
