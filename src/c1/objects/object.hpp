@@ -313,6 +313,10 @@ public:
     virtual int sound_source_y() const;
     virtual int current_visual_width() const;
     virtual int current_visual_height() const;
+    // Not native: ticks until a falling object lands (SimpleObject's drop
+    // fall), 0 when it is not falling.  A sound effect it plays in the
+    // meantime waits for the landing.
+    virtual int ticks_until_landing() const { return 0; }
     virtual char* parse_image_sequence(char* sequence_text,
                                        const char* sequence_end,
                                        int part_index);

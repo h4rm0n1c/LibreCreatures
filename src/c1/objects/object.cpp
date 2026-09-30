@@ -479,6 +479,11 @@ void Object::play_sound_effect(sound::SoundId sound_id,
         return;
     }
 
+    // Not native: an object falling after it was let go of makes its sounds
+    // (the thud of its drop script) when it lands, through the same delayed
+    // queue sndq uses.  Scripts and the world are untouched.
+    queue_delay_ticks = std::max(queue_delay_ticks, ticks_until_landing());
+
     int attenuation = 0;
     int pan = 0;
     compute_sound_attenuation_and_pan(playback, attenuation, pan);

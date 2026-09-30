@@ -412,6 +412,15 @@ void SimpleObject::end_interaction_with_source(
                     floor_room)) {
                 set_movement_bounds(floor_room);
                 landing_on_floor_below = true;
+                // Falling from now on, so a sound its drop script plays below
+                // waits for the landing (see ticks_until_landing).  The
+                // resting Y is settled again after the script.
+                const int rest_y =
+                    floor_room.max_y - entity_->current_image_height();
+                falling_ = rest_y > old_world_y;
+                fall_rest_y_ = rest_y;
+                fall_expected_y_ = old_world_y;
+                fall_velocity_ = 0;
             }
         } else {
             set_bounds_mode(
@@ -486,7 +495,7 @@ void SimpleObject::end_interaction_with_source(
             falling_ = true;
             fall_rest_y_ = target_world_y;
             fall_expected_y_ = current_world_y;
-            fall_speed_ = 0;
+            fall_velocity_ = 0;
             return;
         }
         falling_ = false;
@@ -549,11 +558,9 @@ void SimpleObject::advance_fall(SimpleObjectTickHost& host) {
         falling_ = false;
         return;
     }
-    // Gravity: 2 more pixels a tick each tick, up to 32 a tick.
-    constexpr int kFallAcceleration = 2;
-    constexpr int kFallTopSpeed = 32;
-    fall_speed_ = std::min(fall_speed_ + kFallAcceleration, kFallTopSpeed);
-    const int next_y = std::min(entity_->world_y() + fall_speed_, fall_rest_y_);
+    const int next_y =
+        std::min(entity_->world_y() + next_fall_step(fall_velocity_),
+                 fall_rest_y_);
     world::WorldRect old_bounds{};
     world::WorldRect new_bounds{};
     get_bounds(&old_bounds);
@@ -565,6 +572,35 @@ void SimpleObject::advance_fall(SimpleObjectTickHost& host) {
     if (next_y >= fall_rest_y_) {
         falling_ = false;
     }
+}
+
+int SimpleObject::next_fall_step(int& velocity) {
+    // Gravity of 8 px per tick per tick, integrated with the average of the
+    // speeds at the start and end of the tick, so the fall follows
+    // y = 8 t^2 / 2 exactly: 4, 16, 36, 64, 100, 144 ... pixels after 1, 2, 3
+    // ... ticks.  A room's height, about 150 pixels, takes 6 ticks (0.55 s
+    // at the usual 90 ms tick), as a real fall of about 1.5 m does.  Capped
+    // at 56 px a tick, under the 64 that smooth motion will glide.
+    constexpr int kFallGravity = 8;
+    constexpr int kFallTopSpeed = 56;
+    const int start = velocity;
+    velocity = std::min(velocity + kFallGravity, kFallTopSpeed);
+    return (start + velocity) / 2;
+}
+
+int SimpleObject::ticks_until_landing() const {
+    if (!falling_ || entity_ == nullptr ||
+        entity_->world_y() != fall_expected_y_) {
+        return 0;
+    }
+    int y = entity_->world_y();
+    int velocity = fall_velocity_;
+    int ticks = 0;
+    while (y < fall_rest_y_ && ticks < 1000) {
+        y += next_fall_step(velocity);
+        ++ticks;
+    }
+    return ticks;
 }
 
 void SimpleObject::finish_fall() {
