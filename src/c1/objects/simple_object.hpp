@@ -292,6 +292,7 @@ private:
     int fall_velocity_ = 0;  // px per tick
     void advance_fall(SimpleObjectTickHost& host);
     void finish_fall();
+    void present_drawn_bounds(SimpleObjectTickHost& host) const;
     // One tick of the fall: how far it moves, `velocity` updated.
     static int next_fall_step(int& velocity);
 

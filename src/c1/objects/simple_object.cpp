@@ -467,6 +467,9 @@ void SimpleObject::end_interaction_with_source(
             }
         }
 
+        // The frame it was carried in: if the drop script changes it, the
+        // change is shown when the fall ends (see below).
+        const std::uint8_t carried_frame = entity_->current_image_index();
         dispatch_script_event(ObjectEventId::event_5, source_object, false,
                               host);
 
@@ -496,9 +499,16 @@ void SimpleObject::end_interaction_with_source(
             fall_rest_y_ = target_world_y;
             fall_expected_y_ = current_world_y;
             fall_velocity_ = 0;
+            // The drop script's new pose (the carrot turning on its side) is
+            // the world's from now on, but it is drawn when the object lands,
+            // as the thud is heard then.
+            if (entity_->current_image_index() != carried_frame) {
+                entity_->hold_drawn_image(carried_frame);
+            }
             return;
         }
         falling_ = false;
+        entity_->release_drawn_image();
         move_to_and_redraw(target_world_x, target_world_y, host);
         return;
     }
@@ -556,21 +566,27 @@ void SimpleObject::advance_fall(SimpleObjectTickHost& host) {
     if (entity_ == nullptr || bounds_mode() != BoundsMode::default_world ||
         entity_->world_y() != fall_expected_y_) {
         falling_ = false;
+        if (entity_ != nullptr && entity_->drawn_image_held()) {
+            present_drawn_bounds(host);
+            entity_->release_drawn_image();
+            present_drawn_bounds(host);
+        }
         return;
     }
     const int next_y =
         std::min(entity_->world_y() + next_fall_step(fall_velocity_),
                  fall_rest_y_);
-    world::WorldRect old_bounds{};
-    world::WorldRect new_bounds{};
-    get_bounds(&old_bounds);
+    present_drawn_bounds(host);
     move_to(entity_->world_x(), next_y);
-    get_bounds(&new_bounds);
-    host.present_or_queue_dirty_world_rect(old_bounds);
-    host.present_or_queue_dirty_world_rect(new_bounds);
+    present_drawn_bounds(host);
     fall_expected_y_ = next_y;
     if (next_y >= fall_rest_y_) {
         falling_ = false;
+        // Landed: now it shows the frame its drop script chose.
+        if (entity_->drawn_image_held()) {
+            entity_->release_drawn_image();
+            present_drawn_bounds(host);
+        }
     }
 }
 
@@ -603,6 +619,18 @@ int SimpleObject::ticks_until_landing() const {
     return ticks;
 }
 
+void SimpleObject::present_drawn_bounds(SimpleObjectTickHost& host) const {
+    // What is on screen: the larger of the drawn and the current frame, so
+    // the 8-bit renderer's dirty rectangles cover both across the switch.
+    const int x = entity_->world_x();
+    const int y = entity_->world_y();
+    const int width =
+        std::max(entity_->drawn_image_width(), entity_->current_image_width());
+    const int height = std::max(entity_->drawn_image_height(),
+                                entity_->current_image_height());
+    host.present_or_queue_dirty_world_rect({x, y, x + width, y + height});
+}
+
 void SimpleObject::finish_fall() {
     if (falling_ && entity_ != nullptr &&
         bounds_mode() == BoundsMode::default_world &&
@@ -610,6 +638,9 @@ void SimpleObject::finish_fall() {
         move_to(entity_->world_x(), fall_rest_y_);
     }
     falling_ = false;
+    if (entity_ != nullptr) {
+        entity_->release_drawn_image();
+    }
 }
 
 void SimpleObject::serialize(ObjectArchive& archive) {

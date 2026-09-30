@@ -152,6 +152,37 @@ public:
         return has_current_image() ? current_image().height() : 0;
     }
 
+    // Not native (LibreCreatures): the frame the renderer draws.  Normally
+    // the current one; while a dropped object falls it keeps showing the
+    // frame it was carried in, and its drop script's new pose appears when
+    // it lands (SimpleObject's fall).  Drawing only: bounds, hit tests and
+    // CAOS all see the current frame.  Not saved.
+    std::uint8_t drawn_image_index() const {
+        return held_drawn_image_ >= 0 && gallery_ != nullptr &&
+                       gallery_->images != nullptr &&
+                       held_drawn_image_ < static_cast<int>(gallery_->image_count)
+                   ? static_cast<std::uint8_t>(held_drawn_image_)
+                   : current_image_index_;
+    }
+    bool drawn_image_held() const { return held_drawn_image_ >= 0; }
+    void hold_drawn_image(std::uint8_t index) { held_drawn_image_ = index; }
+    void release_drawn_image() { held_drawn_image_ = -1; }
+    // The drawn frame's size (the current frame's when none is held).
+    int drawn_image_width() const {
+        const std::uint8_t index = drawn_image_index();
+        return gallery_ != nullptr && gallery_->images != nullptr &&
+                       index < gallery_->image_count
+                   ? gallery_->images[index].width()
+                   : 0;
+    }
+    int drawn_image_height() const {
+        const std::uint8_t index = drawn_image_index();
+        return gallery_ != nullptr && gallery_->images != nullptr &&
+                       index < gallery_->image_count
+                   ? gallery_->images[index].height()
+                   : 0;
+    }
+
     // sequence_end bounds both the search for the closing ']' and the
     // 32-byte destination write. Malformed CAOS -- reachable from any
     // third-party COB, not just a corrupted save -- used to read past
@@ -241,6 +272,7 @@ public:
 private:
     display::Gallery* gallery_ = nullptr;
     std::uint8_t current_image_index_ = 0;
+    int held_drawn_image_ = -1;  // see drawn_image_index
     std::uint8_t image_index_base_ = 0;
     int render_plane_ = 0;
     int world_x_ = 0;

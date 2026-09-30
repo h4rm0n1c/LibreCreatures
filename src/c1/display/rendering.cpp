@@ -361,7 +361,9 @@ void WorldRenderer::render_world_rect_to_dib(
             continue;
         }
         const Gallery* gallery = entity->gallery();
-        const std::size_t image_index = entity->current_image_index();
+        // The drawn frame (a falling object may still show the
+        // frame it was carried in; see Entity::drawn_image_index).
+        const std::size_t image_index = entity->drawn_image_index();
         // Gallery allocates exactly image_count entries; equality is invalid.
 
         int relative_x = entity->world_x() - render_rect.min_x;
@@ -425,8 +427,10 @@ void WorldRenderer::render_world_rect_to_dib(
         if (!valid_sprite_image(*entity, host_)) {
             continue;
         }
+        // The drawn frame: a falling object may still show the frame it
+        // was carried in (see Entity::drawn_image_index).
         host_.blit_image_to_dib(
-            entity->gallery()->images[entity->current_image_index()],
+            entity->gallery()->images[entity->drawn_image_index()],
             dib_pixels_, entity->world_x(), entity->world_y(), render_rect,
             viewport_rect, false);
     }
