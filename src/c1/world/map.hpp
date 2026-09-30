@@ -238,6 +238,16 @@ void find_nearest_room_bounds_at_point(const MapRoomTable& room_table,
                                        std::int32_t world_y,
                                        MapRectangle& output_bounds);
 
+// Not native (LibreCreatures): the room whose floor is the first at or
+// below (world_x, world_y) -- where something let go of there comes to
+// rest.  Among the rooms spanning world_x with bottom >= world_y, the one
+// with the highest floor.  False when there is none.  The native lookup
+// above takes the floor nearest in either direction, which put an object
+// dropped high in a room onto the floor of the room above.
+bool find_floor_room_below(const MapRoomTable& room_table,
+                           std::int32_t world_x, std::int32_t world_y,
+                           MapRectangle& output_bounds);
+
 // Returns the first serialized room containing the point.  The inclusive
 // edge rules belong to the Win32 PtInRect boundary supplied by the platform.
 const MapRoom* find_room_containing_point(

@@ -183,6 +183,16 @@ public:
     virtual void clear_edit_object() = 0;
     virtual void find_nearest_room_bounds_at_point(
         int world_x, int world_y, world::WorldRect& out_bounds) const = 0;
+    // Not native: the room whose floor is the first at or below the point
+    // (world::find_floor_room_below).  False when there is none, and by
+    // default for hosts that have no map.
+    virtual bool find_floor_room_below(int world_x, int world_y,
+                                       world::WorldRect& out_bounds) const {
+        (void)world_x;
+        (void)world_y;
+        (void)out_bounds;
+        return false;
+    }
     virtual world::WorldRect vehicle_local_bounds(
         const Object& vehicle) const = 0;
     virtual int vehicle_primary_entity_x(const Object& vehicle) const = 0;
@@ -449,6 +459,9 @@ public:
     // Interactive drops must not retain the map lookup's no-room sentinel.
     // The native object stores the resulting rectangle directly before the
     // final MoveToAndRedraw call; keep that recovery operation object-owned.
+    void set_movement_bounds(const world::WorldRect& bounds) {
+        movement_bounds_ = bounds;
+    }
     void set_world_movement_bounds_for_drop() {
         movement_bounds_ = {0, 0, world::kWorldWidth, world::kWorldHeight};
     }

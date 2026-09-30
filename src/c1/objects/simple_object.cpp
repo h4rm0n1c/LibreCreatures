@@ -143,6 +143,7 @@ void SimpleObject::tick(SimpleObjectTickHost& host) {
         }
         break;
     }
+    advance_fall(host);
 
     if (timer_period() > 0) {
         const std::int32_t next_countdown = timer_countdown() - 1;
@@ -392,11 +393,26 @@ void SimpleObject::end_interaction_with_source(
         Object* vehicle = find_topmost_overlapping_object(
             kIsVehicle, kIsVehicle, host);
         int target_world_x = old_world_x;
+        // Not native: where a room-bound object lands.  The native lookup
+        // takes the floor nearest the object's bottom-left corner in either
+        // direction, so an object let go of in the upper half of a room
+        // jumped up onto the floor of the room above.  It lands on the first
+        // floor at or below that corner instead; the room is its cage from
+        // then on, exactly as the native room would have been.
+        bool landing_on_floor_below = false;
         if (vehicle == nullptr) {
             set_bounds_mode(
                 static_cast<std::uint32_t>(BoundsMode::default_world), host);
             entity_->set_render_plane(saved_entity_render_plane);
             update_movement_bounds(host);
+            world::WorldRect floor_room{};
+            if (has_bounds_flag(0x40u) &&
+                host.find_floor_room_below(
+                    old_world_x, old_world_y + entity_->current_image_height(),
+                    floor_room)) {
+                set_movement_bounds(floor_room);
+                landing_on_floor_below = true;
+            }
         } else {
             set_bounds_mode(
                 static_cast<std::uint32_t>(BoundsMode::vehicle_local), host);
@@ -461,6 +477,19 @@ void SimpleObject::end_interaction_with_source(
         log_object_resting_y(*this, old_world_x, old_world_y, target_world_x,
                              target_world_y);
 
+        // Not native: a room-bound object let go of above its floor falls
+        // there (see advance_fall) rather than appearing on it.  Into a
+        // machine, or anything else, it is placed as the native placed it.
+        const int current_world_y = entity_->world_y();
+        if (landing_on_floor_below && target_world_y > current_world_y) {
+            move_to_and_redraw(target_world_x, current_world_y, host);
+            falling_ = true;
+            fall_rest_y_ = target_world_y;
+            fall_expected_y_ = current_world_y;
+            fall_speed_ = 0;
+            return;
+        }
+        falling_ = false;
         move_to_and_redraw(target_world_x, target_world_y, host);
         return;
     }
@@ -510,6 +539,43 @@ SimpleObject::SimpleObject(
     construction.update_movement_bounds(*this);
 }
 
+void SimpleObject::advance_fall(SimpleObjectTickHost& host) {
+    if (!falling_) {
+        return;
+    }
+    // Picked up, put in something, or moved by a script: the fall is over.
+    if (entity_ == nullptr || bounds_mode() != BoundsMode::default_world ||
+        entity_->world_y() != fall_expected_y_) {
+        falling_ = false;
+        return;
+    }
+    // Gravity: 2 more pixels a tick each tick, up to 32 a tick.
+    constexpr int kFallAcceleration = 2;
+    constexpr int kFallTopSpeed = 32;
+    fall_speed_ = std::min(fall_speed_ + kFallAcceleration, kFallTopSpeed);
+    const int next_y = std::min(entity_->world_y() + fall_speed_, fall_rest_y_);
+    world::WorldRect old_bounds{};
+    world::WorldRect new_bounds{};
+    get_bounds(&old_bounds);
+    move_to(entity_->world_x(), next_y);
+    get_bounds(&new_bounds);
+    host.present_or_queue_dirty_world_rect(old_bounds);
+    host.present_or_queue_dirty_world_rect(new_bounds);
+    fall_expected_y_ = next_y;
+    if (next_y >= fall_rest_y_) {
+        falling_ = false;
+    }
+}
+
+void SimpleObject::finish_fall() {
+    if (falling_ && entity_ != nullptr &&
+        bounds_mode() == BoundsMode::default_world &&
+        entity_->world_y() == fall_expected_y_) {
+        move_to(entity_->world_x(), fall_rest_y_);
+    }
+    falling_ = false;
+}
+
 void SimpleObject::serialize(ObjectArchive& archive) {
     Object::serialize(archive);
 
@@ -524,6 +590,9 @@ void SimpleObject::serialize(ObjectArchive& archive) {
         return;
     }
 
+    // A fall in progress is finished, not saved half way (it is not part
+    // of the native record).
+    finish_fall();
     archive.write_object_reference(entity_.get(), "Entity");
     archive.write_int32(saved_entity_render_plane);
     for (const std::int8_t selector : click_event_for_interaction_state) {

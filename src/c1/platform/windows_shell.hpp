@@ -1320,6 +1320,7 @@ public:
     void move_scenery_to_and_redraw(creatures1::objects::Scenery& /*scenery*/, creatures1::objects::Entity& entity, int world_x, int world_y) override;
 
     void find_nearest_room_bounds_at_point(int world_x, int world_y, creatures1::world::WorldRect& out_bounds) const override;
+    bool find_floor_room_below(int world_x, int world_y, creatures1::world::WorldRect& out_bounds) const override;
 
     creatures1::world::WorldRect vehicle_local_bounds(const creatures1::objects::Object& /*vehicle*/) const override;
 
