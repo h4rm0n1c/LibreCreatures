@@ -405,10 +405,16 @@ void SimpleObject::end_interaction_with_source(
                 static_cast<std::uint32_t>(BoundsMode::default_world), host);
             entity_->set_render_plane(saved_entity_render_plane);
             update_movement_bounds(host);
+            // A floor up to kDropSnapUp pixels above the object's bottom
+            // edge still counts: let go of just past a floor line (the hand
+            // holds things low), it is set on that floor rather than falling
+            // through to the room beneath.
+            constexpr int kDropSnapUp = 16;
             world::WorldRect floor_room{};
             if (has_bounds_flag(0x40u) &&
                 host.find_floor_room_below(
-                    old_world_x, old_world_y + entity_->current_image_height(),
+                    old_world_x,
+                    old_world_y + entity_->current_image_height() - kDropSnapUp,
                     floor_room)) {
                 set_movement_bounds(floor_room);
                 landing_on_floor_below = true;
