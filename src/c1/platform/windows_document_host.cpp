@@ -4705,6 +4705,18 @@ void C1WindowsDocument::request_renderer_origin(int world_x, int world_y) {
     pending_renderer_origin_ = std::make_pair(world_x, world_y);
 }
 
+// A loaded world opens at its saved camera position.  Requested (scrolled
+// to) with Smooth Scrolling on, a saved spot within a screen of 0,0 panned
+// in from the corner over several seconds.
+void C1WindowsDocument::place_renderer_origin(int world_x, int world_y) {
+    if (renderer_ != nullptr) {
+        renderer_->reset_navigation();
+        renderer_->set_viewport_origin(world_x, world_y);
+        return;
+    }
+    pending_renderer_origin_ = std::make_pair(world_x, world_y);
+}
+
 void C1WindowsDocument::center_renderer_on_world_point_if_in_navigation_bounds(
     int world_x, int world_y) {
     if (renderer_ != nullptr) {
@@ -5483,7 +5495,8 @@ void C1WindowsDocument::ensure_renderer(CWnd& view, bool smooth_scrolling_enable
     if (pending_renderer_origin_.has_value()) {
         const auto [origin_x, origin_y] = *pending_renderer_origin_;
         pending_renderer_origin_.reset();
-        renderer_->request_viewport_origin(origin_x, origin_y);
+        // Placed, not scrolled to (see place_renderer_origin).
+        renderer_->set_viewport_origin(origin_x, origin_y);
     }
 }
 
@@ -5860,7 +5873,7 @@ void C1WindowsDocument::ArchiveHost::reset_viewport_navigation_after_load() {
 }
 
 void C1WindowsDocument::ArchiveHost::request_viewport_origin(std::int32_t x, std::int32_t y) {
-    document_.request_renderer_origin(x, y);
+    document_.place_renderer_origin(x, y);
 }
 
 void C1WindowsDocument::ArchiveHost::load_default_first_favourite_place_name(
