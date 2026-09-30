@@ -74,6 +74,7 @@ private:
     struct CachedTexture {
         SDL_Texture* texture = nullptr;
         std::uint32_t pixel_version = 0;
+        std::uint64_t content_serial = 0;
         std::size_t bytes = 0;
         std::uint64_t last_used = 0;
     };

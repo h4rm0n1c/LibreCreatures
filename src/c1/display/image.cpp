@@ -42,6 +42,9 @@ void Image::configure(Gallery* gallery,
     if (resident_cache_ != nullptr) {
         release_pixel_data(*resident_cache_);
     }
+    // Not native (neorender): new content for a renderer's texture cache.
+    static std::uint64_t next_content_serial = 0;
+    content_serial_ = ++next_content_serial;
     gallery_ = gallery;
     width_ = width;
     height_ = height;

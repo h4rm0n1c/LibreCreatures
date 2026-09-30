@@ -110,6 +110,11 @@ public:
         runtime_drawn_ = true;
     }
     std::uint32_t pixel_version() const { return pixel_version_; }
+    // Not native (neorender): different for every configure(), so a texture
+    // cache keyed by the image's address can tell a new picture from the
+    // old one.  A creature's body gallery is rebuilt under the same file
+    // when it ages, and its images can land where the old ones were.
+    std::uint64_t content_serial() const { return content_serial_; }
     bool runtime_drawn() const { return runtime_drawn_; }
 
     std::uint8_t* pixel_data() const { return pixel_data_.get(); }
@@ -142,6 +147,7 @@ private:
     std::list<Image*>::iterator lru_position_;
     bool lru_position_valid_ = false;
     std::uint32_t pixel_version_ = 0;
+    std::uint64_t content_serial_ = 0;
     bool runtime_drawn_ = false;
 };
 

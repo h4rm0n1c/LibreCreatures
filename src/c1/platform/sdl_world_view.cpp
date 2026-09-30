@@ -133,12 +133,15 @@ SDL_Texture* SdlWorldView::texture_for(C1WindowsDocument& document,
                          gallery.header_record_index, index, tier, opaque};
     auto found = textures_.find(key);
     if (found != textures_.end()) {
-        if (tier != display::ImageTier::spr ||
-            found->second.pixel_version == image.pixel_version()) {
+        if (found->second.content_serial == image.content_serial() &&
+            (tier != display::ImageTier::spr ||
+             found->second.pixel_version == image.pixel_version())) {
             found->second.last_used = frame_number_;
             return found->second.texture;
         }
-        // The game has drawn into the image since it was uploaded.
+        // The game has drawn into the image since it was uploaded, or it is
+        // a new image where an old one was (a creature's body gallery,
+        // rebuilt as it ages).
         SDL_DestroyTexture(found->second.texture);
         texture_bytes_ -= found->second.bytes;
         textures_.erase(found);
@@ -146,6 +149,7 @@ SDL_Texture* SdlWorldView::texture_for(C1WindowsDocument& document,
 
     CachedTexture cached;
     cached.pixel_version = image.pixel_version();
+    cached.content_serial = image.content_serial();
     cached.last_used = frame_number_;
     if (tier == display::ImageTier::spr) {
         const std::uint8_t* pixels = document.indexed_image_pixels(image);
