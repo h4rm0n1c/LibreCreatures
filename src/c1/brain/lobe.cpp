@@ -564,12 +564,19 @@ void Lobe::update_late_phase(Brain* brain, std::uint32_t tick) {
                         (static_cast<std::uint32_t>(connection.current_weight) *
                          target_signal) >>
                         8;
+                    // Native @004055dc..00405607: no signal leaves the
+                    // target alone, and the rise past the headroom is taken
+                    // as a byte (MOVZX EAX,CL) before it is added -- with
+                    // the target below the baseline a large rise wraps low
+                    // instead of pinning the weight at 255.
                     const int headroom = static_cast<int>(connection.target_weight) -
                                          static_cast<int>(connection.baseline_weight);
-                    if (headroom < static_cast<int>(weighted_signal)) {
+                    if (weighted_signal != 0 &&
+                        headroom < static_cast<int>(weighted_signal)) {
                         const std::uint32_t raised =
                             static_cast<std::uint32_t>(connection.target_weight) +
-                            weighted_signal - static_cast<int>(headroom);
+                            static_cast<std::uint8_t>(
+                                static_cast<int>(weighted_signal) - headroom);
                         connection.target_weight = static_cast<std::uint8_t>(
                             std::min(raised, static_cast<std::uint32_t>(0xff)));
                     }
