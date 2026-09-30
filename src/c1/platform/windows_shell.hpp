@@ -1685,6 +1685,10 @@ private:
     float tick_progress() const;
     void draw_hand_at_mouse(std::vector<creatures1::display::SceneItem>& scene,
                             const creatures1::world::WorldRect& viewport);
+    // Smooth motion: each object's sprites moved back along its main
+    // sprite's step, `progress` of the way from the last tick.
+    void glide_scene_items(std::vector<creatures1::display::SceneItem>& scene,
+                           float progress);
     void request_sdl_frame();
     void create_sdl_view(CWnd& view);
     // Which SDL-drawn window, if any, a device context belongs to: the

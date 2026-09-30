@@ -4287,23 +4287,7 @@ void C1WindowsDocument::present_sdl_frame() {
         (std::min)(creatures1::world::kWorldHeight,
                    viewport.max_y + kMaximumGlidePerTick)};
     renderer_->collect_scene(gather, sdl_scene_);
-    for (creatures1::display::SceneItem& item : sdl_scene_) {
-        if (item.entity == nullptr) {
-            continue;
-        }
-        const auto previous = previous_entity_positions_.find(item.entity);
-        if (previous == previous_entity_positions_.end()) {
-            continue;
-        }
-        const int dx = wrapped_world_delta(item.world_x - previous->second.first);
-        const int dy = item.world_y - previous->second.second;
-        if (std::abs(dx) > kMaximumGlidePerTick ||
-            std::abs(dy) > kMaximumGlidePerTick) {
-            continue;
-        }
-        item.world_x = previous->second.first + glide(dx, progress);
-        item.world_y = previous->second.second + glide(dy, progress);
-    }
+    glide_scene_items(sdl_scene_, progress);
     // The hand is drawn at the mouse, over the view as drawn.
     draw_hand_at_mouse(sdl_scene_, viewport);
     sdl_view_->render_frame(*this, sdl_scene_, viewport, world_zoom_factor(),
@@ -4389,7 +4373,78 @@ void collect_object_entities(
     }
 }
 
+// The sprite an object's others move with: a simple object's own, a
+// compound object's first part, a creature's body.
+creatures1::objects::Entity* main_entity_of(
+    creatures1::objects::Object& object) {
+    if (auto* simple = dynamic_cast<creatures1::objects::SimpleObject*>(&object)) {
+        return simple->entity();
+    }
+    if (auto* compound =
+            dynamic_cast<creatures1::objects::CompoundObject*>(&object)) {
+        return compound->part_count() > 0 ? compound->part(0).entity.get()
+                                          : nullptr;
+    }
+    if (auto* skeleton = dynamic_cast<creatures1::creatures::Skeleton*>(&object)) {
+        return skeleton->body.get();
+    }
+    return nullptr;
+}
+
 } // namespace
+
+void C1WindowsDocument::glide_scene_items(
+    std::vector<creatures1::display::SceneItem>& scene, float progress) {
+    // Each object glides as one rigid piece: every sprite it draws with
+    // moves by its main sprite's glide (a creature's body, a compound
+    // object's first part).  Gliding each sprite on its own path pulled a
+    // norn's limbs apart between ticks whenever it changed pose -- each limb
+    // jumps to a new frame and a new place against the body every tick --
+    // so its walk looked chaotic.  Now its travel glides and its poses
+    // change a whole frame at a time, as the native animates them.
+    std::unordered_map<const creatures1::objects::Entity*,
+                       const creatures1::objects::Entity*>
+        main_sprite;
+    std::unordered_set<const creatures1::objects::Entity*> sprites;
+    for (std::size_t index = 0; index < object_count(); ++index) {
+        creatures1::objects::Object* object = object_at(index);
+        if (object == nullptr) {
+            continue;
+        }
+        const creatures1::objects::Entity* main = main_entity_of(*object);
+        if (main == nullptr) {
+            continue;
+        }
+        sprites.clear();
+        collect_object_entities(*object, sprites);
+        for (const creatures1::objects::Entity* sprite : sprites) {
+            main_sprite[sprite] = main;
+        }
+    }
+    for (creatures1::display::SceneItem& item : scene) {
+        if (item.entity == nullptr) {
+            continue;
+        }
+        const auto owner = main_sprite.find(item.entity);
+        const creatures1::objects::Entity* reference =
+            owner == main_sprite.end() ? item.entity : owner->second;
+        const auto previous = previous_entity_positions_.find(reference);
+        if (previous == previous_entity_positions_.end()) {
+            continue;
+        }
+        const int dx = wrapped_world_delta(reference->world_x() -
+                                           previous->second.first);
+        const int dy = reference->world_y() - previous->second.second;
+        if (std::abs(dx) > kMaximumGlidePerTick ||
+            std::abs(dy) > kMaximumGlidePerTick) {
+            continue;
+        }
+        // Back from where the tick left it by the part of the step not yet
+        // shown.
+        item.world_x -= dx - glide(dx, progress);
+        item.world_y -= dy - glide(dy, progress);
+    }
+}
 
 void C1WindowsDocument::draw_hand_at_mouse(
     std::vector<creatures1::display::SceneItem>& scene,
