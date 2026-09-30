@@ -13,7 +13,42 @@ namespace {
 // Posted after a tab switch: comctl32 shows the new page only once the
 // sheet's WM_NOTIFY handling returns, and places it at the template size.
 constexpr UINT kDeferredLayoutMessage = WM_APP + 0x4c;
-constexpr UINT kMuteCheckbox = 0x7f4d;  // clear of the kits' own control ids
+// Posted by Options > Skin: the window is rebuilt once the menu command has
+// returned, not from inside it.
+constexpr UINT kSkinChangeMessage = WM_APP + 0x4d;
+
+// Options and Help.  The same ids arrive as WM_COMMAND from the menu bar
+// and as WM_SYSCOMMAND from the system menu, so they are multiples of 16
+// below 0xF000 (the system menu keeps the low four bits).
+constexpr UINT kOptionOnTop = 0x0110;
+constexpr UINT kOptionMute = 0x0120;
+constexpr UINT kOptionSkinLibre = 0x0130;
+constexpr UINT kOptionSkinClassic = 0x0140;
+constexpr UINT kHelpAbout = 0x0150;
+constexpr UINT kKitIcon = 128;  // every kit's icon, as in 1996
+
+// The setting, or failing that the first of the names kits used for it
+// before Options existed.
+bool read_setting(c1kit::KitSettings* settings, std::initializer_list<const char*> names,
+                  std::uint32_t& value) {
+    if (settings == nullptr) {
+        return false;
+    }
+    for (const char* name : names) {
+        if (settings->read_dword(c1kit::SettingsScope::user, name, value)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool g_classic_art_available = false;
+
+CString skin_key() {
+    const char* prog_id = kit_definition().identity.prog_id;
+    return CString(_T("Software\\LibreCreatures\\Kits\\")) +
+           CString(prog_id != nullptr ? prog_id : "kit");
+}
 
 } // namespace
 
@@ -22,6 +57,37 @@ BEGIN_MESSAGE_MAP(KitSheet, CPropertySheet)
     ON_WM_GETMINMAXINFO()
     ON_MESSAGE(kDeferredLayoutMessage, &KitSheet::OnDeferredLayout)
 END_MESSAGE_MAP()
+
+// Options > Skin, kept per kit.
+KitSkin skin_preference() {
+    DWORD value = 0;
+    DWORD size = sizeof(value);
+    if (RegGetValue(HKEY_CURRENT_USER, skin_key(), _T("Skin"), RRF_RT_REG_DWORD, nullptr,
+                    &value, &size) != ERROR_SUCCESS ||
+        value > static_cast<DWORD>(KitSkin::classic)) {
+        return KitSkin::automatic;
+    }
+    return static_cast<KitSkin>(value);
+}
+
+void set_skin_preference(KitSkin skin) {
+    HKEY key = nullptr;
+    if (RegCreateKeyEx(HKEY_CURRENT_USER, skin_key(), 0, nullptr, 0, KEY_SET_VALUE, nullptr,
+                       &key, nullptr) == ERROR_SUCCESS) {
+        const DWORD value = static_cast<DWORD>(skin);
+        RegSetValueEx(key, _T("Skin"), 0, REG_DWORD, reinterpret_cast<const BYTE*>(&value),
+                      sizeof(value));
+        RegCloseKey(key);
+    }
+}
+
+bool classic_art_available() {
+    return g_classic_art_available;
+}
+
+void note_classic_art_available(bool available) {
+    g_classic_art_available = available;
+}
 
 KitSheet::KitSheet(UINT caption_string, UINT paused_suffix_string)
     : CPropertySheet(caption_string),
@@ -184,19 +250,9 @@ void KitSheet::OnGetMinMaxInfo(MINMAXINFO* info) {
     }
 }
 
-void KitSheet::enable_ambience(c1kit::KitSettings* settings, const char* sound, int volume,
-                               bool checkbox) {
-    ambience_settings_ = settings;
+void KitSheet::enable_ambience(const char* sound, int volume) {
     ambience_sound_ = sound;
     ambience_volume_ = volume;
-    std::uint32_t muted = 0;
-    if (settings != nullptr) {
-        settings->read_dword(c1kit::SettingsScope::user, "Mute Ambient", muted);
-    }
-    ambience_muted_ = muted != 0;
-    if (checkbox) {
-        add_mute_checkbox();
-    }
     ambience_ = std::make_unique<KitSound>();
     if (ambience_->open(GetSafeHwnd())) {
         const CString directory = game_directory_setting("Main Directory");
@@ -204,35 +260,6 @@ void KitSheet::enable_ambience(c1kit::KitSettings* settings, const char* sound, 
                                              ambience_sound_ + ".wav");
     }
     apply_ambience();
-}
-
-// Under the pages, in a row the window grows by.
-void KitSheet::add_mute_checkbox() {
-    CWnd* tabs = GetTabControl();
-    CRect tab_rect;
-    if (tabs != nullptr) {
-        tabs->GetWindowRect(&tab_rect);
-        ScreenToClient(&tab_rect);
-    }
-    CRect row(0, 0, 4, 12);  // dialog units: margin, then the checkbox's height
-    ::MapDialogRect(GetActivePage() != nullptr ? GetActivePage()->GetSafeHwnd() : GetSafeHwnd(),
-                    &row);
-    const int height = row.Height();
-    CRect window;
-    GetWindowRect(&window);
-    SetWindowPos(nullptr, 0, 0, window.Width(), window.Height() + height + row.Width(),
-                 SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
-    const CString label = _T("Mute ambient sound");
-    CClientDC dc(this);
-    CFont* previous = dc.SelectObject(GetFont());
-    const int width = dc.GetTextExtent(label).cx + height + 8;
-    dc.SelectObject(previous);
-    mute_check_.Create(label, WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_AUTOCHECKBOX,
-                       CRect(CPoint(tab_rect.left, tab_rect.bottom + row.Width() / 2),
-                             CSize(width, height)),
-                       this, kMuteCheckbox);
-    mute_check_.SetFont(GetFont());
-    mute_check_.SetCheck(ambience_muted_ ? BST_CHECKED : BST_UNCHECKED);
 }
 
 void KitSheet::fit_tabs() {
@@ -254,34 +281,227 @@ void KitSheet::fit_tabs() {
                        SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
 }
 
-void KitSheet::set_ambience_muted(bool muted) {
-    ambience_muted_ = muted;
-    if (ambience_settings_ != nullptr) {
-        ambience_settings_->write_dword("Mute Ambient", muted ? 1u : 0u);
-    }
-    if (mute_check_.GetSafeHwnd() != nullptr) {
-        mute_check_.SetCheck(muted ? BST_CHECKED : BST_UNCHECKED);
-    }
-    apply_ambience();
-}
-
 void KitSheet::apply_ambience() {
     if (!ambience_) {
         return;
     }
-    if (ambience_muted_ && ambience_channel_ >= 0) {
-        ambience_->stop(ambience_channel_);
+    if (KitSound::muted()) {
+        if (ambience_channel_ >= 0) {
+            ambience_->stop(ambience_channel_);
+        }
         ambience_channel_ = -1;
-    } else if (!ambience_muted_ && ambience_channel_ < 0) {
+    } else if (ambience_channel_ < 0) {
         ambience_channel_ = ambience_->play(ambience_sound_, true, ambience_volume_);
     }
 }
 
-BOOL KitSheet::OnCommand(WPARAM wparam, LPARAM lparam) {
-    if (LOWORD(wparam) == kMuteCheckbox && HIWORD(wparam) == BN_CLICKED && ambience_) {
-        set_ambience_muted(mute_check_.GetCheck() == BST_CHECKED);
-        return TRUE;
+// ---------------------------------------------------------------------------
+// Options and Help
+// ---------------------------------------------------------------------------
+
+void KitSheet::install_options(c1kit::KitSettings* settings, bool classic,
+                               bool on_top_by_default) {
+    option_settings_ = settings;
+    classic_look_ = classic;
+    KitSound::set_volume_offset(classic ? 0 : KitSound::kLibreVolumeOffset);
+
+    std::uint32_t value = on_top_by_default ? 1 : 0;
+    read_setting(settings, {"On Top", "Keep on top", "Always on Top"}, value);
+    always_on_top_ = value != 0;
+    value = 0;
+    KitSound::set_muted(read_setting(settings, {"Mute Sounds", "Mute Ambient"}, value) &&
+                        value != 0);
+
+    CMenu options;
+    options.CreatePopupMenu();
+    options.AppendMenu(MF_STRING, kOptionOnTop, _T("Always on &top"));
+    options.AppendMenu(MF_STRING, kOptionMute, _T("&Mute sounds"));
+    CMenu skins;
+    skins.CreatePopupMenu();
+    skins.AppendMenu(MF_STRING, kOptionSkinLibre, _T("&LibreCreatures"));
+    skins.AppendMenu(MF_STRING | (classic_art_available() ? 0 : MF_GRAYED), kOptionSkinClassic,
+                     classic_art_available()
+                         ? _T("&Creatures (1996)")
+                         : _T("&Creatures (1996): needs the original kit beside this one"));
+    options.AppendMenu(MF_POPUP, reinterpret_cast<UINT_PTR>(skins.Detach()), _T("&Skin"));
+    CMenu kit_items;
+    kit_items.CreatePopupMenu();
+    add_kit_options(kit_items);
+    const int kit_item_count = kit_items.GetMenuItemCount();
+    if (kit_item_count > 0) {
+        options.AppendMenu(MF_SEPARATOR);
+        for (int index = 0; index < kit_item_count; ++index) {
+            CString label;
+            kit_items.GetMenuString(index, label, MF_BYPOSITION);
+            const UINT state = kit_items.GetMenuState(index, MF_BYPOSITION);
+            const UINT id = kit_items.GetMenuItemID(index);
+            if (id == 0 || (state & MF_SEPARATOR) != 0) {
+                options.AppendMenu(MF_SEPARATOR);
+            } else {
+                options.AppendMenu(MF_STRING | (state & (MF_CHECKED | MF_GRAYED)), id, label);
+            }
+        }
     }
+    CMenu help;
+    help.CreatePopupMenu();
+    help.AppendMenu(MF_STRING, kHelpAbout,
+                    _T("&About ") + load_string(caption_string_) + _T("..."));
+
+    if (classic) {
+        // The 1996 windows had no menu bar: the system menu carries these.
+        if (CMenu* system = GetSystemMenu(FALSE)) {
+            system->AppendMenu(MF_SEPARATOR);
+            system->AppendMenu(MF_POPUP, reinterpret_cast<UINT_PTR>(options.Detach()),
+                               _T("&Options"));
+            system->AppendMenu(MF_POPUP, reinterpret_cast<UINT_PTR>(help.Detach()), _T("&Help"));
+        }
+    } else {
+        menu_bar_.CreateMenu();
+        menu_bar_.AppendMenu(MF_POPUP, reinterpret_cast<UINT_PTR>(options.Detach()),
+                             _T("&Options"));
+        menu_bar_.AppendMenu(MF_POPUP, reinterpret_cast<UINT_PTR>(help.Detach()), _T("&Help"));
+        CRect before;
+        GetClientRect(&before);
+        SetMenu(&menu_bar_);
+        CRect after;
+        GetClientRect(&after);
+        // The menu bar takes its height from the client area: give it back.
+        const int menu_height = before.Height() - after.Height();
+        CRect window;
+        GetWindowRect(&window);
+        SetWindowPos(nullptr, 0, 0, window.Width(), window.Height() + menu_height,
+                     SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+        if (resizable_) {
+            min_track_.cy += menu_height;
+            layout_pages();
+        }
+    }
+    SetWindowPos(always_on_top_ ? &wndTopMost : &wndNoTopMost, 0, 0, 0, 0,
+                 SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+    refresh_option_checks();
+}
+
+CMenu* KitSheet::options_menu() {
+    return classic_look_ ? GetSystemMenu(FALSE) : GetMenu();
+}
+
+void KitSheet::refresh_option_checks() {
+    CMenu* menu = options_menu();
+    if (menu == nullptr) {
+        return;
+    }
+    menu->CheckMenuItem(kOptionOnTop,
+                        MF_BYCOMMAND | (always_on_top_ ? MF_CHECKED : MF_UNCHECKED));
+    menu->CheckMenuItem(kOptionMute,
+                        MF_BYCOMMAND | (KitSound::muted() ? MF_CHECKED : MF_UNCHECKED));
+    menu->CheckMenuItem(kOptionSkinLibre,
+                        MF_BYCOMMAND | (classic_look_ ? MF_UNCHECKED : MF_CHECKED));
+    menu->CheckMenuItem(kOptionSkinClassic,
+                        MF_BYCOMMAND | (classic_look_ ? MF_CHECKED : MF_UNCHECKED));
+}
+
+void KitSheet::check_kit_option(UINT id, bool checked) {
+    if (CMenu* menu = options_menu()) {
+        menu->CheckMenuItem(id, MF_BYCOMMAND | (checked ? MF_CHECKED : MF_UNCHECKED));
+    }
+}
+
+void KitSheet::enable_kit_option(UINT id, bool enabled) {
+    if (CMenu* menu = options_menu()) {
+        menu->EnableMenuItem(id, MF_BYCOMMAND | (enabled ? MF_ENABLED : MF_GRAYED));
+    }
+}
+
+void KitSheet::set_always_on_top(bool on_top) {
+    always_on_top_ = on_top;
+    SetWindowPos(on_top ? &wndTopMost : &wndNoTopMost, 0, 0, 0, 0,
+                 SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+    if (option_settings_ != nullptr) {
+        option_settings_->write_dword("On Top", on_top ? 1u : 0u);
+    }
+    refresh_option_checks();
+}
+
+void KitSheet::set_sounds_muted(bool muted) {
+    KitSound::set_muted(muted);
+    if (muted) {
+        ambience_channel_ = -1;  // stopped with everything else
+    }
+    apply_ambience();
+    if (option_settings_ != nullptr) {
+        option_settings_->write_dword("Mute Sounds", muted ? 1u : 0u);
+    }
+    refresh_option_checks();
+    on_sounds_muted_changed();
+}
+
+void KitSheet::show_about() {
+    const CString name = load_string(caption_string_);
+    const CString text = name +
+                         _T("\n\nPart of LibreCreatures, a rebuild of the Creatures 1 kits.")
+                         _T("\nBuilt ") +
+                         CString(__DATE__) +
+                         _T(".\n\nThe Creatures (1996) look shows the original kit's own art, ")
+                         _T("read from the original beside this one.");
+    const CString caption = _T("About ") + name;
+    MSGBOXPARAMS params = {sizeof(params)};
+    params.hwndOwner = GetSafeHwnd();
+    params.hInstance = AfxGetResourceHandle();
+    params.lpszText = text;
+    params.lpszCaption = caption;
+    params.dwStyle = MB_OK | MB_USERICON;
+    params.lpszIcon = MAKEINTRESOURCE(kKitIcon);
+    ::MessageBoxIndirect(&params);
+}
+
+void KitSheet::change_skin(KitSkin skin) {
+    const bool want_classic = skin == KitSkin::classic;
+    if (want_classic == classic_look_ || (want_classic && !classic_art_available())) {
+        return;
+    }
+    set_skin_preference(skin);
+    PostMessage(kSkinChangeMessage);
+}
+
+bool KitSheet::handle_option(UINT id) {
+    switch (id) {
+    case kOptionOnTop:
+        set_always_on_top(!always_on_top_);
+        return true;
+    case kOptionMute:
+        set_sounds_muted(!KitSound::muted());
+        return true;
+    case kOptionSkinLibre:
+        change_skin(KitSkin::libre);
+        return true;
+    case kOptionSkinClassic:
+        change_skin(KitSkin::classic);
+        return true;
+    case kHelpAbout:
+        show_about();
+        return true;
+    default:
+        return id >= kKitOptionFirst && id < 0xF000 && on_kit_option(id);
+    }
+}
+
+LRESULT KitSheet::WindowProc(UINT message, WPARAM wparam, LPARAM lparam) {
+    if (message == WM_SYSCOMMAND && handle_option(static_cast<UINT>(wparam & 0xFFF0))) {
+        return 0;
+    }
+    if (message == WM_COMMAND && lparam == 0 && HIWORD(wparam) == 0 &&
+        handle_option(LOWORD(wparam))) {
+        return 0;
+    }
+    if (message == kSkinChangeMessage) {
+        before_skin_change();
+        static_cast<KitApp*>(AfxGetApp())->rebuild_main_window(*this);
+        return 0;
+    }
+    return CPropertySheet::WindowProc(message, wparam, lparam);
+}
+
+BOOL KitSheet::OnCommand(WPARAM wparam, LPARAM lparam) {
     return CPropertySheet::OnCommand(wparam, lparam);
 }
 

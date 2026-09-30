@@ -17,13 +17,11 @@ constexpr char kAmbience[] = "kits";
 constexpr int kAmbienceVolume = -1000;
 constexpr unsigned kCommandSetFolder = 32771;
 constexpr unsigned kCommandRefresh = 32772;
-constexpr unsigned kCommandOnTop = 32773;
 constexpr unsigned kCommandHide = 32774;
 constexpr unsigned kCommandIgnoreAmount = 32775;
 constexpr unsigned kCommandAllowWithout = 32776;
 constexpr unsigned kCommandAbout = 57664;
 constexpr unsigned kCommandClose = 57665;
-constexpr unsigned kCommandMute = 0x8101;
 
 // Strings
 constexpr unsigned kStringOleInitFailed = 100;
@@ -45,7 +43,6 @@ constexpr unsigned kCommandBufferBytes = 0x1000;
 constexpr int kDefaultPageWidthDlu = 360;
 constexpr int kDefaultPageHeightDlu = 280;
 
-constexpr unsigned kSysCommandOnTop = 0x0020;
 
 enum : unsigned {
     kControlFind = 3000,
@@ -58,8 +55,6 @@ enum : unsigned {
     kControlBrowse,
     kControlQuantity,
     kControlFolder,
-    kControlIgnoreAmount,
-    kControlAllowWithout,
     kControlTree,
     kControlFindLabel,
     // The classic look: the Analysis page's labels and buttons, and the
@@ -69,9 +64,12 @@ enum : unsigned {
     kControlAnalysisBrowse,
     kControlAnalysisRefresh,
     kControlAnalysisFolder,
-    kControlOnTopCheck,
     kControlHide,
     kControlCloseKit,
 };
+
+// Options: the original's Advanced menu, in both looks.
+constexpr unsigned kOptionIgnoreAmount = 0x0200;
+constexpr unsigned kOptionAllowWithout = 0x0210;
 
 } // namespace injector

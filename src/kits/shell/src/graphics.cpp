@@ -184,10 +184,16 @@ std::unique_ptr<ClassicArt> ClassicArt::find(std::initializer_list<UINT> bitmaps
             complete = complete && FindResource(module, MAKEINTRESOURCE(id), RT_GROUP_ICON) != nullptr;
         }
         if (complete) {
+            note_classic_art_available(true);
+            if (skin_preference() == KitSkin::libre) {
+                FreeLibrary(module);  // there, but the player chose the kit's own look
+                return nullptr;
+            }
             return std::unique_ptr<ClassicArt>(new ClassicArt(module, candidate));
         }
         FreeLibrary(module);
     }
+    note_classic_art_available(false);
     return nullptr;
 }
 

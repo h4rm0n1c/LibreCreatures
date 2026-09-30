@@ -58,7 +58,5 @@ constexpr unsigned kCommandBufferBytes = 0x1000;
 constexpr int kDefaultPageWidthDlu = 215;
 constexpr int kDefaultPageHeightDlu = 225;
 
-// System menu item: Always on top (the original's menu 143, never loaded).
-constexpr unsigned kSysCommandOnTop = 0x0020;
 
 } // namespace funeral

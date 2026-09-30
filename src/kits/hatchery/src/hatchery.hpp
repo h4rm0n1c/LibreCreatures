@@ -107,6 +107,8 @@ private:
     // pixel so that it can be soft and anti-aliased.
     void render_panel(const CRect& view);
     void describe_selection();
+    void play_selection_sound();
+    void stop_tone();
 
     HatcherySheet& sheet_;
     c1kitshell::PaintedView nest_;
@@ -121,6 +123,7 @@ private:
     std::vector<std::uint32_t> panel_;  // BGRA, view_rect_'s size
     int selected_ = -1;
     int hover_ = -1;
+    int tone_channel_ = -1;
 };
 
 class HatcherySheet : public c1kitshell::KitSheet {
@@ -138,20 +141,21 @@ public:
     // The classic look: the player's original Hatchery beside this one.
     bool classic() const { return classic_ != nullptr; }
     c1kitshell::KitSound& sound() { return sound_; }
-    // The saved "Mute ambient sound" (classic look).
-    bool muted() const { return muted_ != 0; }
+    // Options > Mute sounds.
+    bool muted() const { return c1kitshell::KitSound::muted(); }
 
 protected:
     BOOL OnInitDialog() override;
     void before_game_quit() override;
+    void before_skin_change() override;
+    void add_kit_options(CMenu& options) override;
+    bool on_kit_option(UINT id) override;
+    void on_sounds_muted_changed() override;
     afx_msg int OnCreate(LPCREATESTRUCT create);
     afx_msg void OnTimer(UINT_PTR timer_id);
     afx_msg void OnClose();
     afx_msg void OnDestroy();
-    afx_msg void OnSysCommand(UINT id, LPARAM lparam);
     afx_msg void OnInitMenuPopup(CMenu* menu, UINT index, BOOL system_menu);
-    afx_msg void OnMute();
-    afx_msg void OnRefillNest();
     afx_msg void OnAbout();
     afx_msg void OnWindowPosChanging(WINDOWPOS* position);
     DECLARE_MESSAGE_MAP()
@@ -164,7 +168,6 @@ private:
     void load_preferences();
     void save_preferences();
     void save_nest();
-    void set_always_on_top(bool on);
 
     CFont& default_font_;
     NestPage nest_page_;
@@ -173,10 +176,8 @@ private:
     CSize classic_correction_{0, 0};  // see fit_classic_window
     c1kitshell::KitSound sound_;
     CMenu classic_menu_;
-    std::uint32_t muted_ = 0;
     c1kit::KitSettings* registry_ = nullptr;
     c1kit::Nest nest_;
-    std::uint32_t always_on_top_ = 0;
     bool connected_ = false;
 };
 

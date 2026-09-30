@@ -70,7 +70,6 @@ protected:
     BOOL OnInitDialog() override;
     BOOL OnSetActive() override;
     BOOL OnKillActive() override;
-    afx_msg void OnAlwaysOnTop();
     afx_msg void OnAbout();
     afx_msg void OnCloseKit();
     afx_msg void OnSettingChanged();
@@ -144,8 +143,6 @@ public:
     HMODULE art_module() const { return classic_ ? classic_->module() : nullptr; }
     const char* size_key() const { return classic_ ? "Classic Size" : "Size"; }
     void set_settings(const AlertSettings& settings) { settings_ = settings; }
-    bool always_on_top() const { return always_on_top_ != 0; }
-    void set_always_on_top(bool on);
 
     const std::vector<c1kit::OverviewRecord>& records() const {
         return records_;
@@ -155,6 +152,8 @@ protected:
     BOOL OnInitDialog() override;
     void on_control_state(std::uint8_t state) override;
     void before_game_quit() override;
+    void before_skin_change() override;
+    void show_about() override;
     afx_msg int OnCreate(LPCREATESTRUCT create);
     afx_msg void OnTimer(UINT_PTR timer_id);
     afx_msg void OnSize(UINT type, int cx, int cy);
@@ -180,7 +179,6 @@ private:
     std::unique_ptr<c1kitshell::ClassicArt> classic_;
     std::unique_ptr<c1kitshell::CoverPage> cover_;
     AlertSettings settings_;
-    std::uint32_t always_on_top_ = 1;
     int saved_page_ = 0;
     std::unique_ptr<c1kit::MacroConversation> conversation_;
     std::vector<c1kit::OverviewRecord> records_;

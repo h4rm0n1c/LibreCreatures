@@ -246,7 +246,10 @@ void NestPage::create_controls() {
     nest_.set_mouse_handler([this](CPoint point, bool clicked) {
         const int egg = egg_at(point);
         if (clicked) {
-            selected_ = egg;
+            if (egg != selected_) {
+                selected_ = egg;
+                play_selection_sound();
+            }
             describe_selection();
             refresh();
         } else if (egg != hover_) {
@@ -459,6 +462,8 @@ void NestPage::OnHatch() {
     CString why;
     const int slot = selected_;
     if (sheet_.hatch(slot, why)) {
+        stop_tone();
+        sheet_.sound().play("hslt", false);  // the 1996 kit's hatch
         CString done;
         done.Format(_T("Egg %d is in the incubator."), slot + 1);
         status_.SetWindowText(done);
@@ -471,9 +476,32 @@ void NestPage::OnHatch() {
 
 void NestPage::OnRefill() {
     sheet_.refill();
+    stop_tone();
     selected_ = -1;
     status_.SetWindowText(_T("Six new eggs."));
     refresh();
+}
+
+// The 1996 kit's sounds for a chosen egg: a click, then the egg's male or
+// female tone until another is chosen (the 1996 machine played them as the
+// pointer passed over an egg).
+void NestPage::play_selection_sound() {
+    stop_tone();
+    const c1kit::Nest& nest = sheet_.nest();
+    if (selected_ < 0 || nest.eggs[selected_] == c1kit::EggState::taken) {
+        return;
+    }
+    c1kitshell::KitSound& sound = sheet_.sound();
+    sound.play("hegg", false);
+    tone_channel_ =
+        sound.play(nest.eggs[selected_] == c1kit::EggState::female ? "hfml" : "hmle", true);
+}
+
+void NestPage::stop_tone() {
+    if (tone_channel_ >= 0) {
+        sheet_.sound().stop(tone_channel_);
+        tone_channel_ = -1;
+    }
 }
 
 // ===========================================================================
@@ -485,11 +513,8 @@ BEGIN_MESSAGE_MAP(HatcherySheet, c1kitshell::KitSheet)
     ON_WM_TIMER()
     ON_WM_CLOSE()
     ON_WM_DESTROY()
-    ON_WM_SYSCOMMAND()
     ON_WM_INITMENUPOPUP()
     ON_WM_WINDOWPOSCHANGING()
-    ON_COMMAND(kCommandMute, &HatcherySheet::OnMute)
-    ON_COMMAND(kCommandRefill, &HatcherySheet::OnRefillNest)
     ON_COMMAND(kCommandAbout, &HatcherySheet::OnAbout)
 END_MESSAGE_MAP()
 
@@ -555,9 +580,13 @@ BOOL HatcherySheet::OnInitDialog() {
         enable_resizing(CSize(kDefaultPageWidthDlu, kDefaultPageHeightDlu));
     }
     SetWindowText(c1kitshell::load_string(kStringToolName));
-    if (CMenu* menu = GetSystemMenu(FALSE)) {
-        menu->AppendMenu(MF_SEPARATOR);
-        menu->AppendMenu(MF_STRING, kSysCommandOnTop, _T("Always on &top"));
+    install_options(registry_, classic_ != nullptr);
+    sound_.open(GetSafeHwnd());
+    for (const char* name : kHatcherySounds) {
+        sound_.load(name, game_file(std::string("Sounds\\") + name + ".wav"));
+    }
+    if (!classic_) {
+        enable_ambience("hfan", kLibreFanVolume);  // the classic machine runs its own fan
     }
     load_preferences();
     if (classic_) fit_classic_window();  // after anything that sized the sheet
@@ -584,15 +613,10 @@ void HatcherySheet::load_preferences() {
                                 sizeof(location))) {
         location = {0x100, 0x80};
     }
-    registry_->read_dword(c1kit::SettingsScope::user, "On Top", always_on_top_);
-    registry_->read_dword(c1kit::SettingsScope::user, "Mute Ambient", muted_);
     const int left = location.left < max_left ? location.left : max_left;
     const int top = location.top < max_top ? location.top : max_top;
-    SetWindowPos(always_on_top_ != 0 ? &wndTopMost : &wndNoTopMost, left < 0 ? 0 : left,
+    SetWindowPos(always_on_top() ? &wndTopMost : &wndNoTopMost, left < 0 ? 0 : left,
                  top < 0 ? 0 : top, 0, 0, SWP_NOSIZE | SWP_SHOWWINDOW);
-    if (CMenu* menu = GetSystemMenu(FALSE)) {
-        menu->CheckMenuItem(kSysCommandOnTop, always_on_top_ != 0 ? MF_CHECKED : MF_UNCHECKED);
-    }
     SetTimer(kTimerStartup, kStartupDelayMs, nullptr);
 }
 
@@ -610,8 +634,6 @@ void HatcherySheet::save_preferences() {
     if (!classic_) {
         registry_->write_binary("Size", &size, sizeof(size));  // the classic window is fixed
     }
-    registry_->write_dword("On Top", always_on_top_);
-    registry_->write_dword("Mute Ambient", muted_);
 }
 
 void HatcherySheet::save_nest() {
@@ -666,26 +688,20 @@ void HatcherySheet::OnTimer(UINT_PTR timer_id) {
 }
 
 // The 1996 window: no tabs or buttons, the machine filling it (320 x 240),
-// and its menu -- Help > About Hatchery -- with Options added: "Mute
-// ambient sound" (saved) and "Refill the nest" (for when it is empty, in
-// place of the 1996 Egg Disk).
+// and its menu, Help > About Hatchery.  Options (Refill the nest, for when
+// it is empty, in place of the 1996 Egg Disk, and every kit's) are on the
+// system menu.
 void HatcherySheet::set_up_classic_window() {
     if (CWnd* tabs = GetTabControl()) {
         tabs->ShowWindow(SW_HIDE);
     }
     classic_menu_.CreateMenu();
-    CMenu options;
-    options.CreatePopupMenu();
-    options.AppendMenu(MF_STRING, kCommandMute, _T("&Mute ambient sound"));
-    options.AppendMenu(MF_STRING, kCommandRefill, _T("&Refill the nest"));
     CMenu help;
     help.CreatePopupMenu();
     help.AppendMenu(MF_STRING, kCommandAbout, _T("&About Hatchery..."));
-    classic_menu_.AppendMenu(MF_POPUP, reinterpret_cast<UINT_PTR>(options.Detach()), _T("&Options"));
     classic_menu_.AppendMenu(MF_POPUP, reinterpret_cast<UINT_PTR>(help.Detach()), _T("&Help"));
     SetMenu(&classic_menu_);
     fit_classic_window();
-    sound_.open(GetSafeHwnd());
 }
 
 // The frame for a 320 x 240 client under the menu, from the styles rather
@@ -727,44 +743,34 @@ void HatcherySheet::OnWindowPosChanging(WINDOWPOS* position) {
 
 void HatcherySheet::OnInitMenuPopup(CMenu* menu, UINT index, BOOL system_menu) {
     c1kitshell::KitSheet::OnInitMenuPopup(menu, index, system_menu);
-    if (!system_menu && menu != nullptr) {
-        menu->CheckMenuItem(kCommandMute, muted_ != 0 ? MF_CHECKED : MF_UNCHECKED);
-        menu->EnableMenuItem(kCommandRefill, nest_.any_left() ? MF_GRAYED : MF_ENABLED);
+    enable_kit_option(kOptionRefill, !nest_.any_left());
+}
+
+void HatcherySheet::add_kit_options(CMenu& options) {
+    options.AppendMenu(MF_STRING, kOptionRefill, _T("&Refill the nest"));
+}
+
+bool HatcherySheet::on_kit_option(UINT id) {
+    if (id != kOptionRefill) {
+        return false;
     }
+    if (!nest_.any_left()) {
+        refill();
+        machine_page_.refresh();
+    }
+    return true;
 }
 
-void HatcherySheet::OnMute() {
-    muted_ = muted_ != 0 ? 0 : 1;
-    if (registry_ != nullptr) registry_->write_dword("Mute Ambient", muted_);
-    machine_page_.refresh();
-}
-
-void HatcherySheet::OnRefillNest() {
-    refill();
+void HatcherySheet::on_sounds_muted_changed() {
     machine_page_.refresh();
 }
 
 void HatcherySheet::OnAbout() {
-    MessageBox(_T("The Hatchery\n\nLibreCreatures' Hatchery, wearing the 1996 look from the ")
-               _T("original beside it."),
-               _T("About Hatchery"), MB_OK | MB_ICONINFORMATION);
+    show_about();
 }
 
-void HatcherySheet::set_always_on_top(bool on) {
-    always_on_top_ = on ? 1 : 0;
-    SetWindowPos(on ? &wndTopMost : &wndNoTopMost, 0, 0, 0, 0,
-                 SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-    if (CMenu* menu = GetSystemMenu(FALSE)) {
-        menu->CheckMenuItem(kSysCommandOnTop, on ? MF_CHECKED : MF_UNCHECKED);
-    }
-}
-
-void HatcherySheet::OnSysCommand(UINT id, LPARAM lparam) {
-    if ((id & 0xfff0) == kSysCommandOnTop) {
-        set_always_on_top(always_on_top_ == 0);
-        return;
-    }
-    c1kitshell::KitSheet::OnSysCommand(id, lparam);
+void HatcherySheet::before_skin_change() {
+    save_preferences();
 }
 
 void HatcherySheet::before_game_quit() {

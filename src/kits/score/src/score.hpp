@@ -92,12 +92,12 @@ protected:
     void on_integer_message(std::int32_t payload) override;
     void on_control_state(std::uint8_t state) override;
     void before_game_quit() override;
+    void before_skin_change() override;
     afx_msg int OnCreate(LPCREATESTRUCT create);
     afx_msg void OnTimer(UINT_PTR timer_id);
     afx_msg void OnSize(UINT type, int cx, int cy);
     afx_msg void OnClose();
     afx_msg void OnDestroy();
-    afx_msg void OnSysCommand(UINT id, LPARAM lparam);
     DECLARE_MESSAGE_MAP()
 
 private:
@@ -107,7 +107,6 @@ private:
     void refresh();
     void update_pause();
     bool paused() const { return game_paused_ || minimised_; }
-    void set_always_on_top(bool on);
 
     CFont& default_font_;
     std::unique_ptr<c1kitshell::ClassicArt> classic_;
@@ -118,7 +117,6 @@ private:
     c1kit::KitSettings* registry_ = nullptr;
     std::unique_ptr<c1kit::MacroConversation> conversation_;
     ScoreState state_;
-    std::uint32_t always_on_top_ = 0;
     int ticks_until_refresh_ = 0;
     bool colon_visible_ = true;
     bool connected_ = false;

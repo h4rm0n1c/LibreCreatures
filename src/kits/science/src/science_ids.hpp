@@ -57,8 +57,6 @@ constexpr const char* kMedicineLiquids[] = {
 constexpr char kOtherMedicineLiquid[] = "BDosage.spr";
 constexpr unsigned kTimerSyringe = 21;  // on the Injections page
 
-// System menu item: Always on top (the original's menu 143, never loaded).
-constexpr unsigned kSysCommandOnTop = 0x0020;
 
 // Controls made in code.
 enum : unsigned {

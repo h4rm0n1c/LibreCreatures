@@ -73,8 +73,5 @@ constexpr unsigned kCommandBufferBytes = 0x1000;
 constexpr int kDefaultPageWidthDlu = 300;
 constexpr int kDefaultPageHeightDlu = 209;
 
-// System menu item: Always on top (the original's menu 143, id 32771, which
-// nothing in the kit loaded).
-constexpr unsigned kSysCommandOnTop = 0x0020;
 
 } // namespace score

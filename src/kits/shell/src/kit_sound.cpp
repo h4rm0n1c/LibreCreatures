@@ -1,4 +1,4 @@
-// Classic-look sound through DirectSound.  See kit_sound.hpp.
+// Kit sound through DirectSound.  See kit_sound.hpp.
 
 #include "c1kitshell/kit_sound.hpp"
 
@@ -30,9 +30,40 @@ unsigned read32(const std::vector<unsigned char>& b, size_t at) {
     return b[at] | (b[at + 1] << 8) | (b[at + 2] << 16) | (unsigned(b[at + 3]) << 24);
 }
 
+bool g_muted = false;
+int g_volume_offset = 0;
+std::vector<KitSound*>& open_sounds() {
+    static std::vector<KitSound*> sounds;
+    return sounds;
+}
+
 } // namespace
 
+void KitSound::set_muted(bool muted) {
+    g_muted = muted;
+    if (muted) {
+        for (KitSound* sound : open_sounds()) {
+            sound->stop_all();
+        }
+    }
+}
+
+bool KitSound::muted() {
+    return g_muted;
+}
+
+void KitSound::set_volume_offset(int hundredths_of_db) {
+    g_volume_offset = hundredths_of_db;
+}
+
 KitSound::~KitSound() {
+    std::vector<KitSound*>& sounds = open_sounds();
+    for (size_t i = 0; i < sounds.size(); ++i) {
+        if (sounds[i] == this) {
+            sounds.erase(sounds.begin() + static_cast<std::ptrdiff_t>(i));
+            break;
+        }
+    }
     stop_all();
     if (device_ != nullptr) {
         device_->Release();
@@ -48,6 +79,7 @@ bool KitSound::open(HWND window) {
         return false;
     }
     device_->SetCooperativeLevel(window, DSSCL_NORMAL);
+    open_sounds().push_back(this);
     return true;
 }
 
@@ -92,7 +124,7 @@ void KitSound::release_finished() {
 
 int KitSound::play(const std::string& name, bool loop, int volume, int pan) {
     const auto found = clips_.find(name);
-    if (device_ == nullptr || found == clips_.end()) {
+    if (device_ == nullptr || found == clips_.end() || g_muted) {
         return -1;
     }
     release_finished();
@@ -116,7 +148,8 @@ int KitSound::play(const std::string& name, bool loop, int volume, int pan) {
         if (second != nullptr) std::memcpy(second, clip.data.data() + first_bytes, second_bytes);
         buffer->Unlock(first, first_bytes, second, second_bytes);
     }
-    buffer->SetVolume(volume);
+    const int offset_volume = volume + g_volume_offset;
+    buffer->SetVolume(offset_volume < DSBVOLUME_MIN ? DSBVOLUME_MIN : offset_volume);
     buffer->SetPan(pan);
     buffer->Play(0, 0, loop ? DSBPLAY_LOOPING : 0);
     for (size_t i = 0; i < channels_.size(); ++i) {

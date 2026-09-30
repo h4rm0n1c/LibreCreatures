@@ -81,7 +81,6 @@ BEGIN_MESSAGE_MAP(OwnerSheet, c1kitshell::KitSheet)
     ON_WM_SIZE()
     ON_WM_CLOSE()
     ON_WM_DESTROY()
-    ON_WM_SYSCOMMAND()
 END_MESSAGE_MAP()
 
 // The original opened on a cover page (a key) and played sound; neither is
@@ -150,15 +149,10 @@ int OwnerSheet::OnCreate(LPCREATESTRUCT create) {
 
 BOOL OwnerSheet::OnInitDialog() {
     const BOOL result = c1kitshell::KitSheet::OnInitDialog();
-    if (classic_) {
-        enable_ambience(registry_, kAmbience, kAmbienceVolume);
-    } else {
+    if (!classic_) {
         enable_resizing(CSize(kDefaultPageWidthDlu, kDefaultPageHeightDlu));
-    }
-    if (CMenu* menu = GetSystemMenu(FALSE)) {
-        menu->AppendMenu(MF_SEPARATOR);
-        menu->AppendMenu(MF_STRING, kSysCommandOnTop, _T("Always on &top"));
-    }
+    }    install_options(registry_, classic_ != nullptr);
+    enable_ambience(kAmbience, kAmbienceVolume);
     load_preferences();
     return result;
 }
@@ -180,7 +174,6 @@ void OwnerSheet::load_preferences() {
                                 &location, sizeof(location))) {
         location = {0x100, 0x80};
     }
-    registry_->read_dword(c1kit::SettingsScope::user, "On Top", always_on_top_);
     registry_->read_dword(c1kit::SettingsScope::user, "Photo", saved_photo_);
     // "Page" counts the original's cover as page 0 (the key is shared), as
     // the pages do in the classic look, which has the cover.
@@ -189,13 +182,9 @@ void OwnerSheet::load_preferences() {
     saved_page_ = classic_ ? static_cast<int>(page) : page > 0 ? static_cast<int>(page) - 1 : 0;
     const int left = location.left < max_left ? location.left : max_left;
     const int top = location.top < max_top ? location.top : max_top;
-    SetWindowPos(always_on_top_ != 0 ? &wndTopMost : &wndNoTopMost,
+    SetWindowPos(always_on_top() ? &wndTopMost : &wndNoTopMost,
                  left < 0 ? 0 : left, top < 0 ? 0 : top, 0, 0,
                  SWP_NOSIZE | SWP_SHOWWINDOW);
-    if (CMenu* menu = GetSystemMenu(FALSE)) {
-        menu->CheckMenuItem(kSysCommandOnTop,
-                            always_on_top_ != 0 ? MF_CHECKED : MF_UNCHECKED);
-    }
     SetTimer(kTimerStartup, kStartupDelayMs, nullptr);
 }
 
@@ -213,7 +202,6 @@ void OwnerSheet::save_preferences() {
     if (!classic_) {
         registry_->write_binary("Size", &size, sizeof(size));  // the classic window is fixed
     }
-    registry_->write_dword("On Top", always_on_top_);
     registry_->write_dword("Page",
                            static_cast<std::uint32_t>(GetActiveIndex() + (classic_ ? 0 : 1)));
     registry_->write_dword("Photo", static_cast<std::uint32_t>(selected_photo_));
@@ -532,26 +520,10 @@ void OwnerSheet::OnSize(UINT type, int cx, int cy) {
     }
 }
 
-void OwnerSheet::set_always_on_top(bool on) {
-    always_on_top_ = on ? 1 : 0;
-    SetWindowPos(on ? &wndTopMost : &wndNoTopMost, 0, 0, 0, 0,
-                 SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-    if (CMenu* menu = GetSystemMenu(FALSE)) {
-        menu->CheckMenuItem(kSysCommandOnTop, on ? MF_CHECKED : MF_UNCHECKED);
-    }
+void OwnerSheet::before_skin_change() {
+    save_preferences();
 }
 
-// Fix (bug 9): "Always on top" on the system menu; the original's menu for
-// it was never loaded.
-void OwnerSheet::OnSysCommand(UINT id, LPARAM lparam) {
-    if ((id & 0xfff0) == kSysCommandOnTop) {
-        set_always_on_top(always_on_top_ == 0);
-        return;
-    }
-    c1kitshell::KitSheet::OnSysCommand(id, lparam);
-}
-
-// Save before "app: quit", during which the game may terminate the kit.
 void OwnerSheet::before_game_quit() {
     album_page_.commit_caption();
     save_preferences();
