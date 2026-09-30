@@ -358,7 +358,9 @@ void WorldRenderer::collect_scene(const world::WorldRect& render_rect,
             continue;
         }
         const Gallery* gallery = entity->gallery();
-        const std::size_t image_index = entity->current_image_index();
+        // The drawn frame (neorender: a falling object may still show the
+        // frame it was carried in; see Entity::drawn_image_index).
+        const std::size_t image_index = entity->drawn_image_index();
         // Gallery allocates exactly image_count entries; equality is invalid.
 
         int relative_x = entity->world_x() - render_rect.min_x;
@@ -423,7 +425,7 @@ void WorldRenderer::collect_scene(const world::WorldRect& render_rect,
             continue;
         }
         items.push_back({const_cast<Gallery*>(entity->gallery()),
-                         entity->current_image_index(), entity->world_x(),
+                         entity->drawn_image_index(), entity->world_x(),
                          entity->world_y(), false, entity});
     }
 
