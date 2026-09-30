@@ -57,7 +57,7 @@ public:
     void serialize(objects::ObjectArchive& archive);
 
     std::uint32_t classifier = kEggClassifier;
-    std::uint32_t sex = 1;  // obv1: 1 male, 2 female
+    std::uint32_t sex = 1;  // obv1: 1 male, 2 female, 0 chosen at hatching
     std::unique_ptr<Genome> genome;
 };
 

@@ -62,8 +62,10 @@ bool Egg::is_well_formed_file(const std::uint8_t* bytes, std::size_t size) {
         !is_egg_classifier(read_u32(bytes + kClassifierOffset))) {
         return false;
     }
+    // 0 is a laid egg's: the world's laying script leaves obv1 0 and
+    // `new: crea obv0 obv1` picks the sex when it hatches.
     const std::uint32_t sex = read_u32(bytes + kSexOffset);
-    if (sex != 1 && sex != 2) {
+    if (sex > 2) {
         return false;
     }
     // The genome size must account for the rest of the file exactly, and
