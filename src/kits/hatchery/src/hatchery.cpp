@@ -594,6 +594,8 @@ int HatcherySheet::OnCreate(LPCREATESTRUCT create) {
     if (registry_ == nullptr || !registry_->is_open()) {
         return -1;
     }
+    // New eggs' sexes and Scramble Eggs' parents.
+    std::srand(static_cast<unsigned>(std::time(nullptr)));
     // The nest: the 1996 value, or six new eggs when there is none
     // (InitializeEggstraPattern @ 0x004045b0 regenerated it then too).
     char pattern[16] = {};
@@ -601,6 +603,7 @@ int HatcherySheet::OnCreate(LPCREATESTRUCT create) {
         !c1kit::parse_nest(pattern, nest_)) {
         refill();
     }
+    registry_->read_dword(c1kit::SettingsScope::user, "Scramble Eggs", scramble_eggs_);
     return 0;
 }
 
@@ -675,11 +678,6 @@ void HatcherySheet::save_nest() {
 }
 
 void HatcherySheet::refill() {
-    static bool seeded = false;
-    if (!seeded) {
-        std::srand(static_cast<unsigned>(std::time(nullptr)));
-        seeded = true;
-    }
     nest_ = c1kit::fresh_nest(static_cast<std::uint32_t>(std::rand()));
     save_nest();
 }
@@ -698,7 +696,12 @@ bool HatcherySheet::hatch(int slot, CString& why) {
         return false;
     }
     const bool female = nest_.eggs[slot] == c1kit::EggState::female;
-    if (!c1kit::execute_scheduled(*game, c1kit::hatch_script(slot, female).c_str(), false)) {
+    int mum = slot + 1, dad = slot + 1;
+    if (scramble_eggs_ != 0) {
+        c1kit::scrambled_parents(static_cast<std::uint32_t>(std::rand()), mum, dad);
+    }
+    if (!c1kit::execute_scheduled(*game, c1kit::hatch_script(slot, female, mum, dad).c_str(),
+                                  false)) {
         why = _T("The game did not take the egg.");
         return false;
     }
@@ -780,9 +783,19 @@ void HatcherySheet::OnInitMenuPopup(CMenu* menu, UINT index, BOOL system_menu) {
 
 void HatcherySheet::add_kit_options(CMenu& options) {
     options.AppendMenu(MF_STRING, kOptionRefill, _T("&Refill the nest"));
+    // Not in the 1996 kit: each egg crosses a random mum and dad, never the
+    // pair with the same number.
+    options.AppendMenu(MF_STRING | (scramble_eggs_ != 0 ? MF_CHECKED : 0), kOptionScramble,
+                       _T("&Scramble Eggs"));
 }
 
 bool HatcherySheet::on_kit_option(UINT id) {
+    if (id == kOptionScramble) {
+        scramble_eggs_ = scramble_eggs_ != 0 ? 0 : 1;
+        registry_->write_dword("Scramble Eggs", scramble_eggs_);
+        check_kit_option(kOptionScramble, scramble_eggs_ != 0);
+        return true;
+    }
     if (id != kOptionRefill) {
         return false;
     }

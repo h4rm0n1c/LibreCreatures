@@ -74,12 +74,31 @@ inline Nest fresh_nest(std::uint32_t random) {
 // object, cross its parents' genomes, set its sex (obv1: 1 male, 2 female),
 // start its hatching timer and move it into the incubator, slot by slot.
 // Run on a scheduler (mode 0) holder, with ExecuteMacro.
-inline std::string hatch_script(int slot, bool female) {
-    const std::string parent = std::to_string(slot + 1);
+// `mum` and `dad` (1 to 6) name the genomes crossed, mum<n>.gen and
+// dad<n>.gen in the game's Genetics folder; the 1996 kit always crossed the
+// slot's own pair.
+inline std::string hatch_script(int slot, bool female, int mum, int dad) {
     return "inst,sys: wtop,sys: cmra 2223 724,new: simp eggs 8 " + std::to_string(slot * 8) +
-           " 2000 0,pose 3,setv clas 33882624,setv attr 67,new: gene tokn mum" + parent +
-           " tokn dad" + parent + " obv0,setv obv1 " + (female ? "2" : "1") +
-           ",tick 2400,dde: hatc,mvto " + std::to_string(slot * 40 + 2408) + " 870";
+           " 2000 0,pose 3,setv clas 33882624,setv attr 67,new: gene tokn mum" +
+           std::to_string(mum) + " tokn dad" + std::to_string(dad) + " obv0,setv obv1 " +
+           (female ? "2" : "1") + ",tick 2400,dde: hatc,mvto " +
+           std::to_string(slot * 40 + 2408) + " 870";
+}
+
+inline std::string hatch_script(int slot, bool female) {
+    return hatch_script(slot, female, slot + 1, slot + 1);
+}
+
+// Options > Scramble Eggs: any mum with any dad of the six, except the two
+// with the same number (the nest's own pairs), each of the 30 pairs equally
+// likely.  `random` is any random number.
+inline void scrambled_parents(std::uint32_t random, int& mum, int& dad) {
+    const std::uint32_t pair = random % (kEggCount * (kEggCount - 1));
+    mum = static_cast<int>(pair / (kEggCount - 1)) + 1;
+    dad = static_cast<int>(pair % (kEggCount - 1)) + 1;
+    if (dad >= mum) {
+        ++dad;
+    }
 }
 
 } // namespace c1kit
