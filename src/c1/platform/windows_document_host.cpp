@@ -710,10 +710,35 @@ bool C1WindowsDocument::open_framework_document( creatures1::application::Docume
     try {
         const BOOL result = CDocument::OnOpenDocument(native_path);
         framework_opening_ = false;
+        if (result != FALSE) {
+            repair_world_data();
+        }
         return result != FALSE;
     } catch (...) {
         framework_opening_ = false;
         throw;
+    }
+}
+
+void C1WindowsDocument::repair_world_data() {
+    // LibreCreatures deviation: a fix to the shipped world data, made on
+    // every load.  The stock World.sfc and Eden.sfc give Ocean Dome Sound
+    // (2 8 15, the dome's invisible sound emitter) attr 64, without the
+    // "creatures cannot see it" flag (16) that every other silent helper
+    // has (the cave sounds, the empty objects: attr 80).  Filed as a vendor
+    // and seen, it drew hungry norns into the dome, where it feeds no one
+    // and the only way out is the lift.
+    constexpr std::uint32_t kOceanDomeSound = 0x02080f00;
+    constexpr std::uint8_t kInvisibleToCreatures = 0x10;
+    for (std::size_t index = 0; index < object_count(); ++index) {
+        creatures1::objects::Object* object = object_at(index);
+        if (object != nullptr &&
+            (object->classifier_base() & 0xffffff00u) == kOceanDomeSound &&
+            !object->has_bounds_flag(kInvisibleToCreatures)) {
+            // As CAOS `setv attr` sets it.
+            object->set_bounds_flags_for_script(object->script_bounds_flags() |
+                                                kInvisibleToCreatures);
+        }
     }
 }
 

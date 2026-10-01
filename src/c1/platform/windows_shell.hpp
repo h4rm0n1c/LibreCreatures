@@ -1611,6 +1611,8 @@ private:
     // per-world fallback even if the process registry still names another
     // world. Primary resources remain install-owned and read-only.
     std::string secondary_resource_directory(std::size_t index) const;
+    // Not native: fixes to the shipped world data, after every load.
+    void repair_world_data();
 
     static constexpr std::size_t kMainDirectoryIndex = 0;
     static constexpr std::size_t kGeneticsDirectoryIndex = 5;
