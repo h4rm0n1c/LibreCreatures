@@ -5,6 +5,7 @@
 //
 // Reference: external/creaturesstructs/Creatures1/kit-protocol/README.md.
 
+#include <cctype>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
@@ -187,6 +188,50 @@ struct OverviewRecord {
         return fields[field];
     }
 };
+
+// Not in the 1996 kit: the order of two Observation cells when the list is
+// sorted by a column.  A number ("12", an age "1:05" as minutes, a life
+// force "77%") sorts by value, after any word ("Dead", "N/A", "No");
+// words sort alphabetically, ignoring case.  Negative, zero or positive.
+inline int compare_overview_cells(const std::string& a, const std::string& b) {
+    // The value of "h:mm", "NN%" or "NN"; false for anything else.
+    const auto number = [](const std::string& text, long& value) {
+        if (text.empty() || text[0] < '0' || text[0] > '9') {
+            return false;
+        }
+        char* end = nullptr;
+        value = std::strtol(text.c_str(), &end, 10);
+        if (*end == ':') {
+            char* minutes_end = nullptr;
+            value = value * 60 + std::strtol(end + 1, &minutes_end, 10);
+            end = minutes_end;
+        }
+        if (*end == '%') {
+            ++end;
+        }
+        return *end == '\0';
+    };
+    long a_value = 0;
+    long b_value = 0;
+    const bool a_number = number(a, a_value);
+    const bool b_number = number(b, b_value);
+    if (a_number != b_number) {
+        return a_number ? 1 : -1;
+    }
+    if (a_number) {
+        return a_value < b_value ? -1 : a_value > b_value ? 1 : 0;
+    }
+    for (std::size_t i = 0;; ++i) {
+        const int ca = i < a.size() ? std::tolower(static_cast<unsigned char>(a[i])) : -1;
+        const int cb = i < b.size() ? std::tolower(static_cast<unsigned char>(b[i])) : -1;
+        if (ca != cb) {
+            return ca < cb ? -1 : 1;
+        }
+        if (ca == -1) {
+            return 0;
+        }
+    }
+}
 
 // Parses at most `max_records` records, reading the first eight fields of
 // each, exactly as Observation's LoadOverviewData @ 0x004055f0 does: it stops

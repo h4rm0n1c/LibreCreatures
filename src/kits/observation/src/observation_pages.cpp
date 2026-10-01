@@ -77,6 +77,7 @@ CString sex_text(const std::string& field) {
 
 BEGIN_MESSAGE_MAP(OverviewPage, CPropertyPage)
     ON_WM_SIZE()
+    ON_NOTIFY(LVN_COLUMNCLICK, kControlOverviewList, &OverviewPage::OnColumnClick)
 END_MESSAGE_MAP()
 
 OverviewPage::OverviewPage(ObservationSheet& sheet)
@@ -123,11 +124,23 @@ BOOL OverviewPage::OnInitDialog() {
         ++subitem;
     }
 
+    if (c1kit::KitSettings* registry = sheet_.registry()) {
+        std::uint32_t column = 0;
+        std::uint32_t descending = 0;
+        if (registry->read_dword(c1kit::SettingsScope::user, "Sort Column", column) &&
+            column >= 1 && column <= 7) {
+            sort_column_ = static_cast<int>(column) - 1;  // 0 is "none"
+        }
+        registry->read_dword(c1kit::SettingsScope::user, "Sort Descending", descending);
+        sort_descending_ = descending != 0;
+    }
+
     anchors_.capture(*this);
     anchors_.add(*this, kControlOverviewList,
                  c1kitshell::ControlAnchors::kGrowX |
                      c1kitshell::ControlAnchors::kGrowY);
     show(sheet_.records(), sheet_.settings());
+    show_sort_arrow();
     fit_last_column();
     return TRUE;
 }
@@ -188,6 +201,60 @@ void OverviewPage::show(const std::vector<c1kit::OverviewRecord>& records,
         if (!reported) {
             list_.DeleteItem(item);
         }
+    }
+    sort_rows();
+}
+
+void OverviewPage::OnColumnClick(NMHDR* header, LRESULT* result) {
+    const int column = reinterpret_cast<NMLISTVIEW*>(header)->iSubItem;
+    sort_descending_ = column == sort_column_ && !sort_descending_;
+    sort_column_ = column;
+    if (c1kit::KitSettings* registry = sheet_.registry()) {
+        registry->write_dword("Sort Column", static_cast<std::uint32_t>(sort_column_ + 1));
+        registry->write_dword("Sort Descending", sort_descending_ ? 1 : 0);
+    }
+    sort_rows();
+    show_sort_arrow();
+    *result = 0;
+}
+
+// Rows by the sort column's cells (c1kit::compare_overview_cells), equal
+// ones by name; the list keeps its order between polls otherwise, since
+// rows are updated in place and new ones added at the end.
+void OverviewPage::sort_rows() {
+    if (sort_column_ >= 0 && list_.GetSafeHwnd() != nullptr) {
+        list_.SortItemsEx(&OverviewPage::compare_rows, reinterpret_cast<DWORD_PTR>(this));
+    }
+}
+
+int CALLBACK OverviewPage::compare_rows(LPARAM first, LPARAM second, LPARAM page) {
+    const OverviewPage& self = *reinterpret_cast<const OverviewPage*>(page);
+    const auto cell = [&self](LPARAM row, int column) {
+        return std::string(CStringA(self.list_.GetItemText(static_cast<int>(row), column)));
+    };
+    int order = c1kit::compare_overview_cells(cell(first, self.sort_column_),
+                                              cell(second, self.sort_column_));
+    if (order == 0) {
+        order = c1kit::compare_overview_cells(cell(first, 0), cell(second, 0));
+    }
+    return self.sort_descending_ ? -order : order;
+}
+
+// The header's arrow on the sorted column.
+void OverviewPage::show_sort_arrow() {
+    CHeaderCtrl* header = list_.GetSafeHwnd() != nullptr ? list_.GetHeaderCtrl() : nullptr;
+    if (header == nullptr) {
+        return;
+    }
+    for (int column = 0; column < header->GetItemCount(); ++column) {
+        HDITEM item = {};
+        item.mask = HDI_FORMAT;
+        header->GetItem(column, &item);
+        item.fmt &= ~(HDF_SORTUP | HDF_SORTDOWN);
+        if (column == sort_column_) {
+            item.fmt |= sort_descending_ ? HDF_SORTDOWN : HDF_SORTUP;
+        }
+        header->SetItem(column, &item);
     }
 }
 

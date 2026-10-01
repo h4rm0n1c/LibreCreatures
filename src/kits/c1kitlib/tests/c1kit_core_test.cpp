@@ -221,6 +221,22 @@ void test_create_failure() {
 
 } // namespace
 
+void test_overview_sort_order() {
+    // Ages by minutes, not as text: 0:59 before 1:05 before 10:00.
+    assert(compare_overview_cells("0:59", "1:05") < 0);
+    assert(compare_overview_cells("10:00", "9:59") > 0);
+    // Life force by value, "Dead" first.
+    assert(compare_overview_cells("9%", "77%") < 0);
+    assert(compare_overview_cells("Dead", "3%") < 0);
+    assert(compare_overview_cells("100%", "100%") == 0);
+    // Words alphabetically, ignoring case; words before numbers.
+    assert(compare_overview_cells("alice", "Bob") < 0);
+    assert(compare_overview_cells("N/A", "No") < 0);
+    assert(compare_overview_cells("No", "2") < 0);
+    assert(compare_overview_cells("Bo", "Bob") < 0);
+    assert(compare_overview_cells("", "a") < 0);
+}
+
 int main() {
     test_communicate();
     test_launch_args();
@@ -232,6 +248,7 @@ int main() {
     test_quit_keeps_holder();
     test_reused_holder();
     test_create_failure();
+    test_overview_sort_order();
     std::puts("c1kit core tests passed");
     return 0;
 }
