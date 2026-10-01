@@ -325,6 +325,8 @@ public:
 
     void activate_frame_native(int show_command);
     void ActivateFrame(int show_command) override;
+    // Not native: the "Maximised" value saved beside WindowPosn.
+    bool saved_window_maximised() const;
 
 protected:
     BOOL PreCreateWindow(CREATESTRUCT& create_struct) override;
@@ -525,6 +527,8 @@ private:
     private:
         C1MainFrame& frame_;
     };
+
+    bool first_activation_done_ = false;
 
     std::unique_ptr<creatures1::application::CMainFrame> frame_policy_;
     C1MainToolBar main_toolbar_;
