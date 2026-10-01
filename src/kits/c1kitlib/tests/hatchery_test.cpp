@@ -48,6 +48,21 @@ int main() {
     assert(hatch_script(5, false).find("tokn mum6 tokn dad6") != std::string::npos);
     assert(hatch_script(5, false).find("setv obv1 1,") != std::string::npos);
     assert(hatch_script(5, false).find("mvto 2608 870") != std::string::npos);
+    assert(hatch_script(2, true, 4, 1).find("tokn mum4 tokn dad1") != std::string::npos);
+    assert(hatch_script(2, true, 4, 1).find("simp eggs 8 16 ") != std::string::npos);
+    // Scrambled pairs: never the same number, and all 30 others reachable.
+    int seen[kEggCount + 1][kEggCount + 1] = {};
+    for (std::uint32_t random = 0; random < 300; ++random) {
+        int mum = 0, dad = 0;
+        scrambled_parents(random, mum, dad);
+        assert(mum >= 1 && mum <= kEggCount && dad >= 1 && dad <= kEggCount && mum != dad);
+        ++seen[mum][dad];
+    }
+    for (int mum = 1; mum <= kEggCount; ++mum) {
+        for (int dad = 1; dad <= kEggCount; ++dad) {
+            assert((seen[mum][dad] == 10) == (mum != dad));
+        }
+    }
     std::puts("hatchery_test: all passed");
     return 0;
 }

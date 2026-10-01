@@ -178,6 +178,8 @@ private:
     CMenu classic_menu_;
     c1kit::KitSettings* registry_ = nullptr;
     c1kit::Nest nest_;
+    // Options > Scramble Eggs (saved as "Scramble Eggs").
+    std::uint32_t scramble_eggs_ = 0;
     bool connected_ = false;
 };
 
