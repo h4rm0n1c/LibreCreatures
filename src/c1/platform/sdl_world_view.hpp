@@ -72,10 +72,13 @@ private:
         std::size_t index;
         display::ImageTier tier;
         bool opaque;
+        bool text_overlay;  // the image's text overlay (Image::text_overlay)
         bool operator<(const TextureKey& other) const {
-            return std::tie(image, file, first_record, index, tier, opaque) <
+            return std::tie(image, file, first_record, index, tier, opaque,
+                            text_overlay) <
                    std::tie(other.image, other.file, other.first_record,
-                            other.index, other.tier, other.opaque);
+                            other.index, other.tier, other.opaque,
+                            other.text_overlay);
         }
     };
     struct CachedTexture {
@@ -89,6 +92,9 @@ private:
     SDL_Texture* texture_for(C1WindowsDocument& document,
                              display::Gallery& gallery, std::size_t index,
                              display::ImageTier tier, bool opaque);
+    SDL_Texture* text_overlay_texture_for(C1WindowsDocument& document,
+                                          display::Gallery& gallery,
+                                          std::size_t index);
     SDL_Texture* upload(const std::uint8_t* rgba, int width, int height,
                         std::size_t& bytes);
     void evict_to_budget();

@@ -79,6 +79,11 @@ public:
     virtual std::uint8_t* current_image_pixels(Entity& entity,
                                                 int& out_width,
                                                 int& out_height) = 0;
+    // Not native (neorender): the current image's text overlay (see
+    // Image::text_overlay), the same size as its pixels; null for none.
+    virtual std::uint8_t* current_image_text_overlay(Entity& /*entity*/) {
+        return nullptr;
+    }
     virtual const std::uint8_t* charset_glyph_rows(
         std::uint8_t character_code) const = 0;
     virtual int charset_glyph_advance_width(

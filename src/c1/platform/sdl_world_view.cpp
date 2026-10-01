@@ -184,7 +184,8 @@ SDL_Texture* SdlWorldView::texture_for(C1WindowsDocument& document,
                                        display::ImageTier tier, bool opaque) {
     display::Image& image = gallery.images[index];
     const TextureKey key{&image, gallery.sprite_file_id,
-                         gallery.header_record_index, index, tier, opaque};
+                         gallery.header_record_index, index, tier, opaque,
+                         false};
     auto found = textures_.find(key);
     if (found != textures_.end()) {
         if (found->second.content_serial == image.content_serial() &&
@@ -241,6 +242,59 @@ SDL_Texture* SdlWorldView::texture_for(C1WindowsDocument& document,
     }
     SDL_SetTextureBlendMode(cached.texture,
                             opaque ? SDL_BLENDMODE_NONE : SDL_BLENDMODE_BLEND);
+    texture_bytes_ += cached.bytes;
+    SDL_Texture* texture = cached.texture;
+    textures_.emplace(key, cached);
+    return texture;
+}
+
+// The text the game wrote over an image (Image::text_overlay), for drawing
+// over its S32 art: the overlay's pixels in the game's palette, 0 clear.
+SDL_Texture* SdlWorldView::text_overlay_texture_for(C1WindowsDocument& document,
+                                                    display::Gallery& gallery,
+                                                    std::size_t index) {
+    display::Image& image = gallery.images[index];
+    const std::uint8_t* overlay = image.text_overlay_if_any();
+    const int width = image.width();
+    const int height = image.height();
+    if (overlay == nullptr || width <= 0 || height <= 0) {
+        return nullptr;
+    }
+    const TextureKey key{&image, gallery.sprite_file_id,
+                         gallery.header_record_index, index,
+                         display::ImageTier::spr, false, true};
+    auto found = textures_.find(key);
+    if (found != textures_.end()) {
+        if (found->second.content_serial == image.content_serial() &&
+            found->second.pixel_version == image.pixel_version()) {
+            found->second.last_used = frame_number_;
+            return found->second.texture;
+        }
+        SDL_DestroyTexture(found->second.texture);
+        texture_bytes_ -= found->second.bytes;
+        textures_.erase(found);
+    }
+    CachedTexture cached;
+    cached.pixel_version = image.pixel_version();
+    cached.content_serial = image.content_serial();
+    cached.last_used = frame_number_;
+    const auto& palette = document.frame_palette();
+    scratch_rgba_.resize(static_cast<std::size_t>(width) * height * 4u);
+    std::uint8_t* out = scratch_rgba_.data();
+    for (std::size_t i = 0, n = static_cast<std::size_t>(width) * height; i < n;
+         ++i, out += 4) {
+        const display::FrameColour& colour = palette[overlay[i]];
+        out[0] = colour.red;
+        out[1] = colour.green;
+        out[2] = colour.blue;
+        out[3] = overlay[i] == 0 ? 0 : 255;
+    }
+    cached.texture = upload(scratch_rgba_.data(), width, height, cached.bytes);
+    if (cached.texture == nullptr) {
+        return nullptr;
+    }
+    SDL_SetTextureBlendMode(cached.texture, SDL_BLENDMODE_BLEND);
+    SDL_SetTextureScaleMode(cached.texture, SDL_SCALEMODE_NEAREST);
     texture_bytes_ += cached.bytes;
     SDL_Texture* texture = cached.texture;
     textures_.emplace(key, cached);
@@ -315,6 +369,14 @@ void SdlWorldView::render_frame(C1WindowsDocument& document,
             std::round(static_cast<float>(x + width) * zoom) - left,
             std::round(static_cast<float>(y + height) * zoom) - top};
         SDL_RenderTexture(renderer_, texture, nullptr, &destination);
+        // Text the game wrote over S32 art (a blackboard's words) goes on
+        // top; the 1x pixels already carry it.
+        if (tier != display::ImageTier::spr) {
+            if (SDL_Texture* text =
+                    text_overlay_texture_for(document, *gallery, item.image_index)) {
+                SDL_RenderTexture(renderer_, text, nullptr, &destination);
+            }
+        }
     }
 
     if (debug_highlight != nullptr && debug_highlight->max_x != 0) {

@@ -56,6 +56,16 @@ void Image::configure(Gallery* gallery,
     resident_cache_ = nullptr;
     lru_position_valid_ = false;
     pixel_data_.reset();
+    text_overlay_.reset();
+}
+
+std::uint8_t* Image::text_overlay() {
+    if (text_overlay_ == nullptr && width_ > 0 && height_ > 0) {
+        const std::size_t count =
+            static_cast<std::size_t>(width_) * static_cast<std::size_t>(height_);
+        text_overlay_.reset(new std::uint8_t[count]());
+    }
+    return text_overlay_.get();
 }
 
 void Image::release_pixel_data(PixelCacheState& cache) {

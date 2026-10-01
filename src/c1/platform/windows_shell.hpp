@@ -1234,6 +1234,8 @@ public:
     std::uint8_t* current_image_pixels(creatures1::objects::Entity& entity,
                                        int& out_width,
                                        int& out_height) override;
+    std::uint8_t* current_image_text_overlay(
+        creatures1::objects::Entity& entity) override;
     void preload_image(const creatures1::display::Image& image) override;
     const std::uint8_t* charset_glyph_rows(
         std::uint8_t character_code) const override;

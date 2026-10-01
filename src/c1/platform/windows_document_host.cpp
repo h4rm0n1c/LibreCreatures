@@ -3198,12 +3198,22 @@ std::uint8_t* C1WindowsDocument::current_image_pixels(
     if (pixels == nullptr) {
         return nullptr;
     }
-    // Both callers write into these pixels (fills and text), so the image
-    // now differs from its sprite file and stays drawn from 1x pixels.
-    image.mark_pixels_changed();
+    // Both callers write into these pixels (fills and text); the text also
+    // goes to the image's overlay, so S32 art still draws under it.
+    image.mark_text_changed();
     out_width = image.width();
     out_height = image.height();
     return pixels;
+}
+
+std::uint8_t* C1WindowsDocument::current_image_text_overlay(
+    creatures1::objects::Entity& entity) {
+    creatures1::display::Gallery* gallery = entity.gallery();
+    if (gallery == nullptr || gallery->images == nullptr ||
+        entity.current_image_index() >= gallery->image_count) {
+        return nullptr;
+    }
+    return gallery->images[entity.current_image_index()].text_overlay();
 }
 
 void C1WindowsDocument::preload_image(

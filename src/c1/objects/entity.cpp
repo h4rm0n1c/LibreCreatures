@@ -185,10 +185,17 @@ void Entity::fill_current_image_rect(std::uint8_t palette_index,
         return;
     }
 
+    std::uint8_t* overlay = raster.current_image_text_overlay(*this);
     for (int y = min_y; y < max_y; ++y) {
         std::uint8_t* row = pixels + y * image_width;
         for (int x = min_x; x < max_x; ++x) {
             row[x] = palette_index;
+        }
+        if (overlay != nullptr) {
+            std::uint8_t* overlay_row = overlay + y * image_width;
+            for (int x = min_x; x < max_x; ++x) {
+                overlay_row[x] = 0;  // a fill is the picture's own ground
+            }
         }
     }
 }
@@ -208,6 +215,7 @@ void Entity::draw_text_to_current_image(int pixel_x, int pixel_y,
         return;
     }
 
+    std::uint8_t* overlay = raster.current_image_text_overlay(*this);
     const std::array<std::uint8_t, 3> palette = {
         palette_index_0, palette_index_1, palette_index_2};
     const int line_start_x = pixel_x;
@@ -228,6 +236,16 @@ void Entity::draw_text_to_current_image(int pixel_x, int pixel_y,
                     pixels + (pixel_y + row) * image_width + pixel_x;
                 for (int column = 0; column < 6; ++column) {
                     destination[column] = palette[glyph[row * 6 + column]];
+                }
+                if (overlay != nullptr) {
+                    // The glyph's ground (0) is the picture's own; its ink
+                    // and shadow go over whatever art is drawn.
+                    std::uint8_t* overlay_row =
+                        overlay + (pixel_y + row) * image_width + pixel_x;
+                    for (int column = 0; column < 6; ++column) {
+                        const std::uint8_t shade = glyph[row * 6 + column];
+                        overlay_row[column] = shade == 0 ? 0 : palette[shade];
+                    }
                 }
             }
         }

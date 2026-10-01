@@ -101,15 +101,23 @@ public:
                    std::uint32_t sprite_data_offset,
                    std::uint8_t cache_flags = 0);
 
-    // Not native (neorender): the game changed these pixels while running
-    // -- a creature's pigment remap, speech or blackboard text, a fill.  The
-    // version lets a renderer's texture cache notice; the flag keeps such an
-    // image drawn from its own 1x indexed pixels, never from S32 art.
+    // Not native (neorender): the game recoloured these pixels while running
+    // (a creature's pigment remap).  The version lets a renderer's texture
+    // cache notice; the flag keeps such an image drawn from its own 1x
+    // indexed pixels, never from S32 art.  Text goes to the overlay below.
     void mark_pixels_changed() {
         ++pixel_version_;
         runtime_drawn_ = true;
     }
     std::uint32_t pixel_version() const { return pixel_version_; }
+    // Not native (neorender): text the game wrote (blackboard words, speech)
+    // over a picture that may have S32 art.  The 1x pixels take the text as
+    // ever; the overlay holds only the text's own pixels (0 is clear), so a
+    // renderer can draw it over the S32 art instead of falling back to 1x.
+    // Fills clear it.  Same size as the 1x image; made on first use.
+    std::uint8_t* text_overlay();
+    const std::uint8_t* text_overlay_if_any() const { return text_overlay_.get(); }
+    void mark_text_changed() { ++pixel_version_; }
     // Not native (neorender): different for every configure(), so a texture
     // cache keyed by the image's address can tell a new picture from the
     // old one.  A creature's body gallery is rebuilt under the same file
@@ -149,6 +157,7 @@ private:
     std::uint32_t pixel_version_ = 0;
     std::uint64_t content_serial_ = 0;
     bool runtime_drawn_ = false;
+    std::unique_ptr<std::uint8_t[]> text_overlay_;
 };
 
 // A gallery owns the fixed Image array described by the C1 sprite metadata
