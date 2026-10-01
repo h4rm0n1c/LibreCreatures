@@ -79,6 +79,13 @@ std::string C1MainFrame::forward_default_message(
 creatures1::application::MainFrameWindowRect C1MainFrame::window_rect() const {
     RECT native_rect{};
     GetWindowRect(&native_rect);
+    // Not native: maximised, the window's own size is the one it goes back
+    // to; the maximising is saved beside it (save_window_rect).
+    WINDOWPLACEMENT placement{};
+    placement.length = sizeof(placement);
+    if (IsZoomed() && GetWindowPlacement(&placement)) {
+        native_rect = placement.rcNormalPosition;
+    }
     return {native_rect.left, native_rect.top, native_rect.right,
             native_rect.bottom};
 }
@@ -333,7 +340,24 @@ void C1MainFrame::save_window_rect( const creatures1::application::MainFrameWind
     }
     const RECT native_rect{rect.left, rect.top, rect.right, rect.bottom};
     write_c1_window_rect(registry_key, native_rect);
+    // Not native: whether the window was maximised (the original saved only
+    // the rectangle, so a maximised game came back as a big normal window).
+    const DWORD maximised =
+        GetSafeHwnd() != nullptr && IsZoomed() ? 1u : 0u;
+    RegSetValueExA(registry_key, "Maximised", 0, REG_DWORD,
+                   reinterpret_cast<const BYTE*>(&maximised), sizeof(maximised));
     RegCloseKey(registry_key);
+}
+
+bool C1MainFrame::saved_window_maximised() const {
+    HKEY registry_key = nullptr;
+    if (!open_c1_secondary_registry(registry_key, KEY_READ)) {
+        return false;
+    }
+    std::uint32_t maximised = 0;
+    const bool found = read_registry_dword(registry_key, "Maximised", maximised);
+    RegCloseKey(registry_key);
+    return found && maximised != 0;
 }
 
 int C1MainFrame::minimum_window_x() const {
@@ -1025,6 +1049,15 @@ void C1MainFrame::activate_frame_native(int show_command) {
 }
 
 void C1MainFrame::ActivateFrame(int show_command) {
+    // Not native: the first showing restores a saved maximised window.
+    if (!first_activation_done_) {
+        first_activation_done_ = true;
+        if (show_command != SW_HIDE && show_command != SW_MINIMIZE &&
+            show_command != SW_SHOWMINIMIZED &&
+            show_command != SW_SHOWMINNOACTIVE && saved_window_maximised()) {
+            show_command = SW_SHOWMAXIMIZED;
+        }
+    }
     if (frame_policy_ == nullptr) {
         activate_frame_native(show_command);
         return;

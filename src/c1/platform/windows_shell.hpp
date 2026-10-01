@@ -357,6 +357,8 @@ public:
 
     void activate_frame_native(int show_command);
     void ActivateFrame(int show_command) override;
+    // Not native: the "Maximised" value saved beside WindowPosn.
+    bool saved_window_maximised() const;
 
 protected:
     BOOL PreCreateWindow(CREATESTRUCT& create_struct) override;
@@ -559,6 +561,7 @@ private:
     };
 
     void on_world_pulse();
+    bool first_activation_done_ = false;
     std::uint32_t world_clock_interval_ms_ = 0;
     double world_clock_next_tick_ms_ = 0.0;
     bool in_world_pulse_ = false;
