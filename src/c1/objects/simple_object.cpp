@@ -410,13 +410,33 @@ void SimpleObject::end_interaction_with_source(
             // holds things low), it is set on that floor rather than falling
             // through to the room beneath.
             constexpr int kDropSnapUp = 16;
+            int probe_x = old_world_x;
+            int probe_y = old_world_y + entity_->current_image_height() - kDropSnapUp;
+            // Let go of by a creature: the floor it stands on.  A norn holds
+            // things low and out in front, so near a ledge or a room's edge
+            // the object's own corner can be under the floor line or past the
+            // room's end, and it fell through to the room beneath.
+            const bool creature_drop =
+                source_object != nullptr &&
+                (source_object->classifier_base() >> 24) == 4u;
+            if (creature_drop) {
+                world::WorldRect creature_bounds{};
+                source_object->get_bounds(&creature_bounds);
+                probe_x = creature_bounds.min_x +
+                          (creature_bounds.max_x - creature_bounds.min_x) / 2;
+                probe_y = creature_bounds.max_y - kDropSnapUp;
+            }
             world::WorldRect floor_room{};
             if (has_bounds_flag(0x40u) &&
-                host.find_floor_room_below(
-                    old_world_x,
-                    old_world_y + entity_->current_image_height() - kDropSnapUp,
-                    floor_room)) {
+                host.find_floor_room_below(probe_x, probe_y, floor_room)) {
                 set_movement_bounds(floor_room);
+                if (creature_drop) {
+                    // Inside the creature's room, as near as it fits.
+                    target_world_x = std::max(
+                        floor_room.min_x,
+                        std::min(old_world_x,
+                                 floor_room.max_x - entity_->current_image_width()));
+                }
                 landing_on_floor_below = true;
                 // Falling from now on, so a sound its drop script plays below
                 // waits for the landing (see ticks_until_landing).  The
