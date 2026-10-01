@@ -153,48 +153,43 @@ void ControlAnchors::apply(CWnd& parent) const {
 std::unique_ptr<ClassicArt> ClassicArt::find(std::initializer_list<UINT> bitmaps,
                                              std::initializer_list<const TCHAR*> named_bitmaps,
                                              std::initializer_list<UINT> icons) {
+    // The original kit, renamed from <name>.exe to <name>.old, beside this
+    // kit: whatever this kit's own file is called.
+    const char* original = kit_definition().original_file_name;
     TCHAR own[MAX_PATH] = {};
-    if (GetModuleFileName(nullptr, own, MAX_PATH) == 0) {
+    if (original == nullptr || GetModuleFileName(nullptr, own, MAX_PATH) == 0) {
+        note_classic_art_available(false);
         return nullptr;
     }
-    CString path(own);
-    CString stem = path;
-    if (stem.GetLength() > 4 && stem.Right(4).CompareNoCase(_T(".exe")) == 0) {
-        stem = stem.Left(stem.GetLength() - 4);
+    CString candidate(own);
+    candidate = candidate.Left(candidate.ReverseFind(_T('\\')) + 1) + CString(original) + _T(".old");
+    HMODULE module = GetFileAttributes(candidate) == INVALID_FILE_ATTRIBUTES
+                         ? nullptr
+                         : LoadLibraryEx(candidate, nullptr,
+                                         LOAD_LIBRARY_AS_DATAFILE | LOAD_LIBRARY_AS_IMAGE_RESOURCE);
+    if (module == nullptr) {
+        note_classic_art_available(false);
+        return nullptr;
     }
-    for (const CString& candidate : {stem + _T(".old"), path + _T(".old")}) {
-        if (GetFileAttributes(candidate) == INVALID_FILE_ATTRIBUTES) {
-            continue;
-        }
-        HMODULE module = LoadLibraryEx(candidate, nullptr,
-                                       LOAD_LIBRARY_AS_DATAFILE | LOAD_LIBRARY_AS_IMAGE_RESOURCE);
-        if (module == nullptr) {
-            continue;
-        }
-        // A loose check that it is the kit it claims to be: the art the
-        // classic pages use is all there.
-        bool complete = true;
-        for (const UINT id : bitmaps) {
-            complete = complete && FindResource(module, MAKEINTRESOURCE(id), RT_BITMAP) != nullptr;
-        }
-        for (const TCHAR* name : named_bitmaps) {
-            complete = complete && FindResource(module, name, RT_BITMAP) != nullptr;
-        }
-        for (const UINT id : icons) {
-            complete = complete && FindResource(module, MAKEINTRESOURCE(id), RT_GROUP_ICON) != nullptr;
-        }
-        if (complete) {
-            note_classic_art_available(true);
-            if (skin_preference() == KitSkin::libre) {
-                FreeLibrary(module);  // there, but the player chose the kit's own look
-                return nullptr;
-            }
-            return std::unique_ptr<ClassicArt>(new ClassicArt(module, candidate));
-        }
+    // A loose check that it is the kit it claims to be: the art the
+    // classic pages use is all there.
+    bool complete = true;
+    for (const UINT id : bitmaps) {
+        complete = complete && FindResource(module, MAKEINTRESOURCE(id), RT_BITMAP) != nullptr;
+    }
+    for (const TCHAR* name : named_bitmaps) {
+        complete = complete && FindResource(module, name, RT_BITMAP) != nullptr;
+    }
+    for (const UINT id : icons) {
+        complete = complete && FindResource(module, MAKEINTRESOURCE(id), RT_GROUP_ICON) != nullptr;
+    }
+    note_classic_art_available(complete);
+    if (!complete || skin_preference() == KitSkin::libre) {
+        // Not the kit, or there but the player chose the kit's own look.
         FreeLibrary(module);
+        return nullptr;
     }
-    note_classic_art_available(false);
-    return nullptr;
+    return std::unique_ptr<ClassicArt>(new ClassicArt(module, candidate));
 }
 
 ClassicArt::~ClassicArt() {

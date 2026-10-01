@@ -412,6 +412,7 @@ c1kitshell::KitDefinition make_definition() {
                         {0xbb, 0xf2, 0x00, 0x20, 0xaf, 0x71, 0xe4, 0x33}};
     memcpy(kit.identity.clsid, &clsid, sizeof(clsid));
     kit.tool_slot = 9;
+    kit.original_file_name = "Funeral Kit";
     kit.tool_value_prog_id = "Funeral.OLE";
     kit.tool_name_string = funeral::kStringToolName;
     kit.tool_help_string = funeral::kStringToolHelp;

@@ -386,6 +386,7 @@ c1kitshell::KitDefinition make_definition() {
                         {0xbb, 0xf2, 0x00, 0x20, 0xaf, 0x71, 0xe4, 0x33}};
     memcpy(kit.identity.clsid, &clsid, sizeof(clsid));
     kit.tool_slot = 5;
+    kit.original_file_name = "Breeder's Kit";
     kit.tool_value_prog_id = "Sex.OLE";
     kit.tool_name_string = breeder::kStringToolName;
     kit.tool_help_string = breeder::kStringToolHelp;

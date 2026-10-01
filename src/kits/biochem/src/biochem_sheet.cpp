@@ -348,6 +348,7 @@ c1kitshell::KitDefinition make_definition() {
                         {0x9c, 0x63, 0x7b, 0x8e, 0x1d, 0x5f, 0x3a, 0x20}};
     memcpy(kit.identity.clsid, &clsid, sizeof(clsid));
     kit.tool_slot = 1;
+    kit.original_file_name = "BiochemKit";
     kit.tool_value_prog_id = "BiochemKit.OLE";
     kit.tool_name_string = biochem::kStringToolName;
     kit.tool_help_string = biochem::kStringToolHelp;

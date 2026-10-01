@@ -45,16 +45,17 @@ the egg sprites) are loaded from there, and the ones inside the original
 kits (cover pages, the alert faces) from the original kit itself (below),
 and none is ever copied into this repository.
 
-A player who owns the original kits can have their 1996 look back.  Rename
-each original kit beside the new one to `<name>.old` (for example
-`Science Kit.old` next to `Science Kit.exe`) -- the 1996 release, the later
-one and GOG's are all accepted.  A kit that finds its `.old`, and finds in
+A player who owns the original kits can have their 1996 look back.  Put
+each original kit in the new kits' folder with `.exe` changed to `.old`
+(`Science Kit.exe` becomes `Science Kit.old`) -- the 1996 release, the later
+one and GOG's are all accepted.  The new kit looks for the original's file
+name, whatever its own file is called.  A kit that finds its `.old`, and finds in
 it the pictures its classic pages use, opens that file as data (nothing in
 it runs), reads the 1996 art from it and wears the classic look: the same
 working kit, with the 1996 pictures and page layouts, cover pages, and
 sound (with a setting to mute the continuous ambience).  Without the `.old`,
-or if it lacks what the kit needs, the kit keeps its own interface.  There
-is no other switch.
+or if it lacks what the kit needs, the kit keeps its own interface.
+Options > Skin switches between the two looks while the kit is open.
 
 So the line the kits hold is: none of the original kits' pictures is copied
 into them or into this repository; those are only ever loaded at run time
