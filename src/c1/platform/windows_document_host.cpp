@@ -74,7 +74,13 @@ public:
     }
 };
 
+// The last save failure's file and reason, for the "could not save" box.
+std::string g_last_world_save_failure;
+
 void log_world_save_failure(const char* path, const char* reason) {
+    g_last_world_save_failure =
+        std::string("File: ") + (path == nullptr ? "(none)" : path) +
+        "\nReason: " + (reason == nullptr ? "(unknown)" : reason);
     // Save failures belong in the game's existing "Log information" debug
     // console.  Do not create a parallel file here: the console owns the
     // native filtering, retention and optional "To Log.txt" mirror path.
@@ -1047,6 +1053,7 @@ bool C1WindowsDocument::save_for_close( creatures1::application::Document& /*doc
     // (g_world_save_path_storage), including USER-mode worlds opened through
     // OpenDocumentFile(nullptr), which have no CDocument path of their own.
     // GetPathName() is only a fallback for documents opened from a file.
+    g_last_world_save_failure.clear();
     CString path;
     if (g_active_world_save_path != nullptr &&
         !g_active_world_save_path->empty()) {
@@ -1055,14 +1062,19 @@ bool C1WindowsDocument::save_for_close( creatures1::application::Document& /*doc
         path = GetPathName();
     }
     if (path.IsEmpty()) {
+        log_world_save_failure(nullptr, "the world has no save path");
         return false;
     }
     return OnSaveDocument(path) != FALSE;
 }
 
 void C1WindowsDocument::report_save_failure() {
-    AfxMessageBox("Creatures could not save the world.",
-                  MB_ICONWARNING, 0);
+    // Not native: the box says why, from the failure the save recorded.
+    std::string message = "Creatures could not save the world.";
+    if (!g_last_world_save_failure.empty()) {
+        message += "\n\n" + g_last_world_save_failure;
+    }
+    AfxMessageBox(message.c_str(), MB_ICONWARNING, 0);
 }
 
 void C1WindowsDocument::close_framework_document( creatures1::application::Document& /*document*/) {
