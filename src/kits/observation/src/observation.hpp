@@ -38,9 +38,15 @@ public:
 protected:
     BOOL OnInitDialog() override;
     afx_msg void OnSize(UINT type, int cx, int cy);
+    afx_msg void OnColumnClick(NMHDR* header, LRESULT* result);
     DECLARE_MESSAGE_MAP()
 
 private:
+    // Not in the 1996 kit: a column header sorts the list by that column,
+    // a second click the other way round; kept across polls and sessions.
+    void sort_rows();
+    void show_sort_arrow();
+    static int CALLBACK compare_rows(LPARAM first, LPARAM second, LPARAM page);
     int find_row(const CString& moniker) const;
     void set_row(int item, const c1kit::OverviewRecord& record, int icon);
     void fit_last_column();
@@ -48,6 +54,8 @@ private:
     ObservationSheet& sheet_;
     CListCtrl list_;
     CImageList icons_;
+    int sort_column_ = -1;  // none: the game's order
+    bool sort_descending_ = false;
     c1kitshell::ControlAnchors anchors_;
 };
 
@@ -147,6 +155,9 @@ public:
     const std::vector<c1kit::OverviewRecord>& records() const {
         return records_;
     }
+    // The kit's settings, for the Details list's sort ("Sort Column",
+    // "Sort Descending").
+    c1kit::KitSettings* registry() const { return registry_; }
 
 protected:
     BOOL OnInitDialog() override;
