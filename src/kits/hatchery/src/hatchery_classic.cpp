@@ -83,6 +83,7 @@ BEGIN_MESSAGE_MAP(MachinePage, CPropertyPage)
     ON_WM_LBUTTONDOWN()
     ON_WM_LBUTTONDBLCLK()
     ON_WM_DESTROY()
+    ON_NOTIFY_EX(TTN_NEEDTEXT, 0, &MachinePage::OnEggTip)
 END_MESSAGE_MAP()
 
 MachinePage::MachinePage(HatcherySheet& sheet)
@@ -119,7 +120,35 @@ void MachinePage::load_art() {
 BOOL MachinePage::OnInitDialog() {
     CPropertyPage::OnInitDialog();
     load_art();
+    // Not in the 1996 kit: with Scramble Eggs on, an egg's tip names the
+    // pair it will be crossed from (the 1996 picture stays as it was).
+    if (tips_.Create(this)) {
+        for (int i = 0; i < c1kit::kEggCount; ++i) {
+            tips_.AddTool(this, LPSTR_TEXTCALLBACK, CRect(kEggAt[i], picture_size(eggs_[i])),
+                          static_cast<UINT_PTR>(i + 1));
+        }
+        tips_.Activate(TRUE);
+    }
     SetTimer(kTimerMachine, kMachineTickMs, nullptr);
+    return TRUE;
+}
+
+BOOL MachinePage::PreTranslateMessage(MSG* message) {
+    if (tips_.GetSafeHwnd() != nullptr) {
+        tips_.RelayEvent(message);
+    }
+    return CPropertyPage::PreTranslateMessage(message);
+}
+
+BOOL MachinePage::OnEggTip(UINT /*id*/, NMHDR* header, LRESULT* result) {
+    auto* text = reinterpret_cast<TOOLTIPTEXT*>(header);
+    const int slot = static_cast<int>(header->idFrom) - 1;
+    tip_text_ = slot >= 0 && slot < c1kit::kEggCount &&
+                        sheet_.nest().eggs[slot] != c1kit::EggState::taken
+                    ? sheet_.egg_parents_text(slot)
+                    : CString();
+    text->lpszText = const_cast<LPTSTR>(static_cast<LPCTSTR>(tip_text_));
+    *result = 0;
     return TRUE;
 }
 

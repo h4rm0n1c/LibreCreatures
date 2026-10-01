@@ -22,6 +22,7 @@ constexpr int kDefaultPageHeightDlu = 220;
 
 constexpr unsigned kOptionRefill = 0x0200;  // Options > Refill the nest
 constexpr unsigned kOptionScramble = 0x0210;  // Options > Scramble Eggs
+constexpr unsigned kOptionColourful = 0x0220;  // Options > Make My Creatures Colourful
 // The 1996 kit's sounds (the game's Sounds folder), loaded for both looks.
 constexpr const char* kHatcherySounds[] = {"hfan", "hdsk", "hlgt", "hegg", "hmle", "hfml", "hslt"};
 constexpr int kLibreFanVolume = -1000;  // the fan under the nest, quieter than the machine's

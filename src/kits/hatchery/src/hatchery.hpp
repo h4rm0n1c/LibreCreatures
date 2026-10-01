@@ -53,6 +53,8 @@ protected:
     afx_msg void OnLButtonDown(UINT flags, CPoint point);
     afx_msg void OnLButtonDblClk(UINT flags, CPoint point);
     afx_msg void OnDestroy();
+    afx_msg BOOL OnEggTip(UINT id, NMHDR* header, LRESULT* result);
+    BOOL PreTranslateMessage(MSG* message) override;
     DECLARE_MESSAGE_MAP()
 
 private:
@@ -78,6 +80,8 @@ private:
     int fan_channel_ = -1;
     int scanner_channel_ = -1;
     int egg_channel_ = -1;
+    CToolTipCtrl tips_;
+    CString tip_text_;  // the shown tip's text, kept while it shows
 };
 
 class NestPage : public c1kitshell::LayoutPage {
@@ -141,6 +145,8 @@ public:
     bool hatch(int slot, CString& why);
     void refill();
     std::string game_file(const std::string& name) const;
+    // With Scramble Eggs on: "mum4 x dad1" for egg `slot`, else empty.
+    CString egg_parents_text(int slot) const;
     bool connected() const { return connected_; }
     // The classic look: the player's original Hatchery beside this one.
     bool classic() const { return classic_ != nullptr; }
@@ -172,6 +178,17 @@ private:
     void load_preferences();
     void save_preferences();
     void save_nest();
+    void save_parents();
+    // Every egg's own pair, or with Scramble Eggs a new pair for each.
+    void pick_parents();
+    // With Scramble Eggs on, no egg keeps a same-number pair, however the
+    // mode was turned on (the menu, or the setting changed while closed).
+    void ensure_scrambled();
+    // Make My Creatures Colourful: crosses the egg's genome, adds colour
+    // genes to its file, and answers the genome; false if any step fails
+    // (the egg is then made the plain way).
+    bool colourful_genome(c1kit::MacroTransport& game, int mum, int dad,
+                          std::int32_t& genome);
 
     CFont& default_font_;
     NestPage nest_page_;
@@ -184,6 +201,11 @@ private:
     c1kit::Nest nest_;
     // Options > Scramble Eggs (saved as "Scramble Eggs").
     std::uint32_t scramble_eggs_ = 0;
+    // Options > Make My Creatures Colourful (saved as "Colourful Eggs").
+    std::uint32_t colourful_eggs_ = 0;
+    // Each egg's parents (saved as "Egg Parents"): its own pair, or with
+    // Scramble Eggs the pair picked when the nest was filled.
+    c1kit::NestParents parents_;
     bool connected_ = false;
 };
 
