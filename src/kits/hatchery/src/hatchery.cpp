@@ -290,8 +290,10 @@ void NestPage::describe_selection() {
     if (nest.eggs[selected_] == c1kit::EggState::taken) {
         text.Format(_T("Egg %d has hatched."), selected_ + 1);
     } else {
-        text.Format(_T("Egg %d: %s.  Press Hatch to put it in the incubator."), selected_ + 1,
-                    nest.eggs[selected_] == c1kit::EggState::female ? _T("female") : _T("male"));
+        const CString parents = sheet_.egg_parents_text(selected_);
+        text.Format(_T("Egg %d: %s%s%s.  Press Hatch to put it in the incubator."), selected_ + 1,
+                    nest.eggs[selected_] == c1kit::EggState::female ? _T("female") : _T("male"),
+                    parents.IsEmpty() ? _T("") : _T(", "), static_cast<LPCTSTR>(parents));
     }
     status_.SetWindowText(text);
 }
@@ -327,7 +329,9 @@ void NestPage::fit(const CRect& view) {
     const int frame_width = egg_size_.cx > 0 ? egg_size_.cx : 48;
     const int frame_height = egg_size_.cy > 0 ? egg_size_.cy : 60;
     const int slot = view.Width() / c1kit::kEggCount;
-    baseline_ = static_cast<int>(view.bottom) - (text_height() + 24);
+    // Room for the labels: the sex, and with Scramble Eggs the parents.
+    const int label_lines = sheet_.egg_parents_text(0).IsEmpty() ? 1 : 2;
+    baseline_ = static_cast<int>(view.bottom) - (label_lines * text_height() + 24);
     const int room = baseline_ - static_cast<int>(view.top) - 20;
     scale_ = (std::max)(1, (std::min)((slot - 8) / frame_width, room / frame_height));
 }
@@ -451,6 +455,13 @@ void NestPage::draw(CDC& dc, const CRect& rect) {
                          (taken ? 0 : kSymbolWidth + kSymbolGap);
         dc.SetTextColor(taken ? kLabelTaken : kLabel);
         dc.TextOut(left, baseline_ + 12, word);
+        // Scramble Eggs: the pair it will be crossed from.
+        const CString parents = taken ? CString() : sheet_.egg_parents_text(i);
+        if (!parents.IsEmpty()) {
+            const CSize parents_extent = dc.GetTextExtent(parents);
+            dc.TextOut(rect.left + column * i + column / 2 - parents_extent.cx / 2,
+                       baseline_ + 12 + extent.cy, parents);
+        }
     }
     dc.SelectObject(previous_font);
 }
@@ -562,8 +573,10 @@ int HatcherySheet::OnCreate(LPCREATESTRUCT create) {
     if (registry_ == nullptr || !registry_->is_open()) {
         return -1;
     }
-    // New eggs' sexes and Scramble Eggs' parents.
+    // New eggs' sexes, Scramble Eggs' parents and Colourful's colours.
     std::srand(static_cast<unsigned>(std::time(nullptr)));
+    registry_->read_dword(c1kit::SettingsScope::user, "Scramble Eggs", scramble_eggs_);
+    registry_->read_dword(c1kit::SettingsScope::user, "Colourful Eggs", colourful_eggs_);
     // The nest: the 1996 value, or six new eggs when there is none
     // (InitializeEggstraPattern @ 0x004045b0 regenerated it then too).
     char pattern[16] = {};
@@ -571,7 +584,13 @@ int HatcherySheet::OnCreate(LPCREATESTRUCT create) {
         !c1kit::parse_nest(pattern, nest_)) {
         refill();
     }
-    registry_->read_dword(c1kit::SettingsScope::user, "Scramble Eggs", scramble_eggs_);
+    char parents[32] = {};
+    if (!registry_->read_string(c1kit::SettingsScope::user, "Egg Parents", parents,
+                                sizeof(parents)) ||
+        !c1kit::parse_parents(parents, parents_)) {
+        pick_parents();
+    }
+    ensure_scrambled();
     return 0;
 }
 
@@ -648,6 +667,65 @@ void HatcherySheet::save_nest() {
 void HatcherySheet::refill() {
     nest_ = c1kit::fresh_nest(static_cast<std::uint32_t>(std::rand()));
     save_nest();
+    pick_parents();
+}
+
+void HatcherySheet::save_parents() {
+    if (registry_ != nullptr) {
+        registry_->write_string("Egg Parents", c1kit::format_parents(parents_).c_str());
+    }
+}
+
+void HatcherySheet::pick_parents() {
+    parents_ = scramble_eggs_ != 0
+                   ? c1kit::scrambled_nest_parents([] { return std::rand(); })
+                   : c1kit::NestParents();
+    save_parents();
+}
+
+void HatcherySheet::ensure_scrambled() {
+    if (scramble_eggs_ != 0 &&
+        c1kit::scramble_own_pairs(parents_, [] { return std::rand(); })) {
+        save_parents();
+    }
+}
+
+CString HatcherySheet::egg_parents_text(int slot) const {
+    CString text;
+    if (scramble_eggs_ != 0 && slot >= 0 && slot < c1kit::kEggCount) {
+        text.Format(_T("mum%d x dad%d"), parents_.mum[slot], parents_.dad[slot]);
+    }
+    return text;
+}
+
+bool HatcherySheet::colourful_genome(c1kit::MacroTransport& game, int mum, int dad,
+                                     std::int32_t& genome) {
+    c1kit::MacroConversation conversation(game);
+    std::string reply;
+    const bool crossed = conversation.query_reusing_holder(
+        c1kit::kMacroModeQuery, c1kit::cross_script(mum, dad).c_str(), reply);
+    conversation.close();
+    char* end = nullptr;
+    const long value = crossed ? std::strtol(reply.c_str(), &end, 10) : 0;
+    if (!crossed || end == reply.c_str() || value == 0) {
+        return false;
+    }
+    genome = static_cast<std::int32_t>(value);
+    // The game writes the crossed genome into the world's Genetics folder.
+    const std::string path =
+        std::string(CStringA(c1kitshell::game_directory_setting(
+            "Genetics Directory", c1kit::GameDirectory::world))) +
+        c1kit::genome_file_for(genome);
+    std::vector<std::uint8_t> bytes = read_file(path);
+    if (!c1kit::append_colour_genes(
+            bytes, c1kit::random_egg_colours([] { return std::rand(); }))) {
+        return true;  // made, but left as crossed
+    }
+    if (FILE* file = std::fopen(path.c_str(), "wb")) {
+        std::fwrite(bytes.data(), 1, bytes.size(), file);
+        std::fclose(file);
+    }
+    return true;
 }
 
 // HandleEggSlotClick @ 0x00403c30: the egg's script, then the egg is taken.
@@ -664,12 +742,15 @@ bool HatcherySheet::hatch(int slot, CString& why) {
         return false;
     }
     const bool female = nest_.eggs[slot] == c1kit::EggState::female;
-    int mum = slot + 1, dad = slot + 1;
-    if (scramble_eggs_ != 0) {
-        c1kit::scrambled_parents(static_cast<std::uint32_t>(std::rand()), mum, dad);
-    }
-    if (!c1kit::execute_scheduled(*game, c1kit::hatch_script(slot, female, mum, dad).c_str(),
-                                  false)) {
+    // The pair the egg shows (its own unless Scramble Eggs picked another).
+    ensure_scrambled();
+    const int mum = scramble_eggs_ != 0 ? parents_.mum[slot] : slot + 1;
+    const int dad = scramble_eggs_ != 0 ? parents_.dad[slot] : slot + 1;
+    std::int32_t genome = 0;
+    const std::string script = colourful_eggs_ != 0 && colourful_genome(*game, mum, dad, genome)
+                                   ? c1kit::hatch_script_for_genome(slot, female, genome)
+                                   : c1kit::hatch_script(slot, female, mum, dad);
+    if (!c1kit::execute_scheduled(*game, script.c_str(), false)) {
         why = _T("The game did not take the egg.");
         return false;
     }
@@ -755,6 +836,9 @@ void HatcherySheet::add_kit_options(CMenu& options) {
     // pair with the same number.
     options.AppendMenu(MF_STRING | (scramble_eggs_ != 0 ? MF_CHECKED : 0), kOptionScramble,
                        _T("&Scramble Eggs"));
+    // Not in the 1996 kit: each egg's genome gets colour genes.
+    options.AppendMenu(MF_STRING | (colourful_eggs_ != 0 ? MF_CHECKED : 0), kOptionColourful,
+                       _T("Make My Creatures &Colourful"));
 }
 
 bool HatcherySheet::on_kit_option(UINT id) {
@@ -762,6 +846,16 @@ bool HatcherySheet::on_kit_option(UINT id) {
         scramble_eggs_ = scramble_eggs_ != 0 ? 0 : 1;
         registry_->write_dword("Scramble Eggs", scramble_eggs_);
         check_kit_option(kOptionScramble, scramble_eggs_ != 0);
+        // The eggs still in the nest take new pairs (or their own back).
+        pick_parents();
+        nest_page_.refresh();
+        machine_page_.refresh();
+        return true;
+    }
+    if (id == kOptionColourful) {
+        colourful_eggs_ = colourful_eggs_ != 0 ? 0 : 1;
+        registry_->write_dword("Colourful Eggs", colourful_eggs_);
+        check_kit_option(kOptionColourful, colourful_eggs_ != 0);
         return true;
     }
     if (id != kOptionRefill) {

@@ -63,6 +63,58 @@ int main() {
             assert((seen[mum][dad] == 10) == (mum != dad));
         }
     }
+    // Egg parents: own pairs by default, kept as "mm dd" pairs.
+    NestParents parents;
+    assert(format_parents(parents) == "11 22 33 44 55 66");
+    std::uint32_t counter = 0;
+    parents = scrambled_nest_parents([&counter] { return counter += 7; });
+    for (int i = 0; i < kEggCount; ++i) {
+        assert(parents.mum[i] != parents.dad[i]);
+    }
+    NestParents read_back;
+    assert(parse_parents(format_parents(parents), read_back));
+    for (int i = 0; i < kEggCount; ++i) {
+        assert(read_back.mum[i] == parents.mum[i] && read_back.dad[i] == parents.dad[i]);
+    }
+    assert(!parse_parents("11 22 33 44 55 67", read_back) && read_back.mum[5] == 6);
+    // Turned on with eggs on their own pairs: those get scrambled ones, the
+    // scrambled ones stay.
+    NestParents mixed;
+    mixed.mum[1] = 4;
+    mixed.dad[1] = 2;
+    assert(scramble_own_pairs(mixed, [&counter] { return counter += 5; }));
+    for (int i = 0; i < kEggCount; ++i) {
+        assert(mixed.mum[i] != mixed.dad[i]);
+    }
+    assert(mixed.mum[1] == 4 && mixed.dad[1] == 2);
+    assert(!scramble_own_pairs(mixed, [&counter] { return counter += 5; }));
+    assert(!parse_parents("11 22 33", read_back));
+
+    // Colourful eggs: a cross that answers the genome, then the egg made
+    // with it.
+    assert(cross_script(4, 1) == "new: gene tokn mum4 tokn dad1 var0,dde: putv var0,endm");
+    assert(hatch_script_for_genome(2, true, 1481261369).find(
+               "setv attr 67,setv obv0 1481261369,setv obv1 2,") != std::string::npos);
+    assert(genome_file_for(1481261369) == "9AJX.gen");
+    std::vector<std::uint8_t> genome = {'g', 'e', 'n', 'e', 2, 6, 40, 0, 0, 0x07, 1, 0x80,
+                                        'g', 'e', 'n', 'e', 1, 3, 90, 0, 0, 0x01, 9, 9,
+                                        'g', 'e', 'n', 'd'};
+    EggColours egg_colours;
+    egg_colours.tint[0] = 0x30;
+    egg_colours.hue_rotation = 0xa0;
+    egg_colours.colour_swap = 0x10;
+    assert(append_colour_genes(genome, egg_colours));
+    std::vector<Gene> genes;
+    assert(parse_genome(genome, genes) && genes.size() == 2 + 3 * kColourGenesPerChannel);
+    const Gene& first_added = genes[2];
+    assert(first_added.family == 2 && first_added.subtype == 6 && first_added.id == 91 &&
+           first_added.flags == 0x07);
+    const std::vector<std::uint8_t> expected = {0, 0x30, 'g', 'e', 'x', 't', 0xa0, 0x10};
+    assert(first_added.payload == expected);
+    assert(genes.back().payload[0] == 2 && genes.back().id == 91 + 11);
+    assert(tag_at(genome, genome.size() - 4, "gend"));
+    std::vector<std::uint8_t> broken = {'g', 'e', 'n', 'e', 2, 6, 1, 0, 0, 0, 1, 2};
+    assert(!append_colour_genes(broken, egg_colours) && broken.size() == 12);
     std::puts("hatchery_test: all passed");
     return 0;
 }
