@@ -2045,17 +2045,22 @@ void C1WindowsDocument::update_world_tick() {
     }
     // neorender: the mouse position this tick places the hand at; SDL
     // frames between ticks draw the hand this far from where it now is.
-    tick_mouse_world_x_ = mouse_world_x();
-    tick_mouse_world_y_ = mouse_world_y();
+    const int tick_mouse_client_x = mouse_client_x();
+    const int tick_mouse_client_y = mouse_client_y();
+    const int view_left = renderer_viewport_left();
+    const int view_top = renderer_viewport_top();
     snapshot_motion();
     TickProfiler& profiler = TickProfiler::instance();
     if (!profiler.enabled()) {
         semantic_document_->update_world(*this);
-        return;
+    } else {
+        profiler.begin_tick();
+        semantic_document_->update_world(*this);
+        profiler.end_tick();
     }
-    profiler.begin_tick();
-    semantic_document_->update_world(*this);
-    profiler.end_tick();
+    note_hand_after_tick(tick_mouse_client_x, tick_mouse_client_y,
+                         view_left != renderer_viewport_left() ||
+                             view_top != renderer_viewport_top());
 }
 
 void C1WindowsDocument::recover_world_update_after_boundary_failure( const std::exception& error) {
@@ -4499,12 +4504,49 @@ void C1WindowsDocument::draw_hand_at_mouse(
             collect_object_entities(*object, moving);
         }
     }
+    // The scroll's view anchoring (UpdateViewAnchoredObjects) puts the
+    // hand 16 pixels up whenever any unbounded object exists, until the
+    // hand's own tick puts it back: drawn as is, the hand jumps up while
+    // the view scrolls.  The hand is drawn where it rests from the mouse.
+    const auto* pointer_object =
+        dynamic_cast<const creatures1::objects::SimpleObject*>(pointer_tool());
+    const creatures1::objects::Entity* hand =
+        pointer_object == nullptr ? nullptr : pointer_object->entity();
     // From where the tick put them, whatever smooth motion did.
     for (creatures1::display::SceneItem& item : scene) {
-        if (item.entity != nullptr && moving.count(item.entity) != 0) {
-            item.world_x = item.entity->world_x() + delta_x;
-            item.world_y = item.entity->world_y() + delta_y;
+        if (item.entity == nullptr || moving.count(item.entity) == 0) {
+            continue;
         }
+        if (item.entity == hand) {
+            item.world_x =
+                drawn_mouse_client_x_ + viewport.min_x + hand_rest_offset_x_;
+            item.world_y =
+                drawn_mouse_client_y_ + viewport.min_y + hand_rest_offset_y_;
+            continue;
+        }
+        item.world_x = item.entity->world_x() + delta_x;
+        item.world_y = item.entity->world_y() + delta_y;
+    }
+}
+
+void C1WindowsDocument::note_hand_after_tick(int mouse_client_x,
+                                             int mouse_client_y,
+                                             bool scrolled) {
+    // A scroll moves the hand with the view, so the tick's mouse is
+    // measured over the view as the tick left it, not as it found it.
+    tick_mouse_world_x_ = mouse_client_x + renderer_viewport_left();
+    tick_mouse_world_y_ = mouse_client_y + renderer_viewport_top();
+    if (scrolled) {
+        return;
+    }
+    const auto* pointer =
+        dynamic_cast<const creatures1::objects::SimpleObject*>(pointer_tool());
+    const creatures1::objects::Entity* entity =
+        pointer == nullptr ? nullptr : pointer->entity();
+    if (entity != nullptr) {
+        hand_rest_offset_x_ =
+            wrapped_world_delta(entity->world_x() - tick_mouse_world_x_);
+        hand_rest_offset_y_ = entity->world_y() - tick_mouse_world_y_;
     }
 }
 

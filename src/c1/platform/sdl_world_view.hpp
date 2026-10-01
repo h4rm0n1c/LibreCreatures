@@ -57,6 +57,13 @@ public:
 
 private:
     SdlWorldView(SDL_Window* window, SDL_Renderer* renderer);
+    void hook_cursor(void* window);
+    void unhook_cursor();
+
+    // The wrapped window, and SDL's window procedure that the cursor hook
+    // passes everything else on to.
+    void* hooked_window_ = nullptr;
+    std::intptr_t sdl_window_proc_ = 0;
 
     struct TextureKey {
         const display::Image* image;

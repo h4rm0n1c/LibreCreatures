@@ -1671,9 +1671,14 @@ private:
         creatures1::display::ImageTier::s32_2x;
     std::vector<creatures1::display::SceneItem> sdl_scene_;
     // Where the mouse was, in world pixels, when the last tick placed the
-    // hand, and when the last SDL frame was drawn.
+    // hand (the tick's mouse over the view as the tick left it), and when
+    // the last SDL frame was drawn.
     int tick_mouse_world_x_ = 0;
     int tick_mouse_world_y_ = 0;
+    // Where the hand sits from the mouse after a tick that did not scroll.
+    // A scroll puts it somewhere else for a tick (see draw_hand_at_mouse).
+    int hand_rest_offset_x_ = 0;
+    int hand_rest_offset_y_ = 0;
     int drawn_mouse_client_x_ = -1;
     int drawn_mouse_client_y_ = -1;
     // Smooth motion: where the view and each sprite were when the last tick
@@ -1693,6 +1698,8 @@ private:
     void snapshot_motion();
     // 0 just after a tick, 1 by the next; 1 whenever nothing glides.
     float tick_progress() const;
+    void note_hand_after_tick(int mouse_client_x, int mouse_client_y,
+                              bool scrolled);
     void draw_hand_at_mouse(std::vector<creatures1::display::SceneItem>& scene,
                             const creatures1::world::WorldRect& viewport);
     // Smooth motion: each object's sprites moved back along its main

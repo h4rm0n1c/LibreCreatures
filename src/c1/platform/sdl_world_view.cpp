@@ -54,6 +54,29 @@ int wrapped_screen_x(int world_x, int width, const world::WorldRect& view) {
     return x;
 }
 
+// The window property that holds SDL's procedure for the cursor hook.
+constexpr char kSdlWindowProcProperty[] = "LibreCreatures.SdlWindowProc";
+
+// SDL's own procedure answers WM_SETCURSOR over the client area with SDL's
+// cursor, the system arrow, so the Windows pointer showed through the hand
+// each time Windows asked.  The window class's cursor is what Windows would
+// have used: blank for the world view (resource 132, as in the original),
+// the arrow for the eye view.
+LRESULT CALLBACK class_cursor_window_proc(HWND window, UINT message,
+                                          WPARAM w_param, LPARAM l_param) {
+    const auto sdl_proc = reinterpret_cast<WNDPROC>(
+        ::GetPropA(window, kSdlWindowProcProperty));
+    if (message == WM_SETCURSOR && LOWORD(l_param) == HTCLIENT) {
+        ::SetCursor(reinterpret_cast<HCURSOR>(
+            ::GetClassLongPtrA(window, GCLP_HCURSOR)));
+        return TRUE;
+    }
+    return sdl_proc == nullptr
+               ? ::DefWindowProcA(window, message, w_param, l_param)
+               : ::CallWindowProcA(sdl_proc, window, message, w_param,
+                                   l_param);
+}
+
 } // namespace
 
 std::unique_ptr<SdlWorldView> SdlWorldView::create(void* window,
@@ -75,14 +98,45 @@ std::unique_ptr<SdlWorldView> SdlWorldView::create(void* window,
         SDL_DestroyWindow(sdl_window);
         return nullptr;
     }
-    return std::unique_ptr<SdlWorldView>(
-        new SdlWorldView(sdl_window, renderer));
+    std::unique_ptr<SdlWorldView> view(new SdlWorldView(sdl_window, renderer));
+    view->hook_cursor(window);
+    return view;
+}
+
+void SdlWorldView::hook_cursor(void* window) {
+    HWND hwnd = static_cast<HWND>(window);
+    const LONG_PTR sdl_proc = ::GetWindowLongPtrA(hwnd, GWLP_WNDPROC);
+    if (sdl_proc == 0 ||
+        !::SetPropA(hwnd, kSdlWindowProcProperty,
+                    reinterpret_cast<HANDLE>(sdl_proc))) {
+        return;
+    }
+    ::SetWindowLongPtrA(hwnd, GWLP_WNDPROC,
+                        reinterpret_cast<LONG_PTR>(&class_cursor_window_proc));
+    hooked_window_ = window;
+    sdl_window_proc_ = sdl_proc;
+}
+
+void SdlWorldView::unhook_cursor() {
+    if (hooked_window_ == nullptr) {
+        return;
+    }
+    HWND hwnd = static_cast<HWND>(hooked_window_);
+    // SDL puts MFC's procedure back when it lets go of the window, so its
+    // own must be back in place first.
+    if (::GetWindowLongPtrA(hwnd, GWLP_WNDPROC) ==
+        reinterpret_cast<LONG_PTR>(&class_cursor_window_proc)) {
+        ::SetWindowLongPtrA(hwnd, GWLP_WNDPROC, sdl_window_proc_);
+    }
+    ::RemovePropA(hwnd, kSdlWindowProcProperty);
+    hooked_window_ = nullptr;
 }
 
 SdlWorldView::SdlWorldView(SDL_Window* window, SDL_Renderer* renderer)
     : window_(window), renderer_(renderer) {}
 
 SdlWorldView::~SdlWorldView() {
+    unhook_cursor();
     clear_textures();
     if (renderer_ != nullptr) {
         SDL_DestroyRenderer(renderer_);
