@@ -3,6 +3,7 @@
 #include "windows_pointer_tool_host.hpp"
 #include "windows_macro_host.hpp"
 #include "windows_shell.hpp"
+#include "windows_error_dialog.hpp"
 #include "windows_embedded_kit_host.hpp"
 
 #include "../brain/lobe.hpp"
@@ -1084,12 +1085,13 @@ bool C1WindowsDocument::save_for_close( creatures1::application::Document& /*doc
 }
 
 void C1WindowsDocument::report_save_failure() {
-    // Not native: the box says why, from the failure the save recorded.
-    std::string message = "Creatures could not save the world.";
-    if (!g_last_world_save_failure.empty()) {
-        message += "\n\n" + g_last_world_save_failure;
-    }
-    AfxMessageBox(message.c_str(), MB_ICONWARNING, 0);
+    // Not native: the report says why, from the failure the save recorded,
+    // in text the player can select or copy to pass on.
+    show_error_report(AfxGetMainWnd(), "Creatures",
+                      "Creatures could not save the world.",
+                      g_last_world_save_failure.empty()
+                          ? "No reason was recorded."
+                          : g_last_world_save_failure);
 }
 
 void C1WindowsDocument::close_framework_document( creatures1::application::Document& /*document*/) {
