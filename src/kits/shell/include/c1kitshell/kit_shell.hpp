@@ -25,6 +25,9 @@ class KitSheet;
 struct KitDefinition {
     c1kit::KitIdentity identity;     // the kit's OLE server ProgID and CLSID
     int tool_slot = 0;               // Tool<N> slot
+    // The original kit's file name without ".exe".  Renamed to
+    // <name>.old beside the kit, it supplies the 1996 skin (ClassicArt).
+    const char* original_file_name = nullptr;
     const char* tool_value_prog_id = nullptr;  // ProgID as written in Tool<N>
     UINT tool_name_string = 0;       // Tool<N> menu name
     UINT tool_help_string = 0;       // Tool<N> status-bar help
@@ -270,7 +273,8 @@ private:
 // ---------------------------------------------------------------------------
 
 // A kit can wear its 1996 interface.  It can when the player's original
-// kit sits beside it renamed "<name>.old" (or "<name>.exe.old") -- the 1996
+// kit sits beside it with its file name's ".exe" changed to ".old"
+// ("Science Kit.old"), whatever this kit's own file is called -- the 1996
 // release, the later one, or GOG's -- and holds the art the classic pages
 // use.  The art is read from that file as data (nothing in it runs), so
 // this kit carries none of it.  Options > Skin chooses between the two;

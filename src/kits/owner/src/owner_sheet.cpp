@@ -567,6 +567,7 @@ c1kitshell::KitDefinition make_definition() {
                         {0xbb, 0xf2, 0x00, 0x20, 0xaf, 0x71, 0xe4, 0x33}};
     memcpy(kit.identity.clsid, &clsid, sizeof(clsid));
     kit.tool_slot = 2;
+    kit.original_file_name = "Owner's Kit";
     kit.tool_value_prog_id = "Owner.OLE";
     kit.tool_name_string = owner::kStringToolName;
     kit.tool_help_string = owner::kStringToolHelp;

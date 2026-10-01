@@ -472,6 +472,7 @@ c1kitshell::KitDefinition make_definition() {
                         {0xa8, 0xbb, 0x00, 0xa0, 0xc9, 0x00, 0x8a, 0x48}};
     memcpy(kit.identity.clsid, &clsid, sizeof(clsid));
     kit.tool_slot = 6;
+    kit.original_file_name = "observation";
     kit.tool_value_prog_id = "Overview.OLE";
     kit.tool_name_string = kStringToolName;
     kit.tool_help_string = kStringToolHelp;
