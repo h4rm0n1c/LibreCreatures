@@ -4,7 +4,6 @@
 #include "ecology.hpp"
 #include "ecology_ids.hpp"
 
-#include "c1kitshell/game_art.hpp"
 #include "c1kitshell/kit_art.hpp"
 #include "c1kit/game_sprite.hpp"
 
@@ -149,20 +148,27 @@ void MapPage::refresh() {
     map_.redraw();
 }
 
-// back.spr (or its .s32) from the game's Images folders, each 6 x 6 block
-// averaged into one pixel.
+// back.spr from the game's Images folders, each 6 x 6 block averaged into
+// one pixel.
 void MapPage::load_world_picture() {
     CString palettes = c1kitshell::game_directory_setting("Palette Directory");
     if (palettes.IsEmpty()) {
         palettes = CString(sheet_.game_file("Palettes\\").c_str());
     }
     c1kit::GamePalette palette{};
-    const bool have_palette = c1kit::parse_palette_dta(
-        read_file(std::string(CStringA(palettes)) + "palette.dta"), palette);
-    c1kitshell::GameArt art;
-    if (!c1kitshell::load_game_art(sheet_.image_directories(), "back", palette, false, art) ||
-        art.frames.size() < static_cast<std::size_t>(kTileColumns * kTileRows) ||
-        (art.tier == c1kitshell::GameArtTier::spr && !have_palette)) {
+    if (!c1kit::parse_palette_dta(
+            read_file(std::string(CStringA(palettes)) + "palette.dta"), palette)) {
+        return;
+    }
+    std::vector<c1kit::GameSprite> tiles;
+    bool found = false;
+    for (const std::string& directory : sheet_.image_directories()) {
+        if (c1kit::parse_game_sprites(read_file(directory + "back.spr"), tiles)) {
+            found = true;
+            break;
+        }
+    }
+    if (!found || tiles.size() < static_cast<std::size_t>(kTileColumns * kTileRows)) {
         return;
     }
     const int tile_width = kTileWidth / kShrink;    // 24
@@ -172,8 +178,8 @@ void MapPage::load_world_picture() {
     picture_.assign(static_cast<std::size_t>(picture_width_) * picture_height_, 0xff000000u);
     for (int column = 0; column < kTileColumns; ++column) {
         for (int row = 0; row < kTileRows; ++row) {
-            const c1kitshell::GameImage& tile =
-                art.frames[static_cast<std::size_t>(column * kTileRows + row)];
+            const c1kit::GameSprite& tile =
+                tiles[static_cast<std::size_t>(column * kTileRows + row)];
             if (tile.width < kTileWidth || tile.height < kTileHeight) {
                 continue;
             }
@@ -182,11 +188,12 @@ void MapPage::load_world_picture() {
                     unsigned r = 0, g = 0, b = 0;
                     for (int dy = 0; dy < kShrink; ++dy) {
                         for (int dx = 0; dx < kShrink; ++dx) {
-                            const std::uint32_t p = tile.pixels[static_cast<std::size_t>(
-                                (y * kShrink + dy) * tile.width + x * kShrink + dx)];
-                            r += (p >> 16) & 0xff;
-                            g += (p >> 8) & 0xff;
-                            b += p & 0xff;
+                            const c1kit::PaletteColour& colour =
+                                palette[tile.pixels[static_cast<std::size_t>(
+                                    (y * kShrink + dy) * tile.width + x * kShrink + dx)]];
+                            r += colour.red;
+                            g += colour.green;
+                            b += colour.blue;
                         }
                     }
                     const unsigned n = kShrink * kShrink;
