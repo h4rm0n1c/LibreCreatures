@@ -285,7 +285,9 @@ void update_embedded_kit_tool_command(
         return;
     }
 
-    if (tool_index == 6 || tool_index == 8 || tool_index == 9) {
+    // Slot 10 (not native): the Ecology Kit maps the world, so, like the
+    // Observation, Performance and Graveyard kits, it needs no creature.
+    if (tool_index == 6 || tool_index == 8 || tool_index == 9 || tool_index == 10) {
         platform.set_command_enabled(platform.world_update_is_running());
         return;
     }

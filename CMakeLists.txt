@@ -195,6 +195,9 @@ add_c1_kit(Injector "Injector" ${KITS_ROOT}/injector)
 # "BiochemKit.exe", the Biochemistry Kit (v1.2): OLE server BiochemKit.OLE,
 # Tools slot 1.
 add_c1_kit(BiochemKit "BiochemKit" ${KITS_ROOT}/biochem)
+# "Ecology Kit.exe", new in LibreCreatures (no 1996 original): OLE server
+# Ecology.OLE, Tools slot 10.
+add_c1_kit(EcologyKit "Ecology Kit" ${KITS_ROOT}/ecology)
 
 install(TARGETS c1kitlib RUNTIME DESTINATION .)
 

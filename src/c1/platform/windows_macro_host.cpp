@@ -2,6 +2,7 @@
 #include <cstring>
 #include "windows_macro_host.hpp"
 #include <cstdlib>
+#include <vector>
 
 #include "windows_object_event_host.hpp"
 
@@ -3213,6 +3214,70 @@ std::string WindowsMacroHost::render_cell_values(
     return std::string(formatted);
 }
 
+
+std::string WindowsMacroHost::render_ecology(creatures1::scripting::Macro& /*macro*/) {
+    // LibreCreatures `dde: ecol`, every field "%d|":
+    //   room count, then per room: left, top, right, bottom, room type (the
+    //     map's own: 1 takes the outdoor temperature), and the temperature at
+    //     its centre (the signed value creatures sense there);
+    //   creature count, then per creature: its handle (what `targ` takes),
+    //     down-foot x and y, family, genus, species, sex (1 male, 2 female),
+    //     dead (0/1), infected (its bacterium active, 0/1), selected (0/1).
+    std::string out;
+    const auto field = [&out](long long value) {
+        out += std::to_string(value);
+        out += '|';
+    };
+    creatures1::world::WorldRuntime* runtime = document_.world_runtime();
+    if (runtime == nullptr) {
+        field(0);
+        field(0);
+        return out;
+    }
+    creatures1::world::MapData& map = runtime->map_data();
+    WindowsCreatureEnvironmentHost environment(document_);
+    const int room_count = map.room_count();
+    field(room_count);
+    for (int index = 0; index < room_count; ++index) {
+        const creatures1::world::MapRoom& room = map.room_at(static_cast<std::size_t>(index));
+        field(room.bounds.left);
+        field(room.bounds.top);
+        field(room.bounds.right);
+        field(room.bounds.bottom);
+        field(room.room_type);
+        field(environment
+                  .sample_at((room.bounds.left + room.bounds.right) / 2,
+                             (room.bounds.top + room.bounds.bottom) / 2)
+                  .temperature_delta_raw);
+    }
+    std::vector<creatures1::creatures::Creature*> creatures;
+    for (std::size_t index = 0; index < document_.creature_count(); ++index) {
+        if (auto* creature = dynamic_cast<creatures1::creatures::Creature*>(
+                document_.creature_at(index))) {
+            creatures.push_back(creature);
+        }
+    }
+    field(static_cast<long long>(creatures.size()));
+    const creatures1::creatures::Creature* selected = document_.selected_creature();
+    for (creatures1::creatures::Creature* creature : creatures) {
+        creatures1::objects::Object& object = document_.object_for_creature(*creature);
+        const std::uint32_t classifier = object.classifier_base();
+        field(static_cast<long long>(reinterpret_cast<std::uintptr_t>(&object)));
+        field(creature->skeleton().down_foot_x);
+        field(creature->skeleton().down_foot_y);
+        field((classifier >> 24) & 0xff);
+        field((classifier >> 16) & 0xff);
+        field((classifier >> 8) & 0xff);
+        field(creature->genome_sex() == creatures1::creatures::GenomeSex::female ? 2 : 1);
+        field(creature->is_dead() ? 1 : 0);
+        field(creature->bacterium().activity_state() ==
+                      creatures1::creatures::BacteriumActivityState::active
+                  ? 1
+                  : 0);
+        field(creature == selected ? 1 : 0);
+    }
+    return out;
+}
 
 std::string WindowsMacroHost::render_dendrites(
     creatures1::scripting::Macro& macro, std::uint32_t lobe_index,
