@@ -13,6 +13,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <string>
 
 namespace c1kit {
 namespace {
@@ -238,17 +239,28 @@ bool register_local_server(const KitIdentity& identity, const char* exe_path) {
                   guid.Data3, guid.Data4[0], guid.Data4[1], guid.Data4[2],
                   guid.Data4[3], guid.Data4[4], guid.Data4[5], guid.Data4[6],
                   guid.Data4[7]);
-    char path[256];
-    bool ok = set_default_value(HKEY_CLASSES_ROOT, identity.prog_id,
-                                identity.prog_id);
-    std::snprintf(path, sizeof(path), "%s\\CLSID", identity.prog_id);
-    ok = set_default_value(HKEY_CLASSES_ROOT, path, clsid) && ok;
-    std::snprintf(path, sizeof(path), "CLSID\\%s", clsid);
-    ok = set_default_value(HKEY_CLASSES_ROOT, path, identity.prog_id) && ok;
-    std::snprintf(path, sizeof(path), "CLSID\\%s\\ProgID", clsid);
-    ok = set_default_value(HKEY_CLASSES_ROOT, path, identity.prog_id) && ok;
-    std::snprintf(path, sizeof(path), "CLSID\\%s\\LocalServer32", clsid);
-    ok = set_default_value(HKEY_CLASSES_ROOT, path, exe_path) && ok;
+    // Twice: per user, under HKCU\Software\Classes, which needs no
+    // administrator and which Windows merges into the HKEY_CLASSES_ROOT view
+    // COM reads (before a machine entry, such as a 1996 kit's); and under
+    // HKEY_CLASSES_ROOT itself, which Wine's COM and the game's own lookup
+    // there read.  On Windows a new key (the Ecology Kit's) under
+    // HKEY_CLASSES_ROOT goes to HKLM, which only an administrator can write,
+    // and the game then reported "Invalid class string".  Either is enough.
+    const std::string prog_id = identity.prog_id;
+    const std::string class_key = std::string("CLSID\\") + clsid;
+    const auto register_under = [&](HKEY root, const std::string& prefix) {
+        bool written = set_default_value(root, (prefix + prog_id).c_str(), identity.prog_id);
+        written = set_default_value(root, (prefix + prog_id + "\\CLSID").c_str(), clsid) && written;
+        written = set_default_value(root, (prefix + class_key).c_str(), identity.prog_id) && written;
+        written = set_default_value(root, (prefix + class_key + "\\ProgID").c_str(),
+                                    identity.prog_id) && written;
+        written = set_default_value(root, (prefix + class_key + "\\LocalServer32").c_str(),
+                                    exe_path) && written;
+        return written;
+    };
+    const bool per_user = register_under(HKEY_CURRENT_USER, "Software\\Classes\\");
+    const bool shared = register_under(HKEY_CLASSES_ROOT, "");
+    const bool ok = per_user || shared;
     return ok;
 }
 
