@@ -877,6 +877,8 @@ public:
                                             std::uint32_t cell,
                                             std::uint32_t variable,
                                             std::uint32_t field) = 0;
+    // LibreCreatures `dde: ecol`: rooms and creatures for the Ecology Kit.
+    virtual std::string render_ecology(Macro& macro) = 0;
     // LibreCreatures `dde: dend`: each of a neuron's dendrites under a rule.
     virtual std::string render_dendrites(Macro& macro, std::uint32_t lobe,
                                          std::uint32_t neuron,

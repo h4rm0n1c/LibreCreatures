@@ -191,6 +191,16 @@ bool write_tool_registration(int slot, const char* value_prog_id,
                   name == nullptr ? "" : name, help == nullptr ? "" : help,
                   slot);
     const bool ok = settings->is_open() && settings->write_string(value_name, value);
+    // The game lists Tool0 to Tool<NumTools - 1> only.  A kit in a slot past
+    // the ten 1996 kits (the Ecology Kit, slot 10) raises the count.
+    std::uint32_t tool_count = 0;
+    // Only raised, never made: with no count yet, the game's own default
+    // stands.
+    if (ok && slot >= 0 &&
+        settings->read_dword(SettingsScope::user, "NumTools", tool_count) &&
+        tool_count < static_cast<std::uint32_t>(slot) + 1) {
+        settings->write_dword("NumTools", static_cast<std::uint32_t>(slot) + 1);
+    }
     settings->release();
     return ok;
 }

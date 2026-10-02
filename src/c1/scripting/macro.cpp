@@ -571,7 +571,9 @@ constexpr CaosToken kCell = caos_token('c', 'e', 'l', 'l');
 // LibreCreatures additions to the kit protocol (see case kDcap).
 constexpr CaosToken kDcap = caos_token('d', 'c', 'a', 'p');
 constexpr CaosToken kDend = caos_token('d', 'e', 'n', 'd');
+constexpr CaosToken kEcol = caos_token('e', 'c', 'o', 'l');
 constexpr int kDdeCapabilityDendrites = 1;
+constexpr int kDdeCapabilityEcology = 2;
 constexpr CaosToken kScrp = caos_token('s', 'c', 'r', 'p');
 // `gids` granularities, in the order ExecuteDDECommand tests them.
 constexpr CaosToken kRoot = caos_token('r', 'o', 'o', 't');
@@ -2700,7 +2702,13 @@ void Macro::execute_dde_command(MacroDdeHost& host, MacroRuntimeHost& runtime) {
         // (1: `dde: dend`).  It takes no arguments, so a kit can ask any
         // game: C1 leaves an unknown DDE subcommand without output, and one
         // with arguments would have them read as commands.
-        append_output(std::to_string(kDdeCapabilityDendrites) + "|");
+        append_output(std::to_string(kDdeCapabilityDendrites | kDdeCapabilityEcology) + "|");
+        return;
+    case kEcol:
+        // LibreCreatures: `dde: ecol` -- the rooms, each with its type and
+        // the temperature at its centre, then every creature with its place,
+        // kind and health, for the Ecology Kit's map.  No arguments.
+        append_output(host.render_ecology(*this));
         return;
     case kDend: {
         // LibreCreatures: `dde: dend lobe neuron rule` -- the dendrite count,

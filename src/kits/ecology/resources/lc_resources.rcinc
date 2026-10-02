@@ -1,0 +1,18 @@
+STRINGTABLE
+BEGIN
+    100 "OLE initialization failed.  Make sure that the OLE libraries are the correct version."
+    101 "Ecology Kit"
+    108 " - Paused"
+    200 "Ecology Kit"
+    201 "A map of the world and its creatures"
+    202 "Map"
+END
+
+// The page is laid out in code; this blank template's size is the smallest
+// it can be.
+300 DIALOG 0, 0, 300, 110
+STYLE 0x48c00044
+CAPTION "Page"
+FONT 8, "MS Sans Serif"
+BEGIN
+END
