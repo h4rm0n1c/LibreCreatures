@@ -191,6 +191,14 @@ void EcologySheet::poll() {
     }
     food_ = std::move(food);
     toys_ = std::move(toys);
+    if (run(c1kit::egg_places_script(), reply)) {
+        eggs_.clear();
+        for (const auto& place : c1kit::parse_object_places(reply)) {
+            if (c1kit::in_world(place.first, place.second)) {
+                eggs_.push_back(place);
+            }
+        }
+    }
     page_.refresh();
 }
 

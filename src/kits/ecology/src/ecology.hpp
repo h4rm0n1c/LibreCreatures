@@ -2,8 +2,8 @@
 
 // The Ecology Kit (Tool slot 10, new in LibreCreatures): a small map of the
 // whole world, its rooms coloured by a chosen layer (temperature, crowding,
-// food and drink, toys, disease), and every creature as a dot.  A click on a
-// dot selects that creature and moves the camera to it.
+// food and drink, toys, disease), every creature as a dot and every egg as a
+// small egg.  A click on a creature selects it and moves the camera to it.
 //
 // The rooms, their temperatures and the creatures come from the
 // LibreCreatures `dde: ecol` query (c1kit/ecology.hpp); the food and toys
@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace ecology {
@@ -79,6 +80,8 @@ public:
     const c1kit::EcologySnapshot& world() const { return world_; }
     const std::vector<int>& food_per_room() const { return food_; }
     const std::vector<int>& toys_per_room() const { return toys_; }
+    // Each egg's bottom centre, in the world.
+    const std::vector<std::pair<int, int>>& eggs() const { return eggs_; }
     // False against a game without `dde: ecol`.
     bool game_reports_ecology() const { return reports_ecology_; }
     bool connected() const { return connected_; }
@@ -116,6 +119,7 @@ private:
     c1kit::EcologySnapshot world_;
     std::vector<int> food_;
     std::vector<int> toys_;
+    std::vector<std::pair<int, int>> eggs_;
     bool reports_ecology_ = false;
     bool connected_ = false;
     bool game_paused_ = false;

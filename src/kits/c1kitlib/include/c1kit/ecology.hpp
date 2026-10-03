@@ -16,6 +16,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace c1kit {
@@ -159,9 +160,19 @@ constexpr EcologyObjectKind kEcologyObjectKinds[] = {
     {9, EcologyLayer::toys},   // instruments
 };
 
-inline std::string object_places_script(int genus) {
-    return "enum 2 " + std::to_string(genus) +
-           " 0,dde: putv posl,dde: putv posr,dde: putv posb,next,endm";
+inline std::string object_places_script(int genus, int species = 0) {
+    return "enum 2 " + std::to_string(genus) + " " + std::to_string(species) +
+           ",dde: putv posl,dde: putv posr,dde: putv posb,next,endm";
+}
+
+// Eggs: 2 5 2 (`setv clas 33882624`, 0x02050200), as both the laying script
+// and the Hatchery make them; the stock egg scripts are 2 5 2 too.  2 5 6
+// is the hidden Grendel Mother, not an egg.
+inline std::string egg_places_script() { return object_places_script(5, 2); }
+
+// Places inside the world; an egg parked off it (`mvto 0 2000`) is left out.
+inline bool in_world(int x, int y) {
+    return y >= 0 && y < kWorldHeight && x > -kWorldWidth && x < 2 * kWorldWidth;
 }
 
 // The reply's objects as points (their bottom centre).
