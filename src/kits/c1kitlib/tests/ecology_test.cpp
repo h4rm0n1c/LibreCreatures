@@ -47,6 +47,9 @@ int main() {
            places[1].first == 305);
     assert(object_places_script(6) ==
            "enum 2 6 0,dde: putv posl,dde: putv posr,dde: putv posb,next,endm");
+    assert(egg_places_script() ==
+           "enum 2 5 2,dde: putv posl,dde: putv posr,dde: putv posb,next,endm");
+    assert(in_world(2408, 870) && !in_world(0, 2000));
     std::puts("ecology_test: all passed");
     return 0;
 }

@@ -298,6 +298,21 @@ void MapPage::draw(CDC& dc, const CRect& rect) {
                      view_world_.top + (room.bottom + 1) * height / c1kit::kWorldHeight + 1);
     }
 
+    // The eggs, small and cream, under the creatures.
+    {
+        CBrush shell(RGB(250, 240, 200));
+        CPen outline(PS_SOLID, 1, RGB(90, 70, 40));
+        dc.SelectObject(&shell);
+        dc.SelectObject(&outline);
+        const int egg_width = (std::max)(2, width / 450);
+        const int egg_height = egg_width + egg_width / 2 + 1;
+        for (const auto& egg : sheet_.eggs()) {
+            const CPoint at = to_view(egg.first, egg.second);
+            dc.Ellipse(at.x - egg_width, at.y - 2 * egg_height, at.x + egg_width + 1, at.y + 1);
+        }
+        dc.SelectStockObject(NULL_BRUSH);
+    }
+
     // The creatures.  Infected ones get a magenta ring, the selected one a
     // white one.
     const int radius = (std::max)(3, width / 300);
@@ -401,6 +416,11 @@ void MapPage::describe() {
                         static_cast<int>(world.rooms.size()), living);
             break;
         }
+    }
+    if (sheet_.connected() && sheet_.game_reports_ecology()) {
+        CString eggs;
+        eggs.Format(_T("  Eggs (cream): %d."), static_cast<int>(sheet_.eggs().size()));
+        text += eggs;
     }
     legend_.SetWindowText(text);
 }
