@@ -2,6 +2,7 @@
 #include <cstring>
 #include "windows_macro_host.hpp"
 #include <cstdlib>
+#include <ctime>
 #include <vector>
 
 #include "windows_object_event_host.hpp"
@@ -3214,6 +3215,36 @@ std::string WindowsMacroHost::render_cell_values(
     return std::string(formatted);
 }
 
+
+// LibreCreatures, on `dde: died` (the death script, OWNR the creature): one
+// line "<moniker>|%H:%M %b %d %Y" appended to "Funeral Kit Deaths" in the
+// world folder.  The Funeral Kit hears of a death only when its event bar
+// entry is clicked or leaves the bar, perhaps hours later, and dated each
+// grave by that; it now takes the time from here (c1kit/funeral_files.hpp).
+void WindowsMacroHost::record_creature_death(creatures1::scripting::Macro& macro) {
+    creatures1::objects::Object* owner = macro.object_context.script_owner;
+    if (!is_live_object(owner)) {
+        return;
+    }
+    const creatures1::creatures::Creature* creature = creature_of(*owner);
+    const std::string directory = document_.world_directory();
+    if (creature == nullptr || directory.empty()) {
+        return;
+    }
+    const std::time_t now = std::time(nullptr);
+    const std::tm* local = std::localtime(&now);
+    char when[64] = {0};
+    if (local == nullptr || std::strftime(when, sizeof(when), "%H:%M %b %d %Y", local) == 0) {
+        return;
+    }
+    char line[96] = {0};
+    std::snprintf(line, sizeof(line), "%lx|%s\n",
+                  static_cast<unsigned long>(creature->skeleton().genome_source_filename), when);
+    if (std::FILE* file = std::fopen((directory + "Funeral Kit Deaths").c_str(), "ab")) {
+        std::fputs(line, file);
+        std::fclose(file);
+    }
+}
 
 std::string WindowsMacroHost::render_ecology(creatures1::scripting::Macro& /*macro*/) {
     // LibreCreatures `dde: ecol`, every field "%d|":

@@ -877,6 +877,9 @@ public:
                                             std::uint32_t cell,
                                             std::uint32_t variable,
                                             std::uint32_t field) = 0;
+    // LibreCreatures, on `dde: died`: notes when the script's creature died,
+    // for the Funeral Kit (which may hear of the death much later).
+    virtual void record_creature_death(Macro& macro) = 0;
     // LibreCreatures `dde: ecol`: rooms and creatures for the Ecology Kit.
     virtual std::string render_ecology(Macro& macro) = 0;
     // LibreCreatures `dde: dend`: each of a neuron's dendrites under a rule.

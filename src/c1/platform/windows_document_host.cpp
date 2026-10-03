@@ -742,6 +742,10 @@ void C1WindowsDocument::repair_world_data() {
     }
 }
 
+std::string C1WindowsDocument::world_directory() const {
+    return secondary_resource_directory(kMainDirectoryIndex);
+}
+
 std::string C1WindowsDocument::secondary_resource_directory(
     std::size_t index) const {
     if (!save_world_directory_.empty()) {

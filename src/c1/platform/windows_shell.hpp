@@ -1588,6 +1588,8 @@ public:
     // The creature export path serializes one dynamic object through the same
     // host the world save uses, so it needs the type by name.
     class ArchiveHost;
+    // The world's own folder (its Main Directory), with a trailing '\\'.
+    std::string world_directory() const;
 
 private:
     friend class ArchiveHost;

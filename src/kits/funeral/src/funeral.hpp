@@ -152,6 +152,7 @@ public:
     // A creature's name from the graves or the Register, or its moniker.
     CString name_for_moniker(const std::string& moniker) const;
     std::string world_file(const std::string& name) const;
+    std::string death_time(const std::string& moniker) const;
 
     // Writes the graves file now.
     bool save_graves();

@@ -27,7 +27,7 @@ enum GraveField : std::size_t {
     kGraveMotherMoniker = 3,
     kGraveBirthTime = 4,    // "21:16 Sep 15 2026" (%H:%M %b %d %Y)
     kGraveBirthplace = 5,
-    kGraveDeathTime = 6,    // when the kit was told, in the same form
+    kGraveDeathTime = 6,    // when it died (kDeathsFileName), else when the kit was told
     kGraveEpitaph = 7,
     kGraveHeadstone = 8,    // "1" once a headstone has been made
     kGraveReserved = 9,
@@ -51,6 +51,49 @@ inline std::string moniker_from_id(std::uint32_t id) {
     char text[16];
     std::snprintf(text, sizeof(text), "%lx", static_cast<unsigned long>(id));
     return text;
+}
+
+// Not in the 1996 kit: when each creature died, by the clock, as LibreCreatures
+// writes it (`dde: died`) beside the world -- one line per death,
+// "<moniker>|%H:%M %b %d %Y".  A death the kit hears of later (a corpse
+// leaving the event bar while the kit was closed) keeps its real time.
+constexpr char kDeathsFileName[] = "Funeral Kit Deaths";
+
+// The last time recorded for `moniker`, or empty.
+inline std::string recorded_death_time(const std::string& file_text,
+                                       const std::string& moniker) {
+    std::string found;
+    std::size_t start = 0;
+    while (start < file_text.size()) {
+        std::size_t end = file_text.find('\n', start);
+        if (end == std::string::npos) {
+            end = file_text.size();
+        }
+        std::string line = file_text.substr(start, end - start);
+        if (!line.empty() && line.back() == '\r') {
+            line.pop_back();
+        }
+        const std::size_t bar = line.find('|');
+        if (bar != std::string::npos && line.compare(0, bar, moniker) == 0 &&
+            bar == moniker.size()) {
+            found = line.substr(bar + 1);
+        }
+        start = end + 1;
+    }
+    return found;
+}
+
+// A grave for a creature the Register does not know: its moniker and when it
+// died, the rest empty.  Kept with the others, so it outlasts the kit.
+inline Grave unmarked_grave(const std::string& moniker, const std::string& death_time) {
+    Grave grave;
+    grave[kGraveMoniker] = moniker;
+    grave[kGraveDeathTime] = death_time;
+    return grave;
+}
+
+inline bool is_unmarked(const Grave& grave) {
+    return grave[kGraveCreatureName].empty() && grave[kGraveBirthTime].empty();
 }
 
 // A grave for a registered creature: the first six fields of its Register
