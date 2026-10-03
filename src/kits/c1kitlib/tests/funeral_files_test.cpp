@@ -69,11 +69,31 @@ void test_life_span() {
 
 } // namespace
 
+void test_death_times() {
+    const std::string file =
+        "4b5a4633|10:05 Oct 02 2026\n56424d31|11:00 Oct 02 2026\r\n4b5a4633|12:30 Oct 02 2026\n";
+    // The last line for a moniker wins; another moniker's line is not read.
+    assert(recorded_death_time(file, "4b5a4633") == "12:30 Oct 02 2026");
+    assert(recorded_death_time(file, "56424d31") == "11:00 Oct 02 2026");
+    assert(recorded_death_time(file, "4b5a463") == "");
+    assert(recorded_death_time("", "4b5a4633") == "");
+    const Grave grave = unmarked_grave("4b5a4633", "12:30 Oct 02 2026");
+    assert(is_unmarked(grave) && grave[kGraveMoniker] == "4b5a4633" &&
+           grave[kGraveDeathTime] == "12:30 Oct 02 2026" && !grave.has_headstone());
+    // An unmarked grave survives the graves file.
+    std::vector<Grave> graves{grave};
+    std::vector<Grave> back;
+    assert(parse_graves(serialize_graves(graves), back) && back.size() == 1 &&
+           is_unmarked(back[0]) && back[0][kGraveMoniker] == "4b5a4633" &&
+           back[0][kGraveDeathTime] == "12:30 Oct 02 2026");
+}
+
 int main() {
     test_moniker_from_id();
     test_grave_from_register();
     test_round_trip();
     test_life_span();
+    test_death_times();
     std::puts("funeral_files_test: all passed");
     return 0;
 }

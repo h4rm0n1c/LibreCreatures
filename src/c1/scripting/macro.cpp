@@ -2557,6 +2557,7 @@ void Macro::execute_dde_command(MacroDdeHost& host, MacroRuntimeHost& runtime) {
         host.adjust_score(DdeScoreCounter::dead_norns, 1);
         host.adjust_score(DdeScoreCounter::living_norns, -1);
         host.notify_score_changed();
+        host.record_creature_death(*this);
         return;
     case kNege:
         host.adjust_score(DdeScoreCounter::natural_eggs_laid, 1);

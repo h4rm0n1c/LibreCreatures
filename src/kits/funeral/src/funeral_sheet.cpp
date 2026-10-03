@@ -107,7 +107,9 @@ bool FuneralSheet::create_window() {
     load_register();
     load_graves();
     for (const c1kit::Grave& grave : graves_) {
-        if (!grave.has_headstone()) {
+        if (c1kit::is_unmarked(grave)) {
+            add_unmarked_page(grave[c1kit::kGraveMoniker], grave[c1kit::kGraveDeathTime]);
+        } else if (!grave.has_headstone()) {
             add_memorial_page(grave[c1kit::kGraveMoniker]);
         }
     }
@@ -272,29 +274,57 @@ void FuneralSheet::on_integer_message(std::int32_t payload) {
 
 // A registered creature gets a grave (once: the same death can be reported
 // by both routes) and a memorial page; one the Register does not know gets
-// an unmarked grave.  The Register is read afresh for each death, as the
-// original's LoadRegisterPhotoCollection @ 0x00409b20 does.
+// an unmarked grave and a "No Record" page.  The Register is read afresh for
+// each death, as the original's LoadRegisterPhotoCollection @ 0x00409b20
+// does.
+//
+// Not as the original: the grave is dated when the creature died, as the
+// game recorded it (c1kit::kDeathsFileName), not when the kit heard of it;
+// corpses that left the event bar are all reported at once when the kit
+// next connects.  Unmarked graves are kept too, so their pages come back
+// when the kit is opened again.
 void FuneralSheet::creature_died(const std::string& moniker) {
     commit_epitaphs();
     int page = page_index_for(moniker);
     if (page < 0) {
         load_register();
-        if (grave(moniker) == nullptr) {
-            if (const c1kit::OwnerRecord* record =
-                    c1kit::find_record(register_, moniker)) {
-                graves_.push_back(c1kit::grave_from_register(*record, now_for_grave()));
-                save_graves();
+        c1kit::Grave* existing = grave(moniker);
+        const c1kit::OwnerRecord* record = c1kit::find_record(register_, moniker);
+        if (existing == nullptr || (record != nullptr && c1kit::is_unmarked(*existing))) {
+            std::string died = existing != nullptr ? (*existing)[c1kit::kGraveDeathTime]
+                                                   : death_time(moniker);
+            c1kit::Grave made = record != nullptr ? c1kit::grave_from_register(*record, died)
+                                                  : c1kit::unmarked_grave(moniker, died);
+            if (existing != nullptr) {
+                *existing = std::move(made);
+            } else {
+                graves_.push_back(std::move(made));
             }
+            save_graves();
         }
-        page = grave(moniker) != nullptr
-                   ? add_memorial_page(moniker)
-                   : add_unmarked_page(moniker, now_for_grave());
+        const c1kit::Grave& dead = *grave(moniker);
+        page = c1kit::is_unmarked(dead)
+                   ? add_unmarked_page(moniker, dead[c1kit::kGraveDeathTime])
+                   : add_memorial_page(moniker);
     }
     SetActivePage(page);
     layout_pages();
     if (IsIconic()) {
         ShowWindow(SW_RESTORE);
     }
+}
+
+// When the game recorded the death, else now.
+std::string FuneralSheet::death_time(const std::string& moniker) const {
+    std::vector<std::uint8_t> bytes;
+    if (read_file(world_file(c1kit::kDeathsFileName), bytes)) {
+        const std::string recorded = c1kit::recorded_death_time(
+            std::string(bytes.begin(), bytes.end()), moniker);
+        if (!recorded.empty()) {
+            return recorded;
+        }
+    }
+    return now_for_grave();
 }
 
 int FuneralSheet::page_index_for(const std::string& moniker) {

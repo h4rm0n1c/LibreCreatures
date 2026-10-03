@@ -320,6 +320,7 @@ public:
                                  std::uint32_t lobe, std::uint32_t neuron,
                                  std::uint32_t rule) override;
     std::string render_ecology(creatures1::scripting::Macro& macro) override;
+    void record_creature_death(creatures1::scripting::Macro& macro) override;
     bool capture_picture(creatures1::scripting::Macro& macro,
                          std::uint8_t width, std::uint8_t height,
                          std::string& output_path) override;
