@@ -2273,9 +2273,16 @@ void Creature::handle_drop_event(
             skeleton_.previous_sprite_bounds);
         host.queue_dirty_world_rect(dirty_bounds);
     } else {
+        // HandleDropEvent @ 00409ae0: the vehicle is the SOURCE and the
+        // creature the target -- the vehicle picks the creature up (the
+        // vehicle branch of handle_pickup_event).  Queued the other way round
+        // it reached the vehicle as a creature event, which only stimulates,
+        // so a norn dropped over any vehicle stayed held: stuck to the hand,
+        // which had already been told the drop was done, until a vehicle's
+        // own pickup (the teleporter's button) took it.
         objects::Object& creature_object = host.object_for_creature(*this);
         host.queue_immediate_event(
-            creature_object, *vehicle, objects::ObjectEventId::event_4, 0);
+            *vehicle, creature_object, objects::ObjectEventId::event_4, 0);
     }
 
     host.dispatch_script_event(
