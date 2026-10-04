@@ -229,6 +229,25 @@ stays where the world has it, as it always has.
 
 `compare.log` lines now end with `frames=`, the number of SDL frames drawn.
 
+### World speed
+
+View > World speed (1x, 2x, 5x or 10x; setting `WorldSpeed`, commands
+32953-32956, all seven languages) runs the world that many steps for each
+normal one: the clock's step is the world's interval over the speed. The
+interval itself is untouched, so CAOS, the save and the kits see the same
+value. Everything in the world counts steps, so the status bar's world
+clock, ages, timers and life stages all run that much faster; the clock
+shows world time, not time on the wall.
+
+- The catch-up limit scales with the speed (three steps per normal step), and
+  one pulse spends at most 50 ms stepping, so a world too busy to keep up
+  runs as fast as it can and the window stays responsive.
+- Smooth motion glides over the shorter step.
+- Measured in the lab (8 creatures): 22.2, 55.4 and 111.8 steps a second at
+  2x, 5x and 10x, against 11.1 at 1x.
+- Neorender only: main still steps on `WM_TIMER`, which cannot run much
+  faster than 5x.
+
 ### Smooth motion
 
 View > Smooth motion (on by default; setting `SmoothMotion`, command 32952,
@@ -243,6 +262,13 @@ all seven languages) glides the view and every sprite between ticks:
 - The camera alone is not enough: a followed creature still steps once a
   tick, so a gliding view would make it jitter. Moving both keeps it still
   on screen.
+- A walking creature's step against its heading (east or west) is not
+  glided along x. Its skeleton hangs from the planted foot, so as its legs
+  change pose it rocks back on that foot, about 9 px once a stride. Gliding
+  that slid the whole norn, planted foot and all, back and forward again: it
+  rubber-banded. That step is now shown at once, as the native shows it.
+  Measured over 60 s of a walking norn: 260 frames slid backwards before,
+  none after (`C1_GLIDE_TRACE`, below).
 - Not glided, shown as they are:
   - a sprite new since the tick;
   - anything that moved more than 64 px in one tick (a teleport, the
@@ -265,3 +291,8 @@ Checked in the lab:
 - The frame dump still differs by 0 pixels.
 - Ticks still average 90.00 ms. Their spread widened, as each pulse now
   draws a frame: 5th to 95th percentile within 1 ms, worst about 107 ms.
+
+`C1_GLIDE_TRACE=<Windows path>` (for example `Z:\tmp\glide.txt`) writes
+one line per drawn frame for the selected creature: time, tick, progress,
+the body's world position and frame, where it was drawn, the drawn view,
+the down foot, the skeleton's bounds, the head's end and the facing.

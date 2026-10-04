@@ -4222,6 +4222,35 @@ void C1WindowsDocument::set_max_image_detail(
     }
 }
 
+int C1WindowsDocument::world_speed() const {
+    if (world_speed_ == 0) {
+        std::uint32_t value = 1;
+        HKEY key = nullptr;
+        if (open_c1_secondary_registry(key, KEY_READ)) {
+            DWORD type = 0;
+            DWORD size = sizeof(value);
+            if (RegQueryValueExA(key, "WorldSpeed", nullptr, &type,
+                                 reinterpret_cast<BYTE*>(&value), &size) != ERROR_SUCCESS ||
+                type != REG_DWORD) {
+                value = 1;
+            }
+            RegCloseKey(key);
+        }
+        world_speed_ = 1;
+        for (const int speed : kWorldSpeeds) {
+            if (static_cast<std::uint32_t>(speed) == value) {
+                world_speed_ = speed;
+            }
+        }
+    }
+    return world_speed_;
+}
+
+void C1WindowsDocument::set_world_speed(int speed) {
+    world_speed_ = speed;
+    write_view_setting("WorldSpeed", static_cast<std::uint32_t>(speed));
+}
+
 void C1WindowsDocument::set_smooth_motion(bool on) {
     if (sdl_view_ == nullptr) {
         return;
@@ -4312,6 +4341,7 @@ void C1WindowsDocument::present_sdl_frame() {
     drawn_tick_progress_ = progress;
     if (progress >= 1.0f) {
         renderer_->collect_scene(viewport, sdl_scene_);
+        trace_glide(progress, viewport);
         draw_hand_at_mouse(sdl_scene_, viewport);
         sdl_view_->render_frame(*this, sdl_scene_, viewport, world_zoom_factor(),
                                 &renderer_->debug_highlight_rect(), nullptr);
@@ -4346,10 +4376,47 @@ void C1WindowsDocument::present_sdl_frame() {
                    viewport.max_y + kMaximumGlidePerTick)};
     renderer_->collect_scene(gather, sdl_scene_);
     glide_scene_items(sdl_scene_, progress);
+    trace_glide(progress, viewport);
     // The hand is drawn at the mouse, over the view as drawn.
     draw_hand_at_mouse(sdl_scene_, viewport);
     sdl_view_->render_frame(*this, sdl_scene_, viewport, world_zoom_factor(),
                             &renderer_->debug_highlight_rect(), nullptr);
+}
+
+// Opt-in (C1_GLIDE_TRACE=<Windows path>): one line per drawn frame for the
+// selected creature, to see glides that run backwards on screen: time (ms),
+// world tick, progress, the body's world x, y and frame, where the body was
+// drawn (x, y), the drawn view's left and top, the down foot's x, y and side,
+// the skeleton's sprite bounds' left and right, the head chain's end x, and
+// the facing direction.
+void C1WindowsDocument::trace_glide(float progress,
+                                    const creatures1::world::WorldRect& viewport) {
+    static std::FILE* file = [] {
+        char path[MAX_PATH] = {};
+        const DWORD length = GetEnvironmentVariableA("C1_GLIDE_TRACE", path, MAX_PATH);
+        return length == 0 || length >= MAX_PATH ? nullptr : std::fopen(path, "w");
+    }();
+    const creatures1::creatures::Creature* creature = selected_creature();
+    if (file == nullptr || creature == nullptr || creature->skeleton().body == nullptr) {
+        return;
+    }
+    const creatures1::objects::Entity* body = creature->skeleton().body.get();
+    for (const creatures1::display::SceneItem& item : sdl_scene_) {
+        if (item.entity == body) {
+            const auto& skeleton = creature->skeleton();
+            std::fprintf(file, "%.1f %u %.3f %d %d %d %d %d %d %d %d %d %d %d %d %d %d\n",
+                         performance_counter_ms(), world_tick_count(), progress,
+                         body->world_x(), body->world_y(), body_frame_of(*body),
+                         item.world_x, item.world_y, viewport.min_x, viewport.min_y,
+                         skeleton.down_foot_x, skeleton.down_foot_y,
+                         static_cast<int>(skeleton.down_foot),
+                         skeleton.sprite_bounds.min_x, skeleton.sprite_bounds.max_x,
+                         skeleton.limb_chain_end_x[0],
+                         static_cast<int>(skeleton.facing_direction));
+            std::fflush(file);
+            return;
+        }
+    }
 }
 
 void C1WindowsDocument::snapshot_motion() {
@@ -4385,7 +4452,9 @@ float C1WindowsDocument::tick_progress() const {
         world_update_timer_interval_ms_ == 0) {
         return 1.0f;
     }
-    const double progress = (performance_counter_ms() - tick_started_ms_) /
+    // A step lasts the interval over View > World speed.
+    const double progress = (performance_counter_ms() - tick_started_ms_) *
+                            world_speed() /
                             static_cast<double>(world_update_timer_interval_ms_);
     return progress >= 1.0 ? 1.0f
            : progress <= 0.0 ? 0.0f
@@ -4477,6 +4546,8 @@ void C1WindowsDocument::glide_scene_items(
                        const creatures1::objects::Entity*>
         main_sprite;
     std::unordered_set<const creatures1::objects::Entity*> sprites;
+    // A walking creature's heading (+1 east, -1 west), by its body sprite.
+    std::unordered_map<const creatures1::objects::Entity*, int> heading;
     for (std::size_t index = 0; index < object_count(); ++index) {
         creatures1::objects::Object* object = object_at(index);
         if (object == nullptr) {
@@ -4494,6 +4565,16 @@ void C1WindowsDocument::glide_scene_items(
             frame != previous_body_frames_.end() &&
             frame->second != body_frame_of(*main)) {
             main = nullptr;
+        }
+        if (const auto* skeleton =
+                dynamic_cast<const creatures1::creatures::Skeleton*>(object);
+            skeleton != nullptr && main != nullptr) {
+            if (skeleton->facing_direction == creatures1::creatures::FacingDirection::east) {
+                heading[main] = 1;
+            } else if (skeleton->facing_direction ==
+                       creatures1::creatures::FacingDirection::west) {
+                heading[main] = -1;
+            }
         }
         sprites.clear();
         collect_object_entities(*object, sprites);
@@ -4523,8 +4604,15 @@ void C1WindowsDocument::glide_scene_items(
             continue;
         }
         // Back from where the tick left it by the part of the step not yet
-        // shown.
-        item.world_x -= dx - glide(dx, progress);
+        // shown.  Not a creature's step against its heading: a walking norn
+        // rocks back on its planted foot as its legs change pose (9 px once
+        // a stride), and gliding that slid the whole norn, planted foot and
+        // all, backwards and forwards again -- rubber banding.  The native
+        // shows it as a twitch within the step, and so does this.
+        if (const auto way = heading.find(reference);
+            way == heading.end() || dx * way->second >= 0) {
+            item.world_x -= dx - glide(dx, progress);
+        }
         item.world_y -= dy - glide(dy, progress);
     }
 }

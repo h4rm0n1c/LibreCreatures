@@ -9,4 +9,8 @@ BEGIN
     32950 "Afficher la vue de la créature à sa taille d'origine\nTaille normale"
     32951 "Afficher la vue de la créature deux fois plus grande\nDouble taille"
     32952 "Faire glisser la vue et tout ce qu'elle montre entre les pas du monde (avec un pas de retard)\nMouvement fluide"
+    32953 "Faire tourner le monde à sa vitesse normale\nVitesse normale"
+    32954 "Faire tourner le monde deux fois plus vite ; l'horloge et les âges comptent le temps du monde\nVitesse du monde 2x"
+    32955 "Faire tourner le monde cinq fois plus vite ; l'horloge et les âges comptent le temps du monde\nVitesse du monde 5x"
+    32956 "Faire tourner le monde dix fois plus vite ; l'horloge et les âges comptent le temps du monde\nVitesse du monde 10x"
 END

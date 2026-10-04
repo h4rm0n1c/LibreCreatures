@@ -9,4 +9,8 @@ BEGIN
     32950 "Mostra la visuale della creatura nelle dimensioni originali\nDimensione normale"
     32951 "Mostra la visuale della creatura al doppio delle dimensioni\nDimensione doppia"
     32952 "Fa scorrere la visuale e tutto ciò che contiene tra i passi del mondo (con un passo di ritardo)\nMovimento fluido"
+    32953 "Fa girare il mondo alla velocità normale\nVelocità normale"
+    32954 "Fa girare il mondo due volte più veloce; orologio ed età contano il tempo del mondo\nVelocità del mondo 2x"
+    32955 "Fa girare il mondo cinque volte più veloce; orologio ed età contano il tempo del mondo\nVelocità del mondo 5x"
+    32956 "Fa girare il mondo dieci volte più veloce; orologio ed età contano il tempo del mondo\nVelocità del mondo 10x"
 END

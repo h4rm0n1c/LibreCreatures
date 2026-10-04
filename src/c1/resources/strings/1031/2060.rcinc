@@ -9,4 +9,8 @@ BEGIN
     32950 "Das Betrachtungsfenster in Originalgröße zeigen\nNormale Größe"
     32951 "Das Betrachtungsfenster in doppelter Größe zeigen\nDoppelte Größe"
     32952 "Ansicht und alles darin zwischen den Schritten der Welt gleiten lassen (einen Schritt verzögert)\nFlüssige Bewegung"
+    32953 "Die Welt mit normaler Geschwindigkeit laufen lassen\nNormale Geschwindigkeit"
+    32954 "Die Welt doppelt so schnell laufen lassen; Uhr und Alter zählen Weltzeit\nWeltgeschwindigkeit 2x"
+    32955 "Die Welt fünfmal so schnell laufen lassen; Uhr und Alter zählen Weltzeit\nWeltgeschwindigkeit 5x"
+    32956 "Die Welt zehnmal so schnell laufen lassen; Uhr und Alter zählen Weltzeit\nWeltgeschwindigkeit 10x"
 END

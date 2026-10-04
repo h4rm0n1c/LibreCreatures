@@ -76,6 +76,13 @@ BEGIN
             MENUITEM "&Double", 32951
         END
         MENUITEM "&Mouvement fluide", 32952
+        POPUP "Vi&tesse du monde"
+        BEGIN
+            MENUITEM "&1x (normale)", 32953
+            MENUITEM "&2x", 32954
+            MENUITEM "&5x", 32955
+            MENUITEM "1&0x", 32956
+        END
         MENUITEM "", 0
         MENUITEM "CAOS Console\tCtrl+Shift+C", 32896
     END

@@ -139,6 +139,11 @@ enum class WorldZoom : std::uint32_t { one = 0, two = 1, fit_height = 2 };
 constexpr UINT kViewZoomFirst = 32944;
 constexpr UINT kViewDetailFirst = 32947;
 constexpr UINT kViewEyeZoomFirst = 32950;
+// Not native (neorender): View > World speed, 1x 2x 5x 10x.  The world
+// steps that many times as often; everything in it counts steps, so the
+// world clock, ages and timers all run that much faster with it.
+constexpr UINT kWorldSpeedFirst = 32953;
+constexpr int kWorldSpeeds[] = {1, 2, 5, 10};
 class C1WindowsView;
 void set_world_view_safe_frame(C1WindowsView* view,
                                std::uint32_t frame_count);
@@ -336,6 +341,8 @@ public:
     afx_msg void OnUpdateViewScale(CCmdUI* command_ui);
     afx_msg void OnSmoothMotion();
     afx_msg void OnUpdateSmoothMotion(CCmdUI* command_ui);
+    afx_msg void OnWorldSpeed(UINT command_id);
+    afx_msg void OnUpdateWorldSpeed(CCmdUI* command_ui);
     afx_msg void OnCreateMaleNorn();
     afx_msg void OnCreateFemaleNorn();
     afx_msg void OnMuteCreatureVoices();
@@ -1458,6 +1465,9 @@ public:
     // them, so the world is drawn one tick behind.  Setting SmoothMotion.
     bool smooth_motion() const { return smooth_motion_; }
     void set_smooth_motion(bool on);
+    // View > World speed: 1, 2, 5 or 10 world steps for each normal one.
+    int world_speed() const;
+    void set_world_speed(int speed);
     creatures1::display::ImageTierStore& image_tiers() { return image_tiers_; }
     creatures1::display::TierFileSource& tier_files();
     bool write_renderer_dib_rect(
@@ -1693,6 +1703,7 @@ private:
     // Smooth motion: where the view and each sprite were when the last tick
     // began, and when it began (QueryPerformanceCounter ms).
     bool smooth_motion_ = true;
+    mutable int world_speed_ = 0;  // 0 until read from the registry
     bool motion_snapshot_valid_ = false;
     std::unordered_map<const creatures1::objects::Entity*, std::pair<int, int>>
         previous_entity_positions_;
@@ -1713,6 +1724,7 @@ private:
                             const creatures1::world::WorldRect& viewport);
     // Smooth motion: each object's sprites moved back along its main
     // sprite's step, `progress` of the way from the last tick.
+    void trace_glide(float progress, const creatures1::world::WorldRect& viewport);
     void glide_scene_items(std::vector<creatures1::display::SceneItem>& scene,
                            float progress);
     void request_sdl_frame();

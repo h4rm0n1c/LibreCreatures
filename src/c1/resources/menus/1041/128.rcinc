@@ -76,6 +76,13 @@ BEGIN
             MENUITEM "2倍", 32951
         END
         MENUITEM "なめらかな動き", 32952
+        POPUP "世界の速さ"
+        BEGIN
+            MENUITEM "1倍（標準）", 32953
+            MENUITEM "2倍", 32954
+            MENUITEM "5倍", 32955
+            MENUITEM "10倍", 32956
+        END
         MENUITEM "", 0
         MENUITEM "CAOS Console\tCtrl+Shift+C", 32896
     END

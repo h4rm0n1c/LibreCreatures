@@ -435,6 +435,9 @@ BEGIN_MESSAGE_MAP(C1MainFrame, CFrameWnd)
     // View > Smooth motion.
     ON_COMMAND(32952, &C1MainFrame::OnSmoothMotion)
     ON_UPDATE_COMMAND_UI(32952, &C1MainFrame::OnUpdateSmoothMotion)
+    // View > World speed, 32953-32956.
+    ON_COMMAND_RANGE(32953, 32956, &C1MainFrame::OnWorldSpeed)
+    ON_UPDATE_COMMAND_UI_RANGE(32953, 32956, &C1MainFrame::OnUpdateWorldSpeed)
     ON_COMMAND(32804, &C1MainFrame::OnCreateMaleNorn)
     ON_COMMAND(32805, &C1MainFrame::OnCreateFemaleNorn)
     ON_COMMAND(32897, &C1MainFrame::OnMuteCreatureVoices)
@@ -1209,9 +1212,12 @@ namespace {
 // system timer rounds it to its own resolution, about 15.6 ms by default).
 constexpr UINT_PTR kWorldPulseTimerId = 0x4e52;
 constexpr UINT kWorldPulseIntervalMs = 10;
-// Ticks one pulse may run to catch up after a stall; any further backlog
-// is dropped, as WM_TIMER drops missed ticks.
+// Ticks one pulse may run to catch up after a stall, at normal speed (and
+// that many times the world speed when faster); any further backlog is
+// dropped, as WM_TIMER drops missed ticks.
 constexpr int kWorldClockMaximumCatchUp = 3;
+// The longest one pulse may spend stepping the world.
+constexpr double kWorldPulseBudgetMs = 50.0;
 
 double performance_counter_ms() {
     static const double frequency = [] {
@@ -1250,14 +1256,24 @@ void C1MainFrame::on_world_pulse() {
         return;
     }
     in_world_pulse_ = true;
+    // View > World speed divides the step; the interval itself (the
+    // world's own, which CAOS and the save know) is left alone.
+    int speed = 1;
+    if (auto* document = DYNAMIC_DOWNCAST(C1WindowsDocument, GetActiveDocument())) {
+        speed = document->world_speed();
+    }
+    const double step_ms = static_cast<double>(world_clock_interval_ms_) / speed;
     const double now = performance_counter_ms();
     int ticks = 0;
     while (world_clock_interval_ms_ != 0 && now >= world_clock_next_tick_ms_) {
-        world_clock_next_tick_ms_ += world_clock_interval_ms_;
+        world_clock_next_tick_ms_ += step_ms;
         frame_policy_->OnTimer();
-        if (++ticks == kWorldClockMaximumCatchUp) {
+        // A world too busy to keep up at this speed runs as fast as it
+        // can, without starving the window of messages.
+        if (++ticks == kWorldClockMaximumCatchUp * speed ||
+            performance_counter_ms() - now > kWorldPulseBudgetMs) {
             if (now >= world_clock_next_tick_ms_) {
-                world_clock_next_tick_ms_ = now + world_clock_interval_ms_;
+                world_clock_next_tick_ms_ = now + step_ms;
             }
             break;
         }
@@ -1523,6 +1539,23 @@ void C1MainFrame::OnUpdateSmoothMotion(CCmdUI* command_ui) {
     const bool available = document != nullptr && document->sdl_view_active();
     command_ui->Enable(available ? TRUE : FALSE);
     command_ui->SetCheck(available && document->smooth_motion() ? 1 : 0);
+}
+
+void C1MainFrame::OnWorldSpeed(UINT command_id) {
+    auto* document = DYNAMIC_DOWNCAST(C1WindowsDocument, GetActiveDocument());
+    if (document != nullptr) {
+        document->set_world_speed(kWorldSpeeds[command_id - kWorldSpeedFirst]);
+    }
+}
+
+void C1MainFrame::OnUpdateWorldSpeed(CCmdUI* command_ui) {
+    auto* document = DYNAMIC_DOWNCAST(C1WindowsDocument, GetActiveDocument());
+    command_ui->Enable(document != nullptr ? TRUE : FALSE);
+    command_ui->SetRadio(document != nullptr &&
+                                 document->world_speed() ==
+                                     kWorldSpeeds[command_ui->m_nID - kWorldSpeedFirst]
+                             ? TRUE
+                             : FALSE);
 }
 
 void C1MainFrame::OnImportEgg() {

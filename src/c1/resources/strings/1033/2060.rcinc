@@ -9,4 +9,8 @@ BEGIN
     32950 "Show the Creature's view at its original size\nNormal size"
     32951 "Show the Creature's view at twice its size\nDouble size"
     32952 "Glide the view and everything in it between the world's steps (drawn one step behind)\nSmooth motion"
+    32953 "Run the world at its normal speed\nNormal speed"
+    32954 "Run the world twice as fast; its clock and ages count world time\nWorld speed 2x"
+    32955 "Run the world five times as fast; its clock and ages count world time\nWorld speed 5x"
+    32956 "Run the world ten times as fast; its clock and ages count world time\nWorld speed 10x"
 END

@@ -9,4 +9,8 @@ BEGIN
     32950 "Mostrar la vista de la criatura a su tamaño original\nTamaño normal"
     32951 "Mostrar la vista de la criatura al doble de tamaño\nTamaño doble"
     32952 "Deslizar la vista y todo lo que muestra entre los pasos del mundo (con un paso de retraso)\nMovimiento suave"
+    32953 "Hacer funcionar el mundo a su velocidad normal\nVelocidad normal"
+    32954 "Hacer funcionar el mundo el doble de rápido; el reloj y las edades cuentan el tiempo del mundo\nVelocidad del mundo 2x"
+    32955 "Hacer funcionar el mundo cinco veces más rápido; el reloj y las edades cuentan el tiempo del mundo\nVelocidad del mundo 5x"
+    32956 "Hacer funcionar el mundo diez veces más rápido; el reloj y las edades cuentan el tiempo del mundo\nVelocidad del mundo 10x"
 END
