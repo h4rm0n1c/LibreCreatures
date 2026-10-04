@@ -55,6 +55,13 @@ public:
     virtual const ::creatures1::objects::Entity* entity_at(
         std::size_t index) const = 0;
     virtual void report_invalid_render_registry_index() const = 0;
+    // Not native: the sprite drawn after every other, whatever its plane --
+    // the hand.  It shares plane 9999 with whatever it holds, and equal
+    // planes draw in registry order, so an object made after the hand was
+    // drawn over it.
+    virtual const ::creatures1::objects::Entity* topmost_entity() const {
+        return nullptr;
+    }
     // Diagnostic only: an entity whose current image is missing or out of
     // its gallery's range is skipped this frame; the host reports it.
     virtual void report_invalid_sprite_image(

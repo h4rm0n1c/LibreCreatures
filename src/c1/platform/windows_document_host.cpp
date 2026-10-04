@@ -5274,6 +5274,11 @@ const creatures1::objects::Entity* C1WindowsDocument::entity_at( std::size_t ind
                                       : world_runtime_->entity_at(index);
 }
 
+// The hand is the cursor: drawn over everything, what it holds included.
+const creatures1::objects::Entity* C1WindowsDocument::topmost_entity() const {
+    return pointer_tool_ == nullptr ? nullptr : pointer_tool_->entity();
+}
+
 void C1WindowsDocument::report_invalid_render_registry_index() const {
     // The render policy plate @ 00412aa0 names invalid-index/MFC exception
     // behaviour as a host contract; same convention as the other registries.
