@@ -411,6 +411,15 @@ void WorldRenderer::render_world_rect_to_dib(
         (void)scratch_capacity;
     }
 
+    if (const objects::Entity* top = host_.topmost_entity()) {
+        auto* const first = visible_sprite_records_.data();
+        auto* const last = first + visible_count;
+        std::stable_partition(first, last, [this, top](const VisibleSpriteRecord& record) {
+            return host_.entity_at(static_cast<std::size_t>(
+                       record.entity_registry_index)) != top;
+        });
+    }
+
     for (std::size_t record_index = 0; record_index < visible_count;
          ++record_index) {
         const std::size_t registry_index = static_cast<std::size_t>(

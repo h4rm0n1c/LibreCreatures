@@ -1446,6 +1446,7 @@ public:
     const creatures1::objects::Entity* entity_at(std::size_t index) const override;
 
     void report_invalid_render_registry_index() const override;
+    const creatures1::objects::Entity* topmost_entity() const override;
     void report_invalid_sprite_image(
         const creatures1::objects::Entity& entity) const override;
 
