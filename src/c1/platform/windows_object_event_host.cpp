@@ -766,13 +766,29 @@ void WindowsCreaturePickupDropHost::move_to_and_redraw(
     document_.move_to_and_redraw(object, world_x, world_y);
 }
 
+namespace {
+
+// Creature::UpdateUnboundedWorldPosition @ 00409ce0 ends with
+// SimpleObject::UpdateUnboundedPositionAndRedraw on the pointer tool: the
+// hand's own unbounded step, which moves it to the mouse.  While a creature
+// is held the hand is bounded (its EVENT_5 handler), so nothing else moves
+// it; redrawing the view instead left the hand where it was picked up from,
+// and it wandered from the mouse as the view panned under the creature.
+void move_pointer_tool_with_held_creature(C1WindowsDocument& document) {
+    auto* pointer =
+        dynamic_cast<creatures1::objects::SimpleObject*>(document.pointer_tool());
+    if (pointer == nullptr) {
+        return;
+    }
+    WindowsSimpleObjectInteractionHost host(document);
+    pointer->update_unbounded_position_and_redraw(host);
+}
+
+} // namespace
+
 void WindowsCreaturePickupDropHost::
     update_pointer_tool_unbounded_position_and_redraw() {
-    C1MainFrame* frame = active_main_frame();
-    C1WindowsView* view = frame == nullptr ? nullptr : active_c1_view(*frame);
-    if (view != nullptr) {
-        view->update_pointer_tool_unbounded_position_and_redraw();
-    }
+    move_pointer_tool_with_held_creature(document_);
 }
 
 void WindowsCreaturePickupDropHost::queue_immediate_event(
@@ -819,11 +835,7 @@ void WindowsCreatureUpdateHost::move_to_and_redraw(
 
 void WindowsCreatureUpdateHost::
     update_pointer_tool_unbounded_position_and_redraw() {
-    C1MainFrame* frame = active_main_frame();
-    C1WindowsView* view = frame == nullptr ? nullptr : active_c1_view(*frame);
-    if (view != nullptr) {
-        view->update_pointer_tool_unbounded_position_and_redraw();
-    }
+    move_pointer_tool_with_held_creature(document_);
 }
 
 void WindowsCreatureUpdateHost::queue_immediate_event(
