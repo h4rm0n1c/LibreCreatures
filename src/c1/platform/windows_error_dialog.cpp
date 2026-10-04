@@ -166,14 +166,54 @@ END_MESSAGE_MAP()
 
 } // namespace
 
+namespace {
+
+// Takes any WM_QUIT out of the thread's queue; true, and its exit code, if
+// there was one.
+bool take_pending_quit(int& exit_code) {
+    bool found = false;
+    MSG message{};
+    while (::PeekMessage(&message, nullptr, WM_QUIT, WM_QUIT, PM_REMOVE)) {
+        exit_code = static_cast<int>(message.wParam);
+        found = true;
+    }
+    return found;
+}
+
+} // namespace
+
+// The report must stay up until it is dismissed.  It is most needed while
+// the game closes -- a world that will not save on exit -- and by then the
+// game has stopped the kits and revoked its OLE factories, and MFC queues
+// WM_QUIT as the last OLE object goes.  A modal loop that meets WM_QUIT ends
+// at once, so the report flashed and vanished.  The quit is held back while
+// the report is up and posted again once it has been dismissed.
 void show_error_report(CWnd* parent, const std::string& title,
                        const std::string& summary, const std::string& details) {
-    ErrorReportDialog dialog(parent, title, summary, details);
-    if (dialog.run() == -1) {
+    int quit_code = 0;
+    bool quit_pending = take_pending_quit(quit_code);
+    INT_PTR result = -1;
+    for (int attempt = 0; attempt < 8; ++attempt) {
+        ErrorReportDialog dialog(parent, title, summary, details);
+        result = dialog.run();
+        if (result == IDOK || result == IDCANCEL) {
+            break;
+        }
+        // Ended by a quit that arrived while it was up, or never made.
+        if (!take_pending_quit(quit_code)) {
+            break;
+        }
+        quit_pending = true;
+    }
+    if (result != IDOK && result != IDCANCEL) {
         // The dialog could not be made: the plain box still says it all.
+        quit_pending = take_pending_quit(quit_code) || quit_pending;
         AfxMessageBox(CString(summary.c_str()) + _T("\n\n") +
                           CString(details.c_str()),
                       MB_ICONWARNING);
+    }
+    if (quit_pending) {
+        ::PostQuitMessage(quit_code);
     }
 }
 

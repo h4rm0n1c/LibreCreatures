@@ -1,3 +1,4 @@
+#include "world_in_use.hpp"
 #include <cstdio>
 #include "windows_sfc_ole_host.hpp"
 #include "windows_macro_host.hpp"
@@ -419,6 +420,18 @@ bool C1StartupHost::prepare_embedded_main_window(std::string_view world_path) {
     // document, view, frame, main-window, and OnNewDocument/serialization
     // behavior in MFC's actual template machinery instead of fabricating
     // a frame beside the document model.
+    // Not native: refuse to run a world another copy of the game has open
+    // (world_in_use.hpp).  USER mode loads the stored save path.
+    const std::string world_file =
+        app_state_.privilege_level ==
+                    creatures1::application::PrivilegeLevel::user &&
+                !world_save_path_.empty()
+            ? world_save_path_
+            : std::string(world_path);
+    if (!claim_world(world_file)) {
+        report_world_in_use(world_file);
+        return false;
+    }
     CDocument* document = nullptr;
     if (app_state_.privilege_level ==
         creatures1::application::PrivilegeLevel::user) {

@@ -662,6 +662,8 @@ public:
     BOOL OnOpenDocument(LPCTSTR path) override;
 
     BOOL OnSaveDocument(LPCTSTR path) override;
+    void ReportSaveLoadException(LPCTSTR path, CException* error, BOOL saving,
+                                 UINT default_prompt) override;
 
     BOOL OnNewDocument() override;
 
