@@ -1,3 +1,4 @@
+#include "world_in_use.hpp"
 #include "windows_creature_hosts.hpp"
 #include "windows_object_event_host.hpp"
 #include "windows_pointer_tool_host.hpp"
@@ -584,8 +585,14 @@ BOOL C1WindowsDocument::OnOpenDocument(LPCTSTR path) {
     if (path == nullptr) {
         return FALSE;
     }
-    construct_semantic_document();
     const CStringA native_path(path);
+    // Not native: a world open in another copy of the game is not opened
+    // here too (world_in_use.hpp); this world stays.
+    if (!claim_world(native_path.GetString())) {
+        report_world_in_use(native_path.GetString());
+        return FALSE;
+    }
+    construct_semantic_document();
     if (!semantic_document_->open_document(
             *this, std::string_view(native_path.GetString(),
                                     native_path.GetLength()))) {
@@ -641,6 +648,27 @@ BOOL C1WindowsDocument::OnSaveDocument(LPCTSTR path) {
         log_world_save_failure(native_path.GetString(), "unknown exception");
         return FALSE;
     }
+}
+
+// Not native: a save MFC could not complete (the file locked, the disk full,
+// access denied) is reported in the game's own error report -- the reason in
+// text the player can select and copy -- not MFC's plain box.  That box also
+// vanished when it came up as the game closed (see show_error_report).
+// Loading keeps MFC's report.
+void C1WindowsDocument::ReportSaveLoadException(LPCTSTR path, CException* error,
+                                                BOOL saving, UINT default_prompt) {
+    if (!saving) {
+        CDocument::ReportSaveLoadException(path, error, saving, default_prompt);
+        return;
+    }
+    char message[512] = {};
+    if (error != nullptr) {
+        error->GetErrorMessage(message, sizeof(message));
+    }
+    log_world_save_failure(path == nullptr ? nullptr : CStringA(path).GetString(),
+                           message[0] == '\0' ? "the file could not be written"
+                                               : message);
+    report_save_failure();
 }
 
 BOOL C1WindowsDocument::OnNewDocument() {
