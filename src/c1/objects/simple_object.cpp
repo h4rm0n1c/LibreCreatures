@@ -405,13 +405,16 @@ void SimpleObject::end_interaction_with_source(
                 static_cast<std::uint32_t>(BoundsMode::default_world), host);
             entity_->set_render_plane(saved_entity_render_plane);
             update_movement_bounds(host);
-            // A floor up to kDropSnapUp pixels above the object's bottom
-            // edge still counts: let go of just past a floor line (the hand
-            // holds things low), it is set on that floor rather than falling
-            // through to the room beneath.
-            constexpr int kDropSnapUp = 16;
+            // A floor above the object's bottom edge still counts while at
+            // most half the object is below it: let go of across a floor
+            // line, it lands on whichever side most of it is on, rather than
+            // falling through to the room beneath because its bottom edge
+            // was just past the line.  Half its height, not a fixed margin,
+            // so a large object is judged as fairly as a small one; its whole
+            // height would lift an object hanging mostly below a floor up
+            // onto it.
             int probe_x = old_world_x;
-            int probe_y = old_world_y + entity_->current_image_height() - kDropSnapUp;
+            int probe_y = old_world_y + entity_->current_image_height() / 2;
             // Let go of by a creature: the floor it stands on.  A norn holds
             // things low and out in front, so near a ledge or a room's edge
             // the object's own corner can be under the floor line or past the
@@ -424,7 +427,9 @@ void SimpleObject::end_interaction_with_source(
                 source_object->get_bounds(&creature_bounds);
                 probe_x = creature_bounds.min_x +
                           (creature_bounds.max_x - creature_bounds.min_x) / 2;
-                probe_y = creature_bounds.max_y - kDropSnapUp;
+                // Just above its feet: the floor it stands on.
+                constexpr int kCreatureFootMargin = 16;
+                probe_y = creature_bounds.max_y - kCreatureFootMargin;
             }
             world::WorldRect floor_room{};
             if (has_bounds_flag(0x40u) &&
