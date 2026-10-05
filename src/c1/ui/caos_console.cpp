@@ -190,7 +190,11 @@ void append_caos_output(CaosConsoleHost& host, std::string_view text) {
 void execute_caos_command(CaosConsoleHost& host, std::string_view command) {
     const CaosExecutionResult result = host.execute_command(command);
     if (!result.succeeded) {
-        append_caos_output(host, "Error: Failed to execute command\r\n");
+        append_caos_output(host, "Error: ");
+        append_caos_output(host, result.output.empty()
+                                     ? std::string_view("Failed to execute command")
+                                     : std::string_view(result.output));
+        append_caos_output(host, "\r\n");
         return;
     }
 

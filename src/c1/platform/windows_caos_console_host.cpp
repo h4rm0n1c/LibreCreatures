@@ -1,3 +1,4 @@
+#include <cstring>
 #include "windows_shell.hpp"
 
 #include <fstream>
@@ -203,18 +204,39 @@ creatures1::ui::CaosExecutionResult C1CaosConsoleDialog::execute_command(
     }
 
     // Reuse the pipe server's CAOS dispatch: the console is a second front end
-    // onto the same interpreter, not a separate execution path.
+    // onto the same interpreter, not a separate execution path.  The pipe
+    // takes requests, not bare CAOS: what is typed is sent as
+    // FIRECOMMAND <1, run now and return output> <script>, as a kit or the
+    // lab's client sends it.  Passed through as typed, every line was an
+    // "unknown command" and the console only ever said it had failed.
+    std::string request(command);
+    if (request.find(kRecordSeparator) == std::string::npos) {
+        request = std::string("FIRECOMMAND") + kRecordSeparator + "1" +
+                  kRecordSeparator + request;
+    }
     const std::string response =
         static_cast<creatures1::application::MainFramePipeServerPlatform&>(
             *frame_)
-            .dispatch_pipe_command(command);
+            .dispatch_pipe_command(request);
 
+    // OK <length> <output>, or ERROR <reason>.
     const std::size_t separator = response.find(kRecordSeparator);
     const std::string status = response.substr(0, separator);
     result.succeeded = status == "OK";
-    if (separator != std::string::npos) {
-        result.output = response.substr(separator + 1);
+    if (separator == std::string::npos) {
+        return result;
     }
+    std::string rest = response.substr(separator + 1);
+    if (result.succeeded) {
+        const std::size_t length_end = rest.find(kRecordSeparator);
+        if (length_end != std::string::npos &&
+            rest.find_first_not_of("0123456789") == length_end) {
+            rest.erase(0, length_end + 1);
+        }
+        // The game's output buffer is a C string.
+        rest.resize(std::strlen(rest.c_str()));
+    }
+    result.output = rest;
     return result;
 }
 
