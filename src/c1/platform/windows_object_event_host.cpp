@@ -678,7 +678,15 @@ bool WindowsCreaturePickupDropHost::pointer_pickup_is_privileged(
     }
     constexpr std::uint32_t kRightWithShift = static_cast<std::uint32_t>(
         creatures1::ui::SfcViewPendingInputFlag::right_with_shift);
-    return (view->view_state().previous_input_flags & kRightWithShift) != 0;
+    // Not native: the gesture authorises this one pickup and is then spent.
+    // The snapshot is otherwise refreshed only when the pointer tool
+    // consumes input, and a held creature consumes the click that drops it
+    // without refreshing it, so a shift+right-click kept authorising later
+    // plain right-clicks: a grendel under the hand went into it.
+    std::uint32_t& previous = view->view_state().previous_input_flags;
+    const bool shifted = (previous & kRightWithShift) != 0;
+    previous &= ~kRightWithShift;
+    return shifted;
 }
 
 int WindowsCreaturePickupDropHost::vehicle_attachment_render_plane(
@@ -751,6 +759,12 @@ bool WindowsCreaturePickupDropHost::read_view_input_and_clear_pending_flag(
     out.viewport_left = document_.viewport_left();
     out.viewport_top = document_.renderer_viewport_top();
     const bool had_pending = state.pending_input_flags != 0;
+    if (had_pending) {
+        // Not native: the click is recorded as the last gesture, as the
+        // pointer tool records the ones it consumes (see
+        // pointer_pickup_is_privileged).
+        state.previous_input_flags = state.pending_input_flags;
+    }
     state.pending_input_flags = 0;
     return had_pending;
 }
@@ -819,6 +833,12 @@ bool WindowsCreatureUpdateHost::read_view_input_and_clear_pending_flag(
     out.viewport_left = document_.viewport_left();
     out.viewport_top = document_.renderer_viewport_top();
     const bool had_pending = state.pending_input_flags != 0;
+    if (had_pending) {
+        // Not native: the click is recorded as the last gesture, as the
+        // pointer tool records the ones it consumes (see
+        // pointer_pickup_is_privileged).
+        state.previous_input_flags = state.pending_input_flags;
+    }
     state.pending_input_flags = 0;
     return had_pending;
 }
