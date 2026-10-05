@@ -274,8 +274,11 @@ std::uint8_t* Creature::resolve_genome_locus(
             }
             return &g_unresolved_creature_locus_sentinel;
         case 5:
+            // ResolveGenomeLocus @ 00408d30 maps loci 0-15 to the sixteen
+            // drives, Boredom (10) included.  Leaving 10 out sent every
+            // Boredom receptor and emitter to the sentinel, so the drive
+            // never rose and nothing boredom drives ever happened.
             return locus_index < controls.goal_direction_drive_levels.size()
-                           && locus_index != 10
                        ? &controls.goal_direction_drive_levels[locus_index]
                        : &g_unresolved_creature_locus_sentinel;
         }
@@ -322,8 +325,11 @@ std::uint8_t* Creature::resolve_genome_locus(
             }
             return &g_unresolved_creature_locus_sentinel;
         case 5:
+            // ResolveGenomeLocus @ 00408d30 maps loci 0-15 to the sixteen
+            // drives, Boredom (10) included.  Leaving 10 out sent every
+            // Boredom receptor and emitter to the sentinel, so the drive
+            // never rose and nothing boredom drives ever happened.
             return locus_index < controls.goal_direction_drive_levels.size()
-                           && locus_index != 10
                        ? &controls.goal_direction_drive_levels[locus_index]
                        : &g_unresolved_creature_locus_sentinel;
         }

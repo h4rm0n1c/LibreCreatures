@@ -106,6 +106,8 @@ std::uint8_t* resolve_genome_locus(GenomeLocusStorage& storage,
                                    std::uint8_t tissue,
                                    std::uint8_t locus) {
     std::uint8_t* result = nullptr;
+    // Tissue 5 is the sixteen drives, loci 0-15, Boredom (10) included, as
+    // ResolveGenomeLocus @ 00408d30 maps them.
     if (tissue < 6) {
         if (kind == GenomeLocusKind::receptor) {
             const bool valid =
@@ -114,7 +116,7 @@ std::uint8_t* resolve_genome_locus(GenomeLocusStorage& storage,
                 (tissue == 2 && locus <= 1) ||
                 (tissue == 3 && locus == 0) ||
                 (tissue == 4 && locus <= 15) ||
-                (tissue == 5 && locus <= 15 && locus != 10);
+                (tissue == 5 && locus <= 15);
             if (valid) {
                 result = storage.receptor_locus(tissue, locus);
             }
@@ -125,7 +127,7 @@ std::uint8_t* resolve_genome_locus(GenomeLocusStorage& storage,
                 (tissue == 2 && locus <= 1) ||
                 (tissue == 3 && locus == 0) ||
                 (tissue == 4 && locus <= 5) ||
-                (tissue == 5 && locus <= 15 && locus != 10);
+                (tissue == 5 && locus <= 15);
             if (valid) {
                 result = storage.emitter_locus(tissue, locus);
             }
