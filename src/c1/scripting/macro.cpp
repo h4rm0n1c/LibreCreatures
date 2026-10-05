@@ -137,6 +137,15 @@ void Macro::serialize(MacroArchive& archive) {
         subroutine_cache_cursor_offset =
             std::min(subroutine_cache_cursor_offset, script_buffer.size());
         wait_ticks_remaining = archive.read_uint32();
+        // Not native: the world format has no field for "paused because
+        // new:/sys:/dde:/app: ended its turn" (see execute_script_for_
+        // classifier), so a script saved in that gap lost it on load, and
+        // the first tick -- objects and creatures tick before scripts -- could
+        // replace it before its next turn: a norn saved mid-lay left her egg
+        // at the world origin.  Every loaded script is held so until its
+        // first turn after loading; an event for its owner waits at most
+        // that one turn.
+        paused_by_prefixed_command = true;
         return;
     }
 
