@@ -1,4 +1,10 @@
 #include <cstring>
+#include "windows_macro_host.hpp"
+#include "../scripting/macro_holder.hpp"
+#include <array>
+#include <algorithm>
+#include <stdexcept>
+#include <vector>
 #include "windows_shell.hpp"
 
 #include <fstream>
@@ -12,7 +18,6 @@ C1CaosConsoleDialog* g_caos_console_dialog = nullptr;
 
 // The pipe-server protocol answers "OK" or "ERROR" followed by a record
 // separator and the payload.
-constexpr char kRecordSeparator = '\x1e';
 
 creatures1::ui::CaosRect to_caos_rect(const RECT& rect) {
     return {rect.left, rect.top, rect.right, rect.bottom};
@@ -203,40 +208,42 @@ creatures1::ui::CaosExecutionResult C1CaosConsoleDialog::execute_command(
         return result;
     }
 
-    // Reuse the pipe server's CAOS dispatch: the console is a second front end
-    // onto the same interpreter, not a separate execution path.  The pipe
-    // takes requests, not bare CAOS: what is typed is sent as
-    // FIRECOMMAND <1, run now and return output> <script>, as a kit or the
-    // lab's client sends it.  Passed through as typed, every line was an
-    // "unknown command" and the console only ever said it had failed.
-    std::string request(command);
-    if (request.find(kRecordSeparator) == std::string::npos) {
-        request = std::string("FIRECOMMAND") + kRecordSeparator + "1" +
-                  kRecordSeparator + request;
-    }
-    const std::string response =
-        static_cast<creatures1::application::MainFramePipeServerPlatform&>(
-            *frame_)
-            .dispatch_pipe_command(request);
-
-    // OK <length> <output>, or ERROR <reason>.
-    const std::size_t separator = response.find(kRecordSeparator);
-    const std::string status = response.substr(0, separator);
-    result.succeeded = status == "OK";
-    if (separator == std::string::npos) {
+    // Run the typed CAOS here, as the pipe's FIRECOMMAND 1 does (run now,
+    // return output, the selected creature as owner) -- not through the
+    // pipe server, which runs only under Wine (Windows kits use OLE), so on
+    // Windows every line failed with "Server unavailable".
+    auto* document = DYNAMIC_DOWNCAST(C1WindowsDocument, frame_->GetActiveDocument());
+    if (document == nullptr) {
+        result.output = "No world is open";
         return result;
     }
-    std::string rest = response.substr(separator + 1);
-    if (result.succeeded) {
-        const std::size_t length_end = rest.find(kRecordSeparator);
-        if (length_end != std::string::npos &&
-            rest.find_first_not_of("0123456789") == length_end) {
-            rest.erase(0, length_end + 1);
-        }
-        // The game's output buffer is a C string.
-        rest.resize(std::strlen(rest.c_str()));
+    WindowsMacroHost host(*document);
+    creatures1::scripting::MacroHolder holder(
+        creatures1::scripting::MacroExecutionMode::execute_to_output, host);
+    creatures1::scripting::Macro* macro = holder.macro();
+    if (macro == nullptr) {
+        result.output = "Could not make a script";
+        return result;
     }
-    result.output = rest;
+    macro->load_script_text(std::string(command));
+    creatures1::scripting::MacroObjectContext& context = macro->object_context;
+    context.script_owner = nullptr;
+    if (creatures1::creatures::Creature* creature = document->selected_creature()) {
+        try {
+            context.script_owner = &document->object_for_creature(*creature);
+        } catch (const std::out_of_range&) {
+        }
+    }
+    std::vector<char> output(0x10000, '\0');  // the pipe's FIRECOMMAND buffer
+    if (!holder.reset_result_and_invoke_result_entry(output.data())) {
+        result.output = "The script could not run (check the CAOS)";
+        return result;
+    }
+    result.succeeded = true;
+    const std::size_t length =
+        std::min<std::size_t>(holder.callback_result(), output.size());
+    result.output.assign(output.data(), length);
+    result.output.resize(std::strlen(result.output.c_str()));
     return result;
 }
 
