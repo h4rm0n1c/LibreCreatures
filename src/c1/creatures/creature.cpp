@@ -1765,12 +1765,15 @@ void Creature::update_goal_direction(const CreatureGoalDirectionHost& world) {
             (product + ((product >> 31) & 0xff)) >> 8;
     }
 
-    // The native loop carries the maximum of 10 and each drive score / 4.
-    // It is not a four-way sum or an average despite the decompiler's
-    // temporary-variable shape.
+    // Native @0040cda0 starts at 10 and, for each drive, compares the raw
+    // score with the running value: a larger score replaces it with that
+    // score / 4 (CMOVLE keeps the running value otherwise).  It is not a
+    // maximum of the quarters -- a later, smaller score can lower it.
     std::int32_t drive_baseline = 10;
     for (const std::int32_t score : drive_scores) {
-        drive_baseline = std::max(drive_baseline, score / 4);
+        if (score > drive_baseline) {
+            drive_baseline = score / 4;
+        }
     }
 
     std::array<std::int32_t, kAttentionRecordCount> goal_scores{};
@@ -2795,11 +2798,21 @@ void Creature::update_perception(
                         .activation = activation;
                 }
             };
+            // Native only ever raises these neurons; a false fact leaves
+            // whatever the neuron already holds.
             set_activation(0x0f, 0xff);
-            set_activation(0x11, facts.link_is_my_parent ? 0xff : 0);
-            set_activation(0x12, facts.link_is_my_child ? 0xff : 0);
-            set_activation(0x10, facts.shares_a_parent ? 0xff : 0);
-            set_activation(0x13, facts.is_opposite_sex ? 0xff : 0);
+            if (facts.link_is_my_parent) {
+                set_activation(0x11, 0xff);
+            }
+            if (facts.link_is_my_child) {
+                set_activation(0x12, 0xff);
+            }
+            if (facts.shares_a_parent) {
+                set_activation(0x10, 0xff);
+            }
+            if (facts.is_opposite_sex) {
+                set_activation(0x13, 0xff);
+            }
         }
     }
 
@@ -2808,15 +2821,21 @@ void Creature::update_perception(
             static_cast<std::uint32_t>(brain::StandardLobeIndex::general_sensory));
         const world::WorldRect bounds = skeleton_.movement_bounds();
         const int limb_x = skeleton_.limb_chain_end_x[0];
-        int edge_distance = -1;
+        // Native: within 80 px of the wall being faced, neuron 3 reads
+        // 200 + 2 * (signed offset to that wall), so the offset is normally
+        // zero or negative.  It must not be treated as "no wall".
+        bool near_edge = false;
+        int edge_distance = 0;
         if (skeleton_.facing_direction == FacingDirection::west &&
             limb_x - bounds.min_x <= 0x4f) {
+            near_edge = true;
             edge_distance = bounds.min_x - limb_x;
         } else if (skeleton_.facing_direction == FacingDirection::east &&
                    bounds.max_x - limb_x <= 0x4f) {
+            near_edge = true;
             edge_distance = limb_x - bounds.max_x;
         }
-        if (edge_distance >= 0 && sensory_lobe.neuron_count_value() > 3) {
+        if (near_edge && sensory_lobe.neuron_count_value() > 3) {
             const int activation = std::clamp(edge_distance * 2 + 200, 0, 0xff);
             sensory_lobe.neuron(3).activation =
                 static_cast<std::uint8_t>(activation);
@@ -2874,29 +2893,36 @@ void Creature::apply_stimulus(
     std::uint32_t magnitude,
     const StimulusSourceHost& source_host,
     common::DebugLogHost* log_host) {
+    static_cast<void>(source_creature);
     if (is_dead() || source_object == nullptr) {
         return;
     }
 
     const std::uint8_t original_flags = descriptor.flags;
     if ((original_flags & 0x01) != 0) {
+        // Native @0040b8a0 clamps the signed magnitude to 0..255 before
+        // scaling, and the scale branch excludes the 0x02 neuron offset.
+        const std::int32_t signed_magnitude = static_cast<std::int32_t>(magnitude);
+        const std::uint32_t clamped_magnitude = static_cast<std::uint32_t>(
+            std::clamp(signed_magnitude, 0, 0xff));
         descriptor.attention_activation =
-            scaled_byte(descriptor.attention_activation, magnitude);
+            scaled_byte(descriptor.attention_activation, clamped_magnitude);
         descriptor.target_lobe_activation =
-            scaled_byte(descriptor.target_lobe_activation, magnitude);
-        chemical_amounts.first = scaled_byte(chemical_amounts.first, magnitude);
-        chemical_amounts.second = scaled_byte(chemical_amounts.second, magnitude);
-        chemical_amounts.third = scaled_byte(chemical_amounts.third, magnitude);
-        chemical_amounts.fourth = scaled_byte(chemical_amounts.fourth, magnitude);
-    }
-    if ((original_flags & 0x02) != 0) {
+            scaled_byte(descriptor.target_lobe_activation, clamped_magnitude);
+        chemical_amounts.first = scaled_byte(chemical_amounts.first, clamped_magnitude);
+        chemical_amounts.second = scaled_byte(chemical_amounts.second, clamped_magnitude);
+        chemical_amounts.third = scaled_byte(chemical_amounts.third, clamped_magnitude);
+        chemical_amounts.fourth = scaled_byte(chemical_amounts.fourth, clamped_magnitude);
+    } else if ((original_flags & 0x02) != 0) {
         descriptor.target_neuron_index = static_cast<std::uint8_t>(
             descriptor.target_neuron_index + static_cast<std::int8_t>(magnitude));
     }
-    if (control_state().asleep_signal != 0 && (original_flags & 0x04) == 0) {
+    // Native gates on the skeleton's sleep indicator itself, not on the
+    // asleep signal that UpdateDriveThresholdState copies from it.
+    if (skeleton_.sleep_indicator_active && (original_flags & 0x04) == 0) {
         return;
     }
-    if (control_state().asleep_signal != 0) {
+    if (skeleton_.sleep_indicator_active) {
         descriptor.target_lobe_activation /= 2;
         descriptor.attention_activation /= 2;
     }
@@ -2947,8 +2973,11 @@ void Creature::apply_stimulus(
                                           chemical_amounts.fourth, log_host);
     }
 
-    const bool is_self = source_creature == this ||
-                         source_host.is_this_creature(*source_object, *this);
+    // Native compares only the source object with this creature.  The
+    // source creature is the stimulated creature itself on every queued and
+    // built-in stimulus, so gating on it stopped the goal-direction matrix
+    // ever learning which objects relieve which drives.
+    const bool is_self = source_host.is_this_creature(*source_object, *this);
     if (!is_self && attention_index < goal_direction_weight_matrix_.size()) {
         const std::array<std::uint8_t, 4> ids = {
             chemical_ids.first, chemical_ids.second, chemical_ids.third,
