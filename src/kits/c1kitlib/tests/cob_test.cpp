@@ -73,6 +73,23 @@ std::vector<std::uint8_t> read_file(const std::string& path) {
                                      std::istreambuf_iterator<char>());
 }
 
+// The picture is stored bottom row first; the parser turns it top row first.
+void test_picture_rows() {
+    ArchiveWriter w;
+    w.u16(1);
+    w.u16(1);
+    w.u32(0); w.u32(0); w.u32(0);
+    w.u16(0); w.u16(0); w.u16(0); w.u16(0);
+    w.u32(4); w.u32(3); w.u16(4);
+    w.bytes({3, 3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1});
+    w.cstring("Rows");
+    w.cstring("");
+    std::vector<Cob> cobs;
+    assert(parse_cob_file(w.bytes(), cobs));
+    const std::vector<std::uint8_t> top_first = {1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3};
+    assert(cobs[0].sprite.pixels == top_first);
+}
+
 void test_real(const std::string& dir) {
     DIR* d = opendir(dir.c_str());
     assert(d != nullptr);
@@ -121,6 +138,7 @@ void test_real(const std::string& dir) {
 
 int main(int argc, char** argv) {
     test_sample();
+    test_picture_rows();
     if (argc > 1) test_real(argv[1]);
     std::puts("cob_test: all passed");
     return 0;

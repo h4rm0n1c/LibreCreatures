@@ -13,7 +13,8 @@
 //   uint16  mode: 0 one inject script per injection, else all of them
 //   CString install scripts   (`scrp f g s e,...`: event scripts)
 //   CString inject scripts    (`inst,new: simp ...`: make the object)
-//   sprite  int32 width, int32 height, uint16 row stride, then pixels
+//   sprite  int32 width, int32 height, uint16 row stride, then pixels,
+//           bottom row first (as a Windows DIB)
 //   CString name
 //   CString description
 //
@@ -21,7 +22,9 @@
 
 #include "c1kit/owner_files.hpp"
 
+#include <algorithm>
 #include <cctype>
+#include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <string>
@@ -35,7 +38,7 @@ struct CobSprite {
     int width = 0;
     int height = 0;
     int stride = 0;
-    std::vector<std::uint8_t> pixels;  // palette indices, height rows of stride
+    std::vector<std::uint8_t> pixels;  // palette indices, height rows of stride, top row first
 };
 
 struct Cob {
@@ -56,6 +59,16 @@ struct Cob {
         return expiry_month != 0 || expiry_day != 0 || expiry_year != 0;
     }
 };
+
+// The file stores the picture bottom row first; turn it top row first.
+inline void flip_rows(CobSprite& sprite) {
+    const std::size_t stride = static_cast<std::size_t>(sprite.stride);
+    for (int top = 0, bottom = sprite.height - 1; top < bottom; ++top, --bottom) {
+        std::swap_ranges(sprite.pixels.begin() + static_cast<std::ptrdiff_t>(top * stride),
+                         sprite.pixels.begin() + static_cast<std::ptrdiff_t>((top + 1) * stride),
+                         sprite.pixels.begin() + static_cast<std::ptrdiff_t>(bottom * stride));
+    }
+}
 
 inline bool parse_cob_file(const std::vector<std::uint8_t>& bytes, std::vector<Cob>& out) {
     out.clear();
@@ -90,6 +103,9 @@ inline bool parse_cob_file(const std::vector<std::uint8_t>& bytes, std::vector<C
         reader.bytes(static_cast<std::size_t>(cob.sprite.stride) *
                          static_cast<std::size_t>(cob.sprite.height),
                      cob.sprite.pixels);
+        if (reader.ok()) {
+            flip_rows(cob.sprite);
+        }
         cob.name = reader.cstring();
         cob.description = reader.cstring();
         if (reader.ok()) {
