@@ -1568,6 +1568,10 @@ private:
     CWnd* renderer_view_ = nullptr;
     std::unique_ptr<creatures1::application::Document> semantic_document_;
     creatures1::display::SpriteFileCache sprite_files_;
+    // The world save in progress (save_framework_document), and whether its
+    // failure reason is already recorded for the report.
+    std::string save_path_in_progress_;
+    bool save_reason_recorded_ = false;
     creatures1::objects::ObjectEventScheduler event_scheduler_;
     creatures1::creatures::CreatureSelectionState selection_;
     creatures1::creatures::CreatureSelectionEntry* selected_creature_entry_ =
