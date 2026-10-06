@@ -65,6 +65,33 @@ carried.  The 1996 dialog layouts (the positions and sizes of a
 page's controls) are carried in the kits, as the structure a classic page is
 built on; they hold no artwork.
 
+## Crash reports
+
+Every kit catches what would otherwise end it with no word: an exception
+nothing handled (an access violation, a C++ exception thrown out of a
+window procedure), `std::terminate`, a bad C runtime argument, a pure
+virtual call or `abort()` (`shell/src/kit_crash.cpp`).
+
+- The kit that failed draws nothing.  On a fresh thread it writes a
+  minidump (`.dmp`) and a text report (`.txt`) to
+  `%LOCALAPPDATA%\LibreCreatures\Crash Reports`, named for the kit, the
+  time and the process.  Then it opens a new copy of itself with
+  `/CrashReport=<report>` to show the report, and ends.
+- The report gives the kit and its build stamp, the Windows (and Wine)
+  version, the error and where it happened (module and offset), a C++
+  exception's type and message, the registers, the stack and the loaded
+  modules.  The window shows it with Copy and Show file.
+- An error MFC catches in a message handler is reported in the kit itself,
+  once per run; the kit then carries on as MFC does.
+- On 64-bit Windows a 32-bit program can lose an exception thrown inside a
+  window procedure; the kits turn that off so the exception is reported.
+- `C1KIT_CRASH_TEST=<kind>` makes a kit fail on purpose once it is up:
+  `access`, `throw`, `noexcept`, `invalid`, `purecall`, `abort`, `stack`,
+  `mfc` (carried on) or `wndthrow`.
+
+The report text is built by `c1kitlib/include/c1kit/crash_report.hpp`
+(portable, tested in `c1kitlib/tests/crash_report_test.cpp`).
+
 ## Building
 
 CMake builds `c1kitlib.dll` and each kit with the game (see
@@ -82,4 +109,6 @@ g++ -std=c++17 -D'__declspec(x)=' -Ic1kitlib/include \
     c1kitlib/tests/c1kit_core_test.cpp -o c1kit_core_test && ./c1kit_core_test
 g++ -std=c++17 -D'__declspec(x)=' -Iobservation/src -Ic1kitlib/include \
     observation/tests/creature_monitor_test.cpp -o monitor_test && ./monitor_test
+g++ -std=c++17 -Ic1kitlib/include \
+    c1kitlib/tests/crash_report_test.cpp -o crash_report_test && ./crash_report_test
 ```

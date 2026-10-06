@@ -83,6 +83,11 @@ void test_launch_args() {
     assert(args.embedding && args.tool_id == 12 && args.prog_id.empty());
     args = parse_launch_args("");
     assert(!args.embedding && args.tool_id == -1);
+    args = parse_launch_args(
+        "/CrashReport=\"C:\\Users\\a b\\Crash Reports\\Hatchery 1.txt\"");
+    assert(!args.embedding &&
+           args.crash_report == "C:\\Users\\a b\\Crash Reports\\Hatchery 1.txt");
+    assert(parse_launch_args("/Embedding").crash_report.empty());
 }
 
 void test_take_field() {
