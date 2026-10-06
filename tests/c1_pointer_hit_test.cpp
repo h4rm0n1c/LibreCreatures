@@ -21,6 +21,11 @@ public:
         return true;
     }
     int render_plane() const override { return plane_; }
+    bool has_click_hotspot_at(int x, int y) const override {
+        return x >= hotspot_.min_x && x < hotspot_.max_x && y >= hotspot_.min_y &&
+               y < hotspot_.max_y;
+    }
+    WorldRect hotspot_{};
 
 private:
     WorldRect bounds_;
@@ -73,6 +78,29 @@ int main() {
     world.hotspot = at(110, 120);
     assert(hand.find_topmost_overlapping_object(kActivatable, kActivatable,
                                                 world) == &lift);
+
+    // A norn standing in the lift in front of its arrows (a click hotspot):
+    // the arrows stay the lift's, the rest of the norn stays the norn's.
+    TestObject hotspot_lift({100, 100, 200, 300}, 10, kActivatable);
+    hotspot_lift.hotspot_ = {180, 170, 192, 196};
+    TestObject norn_at_arrows({120, 150, 195, 290}, 5, kActivatable);
+    world.objects = {&hand, &hotspot_lift, &norn_at_arrows};
+    world.hotspot = at(185, 180);
+    assert(hand.find_topmost_overlapping_object(kActivatable, kActivatable,
+                                                world) == &hotspot_lift);
+    world.hotspot = at(140, 250);
+    assert(hand.find_topmost_overlapping_object(kActivatable, kActivatable,
+                                                world) == &norn_at_arrows);
+    // A norn beside the lift whose box clips the arrows, drawn on a higher
+    // plane: the arrows are still the lift's.
+    TestObject norn_beside({185, 150, 260, 290}, 20, kActivatable);
+    world.objects = {&hand, &hotspot_lift, &norn_beside};
+    world.hotspot = at(186, 180);
+    assert(hand.find_topmost_overlapping_object(kActivatable, kActivatable,
+                                                world) == &hotspot_lift);
+    world.hotspot = at(230, 250);
+    assert(hand.find_topmost_overlapping_object(kActivatable, kActivatable,
+                                                world) == &norn_beside);
 
     // Partial overlap keeps the native plane rule.
     TestObject back({0, 0, 50, 50}, 3, kActivatable);
