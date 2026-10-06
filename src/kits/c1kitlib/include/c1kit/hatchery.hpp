@@ -236,9 +236,10 @@ constexpr int kColourGenesPerChannel = 4;
 // Adds the pigment genes, each followed by "gext", before the genome's
 // "gend".  Each is a creature-family subtype-6 gene: channel, amount, then
 // "gext", hue rotation, colour swap.  New gene numbers follow the highest
-// in the file; the flags are those of the genome's first pigment gene (or
-// mutable, duplicable and deletable).  False, and the bytes unchanged, for
-// a file that does not end in "gend".
+// in the file.  They are mutable only: a duplicable gene can start crossover
+// copying whole blocks again (genomes grow each generation), and a
+// deletable one lets the colour drop out.  False, and the bytes unchanged,
+// for a file that does not end in "gend".
 inline bool append_colour_genes(std::vector<std::uint8_t>& genome, const EggColours& colours) {
     std::vector<Gene> genes;
     if (!parse_genome(genome, genes) || genome.size() < 4 ||
@@ -246,15 +247,10 @@ inline bool append_colour_genes(std::vector<std::uint8_t>& genome, const EggColo
         return false;
     }
     std::uint8_t next_id = 0;
-    std::uint8_t flags = kGeneMutable | kGeneDuplicable | kGeneDeletable;
-    bool have_flags = false;
+    constexpr std::uint8_t flags = kGeneMutable;
     for (const Gene& gene : genes) {
         if (gene.id >= next_id) {
             next_id = static_cast<std::uint8_t>(gene.id + 1);
-        }
-        if (!have_flags && gene.family == kGeneFamilyCreature && gene.subtype == 6) {
-            flags = gene.flags;
-            have_flags = true;
         }
     }
     std::vector<std::uint8_t> added;
