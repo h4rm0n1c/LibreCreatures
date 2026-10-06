@@ -661,13 +661,18 @@ void C1WindowsDocument::ReportSaveLoadException(LPCTSTR path, CException* error,
         CDocument::ReportSaveLoadException(path, error, saving, default_prompt);
         return;
     }
-    char message[512] = {};
-    if (error != nullptr) {
-        error->GetErrorMessage(message, sizeof(message));
+    // A failure in our own serializer has already recorded its reason
+    // (Serialize); MFC's generic archive message would hide it.
+    if (!save_reason_recorded_) {
+        char message[512] = {};
+        if (error != nullptr) {
+            error->GetErrorMessage(message, sizeof(message));
+        }
+        log_world_save_failure(path == nullptr ? nullptr : CStringA(path).GetString(),
+                               message[0] == '\0' ? "the file could not be written"
+                                                   : message);
+        save_reason_recorded_ = true;
     }
-    log_world_save_failure(path == nullptr ? nullptr : CStringA(path).GetString(),
-                           message[0] == '\0' ? "the file could not be written"
-                                               : message);
     report_save_failure();
 }
 
@@ -1045,14 +1050,20 @@ void C1WindowsDocument::promote_temporary_world_backup() {
 
 void C1WindowsDocument::save_framework_document( creatures1::application::Document& /*document*/, std::string_view path) {
     const CStringA native_path(std::string(path).c_str());
+    save_path_in_progress_ = native_path.GetString();
+    save_reason_recorded_ = false;
     if (CDocument::OnSaveDocument(native_path) == FALSE) {
         // SFCDoc::OnSaveDocument calls the MFC hook and still returns success;
         // MFC owns the archive transaction and its user-facing failure path.
         // Keep that native boundary here so one failed archive cannot escape
-        // into the world timer and immediately retry every tick.
-        log_world_save_failure(native_path.GetString(),
-                               "C1 MFC document save failed");
+        // into the world timer and immediately retry every tick.  The reason
+        // Serialize or ReportSaveLoadException recorded is kept.
+        if (!save_reason_recorded_) {
+            log_world_save_failure(native_path.GetString(),
+                                   "C1 MFC document save failed");
+        }
     }
+    save_reason_recorded_ = false;
 }
 
 std::size_t C1WindowsDocument::object_count() const {
@@ -6522,7 +6533,18 @@ std::string C1WindowsDocument::ArchiveHost::runtime_class(const void* object, st
     // indicator by "SimpleObject", so leaving it out threw on every creature
     // write -- which meant every autosave threw, and update_world aborted
     // before its closing set_world_tick_count.  The world tick never advanced.
-    if (requested != "Object" && requested != "SimpleObject") {
+    // The same goes for a request by a leaf class name that is not written
+    // yet: a Lift's pending calls ask for "CallButton", and the button comes
+    // after the lift in the object list, so saving while a call was waiting
+    // threw here and the world was not saved.  A CallButton's "Lift" has the
+    // same shape.  Every Object-family name resolves the leaf the same way.
+    const bool object_family =
+        requested == "Object" || requested == "SimpleObject" ||
+        requested == "CompoundObject" || requested == "Vehicle" ||
+        requested == "Lift" || requested == "CallButton" ||
+        requested == "Scenery" || requested == "Blackboard" ||
+        requested == "PointerTool" || requested == "Bubble";
+    if (!object_family) {
         throw std::logic_error("unsupported C1 MFC reference request: " +
                                std::string(requested));
     }
@@ -6855,8 +6877,25 @@ void C1WindowsDocument::Serialize(CArchive& archive) {
     if (semantic_document_ == nullptr) {
         throw std::logic_error("C1 document serialization has no semantic document");
     }
-    ArchiveHost host(*this, archive);
-    semantic_document_->serialize(host);
+    if (!archive.IsStoring()) {
+        ArchiveHost host(*this, archive);
+        semantic_document_->serialize(host);
+        return;
+    }
+    // Not native: a save that fails in our own code throws a C++ exception,
+    // which CDocument::OnSaveDocument does not catch (it catches CException).
+    // It left the mirror temp file (MFCxxxx.tmp) open beside the world and
+    // skipped MFC's failure path.  Record the reason, then hand MFC its own
+    // exception: it aborts the temp file, leaves World.sfc as it was and
+    // reports through ReportSaveLoadException.
+    try {
+        ArchiveHost host(*this, archive);
+        semantic_document_->serialize(host);
+    } catch (const std::exception& error) {
+        log_world_save_failure(save_path_in_progress_.c_str(), error.what());
+        save_reason_recorded_ = true;
+        AfxThrowArchiveException(CArchiveException::genericException);
+    }
 }
 
 void C1WindowsDocument::pan_view_to_selected_creature() {

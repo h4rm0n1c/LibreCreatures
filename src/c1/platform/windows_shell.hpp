@@ -1721,6 +1721,10 @@ private:
     // began, and when it began (QueryPerformanceCounter ms).
     bool smooth_motion_ = true;
     bool show_rooms_ = false;
+    // The world save in progress (save_framework_document), and whether its
+    // failure reason is already recorded for the report.
+    std::string save_path_in_progress_;
+    bool save_reason_recorded_ = false;
     std::vector<std::size_t> hovered_rooms_;
     mutable int world_speed_ = 0;  // 0 until read from the registry
     bool motion_snapshot_valid_ = false;
