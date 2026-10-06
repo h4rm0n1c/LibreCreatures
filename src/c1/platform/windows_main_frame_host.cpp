@@ -438,6 +438,9 @@ BEGIN_MESSAGE_MAP(C1MainFrame, CFrameWnd)
     // View > World speed, 32953-32956.
     ON_COMMAND_RANGE(32953, 32956, &C1MainFrame::OnWorldSpeed)
     ON_UPDATE_COMMAND_UI_RANGE(32953, 32956, &C1MainFrame::OnUpdateWorldSpeed)
+    // View > Developer view > Show rooms.
+    ON_COMMAND(kShowRooms, &C1MainFrame::OnShowRooms)
+    ON_UPDATE_COMMAND_UI(kShowRooms, &C1MainFrame::OnUpdateShowRooms)
     ON_COMMAND(32804, &C1MainFrame::OnCreateMaleNorn)
     ON_COMMAND(32805, &C1MainFrame::OnCreateFemaleNorn)
     ON_COMMAND(32897, &C1MainFrame::OnMuteCreatureVoices)
@@ -1539,6 +1542,20 @@ void C1MainFrame::OnUpdateSmoothMotion(CCmdUI* command_ui) {
     const bool available = document != nullptr && document->sdl_view_active();
     command_ui->Enable(available ? TRUE : FALSE);
     command_ui->SetCheck(available && document->smooth_motion() ? 1 : 0);
+}
+
+void C1MainFrame::OnShowRooms() {
+    auto* document = DYNAMIC_DOWNCAST(C1WindowsDocument, GetActiveDocument());
+    if (document != nullptr) {
+        document->set_show_rooms(!document->show_rooms());
+    }
+}
+
+void C1MainFrame::OnUpdateShowRooms(CCmdUI* command_ui) {
+    auto* document = DYNAMIC_DOWNCAST(C1WindowsDocument, GetActiveDocument());
+    const bool available = document != nullptr && document->sdl_view_active();
+    command_ui->Enable(available ? TRUE : FALSE);
+    command_ui->SetCheck(available && document->show_rooms() ? 1 : 0);
 }
 
 void C1MainFrame::OnWorldSpeed(UINT command_id) {

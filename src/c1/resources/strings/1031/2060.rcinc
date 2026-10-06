@@ -13,4 +13,6 @@ BEGIN
     32954 "Die Welt doppelt so schnell laufen lassen; Uhr und Alter zählen Weltzeit\nWeltgeschwindigkeit 2x"
     32955 "Die Welt fünfmal so schnell laufen lassen; Uhr und Alter zählen Weltzeit\nWeltgeschwindigkeit 5x"
     32956 "Die Welt zehnmal so schnell laufen lassen; Uhr und Alter zählen Weltzeit\nWeltgeschwindigkeit 10x"
+    32957 "Jeden Raum der Welt als Umriss zeigen; mit der Maus auf einer Kante erscheint die Nummer des Raums\nRäume zeigen"
+    32958 "Raum %d, Typ %u: %d,%d bis %d,%d"
 END

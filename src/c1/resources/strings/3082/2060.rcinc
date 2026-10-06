@@ -13,4 +13,6 @@ BEGIN
     32954 "Hacer funcionar el mundo el doble de rápido; el reloj y las edades cuentan el tiempo del mundo\nVelocidad del mundo 2x"
     32955 "Hacer funcionar el mundo cinco veces más rápido; el reloj y las edades cuentan el tiempo del mundo\nVelocidad del mundo 5x"
     32956 "Hacer funcionar el mundo diez veces más rápido; el reloj y las edades cuentan el tiempo del mundo\nVelocidad del mundo 10x"
+    32957 "Mostrar el contorno de cada habitación del mundo; con el ratón sobre un borde aparece el número de la habitación\nMostrar habitaciones"
+    32958 "Habitación %d, tipo %u: de %d,%d a %d,%d"
 END

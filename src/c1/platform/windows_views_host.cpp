@@ -3,7 +3,9 @@
 #include "sdl_world_view.hpp"
 
 #include "../scripting/macro.hpp"
+#include "../world/room_edges.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <map>
 #include <tuple>
@@ -944,9 +946,118 @@ CPoint C1WindowsView::world_pixel_point(CPoint point) const {
 
 afx_msg void C1WindowsView::OnMouseMove(UINT flags, CPoint point) {
     CView::OnMouseMove(flags, point);
+    update_room_tip(point);
     point = world_pixel_point(point);
     creatures1::ui::on_mouse_move(view_state_, scroll_settings(), *this,
                                   flags, point.x, point.y);
+}
+
+namespace {
+constexpr UINT_PTR kRoomTipTimer = 0x524d;  // "RM"
+}
+
+// Called through the timer's own procedure, so it does not depend on the
+// view's window procedure (which SDL wraps).
+void CALLBACK C1WindowsView::room_tip_timer(HWND window, UINT, UINT_PTR, DWORD) {
+    auto* view = dynamic_cast<C1WindowsView*>(CWnd::FromHandlePermanent(window));
+    if (view == nullptr) {
+        ::KillTimer(window, kRoomTipTimer);
+        return;
+    }
+    POINT cursor{};
+    if (!::GetCursorPos(&cursor) || ::WindowFromPoint(cursor) != window) {
+        view->hide_room_tip();
+        return;
+    }
+    ::ScreenToClient(window, &cursor);
+    view->update_room_tip(CPoint(cursor));
+}
+
+void C1WindowsView::update_room_tip(CPoint point) {
+    C1WindowsDocument* document = this->document();
+    if (document == nullptr || !document->show_rooms()) {
+        hide_room_tip();
+        return;
+    }
+    const float zoom = document->world_zoom_factor();
+    const CPoint world = world_pixel_point(point);
+    // About three screen pixels either side of an edge.
+    const int tolerance =
+        (std::max)(1, static_cast<int>(std::ceil(3.0f / (zoom > 0.0f ? zoom : 1.0f))));
+    const creatures1::world::MapRoomTable table = document->room_table();
+    std::vector<std::size_t> rooms = creatures1::world::rooms_with_edge_near(
+        table, world.x + document->renderer_viewport_left(),
+        world.y + document->renderer_viewport_top(), tolerance);
+    if (rooms.empty()) {
+        hide_room_tip();
+        document->set_hovered_rooms({});
+        return;
+    }
+    CString format;
+    if (!format.LoadString(kRoomTipFormat)) {
+        format = _T("Room %d, type %u: %d,%d to %d,%d");
+    }
+    CString text;
+    for (const std::size_t index : rooms) {
+        const creatures1::world::MapRoom& room = table.rooms[index];
+        CString line;
+        line.Format(format, static_cast<int>(index),
+                    static_cast<unsigned int>(room.room_type), room.bounds.left,
+                    room.bounds.top, room.bounds.right, room.bounds.bottom);
+        if (!text.IsEmpty()) {
+            text += _T("\r\n");
+        }
+        text += line;
+    }
+    document->set_hovered_rooms(std::move(rooms));
+
+    POINT cursor = point;
+    ::ClientToScreen(m_hWnd, &cursor);
+    const LPARAM position = MAKELPARAM(cursor.x + 16, cursor.y + 20);
+    TOOLINFO tool{};
+    tool.cbSize = TTTOOLINFO_V1_SIZE;
+    tool.uFlags = TTF_IDISHWND | TTF_TRACK | TTF_ABSOLUTE;
+    tool.hwnd = m_hWnd;
+    tool.uId = reinterpret_cast<UINT_PTR>(m_hWnd);
+    tool.lpszText = const_cast<LPTSTR>(static_cast<LPCTSTR>(text));
+    if (room_tip_ == nullptr) {
+        room_tip_ = ::CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, nullptr,
+                                     WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
+                                     CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+                                     CW_USEDEFAULT, m_hWnd, nullptr,
+                                     AfxGetInstanceHandle(), nullptr);
+        if (room_tip_ == nullptr) {
+            return;
+        }
+        // A width limit lets the tip break lines at "\r\n".
+        ::SendMessage(room_tip_, TTM_SETMAXTIPWIDTH, 0, 600);
+        ::SendMessage(room_tip_, TTM_ADDTOOL, 0, reinterpret_cast<LPARAM>(&tool));
+    } else {
+        ::SendMessage(room_tip_, TTM_UPDATETIPTEXT, 0, reinterpret_cast<LPARAM>(&tool));
+    }
+    ::SendMessage(room_tip_, TTM_TRACKPOSITION, 0, position);
+    if (!room_tip_shown_) {
+        ::SendMessage(room_tip_, TTM_TRACKACTIVATE, TRUE, reinterpret_cast<LPARAM>(&tool));
+        room_tip_shown_ = true;
+        ::SetTimer(m_hWnd, kRoomTipTimer, 100, &C1WindowsView::room_tip_timer);
+    }
+}
+
+void C1WindowsView::hide_room_tip() {
+    if (room_tip_shown_ && room_tip_ != nullptr) {
+        TOOLINFO tool{};
+        tool.cbSize = TTTOOLINFO_V1_SIZE;
+        tool.hwnd = m_hWnd;
+        tool.uId = reinterpret_cast<UINT_PTR>(m_hWnd);
+        ::SendMessage(room_tip_, TTM_TRACKACTIVATE, FALSE, reinterpret_cast<LPARAM>(&tool));
+    }
+    if (room_tip_shown_) {
+        ::KillTimer(m_hWnd, kRoomTipTimer);
+    }
+    room_tip_shown_ = false;
+    if (C1WindowsDocument* document = this->document()) {
+        document->set_hovered_rooms({});
+    }
 }
 
 afx_msg void C1WindowsView::OnLButtonDown(UINT flags, CPoint point) {
@@ -1044,6 +1155,12 @@ void C1WindowsView::OnDestroy() {
     // attached to the document that owns the settings store.  The document
     // destroys the renderer again in its own teardown, which is a no-op.
     creatures1::ui::shutdown_view(view_state_, view_settings_, *this);
+    hide_room_tip();
+    if (room_tip_ != nullptr) {
+        ::DestroyWindow(room_tip_);
+        room_tip_ = nullptr;
+        room_tip_shown_ = false;
+    }
     CView::OnDestroy();
 }
 
@@ -1383,7 +1500,7 @@ LRESULT C1EyeViewWindow::OnSdlFrame(WPARAM, LPARAM) {
     renderer_->collect_scene(viewport, sdl_scene_);
     sdl_->render_frame(document_, sdl_scene_, viewport,
                        static_cast<float>(document_.eye_view_zoom()), nullptr,
-                       nullptr);
+                       nullptr, nullptr);
     return 0;
 }
 

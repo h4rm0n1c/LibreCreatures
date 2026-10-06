@@ -321,6 +321,7 @@ void SdlWorldView::render_frame(C1WindowsDocument& document,
                                 const std::vector<display::SceneItem>& scene,
                                 const world::WorldRect& viewport, float zoom,
                                 const world::WorldRect* debug_highlight,
+                                const RoomOutlines* rooms,
                                 display::RgbFrame* capture) {
     ++frame_number_;
     SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 255);
@@ -376,6 +377,30 @@ void SdlWorldView::render_frame(C1WindowsDocument& document,
                     text_overlay_texture_for(document, *gallery, item.image_index)) {
                 SDL_RenderTexture(renderer_, text, nullptr, &destination);
             }
+        }
+    }
+
+    if (rooms != nullptr) {
+        for (std::size_t index = 0; index < rooms->table.room_count; ++index) {
+            const world::MapRectangle& room = rooms->table.rooms[index].bounds;
+            const bool highlighted =
+                rooms->highlighted != nullptr &&
+                std::find(rooms->highlighted->begin(), rooms->highlighted->end(),
+                          index) != rooms->highlighted->end();
+            if (highlighted) {
+                SDL_SetRenderDrawColor(renderer_, 255, 255, 255, 255);
+            } else {
+                SDL_SetRenderDrawColor(renderer_, 255, 220, 0, 255);
+            }
+            const int width = room.right - room.left;
+            const int x = wrapped_screen_x(room.left, width, viewport);
+            // Whole screen pixels, so the outline stays one pixel wide.
+            const SDL_FRect outline{
+                std::round(static_cast<float>(x) * zoom),
+                std::round(static_cast<float>(room.top - viewport.min_y) * zoom),
+                std::round(static_cast<float>(width) * zoom) + 1.0f,
+                std::round(static_cast<float>(room.bottom - room.top) * zoom) + 1.0f};
+            SDL_RenderRect(renderer_, &outline);
         }
     }
 

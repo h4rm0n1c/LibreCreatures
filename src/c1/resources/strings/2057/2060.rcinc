@@ -13,4 +13,6 @@ BEGIN
     32954 "Run the world twice as fast; its clock and ages count world time\nWorld speed 2x"
     32955 "Run the world five times as fast; its clock and ages count world time\nWorld speed 5x"
     32956 "Run the world ten times as fast; its clock and ages count world time\nWorld speed 10x"
+    32957 "Outline each room in the world; hold the mouse over an edge to see the room's number\nShow rooms"
+    32958 "Room %d, type %u: %d,%d to %d,%d"
 END

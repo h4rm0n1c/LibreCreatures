@@ -83,6 +83,10 @@ BEGIN
             MENUITEM "5倍", 32955
             MENUITEM "10倍", 32956
         END
+        POPUP "開発者ビュー"
+        BEGIN
+            MENUITEM "部屋を表示", 32957
+        END
         MENUITEM "", 0
         MENUITEM "CAOS Console\tCtrl+Shift+C", 32896
     END

@@ -296,3 +296,23 @@ Checked in the lab:
 one line per drawn frame for the selected creature: time, tick, progress,
 the body's world position and frame, where it was drawn, the drawn view,
 the down foot, the skeleton's bounds, the head's end and the facing.
+
+### Developer view: Show rooms
+
+View > Developer view > Show rooms (off by default; setting `ShowRooms`,
+command 32957, tooltip format string 32958, all seven languages) draws
+each room in the map's room table as a 1-pixel outline over the main view:
+
+- Yellow outlines; the rooms whose edge is under the mouse are white.
+- With the mouse within about 3 screen pixels of an edge, a tooltip gives
+  each such room's number (its place in the room table, from 0), its type
+  (1 takes the outdoor temperature) and its bounds. Rooms that share an
+  edge are all listed.
+- While the tooltip shows, a 100 ms timer checks the mouse again, so the
+  tooltip follows the view as it scrolls under a still mouse and goes when
+  the mouse leaves the window. (Under Wine a mouse that jumps out of the
+  window sends no `WM_MOUSELEAVE`.)
+- SDL view only: the item is greyed out with GDI. Drawing only: the 8-bit
+  back buffer, snapshots and the frame dump do not show the outlines.
+- `world/room_edges.hpp` holds the edge test; `tests/c1_room_edges_test.cpp`
+  checks it.

@@ -128,6 +128,7 @@ inline constexpr std::array<const char*, kResourceDirectoryCount>
 
 class C1WindowsDocument;
 class SdlWorldView;
+struct RoomOutlines;
 // neorender: posted to the view to draw one SDL frame; repeated requests
 // before it is handled collapse into that one frame.
 constexpr UINT kSdlFrameMessage = WM_APP + 0x51;
@@ -143,6 +144,9 @@ constexpr UINT kViewEyeZoomFirst = 32950;
 // steps that many times as often; everything in it counts steps, so the
 // world clock, ages and timers all run that much faster with it.
 constexpr UINT kWorldSpeedFirst = 32953;
+// View > Developer view > Show rooms, and its tooltip's format string.
+constexpr UINT kShowRooms = 32957;
+constexpr UINT kRoomTipFormat = 32958;
 constexpr int kWorldSpeeds[] = {1, 2, 5, 10};
 class C1WindowsView;
 void set_world_view_safe_frame(C1WindowsView* view,
@@ -341,6 +345,8 @@ public:
     afx_msg void OnUpdateViewScale(CCmdUI* command_ui);
     afx_msg void OnSmoothMotion();
     afx_msg void OnUpdateSmoothMotion(CCmdUI* command_ui);
+    afx_msg void OnShowRooms();
+    afx_msg void OnUpdateShowRooms(CCmdUI* command_ui);
     afx_msg void OnWorldSpeed(UINT command_id);
     afx_msg void OnUpdateWorldSpeed(CCmdUI* command_ui);
     afx_msg void OnCreateMaleNorn();
@@ -1467,6 +1473,14 @@ public:
     // them, so the world is drawn one tick behind.  Setting SmoothMotion.
     bool smooth_motion() const { return smooth_motion_; }
     void set_smooth_motion(bool on);
+    // View > Developer view > Show rooms: room outlines over the main view
+    // (SDL only), the rooms whose edge the mouse is on drawn brighter.
+    // Setting ShowRooms.
+    bool show_rooms() const { return sdl_view_ != nullptr && show_rooms_; }
+    void set_show_rooms(bool on);
+    void set_hovered_rooms(std::vector<std::size_t> rooms);
+    creatures1::world::MapRoomTable room_table() const;
+    RoomOutlines room_outlines() const;
     // View > World speed: 1, 2, 5 or 10 world steps for each normal one.
     int world_speed() const;
     void set_world_speed(int speed);
@@ -1706,6 +1720,8 @@ private:
     // Smooth motion: where the view and each sprite were when the last tick
     // began, and when it began (QueryPerformanceCounter ms).
     bool smooth_motion_ = true;
+    bool show_rooms_ = false;
+    std::vector<std::size_t> hovered_rooms_;
     mutable int world_speed_ = 0;  // 0 until read from the registry
     bool motion_snapshot_valid_ = false;
     std::unordered_map<const creatures1::objects::Entity*, std::pair<int, int>>
@@ -2603,6 +2619,14 @@ protected:
 
     afx_msg void OnMouseMove(UINT flags, CPoint point);
     afx_msg LRESULT OnSdlFrame(WPARAM, LPARAM);
+    // neorender, View > Developer view > Show rooms: a tooltip with the
+    // number of each room whose edge is under the mouse at `point` (client
+    // pixels), and those rooms drawn brighter.  While it shows, a timer
+    // checks again (the view scrolls under a still mouse; under Wine a
+    // mouse that jumps out of the window sends no WM_MOUSELEAVE).
+    void update_room_tip(CPoint point);
+    void hide_room_tip();
+    static void CALLBACK room_tip_timer(HWND window, UINT, UINT_PTR, DWORD);
     // neorender: a client point in world pixels (the client point divided
     // by the zoom), which is what the view's mouse handling works in.
     CPoint world_pixel_point(CPoint point) const;
@@ -2631,6 +2655,8 @@ public:
 private:
     creatures1::ui::WorldViewSettings view_settings_{};
     creatures1::ui::SfcViewState view_state_{};
+    HWND room_tip_ = nullptr;
+    bool room_tip_shown_ = false;
 
 public:
     // The pointer-tool runtime host reads and clears the pending input

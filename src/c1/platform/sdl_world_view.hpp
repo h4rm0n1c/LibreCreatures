@@ -4,6 +4,7 @@
 #include "../display/image_tiers.hpp"
 #include "../display/rendering.hpp"
 #include "../world/geometry.hpp"
+#include "../world/map.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -20,6 +21,13 @@ struct SDL_Window;
 namespace creatures1::platform {
 
 class C1WindowsDocument;
+
+// View > Developer view > Show rooms: every room's outline, one screen pixel
+// wide, with the rooms in `highlighted` (places in the table) brighter.
+struct RoomOutlines {
+    world::MapRoomTable table;
+    const std::vector<std::size_t>* highlighted = nullptr;
+};
 
 // Not native (neorender).  Draws the world view through SDL3 into an
 // existing window (the MFC view), from the same scene list the 8-bit
@@ -39,12 +47,13 @@ public:
     SdlWorldView& operator=(const SdlWorldView&) = delete;
 
     // One whole frame of `viewport` (world coordinates), `zoom` screen pixels
-    // per world pixel.  With `capture` set, the frame is also read back
-    // before it is shown.
+    // per world pixel.  With `rooms` set, room outlines go over the world.
+    // With `capture` set, the frame is also read back before it is shown.
     void render_frame(C1WindowsDocument& document,
                       const std::vector<display::SceneItem>& scene,
                       const world::WorldRect& viewport, float zoom,
                       const world::WorldRect* debug_highlight,
+                      const RoomOutlines* rooms,
                       display::RgbFrame* capture);
 
     // Forget every texture (a new world, a new palette).

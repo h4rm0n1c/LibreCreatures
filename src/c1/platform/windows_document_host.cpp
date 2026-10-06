@@ -4168,6 +4168,8 @@ void C1WindowsDocument::load_view_scale_settings() {
     eye_view_zoom_ = value == 2 ? 2 : 1;
     read_view_setting("SmoothMotion", value, 1);
     smooth_motion_ = value != 0;
+    read_view_setting("ShowRooms", value, 0);
+    show_rooms_ = value != 0;
 }
 
 float C1WindowsDocument::world_zoom_factor() const {
@@ -4288,6 +4290,33 @@ void C1WindowsDocument::set_smooth_motion(bool on) {
     request_sdl_frame();
 }
 
+void C1WindowsDocument::set_show_rooms(bool on) {
+    if (sdl_view_ == nullptr) {
+        return;
+    }
+    show_rooms_ = on;
+    hovered_rooms_.clear();
+    write_view_setting("ShowRooms", on ? 1 : 0);
+    request_sdl_frame();
+}
+
+void C1WindowsDocument::set_hovered_rooms(std::vector<std::size_t> rooms) {
+    if (rooms == hovered_rooms_) {
+        return;
+    }
+    hovered_rooms_ = std::move(rooms);
+    request_sdl_frame();
+}
+
+creatures1::world::MapRoomTable C1WindowsDocument::room_table() const {
+    return world_runtime_ == nullptr ? creatures1::world::MapRoomTable{}
+                                     : world_runtime_->map_data().room_table();
+}
+
+RoomOutlines C1WindowsDocument::room_outlines() const {
+    return {room_table(), &hovered_rooms_};
+}
+
 void C1WindowsDocument::set_eye_view_zoom(int zoom) {
     if (sdl_view_ == nullptr) {
         return;
@@ -4371,8 +4400,10 @@ void C1WindowsDocument::present_sdl_frame() {
         renderer_->collect_scene(viewport, sdl_scene_);
         trace_glide(progress, viewport);
         draw_hand_at_mouse(sdl_scene_, viewport);
+        const RoomOutlines rooms = room_outlines();
         sdl_view_->render_frame(*this, sdl_scene_, viewport, world_zoom_factor(),
-                                &renderer_->debug_highlight_rect(), nullptr);
+                                &renderer_->debug_highlight_rect(),
+                                show_rooms_ ? &rooms : nullptr, nullptr);
         return;
     }
 
@@ -4407,8 +4438,10 @@ void C1WindowsDocument::present_sdl_frame() {
     trace_glide(progress, viewport);
     // The hand is drawn at the mouse, over the view as drawn.
     draw_hand_at_mouse(sdl_scene_, viewport);
+    const RoomOutlines rooms = room_outlines();
     sdl_view_->render_frame(*this, sdl_scene_, viewport, world_zoom_factor(),
-                            &renderer_->debug_highlight_rect(), nullptr);
+                            &renderer_->debug_highlight_rect(),
+                            show_rooms_ ? &rooms : nullptr, nullptr);
 }
 
 // Opt-in (C1_GLIDE_TRACE=<Windows path>): one line per drawn frame for the
@@ -4821,7 +4854,7 @@ void C1WindowsDocument::dump_renderer_frames(const std::string& directory) {
     renderer_->collect_scene(viewport, sdl_scene_);
     creatures1::display::RgbFrame sdl;
     sdl_view_->render_frame(*this, sdl_scene_, viewport, 1.0f,
-                            &renderer_->debug_highlight_rect(), &sdl);
+                            &renderer_->debug_highlight_rect(), nullptr, &sdl);
     const std::vector<std::uint8_t> bmp = creatures1::display::encode_bmp24(sdl);
     std::ofstream(stem + "-sdl.bmp", std::ios::binary)
         .write(reinterpret_cast<const char*>(bmp.data()),

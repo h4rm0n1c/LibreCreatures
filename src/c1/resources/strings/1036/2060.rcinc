@@ -13,4 +13,6 @@ BEGIN
     32954 "Faire tourner le monde deux fois plus vite ; l'horloge et les âges comptent le temps du monde\nVitesse du monde 2x"
     32955 "Faire tourner le monde cinq fois plus vite ; l'horloge et les âges comptent le temps du monde\nVitesse du monde 5x"
     32956 "Faire tourner le monde dix fois plus vite ; l'horloge et les âges comptent le temps du monde\nVitesse du monde 10x"
+    32957 "Montrer le contour de chaque pièce du monde ; la souris sur un bord affiche le numéro de la pièce\nAfficher les pièces"
+    32958 "Pièce %d, type %u : %d,%d à %d,%d"
 END

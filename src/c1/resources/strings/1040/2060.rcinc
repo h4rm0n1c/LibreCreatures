@@ -13,4 +13,6 @@ BEGIN
     32954 "Fa girare il mondo due volte più veloce; orologio ed età contano il tempo del mondo\nVelocità del mondo 2x"
     32955 "Fa girare il mondo cinque volte più veloce; orologio ed età contano il tempo del mondo\nVelocità del mondo 5x"
     32956 "Fa girare il mondo dieci volte più veloce; orologio ed età contano il tempo del mondo\nVelocità del mondo 10x"
+    32957 "Mostra il contorno di ogni stanza del mondo; con il mouse su un bordo appare il numero della stanza\nMostra le stanze"
+    32958 "Stanza %d, tipo %u: da %d,%d a %d,%d"
 END

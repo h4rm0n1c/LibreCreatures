@@ -83,6 +83,10 @@ BEGIN
             MENUITEM "&5x", 32955
             MENUITEM "1&0x", 32956
         END
+        POPUP "Vista &sviluppatore"
+        BEGIN
+            MENUITEM "Mostra le &stanze", 32957
+        END
         MENUITEM "", 0
         MENUITEM "CAOS Console\tCtrl+Shift+C", 32896
     END
