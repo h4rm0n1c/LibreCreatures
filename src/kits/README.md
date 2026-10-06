@@ -87,7 +87,8 @@ virtual call or `abort()` (`shell/src/kit_crash.cpp`).
   window procedure; the kits turn that off so the exception is reported.
 - `C1KIT_CRASH_TEST=<kind>` makes a kit fail on purpose once it is up:
   `access`, `throw`, `noexcept`, `invalid`, `purecall`, `abort`, `stack`,
-  `mfc` (carried on) or `wndthrow`.
+  `mfc` (carried on), `wndthrow` or `reporter` (the report writer fails
+  too; the basic report it wrote first is shown).
 
 The report text is built by `c1kitlib/include/c1kit/crash_report.hpp`
 (portable, tested in `c1kitlib/tests/crash_report_test.cpp`).

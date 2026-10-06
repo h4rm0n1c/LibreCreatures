@@ -44,6 +44,8 @@ using c1kit::CrashKind;
 char g_exe_path[MAX_PATH] = {};
 char g_kit_name[MAX_PATH] = {};
 volatile LONG g_crashing = 0;
+volatile DWORD g_writer_thread_id = 0;
+bool g_test_writer_crash = false;  // C1KIT_CRASH_TEST=reporter
 bool g_carried_on_reported = false;
 
 std::string file_name_of(const std::string& path) {
@@ -467,11 +469,24 @@ struct CrashJob {
 
 DWORD WINAPI write_crash_files(void* parameter) {
     auto* job = static_cast<CrashJob*>(parameter);
+    g_writer_thread_id = ::GetCurrentThreadId();
     const std::string stem = report_stem();
+    const std::string report_path = stem + ".txt";
+    // A basic report first, from the exception record alone: if gathering
+    // the details below fails (handle_crash ends only this thread then),
+    // this is what the report window shows.
+    CrashInfo info = describe(job->kind, *job->pointers, job->thread_id,
+                              job->message == nullptr ? "" : job->message);
+    if (write_text_file(report_path,
+                        c1kit::crash_report_text(info) +
+                            "\n(The stack, the modules and the dump could not be written.)\n")) {
+        copy_text(job->report_path, MAX_PATH, report_path.c_str());
+    }
+    if (g_test_writer_crash) {
+        *static_cast<volatile int*>(nullptr) = 2;
+    }
     DbgHelp help;
-    // The dump first: it needs nothing of ours to be in working order.
-    std::string dump_path = stem + ".dmp";
-    bool dumped = false;
+    const std::string dump_path = stem + ".dmp";
     if (help.write_dump != nullptr) {
         HANDLE file = ::CreateFileA(dump_path.c_str(), GENERIC_WRITE, 0, nullptr,
                                     CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
@@ -480,28 +495,25 @@ DWORD WINAPI write_crash_files(void* parameter) {
             exception.ThreadId = job->thread_id;
             exception.ExceptionPointers = job->pointers;
             exception.ClientPointers = FALSE;
-            dumped = help.write_dump(::GetCurrentProcess(), ::GetCurrentProcessId(), file,
-                                     static_cast<MINIDUMP_TYPE>(
-                                         MiniDumpWithIndirectlyReferencedMemory |
-                                         MiniDumpScanMemory),
-                                     &exception, nullptr, nullptr) != FALSE;
+            const bool dumped =
+                help.write_dump(::GetCurrentProcess(), ::GetCurrentProcessId(), file,
+                                static_cast<MINIDUMP_TYPE>(
+                                    MiniDumpWithIndirectlyReferencedMemory |
+                                    MiniDumpScanMemory),
+                                &exception, nullptr, nullptr) != FALSE;
             ::CloseHandle(file);
-            if (!dumped) {
+            if (dumped) {
+                info.dump_file = dump_path;
+            } else {
                 ::DeleteFileA(dump_path.c_str());
             }
         }
-    }
-    CrashInfo info = describe(job->kind, *job->pointers, job->thread_id,
-                              job->message == nullptr ? "" : job->message);
-    if (dumped) {
-        info.dump_file = dump_path;
     }
     if (job->pointers->ContextRecord != nullptr) {
         walk_stack(help, *job->pointers->ContextRecord, job->thread_id, info);
         scan_stack(job->pointers->ContextRecord->Esp, info);
     }
     list_modules(info);
-    const std::string report_path = stem + ".txt";
     if (write_text_file(report_path, c1kit::crash_report_text(info))) {
         copy_text(job->report_path, MAX_PATH, report_path.c_str());
     }
@@ -513,7 +525,12 @@ DWORD WINAPI write_crash_files(void* parameter) {
 [[noreturn]] void handle_crash(CrashKind kind, EXCEPTION_POINTERS* pointers,
                                const char* message) {
     if (::InterlockedExchange(&g_crashing, 1) != 0) {
-        // Failed again while reporting: just end.
+        // Failed again while reporting.  On the writer thread, end only that
+        // thread: the crashed thread is waiting for it, and then shows the
+        // basic report it wrote first.  Anywhere else, just end.
+        if (::GetCurrentThreadId() == g_writer_thread_id) {
+            ::ExitThread(1);
+        }
         ::TerminateProcess(::GetCurrentProcess(), 0xC1C1);
     }
     CrashJob job{kind, pointers, ::GetCurrentThreadId(), message, {}};
@@ -817,7 +834,8 @@ void show_report(const std::string& summary, const std::string& details,
 // C1KIT_CRASH_TEST=<kind> makes the kit fail on purpose once it is up, to
 // check each path: access, throw, noexcept, invalid, purecall, abort,
 // stack, mfc (an MFC exception in a message handler), wndthrow (a C++
-// exception out of a message handler).
+// exception out of a message handler), reporter (access, and the report
+// writer fails after its basic report).
 
 struct PureBase {
     PureBase() { call(); }
@@ -951,7 +969,11 @@ void run_crash_test_if_asked() {
         return;
     }
     const std::string test = kind;
-    if (test == "access") {
+    if (test == "reporter") {
+        // An access violation whose report writer then fails as well.
+        g_test_writer_crash = true;
+        *static_cast<volatile int*>(nullptr) = 1;
+    } else if (test == "access") {
         *static_cast<volatile int*>(nullptr) = 1;
     } else if (test == "throw") {
         throw std::out_of_range("crash test: thrown and not caught");
