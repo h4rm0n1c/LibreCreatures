@@ -203,6 +203,9 @@ void InjectorSheet::reload() {
             std::vector<c1kit::Cob> cobs;
             if (read_file(path, bytes) && c1kit::parse_cob_file(bytes, cobs)) {
                 for (c1kit::Cob& cob : cobs) {
+                    // Not in the original: a COB named "unknown" (or
+                    // nothing) is listed by its file name.
+                    cob.name = c1kit::cob_display_name(cob.name, path);
                     entries_.push_back(CobEntry{path, std::move(cob)});
                 }
             }
@@ -281,7 +284,9 @@ bool InjectorSheet::inject(CobEntry& entry, CString& why) {
         return false;
     }
     for (const std::string& script : cob.install_scripts) {
-        if (!run(script)) {
+        // Fix (bug 2): extra spaces in a `scrp` header put the script under
+        // the wrong event (see c1kit::tidy_script_header).
+        if (!run(c1kit::tidy_script_header(script))) {
             why = _T("Failed to send a script to Creatures.");
             return false;
         }
@@ -349,6 +354,18 @@ bool InjectorSheet::remove(CobEntry& entry, CString& why) {
             return false;
         }
         scripts.push_back(generated);
+    }
+    // Fix (bug 2): a world injected before that fix (or by the original kit)
+    // has the misread copies; take those out as well.
+    std::string misfiled;
+    for (const c1kit::InstalledScript& stray : c1kit::misfiled_scripts(entry.cob)) {
+        misfiled += "scrx " + std::to_string(stray.classifier.family) + " " +
+                    std::to_string(stray.classifier.genus) + " " +
+                    std::to_string(stray.classifier.species) + " " +
+                    std::to_string(stray.event) + ",";
+    }
+    if (!misfiled.empty()) {
+        scripts.push_back("inst," + misfiled + "endm");
     }
     for (const std::string& script : scripts) {
         if (!run(script)) {

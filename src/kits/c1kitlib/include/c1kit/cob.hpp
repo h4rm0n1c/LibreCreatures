@@ -117,6 +117,26 @@ inline bool parse_cob_file(const std::vector<std::uint8_t>& bytes, std::vector<C
 
 // CCobObject::IsExpired @ 0x00408100: never with no date; a year up to 99
 // is 19xx; a COB is good through the whole of its expiry day.
+// The name to show for a COB: its own, or -- when that is blank or the
+// placeholder "unknown" (Potions and Lotions has it) -- its file's name
+// without folder and extension.  Not in the original, which showed
+// "unknown".
+inline std::string cob_display_name(const std::string& name, const std::string& file_path) {
+    std::string trimmed = name;
+    while (!trimmed.empty() && std::isspace(static_cast<unsigned char>(trimmed.back()))) trimmed.pop_back();
+    std::size_t first = 0;
+    while (first < trimmed.size() && std::isspace(static_cast<unsigned char>(trimmed[first]))) ++first;
+    trimmed.erase(0, first);
+    std::string lower = trimmed;
+    for (char& c : lower) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    if (!trimmed.empty() && lower != "unknown") return name;
+    const std::size_t slash = file_path.find_last_of("\\/");
+    std::string stem = slash == std::string::npos ? file_path : file_path.substr(slash + 1);
+    const std::size_t dot = stem.find_last_of('.');
+    if (dot != std::string::npos && dot > 0) stem.resize(dot);
+    return stem.empty() ? name : stem;
+}
+
 inline bool cob_expired(const Cob& cob, int year, int month, int day) {
     if (!cob.has_expiry()) {
         return false;
@@ -192,6 +212,84 @@ inline bool installed_script(const std::string& script, InstalledScript& out) {
     return caos_integer(tokens[1], out.classifier.family) &&
            caos_integer(tokens[2], out.classifier.genus) &&
            caos_integer(tokens[3], out.classifier.species) && caos_integer(tokens[4], out.event);
+}
+
+// A `scrp`/`scrx` header as the game itself reads it (ParseRValue
+// @ 0x0041a9d0 in Creatures.exe): four numbers, each starting at the
+// character after the previous one's separator, so an extra space is read
+// as a digit (' ' - '0' is -16), and each number kept as a byte.  The 1996
+// Coconuts COB has `scrp 2 13 10  5`, which the game installs as event 101.
+// False when the script is not such a header or a number is a variable.
+inline bool original_script_classifier(const std::string& script, InstalledScript& out) {
+    if (script.size() < 5 || (script.compare(0, 4, "scrp") != 0 && script.compare(0, 4, "scrx") != 0)) {
+        return false;
+    }
+    std::size_t at = 5;  // the command's four characters and its separator
+    int values[4] = {};
+    for (int& value : values) {
+        if (at >= script.size() || script[at] >= ':') return false;  // a variable
+        std::uint32_t number = 0;
+        if (script[at] == '-') {
+            ++at;
+            if (at < script.size()) number = 0u - static_cast<std::uint32_t>(script[at++] - '0');
+            while (at < script.size()) {
+                const char digit = script[at++];
+                if (digit < '0') break;
+                number = number * 10u - static_cast<std::uint32_t>(digit - '0');
+            }
+        } else {
+            number = static_cast<std::uint32_t>(script[at++] - '0');
+            while (at < script.size()) {
+                const char digit = script[at++];
+                if (digit < '0') break;
+                number = number * 10u + static_cast<std::uint32_t>(digit - '0');
+            }
+        }
+        value = static_cast<int>(number & 0xffu);
+    }
+    out.classifier = {values[0], values[1], values[2]};
+    out.event = values[3];
+    return true;
+}
+
+// Fix (Injector bug 2): a `scrp`/`scrx` header with extra spaces between
+// its numbers (or after the command) is sent with single spaces, so the
+// script goes where its author meant.  The original sent it as written,
+// and the game read the extra space as part of a number.  Everything after
+// the header is left alone.
+inline std::string tidy_script_header(const std::string& script) {
+    if (script.size() < 5 || (script.compare(0, 4, "scrp") != 0 && script.compare(0, 4, "scrx") != 0)) {
+        return script;
+    }
+    std::string header = script.substr(0, 4);
+    std::size_t at = 4;
+    for (int number = 0; number < 4; ++number) {
+        while (at < script.size() && (script[at] == ' ' || script[at] == '\t')) ++at;
+        const std::size_t start = at;
+        while (at < script.size() && script[at] != ' ' && script[at] != '\t' && script[at] != ',') ++at;
+        if (start == at) return script;  // not four numbers: leave it as written
+        header += ' ';
+        header += script.substr(start, at - start);
+    }
+    while (at < script.size() && (script[at] == ' ' || script[at] == '\t')) ++at;
+    return header + script.substr(at);
+}
+
+// The scripts a COB installed in a world where its headers were read as
+// written (by the original Injector, or before the fix above): those whose
+// event or classifier differs from what the author meant.  Removing the COB
+// removes these too.
+inline std::vector<InstalledScript> misfiled_scripts(const Cob& cob) {
+    std::vector<InstalledScript> found;
+    for (const std::string& install : cob.install_scripts) {
+        InstalledScript meant;
+        InstalledScript original;
+        if (installed_script(install, meant) && original_script_classifier(install, original) &&
+            (!(meant.classifier == original.classifier) || meant.event != original.event)) {
+            found.push_back(original);
+        }
+    }
+    return found;
 }
 
 // The objects an inject script makes: its `setv clas <n>`, where n is

@@ -41,7 +41,9 @@ LoadInjectorCobFile @ 0x00408370; the format is in
 `c1kitlib/include/c1kit/cob.hpp`. Each has scripts to install (`scrp f g s
 e`), scripts that make the object (`inst,new: ...`), a picture, a name, a
 description, how many are left (255: unlimited) and an optional expiry date.
-`<name>.rcb` beside a COB is its removal: a COB whose second list removes it.
+`<name>.rcb` beside a COB is its removal: a COB whose second list removes it. *This build:* a COB whose own
+name is blank or "unknown" (Potions and Lotions) is listed by its file name;
+the original showed "unknown".
 
 ## Pages
 
@@ -77,6 +79,13 @@ Beetle that is the same commands as its own `.rcb`.
 
 1. A COB with none left can still be injected: the count test accepts 0,
    although the page shows it as used up.
+2. Install scripts are sent exactly as written, and the game reads a
+   `scrp` header's numbers character by character, so an extra space is
+   taken as part of the next number.  The 1996 Coconuts COB's
+   `scrp 2 13 10  5` (two spaces) was installed as event 101, so a
+   coconut's drop script never ran.  This build sends the header with
+   single spaces, and removing a COB also removes any such misread copy a
+   world already has.
 
 The counts are kept only while the kit runs, and are read afresh from the
 files on Refresh; this build does the same (it does not write your COB

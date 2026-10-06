@@ -90,6 +90,44 @@ void test_picture_rows() {
     assert(cobs[0].sprite.pixels == top_first);
 }
 
+// Extra spaces in a scrp header: the game's reading, the tidied header and
+// the misread copy a removal must also take out.
+void test_display_name() {
+    assert(cob_display_name("Beetle", "C:\\Creatures\\Beetle.cob") == "Beetle");
+    assert(cob_display_name("unknown", "C:\\Creatures\\Potions and Lotions.COB") ==
+           "Potions and Lotions");
+    assert(cob_display_name(" Unknown ", "/x/Potions and Lotions.COB") == "Potions and Lotions");
+    assert(cob_display_name("", "Potions.cob") == "Potions");
+    assert(cob_display_name("unknown thing", "a.cob") == "unknown thing");
+}
+
+void test_script_headers() {
+    InstalledScript original;
+    assert(original_script_classifier("scrp 2 13 10  5,snde drop,endm", original));
+    assert(original.classifier.family == 2 && original.classifier.genus == 13 &&
+           original.classifier.species == 10 && original.event == 101);
+    assert(original_script_classifier("scrp 2 13 10 5,endm", original) && original.event == 5);
+    assert(original_script_classifier("scrx 3 1 7 9,endm", original) && original.event == 9);
+    assert(!original_script_classifier("scrp var0 1 2 3,endm", original));
+    assert(!original_script_classifier("inst,new: simp coco 9 0 500 0,endm", original));
+
+    assert(tidy_script_header("scrp 2 13 10  5,snde drop,  endm") ==
+           "scrp 2 13 10 5,snde drop,  endm");
+    assert(tidy_script_header("scrp  2  13 10 5 ,endm") == "scrp 2 13 10 5,endm");
+    assert(tidy_script_header("scrp 2 13 10 5,endm") == "scrp 2 13 10 5,endm");
+    assert(tidy_script_header("inst,setv  var0 1,endm") == "inst,setv  var0 1,endm");
+    assert(tidy_script_header("scrp 2 13,endm") == "scrp 2 13,endm");
+    InstalledScript tidied;
+    assert(original_script_classifier(tidy_script_header("scrp 2 13 10  5,endm"), tidied) &&
+           tidied.event == 5);
+
+    Cob cob;
+    cob.install_scripts = {"scrp 2 13 10  5,snde drop,endm", "scrp 2 13 10 8,wait 1,endm"};
+    const std::vector<InstalledScript> misfiled = misfiled_scripts(cob);
+    assert(misfiled.size() == 1 && misfiled[0].event == 101 &&
+           misfiled[0].classifier.genus == 13);
+}
+
 void test_real(const std::string& dir) {
     DIR* d = opendir(dir.c_str());
     assert(d != nullptr);
@@ -139,6 +177,8 @@ void test_real(const std::string& dir) {
 int main(int argc, char** argv) {
     test_sample();
     test_picture_rows();
+    test_script_headers();
+    test_display_name();
     if (argc > 1) test_real(argv[1]);
     std::puts("cob_test: all passed");
     return 0;
