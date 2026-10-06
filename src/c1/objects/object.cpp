@@ -298,6 +298,10 @@ Object* Object::find_object_under_pointer(
     // enclose another candidate's is dropped first -- the smaller thing
     // inside it is what the hand is aimed at -- and the native plane rule
     // decides among the rest, so partial overlaps behave as before.
+    // Before either rule: an object whose own click hotspot is under the
+    // hand (a lift's arrows) gets the click.  A norn standing in or beside
+    // a lift covered its arrows with its bounding box, and the click went
+    // to the norn (a pat or a slap) until it moved away.
     const world::WorldRect search_bounds = world.pointer_tool_bounds(*this);
 
     struct Hit {
@@ -329,6 +333,17 @@ Object* Object::find_object_under_pointer(
 
     Object* topmost_object = nullptr;
     int topmost_render_plane = -1;
+    for (const Hit& hit : hits) {
+        if (hit.render_plane > topmost_render_plane &&
+            hit.object->has_click_hotspot_at(search_bounds.min_x,
+                                             search_bounds.min_y)) {
+            topmost_render_plane = hit.render_plane;
+            topmost_object = hit.object;
+        }
+    }
+    if (topmost_object != nullptr) {
+        return topmost_object;
+    }
     for (const Hit& hit : hits) {
         const bool encloses_another_hit = std::any_of(
             hits.begin(), hits.end(), [&hit](const Hit& other) {

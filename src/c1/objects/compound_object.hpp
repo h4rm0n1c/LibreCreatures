@@ -134,6 +134,10 @@ public:
 
     ObjectEventId click_event_id_at_world_position(int world_x,
                                                    int world_y) const override;
+    bool has_click_hotspot_at(int world_x, int world_y) const override {
+        return click_event_id_at_world_position(world_x, world_y) !=
+               ObjectEventId::no_event;
+    }
     void get_part_center(int* out_world_x, int* out_world_y,
                          std::int32_t creature_event_index) const override;
 

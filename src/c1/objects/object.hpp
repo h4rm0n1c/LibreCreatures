@@ -328,6 +328,15 @@ public:
 
     virtual ObjectEventId click_event_id_at_world_position(int world_x,
                                                            int world_y) const;
+    // Not native: whether (world_x, world_y) is on one of the object's own
+    // click hotspots (a compound object's `knob` regions, such as a lift's
+    // arrows).  The hand's enclosing-object rule (find_object_under_pointer)
+    // lets such an object keep the click.
+    virtual bool has_click_hotspot_at(int world_x, int world_y) const {
+        (void)world_x;
+        (void)world_y;
+        return false;
+    }
     virtual bool references_object(Object* candidate) const;
 
     // Archives the recovered Object base record. Derived serializers call
