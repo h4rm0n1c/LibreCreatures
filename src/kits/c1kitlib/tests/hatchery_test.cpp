@@ -108,7 +108,7 @@ int main() {
     assert(parse_genome(genome, genes) && genes.size() == 2 + 3 * kColourGenesPerChannel);
     const Gene& first_added = genes[2];
     assert(first_added.family == 2 && first_added.subtype == 6 && first_added.id == 91 &&
-           first_added.flags == 0x07);
+           first_added.flags == kGeneMutable);
     const std::vector<std::uint8_t> expected = {0, 0x30, 'g', 'e', 'x', 't', 0xa0, 0x10};
     assert(first_added.payload == expected);
     assert(genes.back().payload[0] == 2 && genes.back().id == 91 + 11);
