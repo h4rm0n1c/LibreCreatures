@@ -66,6 +66,9 @@ struct LaunchArgs {
     bool automation = false;  // /Automation
     int tool_id = -1;         // -1 when absent
     std::string prog_id;
+    // /CrashReport=<file>: show the crash report a crashed copy of the kit
+    // wrote, then exit (see c1kit/crash_report.hpp).
+    std::string crash_report;
 };
 
 namespace detail {
@@ -124,6 +127,12 @@ inline LaunchArgs parse_launch_args(std::string_view command_line) {
             args.tool_id = std::atoi(std::string(value).c_str());
         } else if (detail::switch_equals(name, "progid")) {
             args.prog_id.assign(value);
+        } else if (detail::switch_equals(name, "crashreport")) {
+            std::string_view path = value;
+            if (path.size() >= 2 && path.front() == '"' && path.back() == '"') {
+                path = path.substr(1, path.size() - 2);
+            }
+            args.crash_report.assign(path);
         }
     }
     return args;

@@ -5,12 +5,24 @@
 #include "c1kitshell/kit_shell.hpp"
 #include "c1kitshell/kit_art.hpp"
 
+#include <cstdio>
+
 namespace c1kitshell {
 
 KitApp::KitApp() = default;
 
 BOOL KitApp::InitInstance() {
     const KitDefinition& kit = kit_definition();
+
+    // A copy started by a crash only shows the report (and sets no crash
+    // handlers of its own, so a failure there cannot start another).
+    const c1kit::LaunchArgs launch =
+        c1kit::parse_launch_args(CStringA(m_lpCmdLine).GetString());
+    if (!launch.crash_report.empty()) {
+        show_crash_report_file(launch.crash_report);
+        return FALSE;
+    }
+    install_crash_handlers();
 
     // The game's Main Directory becomes the working directory, where kits
     // find their art (LoadOverviewMainDirectory @ 0x00402040, which read
@@ -29,8 +41,7 @@ BOOL KitApp::InitInstance() {
         return FALSE;
     }
 
-    const c1kit::LaunchArgs args =
-        c1kit::parse_launch_args(CStringA(m_lpCmdLine).GetString());
+    const c1kit::LaunchArgs& args = launch;
     if (!args.embedding && !args.automation) {
         // Run on its own: register the server and the Tools-menu entry, then
         // exit, as COleObjectFactory::UpdateRegistryAll plus
@@ -69,6 +80,7 @@ BOOL KitApp::InitInstance() {
         return FALSE;
     }
     m_pMainWnd = sheet;
+    run_crash_test_if_asked();
     return TRUE;
 }
 
@@ -96,6 +108,30 @@ int KitApp::ExitInstance() {
         server_ = nullptr;
     }
     return CWinApp::ExitInstance();
+}
+
+LRESULT KitApp::ProcessWndProcException(CException* error, const MSG* message) {
+    // As CWinApp::ProcessWndProcException: a window that fails to be made
+    // is refused, a paint is marked done, a command answers TRUE, and a
+    // CUserException has already told the user.
+    LRESULT result = 0;
+    if (message->message == WM_CREATE) {
+        result = -1;
+    } else if (message->message == WM_PAINT) {
+        ::ValidateRect(message->hwnd, nullptr);
+    } else if (message->message == WM_COMMAND) {
+        result = TRUE;
+    }
+    if (error->IsKindOf(RUNTIME_CLASS(CUserException))) {
+        return result;
+    }
+    TCHAR text[512] = {};
+    error->GetErrorMessage(text, 512);
+    char detail[96];
+    std::snprintf(detail, sizeof detail, " (%s, window message 0x%04X)",
+                  error->GetRuntimeClass()->m_lpszClassName, message->message);
+    report_carried_on_error(std::string(CStringA(text).GetString()) + detail);
+    return result;
 }
 
 bool KitApp::on_communicate(std::int32_t header, std::int32_t payload) {

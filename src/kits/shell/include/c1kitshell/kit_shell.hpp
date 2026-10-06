@@ -51,6 +51,23 @@ bool classic_art_available();
 void note_classic_art_available(bool available);  // ClassicArt::find's record
 
 // ---------------------------------------------------------------------------
+// Crash reports (kit_crash.cpp)
+// ---------------------------------------------------------------------------
+
+// Catches what would end the kit with no word (an unhandled exception,
+// std::terminate, a bad C runtime argument, a pure virtual call, abort),
+// writes a report and a minidump under %LOCALAPPDATA%\LibreCreatures\Crash
+// Reports, and opens a new copy of the kit to show the report.
+void install_crash_handlers();
+// /CrashReport=<file>: shows the report a crashed copy wrote.
+int show_crash_report_file(const std::string& report_path);
+// An error the kit carries on from (MFC caught it in a message handler):
+// writes a report and shows it, once per run.
+void report_carried_on_error(const std::string& message);
+// C1KIT_CRASH_TEST=<kind>: fails on purpose, to test the above.
+void run_crash_test_if_asked();
+
+// ---------------------------------------------------------------------------
 // Application
 // ---------------------------------------------------------------------------
 
@@ -60,6 +77,9 @@ public:
 
     BOOL InitInstance() override;
     int ExitInstance() override;
+    // MFC's report of an exception it caught in a message handler: ours,
+    // not MFC's plain box, then MFC's own way of carrying on.
+    LRESULT ProcessWndProcException(CException* error, const MSG* message) override;
 
     CFont& default_font() { return default_font_; }
 
