@@ -191,6 +191,11 @@ std::string decimal(int value) {
     return std::to_string(value);
 }
 
+// `kill` parks objects at (1000, 4000), below the 1200-pixel world.
+bool is_off_world_position(int world_y) {
+    return world_y >= world::kWorldHeight;
+}
+
 std::uint8_t scaled_byte(std::uint8_t value, std::uint32_t magnitude) {
     return static_cast<std::uint8_t>(
         (static_cast<std::uint32_t>(value) * (magnitude & 0xffu)) >> 8);
@@ -2696,6 +2701,14 @@ void Creature::update_perception(
             continue;
         }
 
+        // LibreCreatures deviation (issue #11): a target that has been
+        // killed sits at (1000, 4000).  C1 copied that into the record here,
+        // before the attention pass dropped the target, so the creature
+        // remembered the object as below every floor.  Keep its last real
+        // position; the attention pass still drops the target.
+        if (is_off_world_position(source_host.sound_source_y(*record.target))) {
+            continue;
+        }
         const int current_x = source_host.sound_source_x(*record.target);
         const int previous_x = record.world_x;
         const int delta = previous_x - current_x;
@@ -2893,6 +2906,7 @@ void Creature::apply_stimulus(
     std::uint32_t magnitude,
     const StimulusSourceHost& source_host,
     common::DebugLogHost* log_host) {
+    static_cast<void>(source_creature);
     if (is_dead() || source_object == nullptr) {
         return;
     }
@@ -2934,8 +2948,18 @@ void Creature::apply_stimulus(
                         : source_object;
     record.target_neuron_index = descriptor.target_neuron_index;
     record.lobe_activation = descriptor.target_lobe_activation;
-    record.world_x = source_host.sound_source_x(*source_object);
-    record.world_y = source_host.sound_source_y(*source_object);
+    // LibreCreatures deviation (issue #11).  `kill` parks an object at
+    // (1000, 4000) instead of deleting it, and an eaten food's stimulus can
+    // arrive after the kill.  C1 stored that off-world position as where the
+    // object is, and goal direction then sent the norn "down" to it through
+    // lifts and call buttons for ever.  A parked object is gone: keep the
+    // last real position instead.
+    const int source_x = source_host.sound_source_x(*source_object);
+    const int source_y = source_host.sound_source_y(*source_object);
+    if (!is_off_world_position(source_y)) {
+        record.world_x = source_x;
+        record.world_y = source_y;
+    }
     record.visible = true;
     record.stimulus_seen = true;
 
@@ -2973,14 +2997,11 @@ void Creature::apply_stimulus(
     }
 
     // Native (@0040b8a0) compares only the source object with this
-    // creature, and the source creature is the stimulated creature itself on
-    // every queued and built-in stimulus -- so this gate keeps the
-    // goal-direction matrix from ever learning.  It is kept on purpose for
-    // now: with native learning, goal direction drives norns into endless
-    // lift and call-button loops (086fc90), so it stays off until the cause
-    // is found.
-    const bool is_self = source_creature == this ||
-                         source_host.is_this_creature(*source_object, *this);
+    // creature.  The source creature is the stimulated creature itself on
+    // every queued and built-in stimulus, so it must not take part: gating on
+    // it kept the goal-direction matrix from ever learning which objects
+    // relieve which drives.
+    const bool is_self = source_host.is_this_creature(*source_object, *this);
     if (!is_self && attention_index < goal_direction_weight_matrix_.size()) {
         const std::array<std::uint8_t, 4> ids = {
             chemical_ids.first, chemical_ids.second, chemical_ids.third,
