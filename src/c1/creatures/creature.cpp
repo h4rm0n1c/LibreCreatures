@@ -2191,8 +2191,12 @@ void Creature::handle_pickup_event(
         }
 
         skeleton_.previous_sprite_bounds = skeleton_.sprite_bounds;
-        skeleton_.body->set_render_plane(
+        // A creature whose body rebuild failed has no body; a vehicle
+        // pickup used to write through the null pointer here.
+        if (skeleton_.body != nullptr) {
+            skeleton_.body->set_render_plane(
             host.vehicle_attachment_render_plane(source));
+        }
         skeleton_.set_bounds_mode(static_cast<std::uint32_t>(
                                       objects::Object::BoundsMode::vehicle_local),
                                   host.renderables());
@@ -2220,7 +2224,9 @@ void Creature::handle_pickup_event(
                                       objects::Object::BoundsMode::unbounded_1),
                                   host.renderables());
         skeleton_.set_bounds_reference_object(nullptr);
-        skeleton_.body->set_render_plane(kPointerHeldRenderPlane);
+        if (skeleton_.body != nullptr) {
+            skeleton_.body->set_render_plane(kPointerHeldRenderPlane);
+        }
         skeleton_.update_movement_bounds(host.movement_bounds_host());
         skeleton_.update_limb_frames_for_pose();
         update_unbounded_world_position(host, host);
@@ -2246,7 +2252,9 @@ void Creature::handle_drop_event(
     if (source.has_bounds_flag(objects::Object::kIsVehicle)) {
         skeleton_.previous_sprite_bounds = skeleton_.sprite_bounds;
         if (skeleton_.body != nullptr) {
-            skeleton_.body->set_render_plane(skeleton_.normal_render_plane);
+            if (skeleton_.body != nullptr) {
+                skeleton_.body->set_render_plane(skeleton_.normal_render_plane);
+            }
         }
         skeleton_.set_bounds_mode(
             static_cast<std::uint32_t>(objects::Object::BoundsMode::default_world),
@@ -2276,7 +2284,9 @@ void Creature::handle_drop_event(
             static_cast<std::uint32_t>(objects::Object::BoundsMode::default_world),
             host.renderables());
         if (skeleton_.body != nullptr) {
-            skeleton_.body->set_render_plane(skeleton_.normal_render_plane);
+            if (skeleton_.body != nullptr) {
+                skeleton_.body->set_render_plane(skeleton_.normal_render_plane);
+            }
         }
         skeleton_.update_movement_bounds(host.movement_bounds_host());
         skeleton_.previous_sprite_bounds = skeleton_.sprite_bounds;

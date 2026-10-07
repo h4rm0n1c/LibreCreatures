@@ -1248,6 +1248,22 @@ void C1WindowsDocument::release_gallery(
     }
 }
 
+void C1WindowsDocument::release_simple_object_gallery(
+    creatures1::display::Gallery& gallery) {
+    // Called from ~SimpleObject.  When a world is torn down the gallery
+    // registry can already be empty; releasing then must be a no-op, not a
+    // throw out of a destructor.
+    if (world_runtime_ == nullptr) {
+        return;
+    }
+    for (std::size_t index = 0; index < world_runtime_->gallery_count(); ++index) {
+        if (world_runtime_->gallery_at(index) == &gallery) {
+            world_runtime_->release_gallery(gallery);
+            return;
+        }
+    }
+}
+
 std::size_t C1WindowsDocument::gallery_count() const {
     return world_runtime_ == nullptr ? 0 : world_runtime_->gallery_count();
 }
@@ -5408,6 +5424,7 @@ void* C1WindowsDocument::ArchiveHost::create_object(std::string_view name, std::
         // second one to the registry.
         if (document_.pointer_tool_ == nullptr) {
             auto tool = std::make_unique<creatures1::ui::PointerTool>();
+            tool->set_gallery_owner(&document_);
             document_.pointer_tool_ = tool.get();
             document_.world_runtime_->adopt_non_scenery_object(
                 std::move(tool));
@@ -5419,6 +5436,7 @@ void* C1WindowsDocument::ArchiveHost::create_object(std::string_view name, std::
             new (std::nothrow) creatures1::objects::Bubble());
         auto* raw = bubble.get();
         if (raw != nullptr) {
+            raw->set_gallery_owner(&document_);
             document_.world_runtime_->adopt_non_scenery_object(
                 std::move(bubble));
         }
@@ -5474,7 +5492,9 @@ void* C1WindowsDocument::ArchiveHost::create_object(std::string_view name, std::
     } else if (name == "CompoundObject") {
         object = std::make_unique<creatures1::objects::CompoundObject>();
     } else if (name == "SimpleObject") {
-        object = std::make_unique<creatures1::objects::SimpleObject>();
+        auto simple = std::make_unique<creatures1::objects::SimpleObject>();
+        simple->set_gallery_owner(&document_);
+        object = std::move(simple);
     } else if (name == "Object") {
         object = std::make_unique<creatures1::objects::Object>();
     } else {
