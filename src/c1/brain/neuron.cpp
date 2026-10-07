@@ -39,6 +39,11 @@ std::string_view neuron_label(const LobeNeuron& neuron,
 
 namespace {
 
+// MigrateRuleConnections @ 00405da0 packs its duplicate test as
+// (sum << 16) | (product & 0xffff), which throws away the high half of the
+// pointer sum, so unrelated dendrite sets can pass for duplicates.
+// LibreCreatures deviation: compare the whole sum, the closer reading of
+// "is this set already wired".
 struct ConnectionSetSignature {
     std::uint32_t pointer_sum = 0;
     std::uint16_t pointer_product_low = 0;
