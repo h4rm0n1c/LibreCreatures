@@ -252,6 +252,25 @@ public:
                                     std::uint8_t palette_index_1,
                                     std::uint8_t palette_index_2,
                                     EntityRasterHost& raster);
+    // Not native (neorender): text drawn over this entity's picture instead
+    // of into it.  A speech bubble's balloon is then one shared image, not a
+    // private copy pinned in the pixel cache for each bubble.  The overlay
+    // is indexed like the picture, 0 is clear, and it has the picture's 1x
+    // size.  Both renderers draw it over the picture.  The serial changes
+    // with each edit, so a texture cache can tell old text from new.
+    void fill_text_overlay_rect(std::uint8_t palette_index, int min_x,
+                                int min_y, int max_x, int max_y);
+    void draw_text_to_text_overlay(int pixel_x, int pixel_y, const char* text,
+                                   std::uint8_t palette_index_0,
+                                   std::uint8_t palette_index_1,
+                                   std::uint8_t palette_index_2,
+                                   EntityRasterHost& raster);
+    const std::uint8_t* text_overlay_pixels() const {
+        return text_overlay_.get();
+    }
+    int text_overlay_width() const { return text_overlay_width_; }
+    int text_overlay_height() const { return text_overlay_height_; }
+    std::uint32_t text_overlay_serial() const { return text_overlay_serial_; }
     // See parse_image_sequence: sequence_end bounds the search for ']' so a
     // missing terminator (any third-party COB can send one) can't walk this
     // read past the script buffer. Returns nullptr on that failure.
@@ -285,6 +304,11 @@ private:
     std::unique_ptr<ImageSequenceBuffer> image_sequence_;
     std::size_t image_sequence_cursor_ = 0;
     EntityRegistryHost* registry_ = nullptr;
+    std::uint8_t* prepare_text_overlay();
+    std::unique_ptr<std::uint8_t[]> text_overlay_;
+    int text_overlay_width_ = 0;
+    int text_overlay_height_ = 0;
+    std::uint32_t text_overlay_serial_ = 0;
 };
 
 } // namespace creatures1::objects

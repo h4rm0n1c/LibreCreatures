@@ -160,6 +160,30 @@ private:
     std::unique_ptr<std::uint8_t[]> text_overlay_;
 };
 
+// Where an image-sized rectangle at a world position lands in the renderer's
+// DIB, after world wrap and clipping; false when none of it shows.  Image's
+// own blit and the text overlay blit share it.
+struct DibBlitPlacement {
+    int source_x = 0;
+    int source_y = 0;
+    int destination_x = 0;
+    int destination_y = 0;
+    int copy_width = 0;
+    int row_count = 0;
+    int destination_stride = 0;
+};
+bool place_dib_blit(int width, int height, int world_x, int world_y,
+                    const world::WorldRect& clip_rect,
+                    const world::WorldRect& view_rect,
+                    DibBlitPlacement& out);
+// Not native (neorender): draws an entity's text overlay (0 is clear) over
+// what is already in the DIB.
+void blit_text_overlay_to_dib(const std::uint8_t* overlay, int width,
+                              int height, std::uint8_t* dib_pixels,
+                              int world_x, int world_y,
+                              const world::WorldRect& clip_rect,
+                              const world::WorldRect& view_rect);
+
 // A gallery owns the fixed Image array described by the C1 sprite metadata
 // file.  The native implementation used an MFC allocation header and a
 // CPtrArray registry; those implementation details are represented by the

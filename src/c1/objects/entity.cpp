@@ -200,6 +200,90 @@ void Entity::fill_current_image_rect(std::uint8_t palette_index,
     }
 }
 
+std::uint8_t* Entity::prepare_text_overlay() {
+    if (gallery_ == nullptr || gallery_->images == nullptr ||
+        current_image_index_ >= gallery_->image_count) {
+        return nullptr;
+    }
+    const display::Image& image = gallery_->images[current_image_index_];
+    const int width = image.width();
+    const int height = image.height();
+    if (width <= 0 || height <= 0) {
+        return nullptr;
+    }
+    if (text_overlay_ == nullptr || width != text_overlay_width_ ||
+        height != text_overlay_height_) {
+        text_overlay_.reset(new std::uint8_t[static_cast<std::size_t>(width) *
+                                             static_cast<std::size_t>(height)]());
+        text_overlay_width_ = width;
+        text_overlay_height_ = height;
+    }
+    static std::uint32_t next_text_overlay_serial = 0;
+    text_overlay_serial_ = ++next_text_overlay_serial;
+    return text_overlay_.get();
+}
+
+void Entity::fill_text_overlay_rect(std::uint8_t palette_index, int min_x,
+                                    int min_y, int max_x, int max_y) {
+    std::uint8_t* overlay = prepare_text_overlay();
+    if (overlay == nullptr) {
+        return;
+    }
+    min_x = std::max(min_x, 0);
+    min_y = std::max(min_y, 0);
+    max_x = std::min(max_x, text_overlay_width_);
+    max_y = std::min(max_y, text_overlay_height_);
+    for (int y = min_y; y < max_y; ++y) {
+        std::uint8_t* row = overlay + y * text_overlay_width_;
+        for (int x = min_x; x < max_x; ++x) {
+            row[x] = palette_index;
+        }
+    }
+}
+
+void Entity::draw_text_to_text_overlay(int pixel_x, int pixel_y,
+                                       const char* text,
+                                       std::uint8_t palette_index_0,
+                                       std::uint8_t palette_index_1,
+                                       std::uint8_t palette_index_2,
+                                       EntityRasterHost& raster) {
+    std::uint8_t* overlay = prepare_text_overlay();
+    if (overlay == nullptr || text == nullptr) {
+        return;
+    }
+    // The same glyph walk as draw_text_to_current_image, clipped to the
+    // overlay: every glyph pixel is written, its ground included.
+    const std::array<std::uint8_t, 3> palette = {
+        palette_index_0, palette_index_1, palette_index_2};
+    const int line_start_x = pixel_x;
+    for (const char* cursor = text; *cursor != '\0'; ++cursor) {
+        const std::uint8_t character_code =
+            static_cast<std::uint8_t>(*cursor);
+        if (character_code == static_cast<std::uint8_t>('|')) {
+            pixel_y += 12;
+            pixel_x = line_start_x;
+            continue;
+        }
+        const std::uint8_t* glyph = raster.charset_glyph_rows(character_code);
+        if (glyph != nullptr) {
+            for (int row = 0; row < 12; ++row) {
+                const int y = pixel_y + row;
+                if (y < 0 || y >= text_overlay_height_) {
+                    continue;
+                }
+                for (int column = 0; column < 6; ++column) {
+                    const int x = pixel_x + column;
+                    if (x >= 0 && x < text_overlay_width_) {
+                        overlay[y * text_overlay_width_ + x] =
+                            palette[glyph[row * 6 + column]];
+                    }
+                }
+            }
+        }
+        pixel_x += 1 + raster.charset_glyph_advance_width(character_code);
+    }
+}
+
 void Entity::draw_text_to_current_image(int pixel_x, int pixel_y,
                                         const char* text,
                                         std::uint8_t palette_index_0,

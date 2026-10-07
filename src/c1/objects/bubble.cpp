@@ -13,7 +13,10 @@ Bubble::Bubble(Object* anchor_object, std::uint8_t lifetime_ticks,
                    ? static_cast<int>(place_on_right)
                    : static_cast<int>(place_on_right) +
                          static_cast<int>(placement_mode) * 2),
-          1, true, -99, -99, 9000, 0x10, 0, 2, 1, 2, 0xff, 0, 0, 0,
+          // Native asks for a private, cache-protected copy of the balloon
+          // so it can write the text into its pixels.  The text goes to an
+          // overlay here (see BubbleTextHost), so bubbles share the balloon.
+          1, false, -99, -99, 9000, 0x10, 0, 2, 1, 2, 0xff, 0, 0, 0,
           construction),
       lifetime_ticks_remaining(lifetime_ticks),
       anchor_object(anchor_object),

@@ -301,6 +301,56 @@ SDL_Texture* SdlWorldView::text_overlay_texture_for(C1WindowsDocument& document,
     return texture;
 }
 
+// An entity's own text overlay (a speech bubble's words over the shared
+// balloon).  Keyed by the entity; the overlay serial tells new text, or a new
+// entity at the same address, from what was uploaded.
+SDL_Texture* SdlWorldView::entity_text_overlay_texture_for(
+    C1WindowsDocument& document, const objects::Entity& entity) {
+    const std::uint8_t* overlay = entity.text_overlay_pixels();
+    const int width = entity.text_overlay_width();
+    const int height = entity.text_overlay_height();
+    if (overlay == nullptr || width <= 0 || height <= 0) {
+        return nullptr;
+    }
+    const TextureKey key{nullptr, 0, 0,
+                         reinterpret_cast<std::size_t>(&entity),
+                         display::ImageTier::spr, false, true};
+    auto found = textures_.find(key);
+    if (found != textures_.end()) {
+        if (found->second.content_serial == entity.text_overlay_serial()) {
+            found->second.last_used = frame_number_;
+            return found->second.texture;
+        }
+        SDL_DestroyTexture(found->second.texture);
+        texture_bytes_ -= found->second.bytes;
+        textures_.erase(found);
+    }
+    CachedTexture cached;
+    cached.content_serial = entity.text_overlay_serial();
+    cached.last_used = frame_number_;
+    const auto& palette = document.frame_palette();
+    scratch_rgba_.resize(static_cast<std::size_t>(width) * height * 4u);
+    std::uint8_t* out = scratch_rgba_.data();
+    for (std::size_t i = 0, n = static_cast<std::size_t>(width) * height; i < n;
+         ++i, out += 4) {
+        const display::FrameColour& colour = palette[overlay[i]];
+        out[0] = colour.red;
+        out[1] = colour.green;
+        out[2] = colour.blue;
+        out[3] = overlay[i] == 0 ? 0 : 255;
+    }
+    cached.texture = upload(scratch_rgba_.data(), width, height, cached.bytes);
+    if (cached.texture == nullptr) {
+        return nullptr;
+    }
+    SDL_SetTextureBlendMode(cached.texture, SDL_BLENDMODE_BLEND);
+    SDL_SetTextureScaleMode(cached.texture, SDL_SCALEMODE_NEAREST);
+    texture_bytes_ += cached.bytes;
+    SDL_Texture* texture = cached.texture;
+    textures_.emplace(key, cached);
+    return texture;
+}
+
 void SdlWorldView::evict_to_budget() {
     while (texture_bytes_ > kTextureBudgetBytes && !textures_.empty()) {
         auto oldest = std::min_element(
@@ -375,6 +425,13 @@ void SdlWorldView::render_frame(C1WindowsDocument& document,
         if (tier != display::ImageTier::spr) {
             if (SDL_Texture* text =
                     text_overlay_texture_for(document, *gallery, item.image_index)) {
+                SDL_RenderTexture(renderer_, text, nullptr, &destination);
+            }
+        }
+        if (item.entity != nullptr &&
+            item.entity->text_overlay_pixels() != nullptr) {
+            if (SDL_Texture* text =
+                    entity_text_overlay_texture_for(document, *item.entity)) {
                 SDL_RenderTexture(renderer_, text, nullptr, &destination);
             }
         }

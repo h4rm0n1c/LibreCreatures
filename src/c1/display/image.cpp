@@ -282,19 +282,12 @@ void Image::serialize(ImageArchive& archive) {
     archive.write_uint32(sprite_data_offset_);
 }
 
-void Image::blit_to_dib(
-    std::uint8_t* dib_pixels,
-    int world_x,
-    int world_y,
-    const world::WorldRect& clip_rect,
-    const world::WorldRect& view_rect,
-    bool direct_copy,
-    PixelCacheState& cache,
-    SpriteFileCache& sprite_files,
-    const SpriteFileSearchPaths& paths,
-    BinaryResourceFileSystem& files) {
-    int source_right = width_ - 1;
-    int source_bottom = height_ - 1;
+bool place_dib_blit(int width, int height, int world_x, int world_y,
+                    const world::WorldRect& clip_rect,
+                    const world::WorldRect& view_rect,
+                    DibBlitPlacement& out) {
+    int source_right = width - 1;
+    int source_bottom = height - 1;
     int relative_x = world_x - clip_rect.min_x;
     const int clip_origin_y = clip_rect.min_y;
     int relative_y = world_y - clip_origin_y;
@@ -313,7 +306,7 @@ void Image::blit_to_dib(
     const int clip_bottom = clip_rect.max_y - clip_origin_y - 1;
     if (relative_x > clip_right || relative_y > clip_bottom ||
         image_right < 0 || image_bottom < 0) {
-        return;
+        return false;
     }
 
     const int destination_x_offset = relative_x >= 0 ? relative_x : 0;
@@ -333,7 +326,7 @@ void Image::blit_to_dib(
     int destination_x = unwrapped_destination_x;
     const int destination_stride = view_rect.max_x - view_rect.min_x;
     if (destination_stride <= 0) {
-        return;
+        return false;
     }
 
     // A wrapped world coordinate and a one-pixel alignment pad can both make
@@ -353,7 +346,7 @@ void Image::blit_to_dib(
                                              world::kWorldWidth)) {
             destination_x -= world::kWorldWidth;
         } else {
-            return;
+            return false;
         }
     }
 
@@ -383,8 +376,60 @@ void Image::blit_to_dib(
     }
     if (copy_width <= 0 || row_count <= 0 || source_x > source_right ||
         source_y > source_bottom) {
+        return false;
+    }
+
+    out.source_x = source_x;
+    out.source_y = source_y;
+    out.destination_x = destination_x;
+    out.destination_y = destination_y;
+    out.copy_width = copy_width;
+    out.row_count = row_count;
+    out.destination_stride = destination_stride;
+    return true;
+}
+
+void blit_text_overlay_to_dib(const std::uint8_t* overlay, int width,
+                              int height, std::uint8_t* dib_pixels,
+                              int world_x, int world_y,
+                              const world::WorldRect& clip_rect,
+                              const world::WorldRect& view_rect) {
+    DibBlitPlacement placement;
+    if (overlay == nullptr || dib_pixels == nullptr ||
+        !place_dib_blit(width, height, world_x, world_y, clip_rect, view_rect,
+                        placement)) {
         return;
     }
+    blit_zero_transparent_pixels(
+        {const_cast<std::uint8_t*>(overlay), width}, placement.source_x,
+        placement.source_y, {dib_pixels, placement.destination_stride},
+        placement.destination_x, placement.destination_y,
+        static_cast<std::uint32_t>(placement.copy_width), placement.row_count);
+}
+
+void Image::blit_to_dib(
+    std::uint8_t* dib_pixels,
+    int world_x,
+    int world_y,
+    const world::WorldRect& clip_rect,
+    const world::WorldRect& view_rect,
+    bool direct_copy,
+    PixelCacheState& cache,
+    SpriteFileCache& sprite_files,
+    const SpriteFileSearchPaths& paths,
+    BinaryResourceFileSystem& files) {
+    DibBlitPlacement placement;
+    if (!place_dib_blit(width_, height_, world_x, world_y, clip_rect,
+                        view_rect, placement)) {
+        return;
+    }
+    const int source_x = placement.source_x;
+    const int source_y = placement.source_y;
+    const int destination_x = placement.destination_x;
+    const int destination_y = placement.destination_y;
+    const int copy_width = placement.copy_width;
+    const int row_count = placement.row_count;
+    const int destination_stride = placement.destination_stride;
 
     std::uint8_t* pixels =
         get_pixel_data(cache, sprite_files, paths, files);

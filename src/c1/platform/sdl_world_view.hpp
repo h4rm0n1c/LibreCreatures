@@ -104,6 +104,8 @@ private:
     SDL_Texture* text_overlay_texture_for(C1WindowsDocument& document,
                                           display::Gallery& gallery,
                                           std::size_t index);
+    SDL_Texture* entity_text_overlay_texture_for(
+        C1WindowsDocument& document, const objects::Entity& entity);
     SDL_Texture* upload(const std::uint8_t* rgba, int width, int height,
                         std::size_t& bytes);
     void evict_to_budget();

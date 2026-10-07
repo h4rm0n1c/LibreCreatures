@@ -3381,8 +3381,10 @@ void C1WindowsDocument::clear_bubble_text_band(
         return;
     }
     // Rows 3 through 14 inclusive, 0x90 pixels wide from x=6: the exact strip
-    // the native memsets to palette index 0xf2 before drawing.
-    entity->fill_current_image_rect(0xf2, 6, 3, 6 + 0x90, 0x0f, *this);
+    // the native memsets to palette index 0xf2 before drawing.  Not native:
+    // the strip and the text go to the entity's text overlay, not into the
+    // balloon picture, so every bubble can share one balloon image.
+    entity->fill_text_overlay_rect(0xf2, 6, 3, 6 + 0x90, 0x0f);
 }
 
 void C1WindowsDocument::draw_bubble_text(
@@ -3393,8 +3395,8 @@ void C1WindowsDocument::draw_bubble_text(
         return;
     }
     const std::string terminated(text);
-    entity->draw_text_to_current_image(x, y, terminated.c_str(), background,
-                                       foreground, shadow, *this);
+    entity->draw_text_to_text_overlay(x, y, terminated.c_str(), background,
+                                      foreground, shadow, *this);
 }
 
 void C1WindowsDocument::redraw_after_bubble_text(
