@@ -350,11 +350,16 @@ void WorldRenderer::render_world_rect_to_dib(
         }
     }
 
+    // RenderWorldRectToDIB @ 00412aa0 walks the whole entity registry and
+    // stops once 4000 sprites are visible.  The cap is on visible sprites,
+    // not on registry entries: capping the walk at 4000 entries hid every
+    // entity made after the 4000th (speech bubbles first) in a busy world.
     constexpr std::size_t kMaximumVisibleSprites = 4000;
-    const std::size_t registry_count =
-        std::min(host_.entity_count(), kMaximumVisibleSprites);
+    const std::size_t registry_count = host_.entity_count();
     std::size_t visible_count = 0;
-    for (std::size_t registry_index = 0; registry_index < registry_count;
+    for (std::size_t registry_index = 0;
+         registry_index < registry_count &&
+         visible_count < kMaximumVisibleSprites;
          ++registry_index) {
         const objects::Entity* entity = host_.entity_at(registry_index);
         if (entity == nullptr || !valid_sprite_image(*entity, host_)) {
