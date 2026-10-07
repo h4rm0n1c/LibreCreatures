@@ -3832,6 +3832,19 @@ bool C1WindowsDocument::selected_creature_exists() const {
     return selected_creature() != nullptr;
 }
 
+void C1WindowsDocument::forget_killed_object(
+    creatures1::objects::Object& object) {
+    const creatures1::creatures::Creature* killed_creature =
+        creature_for_object(object);
+    for (std::size_t index = 0; index < creature_count(); ++index) {
+        auto* creature = dynamic_cast<creatures1::creatures::Creature*>(
+            creature_at(index));
+        if (creature != nullptr && creature != killed_creature) {
+            creature->forget_killed_object(object);
+        }
+    }
+}
+
 void C1WindowsDocument::release_from_pointer_tool(
     creatures1::objects::Object& object) {
     // The carried object is the one unbounded object besides the hand.  Run

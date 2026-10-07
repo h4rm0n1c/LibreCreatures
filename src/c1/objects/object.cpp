@@ -405,6 +405,13 @@ void Object::initialize_runtime_state(ObjectInitializationHost& runtime) {
     // so removing it -- a norn eating food straight out of the hand -- left
     // the hand frozen where it was until the world was reloaded.
     runtime.release_from_pointer_tool(*this);
+    // Not native either (issue #11): `kill` parks the object at (1000, 4000)
+    // but, unlike the permanent delete, leaves creatures pointing at it, so
+    // the next perception pass took the parked position as where that kind
+    // of object is.  Drop the creatures' live references now, as the delete
+    // and the hand's hide (PointerTool::HandleQueuedEvent5) do.  A record's
+    // position is the memory of a whole category, so it is kept.
+    runtime.forget_killed_object(*this);
     runtime.remove_from_event_bar(*this, true);
     runtime.purge_destroy_when_finished_macros(*this);
 

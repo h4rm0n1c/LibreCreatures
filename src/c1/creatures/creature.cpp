@@ -1184,13 +1184,16 @@ void Creature::update_attention(CreatureAttentionHost& host) {
             const std::size_t target_neuron_index =
                 winning_record.target_neuron_index;
             if (target_neuron_index < sensory_lobe.neuron_count_value()) {
-                // The executable treats this byte as signed, retaining only
-                // values in 0..127 and mapping 0x80..0xff to zero.
-                const std::int8_t activation = static_cast<std::int8_t>(
-                    winning_record.lobe_activation);
+                // LibreCreatures deviation: UpdateAttention @0040bbc0 reads
+                // this byte signed (MOVSX, then CMOVNS clamps negatives to
+                // zero), so every sense value of 128 or more -- all of them in
+                // the stock and Libre genomes -- was restored as 0 and the
+                // attended object's sense never reached the brain.
+                // ApplyStimulus adds the same byte unsigned.  Read it
+                // unsigned here too.
                 sensory_lobe.neuron(static_cast<std::uint32_t>(
                     target_neuron_index)).activation =
-                    activation >= 0 ? static_cast<std::uint8_t>(activation) : 0;
+                    winning_record.lobe_activation;
             }
         }
 
@@ -2943,23 +2946,29 @@ void Creature::apply_stimulus(
     const AttentionClassifier classifier = source_host.classify(*source_object);
     const std::uint32_t attention_index = get_attention_record_index(classifier);
     AttentionRecord& record = attention_records_[attention_index];
-    record.target = source_host.is_this_creature(*source_object, *this)
-                        ? nullptr
-                        : source_object;
-    record.target_neuron_index = descriptor.target_neuron_index;
-    record.lobe_activation = descriptor.target_lobe_activation;
     // LibreCreatures deviation (issue #11).  `kill` parks an object at
     // (1000, 4000) instead of deleting it, and an eaten food's stimulus can
-    // arrive after the kill.  C1 stored that off-world position as where the
-    // object is, and goal direction then sent the norn "down" to it through
-    // lifts and call buttons for ever.  A parked object is gone: keep the
-    // last real position instead.
+    // arrive after the kill.  C1 then made the parked object the slot's
+    // target and stored its off-world position as where that kind of object
+    // is; goal direction sent the norn "down" to it through lifts and call
+    // buttons for ever.  A parked object is gone: it does not become the
+    // target, and the slot keeps its last real position.  The stimulus
+    // itself -- chemicals, lobe input, goal learning -- still applies.
     const int source_x = source_host.sound_source_x(*source_object);
     const int source_y = source_host.sound_source_y(*source_object);
-    if (!is_off_world_position(source_y)) {
+    if (is_off_world_position(source_y)) {
+        if (record.target == source_object) {
+            record.target = nullptr;
+        }
+    } else {
+        record.target = source_host.is_this_creature(*source_object, *this)
+                            ? nullptr
+                            : source_object;
         record.world_x = source_x;
         record.world_y = source_y;
     }
+    record.target_neuron_index = descriptor.target_neuron_index;
+    record.lobe_activation = descriptor.target_lobe_activation;
     record.visible = true;
     record.stimulus_seen = true;
 
@@ -3307,6 +3316,36 @@ std::uint32_t Creature::first_seen_stimulus_magnitude(
         return 0xb4;
     }
     return 0x50;
+}
+
+void Creature::forget_killed_object(const objects::Object& object) {
+    if (skeleton_.motion_link == &object) {
+        skeleton_.motion_link = nullptr;
+    }
+    for (std::size_t index = 0; index < attention_records_.size(); ++index) {
+        AttentionRecord& record = attention_records_[index];
+        if (record.target != &object) {
+            continue;
+        }
+        record.target = nullptr;
+        record.visible = false;
+        if (brain_ == nullptr) {
+            continue;
+        }
+        brain::Lobe& attention_lobe = brain_->lobe(
+            static_cast<std::uint32_t>(brain::StandardLobeIndex::attention));
+        if (index < attention_lobe.neuron_count_value()) {
+            brain::LobeNeuron& neuron =
+                attention_lobe.neuron(static_cast<std::uint32_t>(index));
+            neuron.firing_strength = 0;
+            neuron.activation = 0;
+        }
+        brain::Lobe& source_lobe = brain_->lobe(static_cast<std::uint32_t>(
+            brain::StandardLobeIndex::stimulus_source));
+        if (index < source_lobe.neuron_count_value()) {
+            source_lobe.neuron(static_cast<std::uint32_t>(index)).activation = 0;
+        }
+    }
 }
 
 bool Creature::references_object(const objects::Object* candidate) const {
@@ -3770,6 +3809,14 @@ void Creature::serialize(
             record = {};
             record.world_x = archive.read_int32();
             record.world_y = archive.read_int32();
+            // LibreCreatures deviation (issue #11): worlds saved by C1, or by
+            // LibreCreatures before the fix, can remember a killed object's
+            // parked (1000, 4000) as where its kind is.  Load such a record as
+            // unknown, the constructor's (-1, -1); the target is null here.
+            if (is_off_world_position(record.world_y)) {
+                record.world_x = -1;
+                record.world_y = -1;
+            }
         }
 
         for (StimulusContext& context : built_in_stimulus_contexts_) {
