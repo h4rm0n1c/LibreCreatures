@@ -2893,7 +2893,6 @@ void Creature::apply_stimulus(
     std::uint32_t magnitude,
     const StimulusSourceHost& source_host,
     common::DebugLogHost* log_host) {
-    static_cast<void>(source_creature);
     if (is_dead() || source_object == nullptr) {
         return;
     }
@@ -2973,11 +2972,15 @@ void Creature::apply_stimulus(
                                           chemical_amounts.fourth, log_host);
     }
 
-    // Native compares only the source object with this creature.  The
-    // source creature is the stimulated creature itself on every queued and
-    // built-in stimulus, so gating on it stopped the goal-direction matrix
-    // ever learning which objects relieve which drives.
-    const bool is_self = source_host.is_this_creature(*source_object, *this);
+    // Native (@0040b8a0) compares only the source object with this
+    // creature, and the source creature is the stimulated creature itself on
+    // every queued and built-in stimulus -- so this gate keeps the
+    // goal-direction matrix from ever learning.  It is kept on purpose for
+    // now: with native learning, goal direction drives norns into endless
+    // lift and call-button loops (086fc90), so it stays off until the cause
+    // is found.
+    const bool is_self = source_creature == this ||
+                         source_host.is_this_creature(*source_object, *this);
     if (!is_self && attention_index < goal_direction_weight_matrix_.size()) {
         const std::array<std::uint8_t, 4> ids = {
             chemical_ids.first, chemical_ids.second, chemical_ids.third,
