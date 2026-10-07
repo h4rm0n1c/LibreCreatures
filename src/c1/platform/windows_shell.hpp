@@ -1309,6 +1309,7 @@ public:
 
     void add_to_world_object_registry(creatures1::objects::Object& object) override;
     void release_from_pointer_tool(creatures1::objects::Object& object) override;
+    void forget_killed_object(creatures1::objects::Object& object) override;
 
     // ObjectDeletionHost: Creature vtable slot 16 (0040e9f0), the permanent
     // delete `kill` and Export run on a creature.

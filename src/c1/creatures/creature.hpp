@@ -1142,6 +1142,12 @@ public:
 
     bool references_object(const objects::Object* candidate) const;
     void clear_references_to_object(const objects::Object* candidate);
+    // LibreCreatures deviation (issue #11): `kill` drops the creature's live
+    // references to the object -- the attention target in any record and the
+    // motion link -- and silences that slot's attention (lobe 7) and
+    // stimulus-source (lobe 2) neurons, as the hand's hide does.  Record
+    // positions are category memory and are kept.
+    void forget_killed_object(const objects::Object& object);
 
     brain::Brain* brain() const { return brain_.get(); }
     void set_brain(brain::Brain* value) { brain_.reset(value); }
