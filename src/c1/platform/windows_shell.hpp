@@ -690,6 +690,7 @@ class C1WindowsDocument final
       public creatures1::objects::ImagePreloadHost,
       public creatures1::objects::EntityRasterHost,
       public creatures1::objects::BubbleConstructionHost,
+      public creatures1::objects::SimpleObjectGalleryOwnerHost,
       public creatures1::objects::SimpleObjectPlacementHost,
       public creatures1::objects::ObjectMovementBoundsHost,
       public creatures1::objects::ObjectDeletionHost,
@@ -1208,6 +1209,8 @@ public:
     void report_script_table_full() override;
 
     creatures1::display::Gallery* acquire_gallery(std::uint32_t sprite_file_id, int header_record_index, std::uint32_t image_count, bool cache_protected) override;
+    creatures1::objects::SimpleObjectGalleryOwnerHost* gallery_owner() override { return this; }
+    void release_simple_object_gallery(creatures1::display::Gallery& gallery) override;
 
     creatures1::objects::EntityRegistryHost& entity_registry() override;
 

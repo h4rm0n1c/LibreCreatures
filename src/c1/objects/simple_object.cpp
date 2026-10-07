@@ -104,6 +104,15 @@ SimpleObject::~SimpleObject() {
     // renderable-set, sound, gallery, and registry teardown. Resetting the
     // unique owner expresses that ordering without reproducing ABI wrappers.
     entity_.reset();
+    // Native ~SimpleObject @ 00426e30 releases the gallery.  The port never
+    // did: shared galleries kept a stale count, and each protected gallery
+    // (speech bubbles had one each) stayed pinned in the pixel cache until
+    // no image could load and norns changing life stage were left bodiless.
+    if (gallery_owner_ != nullptr && gallery() != nullptr) {
+        display::Gallery* owned_gallery = gallery();
+        set_gallery(nullptr);
+        gallery_owner_->release_simple_object_gallery(*owned_gallery);
+    }
 }
 
 std::unique_ptr<Bubble> SimpleObject::create_bubble(
@@ -570,6 +579,11 @@ SimpleObject::SimpleObject(
 
     display::Gallery* gallery = construction.acquire_gallery(
         sprite_file_id, header_record_index, image_count, cache_protected);
+    // SimpleObject::SimpleObject @ 00426cf0 keeps the acquired gallery in
+    // the Object field as well as the Entity's; ~SimpleObject releases it
+    // from there.
+    set_gallery(gallery);
+    gallery_owner_ = construction.gallery_owner();
 
     // Native order: establish the SimpleObject defaults, allocate/register
     // the Entity, copy its placement, then apply caller-supplied state.

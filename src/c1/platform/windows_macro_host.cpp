@@ -2100,6 +2100,11 @@ creatures1::display::Gallery* WindowsNewObjectHost::acquire_gallery(
                                      image_count, cache_protected);
 }
 
+creatures1::objects::SimpleObjectGalleryOwnerHost*
+WindowsNewObjectHost::gallery_owner() {
+    return &document_;
+}
+
 creatures1::objects::EntityRegistryHost&
 WindowsNewObjectHost::entity_registry() {
     return document_.entity_registry();
