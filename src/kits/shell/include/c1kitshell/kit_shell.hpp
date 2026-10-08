@@ -120,6 +120,11 @@ public:
     // (Observation RequestGameQuit @ 0x004038a0).
     void request_game_quit();
 
+    // Raise the kit above the game.  Windows' foreground lock let a kit the
+    // game started open behind the game's window (fixed the same way in
+    // C1 CE build 10.4).
+    void bring_to_front();
+
 protected:
     // ConnectToApplicationOle (Observation @ 0x00403320): connect, and on
     // failure report the automation error or "Can not communicate with

@@ -80,6 +80,7 @@ BOOL KitApp::InitInstance() {
         return FALSE;
     }
     m_pMainWnd = sheet;
+    sheet->bring_to_front();
     run_crash_test_if_asked();
     return TRUE;
 }

@@ -174,6 +174,8 @@ bool WindowsEmbeddedKitHost::launch_via_wine_proxy(std::size_t tool_index) {
 
     const std::string kit_prog_id(
         frame_.embedded_kit_definitions()[tool_index].prog_id);
+    // Let the kit take the foreground, or Windows opens it behind the game.
+    ::AllowSetForegroundWindow(ASFW_ANY);
     const HANDLE kit_process = launch(kit_executable_path.c_str(),
                                       static_cast<int>(tool_index),
                                       kit_prog_id.c_str());
