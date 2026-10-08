@@ -1294,7 +1294,6 @@ private:
     std::uint8_t genome_life_stage_ = 0;
     std::uint32_t biochemistry_tick_ = 0;
     std::uint8_t death_state_ = 0;
-    AttentionClassifier classifier_{};
     std::uint32_t selected_action_id_ = 0;
     std::uint8_t action_activation_boost_ = 0;
     std::uint8_t active_involuntary_action_index_ = 0xff;

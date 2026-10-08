@@ -2361,7 +2361,6 @@ void Creature::initialize_runtime_state(const InitializationHost& host) {
     sleep_indicator_object_ = nullptr;
     skeleton_.set_bounds_reference_object(nullptr);
     caos_object_pointer_ = nullptr;
-    classifier_ = {AttentionObjectFamily::creature, 0};
     selected_action_id_ = 0;
     action_activation_boost_ = 0;
     active_involuntary_action_index_ = 0xff;
@@ -3498,8 +3497,16 @@ void Creature::update_environment_and_life_stage(
                           control_state().ambient_light_signal);
     }
 
-    const std::size_t attention_index =
-        classifier_to_attention_index(classifier_);
+    // The creature's own kind, from its skeleton -- the object C1 treats as
+    // the creature, which carries the genus and is saved with it.  A separate
+    // copy held here was set to genus 0 on construction and never loaded, so
+    // a Norn looked for its neighbours in the wrong attention slot and its
+    // crowdedness ignored other Norns.
+    const std::uint32_t own_classifier = skeleton_.classifier_base();
+    const std::size_t attention_index = classifier_to_attention_index(
+        AttentionClassifier{
+            static_cast<AttentionObjectFamily>((own_classifier >> 24) & 0xffu),
+            static_cast<std::uint8_t>((own_classifier >> 16) & 0xffu)});
     const objects::Object* attention_target =
         attention_index < attention_records_.size()
             ? attention_records_[attention_index].target
