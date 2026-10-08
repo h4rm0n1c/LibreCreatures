@@ -384,8 +384,8 @@ inline const char* object_kind_word(int neuron) {
         "", "hand", "button", "nature", "herb", "egg", "food",
         "drink", "dispenser", "music", "animal", "heat", "comfort", "toy",
         "bigtoy", "weed", "", "", "", "", "", "", "", "", "", "", "vehicle",
-        "lift", "computer", "gadget", "cannon", "", "", "", "", "", "",
-        "Norn", "Grendel", ""};
+        "lift", "computer", "gadget", "cannon", "", "", "", "", "",
+        "Norn", "Grendel", "", ""};
     return neuron >= 0 && neuron < 40 ? kKinds[neuron] : "";
 }
 

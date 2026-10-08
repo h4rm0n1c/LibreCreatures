@@ -205,7 +205,7 @@ void test_brain_map() {
     assert(neuron_meaning(kLobeDecision, 12, names).empty());
     assert(neuron_meaning(kLobeVerb, 1, names) == "push");
     assert(neuron_meaning(kLobeAttention, 6, names) == "food");
-    assert(neuron_meaning(kLobeNoun, 37, names) == "Norn");
+    assert(neuron_meaning(kLobeNoun, 36, names) == "Norn");
     assert(neuron_meaning(kLobeConcept, 3, names).empty());
     assert(std::string(lobe_name(kLobeDecision)) == "Decision");
 }

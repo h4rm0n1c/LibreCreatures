@@ -36,8 +36,8 @@ constexpr const char* kDefaultVocabularyGroup1[40] = {
     "drink",  "dispenser", "music", "animal", "heat", "comfort", "toy",
     "bigtoy", "weed",   "",       "",       "",       "",       "",       "",
     "",       "",       "",       "",       "vehicle", "lift", "computer",
-    "gadget", "cannon", "",      "",       "",       "",       "",       "",
-    "Norn",   "Grendel", "",
+    "gadget", "cannon", "",      "",       "",       "",       "",
+    "Norn",   "Grendel", "",       "",
 };
 
 constexpr const char* kDefaultVocabularyGroup2[16] = {
