@@ -176,6 +176,16 @@ void migrate_rule_connections(LobeNeuron& neuron, Brain& owner_brain,
         for (std::uint32_t index = 0;
              index < source_lobe.active_neuron_count(); ++index) {
             const LobeNeuron* existing = source_lobe.active_neuron(index);
+            // LibreCreatures deviation.  MigrateRuleConnections @00405da0
+            // writes each candidate into this neuron's own connections, then
+            // checks every active neuron for the same wiring -- this one
+            // included.  An active neuron always matched itself, so every
+            // candidate was rejected and the fallback below zeroed the
+            // neuron's weights instead of moving its dendrites.  Only a
+            // different neuron can make the candidate a duplicate.
+            if (existing == &neuron) {
+                continue;
+            }
             const std::uint8_t existing_count =
                 rule_index == 0 ? existing->rule0_connection_count
                                 : existing->rule1_connection_count;
