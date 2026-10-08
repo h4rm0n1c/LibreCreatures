@@ -1282,6 +1282,10 @@ private:
         built_in_stimulus_contexts_{};
     std::array<AttentionRecord, kAttentionRecordCount> attention_records_{};
     GoalDirectionState goal_direction_state_{};
+    // Set when a killed object was the motion link (forget_killed_object):
+    // the next UpdateAttention runs its transition even if the new target
+    // is also none.  Not saved; a load starts with a fresh transition anyway.
+    bool attention_transition_pending_ = false;
     GoalDirectionWeightMatrix goal_direction_weight_matrix_{};
     InstinctRuntimeState instinct_runtime_state_{};
     GenomeFilenameId child_genome_source_filename_ = 0;
