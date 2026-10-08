@@ -129,6 +129,10 @@ public:
     int width() const { return width_; }
     int height() const { return height_; }
     bool is_pixel_data_resident() const;
+    // A private copy the game may draw into (native "cache protection").
+    bool is_cache_protected() const {
+        return has_flag(ImageCacheFlag::cache_protected);
+    }
 
 private:
     friend struct PixelCacheState;

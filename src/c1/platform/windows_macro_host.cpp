@@ -3423,6 +3423,11 @@ bool WindowsMacroHost::capture_picture(creatures1::scripting::Macro& macro,
     }
     output_path += "temp.spr";
     if (document_.write_renderer_dib_rect(capture_rect, output_path)) {
+        // temp.spr was just rewritten: no kept gallery of it may be reused.
+        if (creatures1::world::WorldRuntime* runtime = document_.world_runtime()) {
+            constexpr creatures1::display::SpriteFileId kTempSprite = 0x706d6574;  // "temp"
+            runtime->forget_retired_galleries(kTempSprite);
+        }
         return true;
     }
     output_path.clear();

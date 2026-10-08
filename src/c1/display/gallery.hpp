@@ -40,6 +40,25 @@ public:
     virtual std::size_t gallery_count() const = 0;
     virtual Gallery* gallery_at(std::size_t index) const = 0;
     virtual Gallery* add_gallery(std::unique_ptr<Gallery> gallery) = 0;
+
+    // LibreCreatures, not native: a shared gallery whose last user went away
+    // may be kept aside instead of freed, so the next object that wants the
+    // same sprites (a speech balloon, a zzz) reuses its images, pixels and
+    // textures instead of loading them again.  A registry without such a
+    // pool answers nullptr.
+    virtual Gallery* revive_gallery(SpriteFileId sprite_file_id,
+                                    std::int32_t header_record_index,
+                                    std::uint32_t image_count) {
+        static_cast<void>(sprite_file_id);
+        static_cast<void>(header_record_index);
+        static_cast<void>(image_count);
+        return nullptr;
+    }
+    // A sprite file was rewritten (a creature's body, a snapshot): kept
+    // galleries of it are stale.
+    virtual void forget_retired_galleries(SpriteFileId sprite_file_id) {
+        static_cast<void>(sprite_file_id);
+    }
 };
 
 Gallery* create_gallery(

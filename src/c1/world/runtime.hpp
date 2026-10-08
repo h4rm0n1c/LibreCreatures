@@ -111,6 +111,10 @@ public:
     bool remove_at(std::size_t index) override;
     void release_gallery(display::Gallery& gallery);
     void clear_galleries();
+    display::Gallery* revive_gallery(display::SpriteFileId sprite_file_id,
+                                     std::int32_t header_record_index,
+                                     std::uint32_t image_count) override;
+    void forget_retired_galleries(display::SpriteFileId sprite_file_id) override;
 
 private:
     void destroy_owned_creature(
@@ -123,6 +127,11 @@ private:
     std::vector<objects::Object*> renderable_objects_;
     std::vector<creatures1::creatures::CreatureSelectionEntry*> creatures_;
     std::vector<std::unique_ptr<display::Gallery>> galleries_;
+    // Shared galleries no object uses any more, newest first (see
+    // GalleryRegistry::revive_gallery).  Not part of the registry, so a
+    // saved world never sees them.
+    static constexpr std::size_t kRetiredGalleryCapacity = 32;
+    std::vector<std::unique_ptr<display::Gallery>> retired_galleries_;
     std::vector<std::unique_ptr<objects::Object>> owned_objects_;
     std::vector<std::unique_ptr<creatures1::creatures::Creature>>
         owned_creatures_;
