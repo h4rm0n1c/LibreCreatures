@@ -3072,7 +3072,8 @@ void Creature::notify_dependents_on_removal(
     const CreatureObjectIdentityHost& object_identity,
     const StimulusSourceHost& source_host,
     BuiltInStimulusDebugHost* debug_host,
-    common::DebugLogHost* log_host) {
+    common::DebugLogHost* log_host,
+    bool disappoint_when_empty) {
     objects::Object& creature_object = object_identity.object_for_creature(*this);
     std::size_t object_count = non_scenery_objects.object_count();
     std::size_t dependent_count = 0;
@@ -3093,7 +3094,7 @@ void Creature::notify_dependents_on_removal(
         object_count = non_scenery_objects.object_count();
     }
 
-    if (dependent_count != 0) {
+    if (dependent_count != 0 || !disappoint_when_empty) {
         return;
     }
 

@@ -542,7 +542,7 @@ public:
     // supplies the registry, immediate-event, identity, stimulus, and debug
     // hosts required by that typed policy.
     virtual void notify_creature_dependents_on_removal(
-        objects::Object& object) = 0;
+        objects::Object& object, bool disappoint_when_empty) = 0;
     // `rmev` parses an Object reference and removes that object from the
     // process-wide EventBar display list with the native auxiliary-state
     // recording flag set.  The UI/event-bar adapter owns list storage and
@@ -1330,6 +1330,9 @@ public:
     // to wait.  Ordinary events arriving then are deferred rather than
     // overwriting it; see execute_script_for_classifier.
     bool paused_by_prefixed_command = false;
+    // A creature running another object's script (the script a norn runs to
+    // push or pull that object), not one of the creature's own scripts.
+    bool creature_runs_object_script = false;
     bool capture_output_enabled = false;
     std::uint32_t script_capacity_bytes = 0;
     std::string script_buffer;

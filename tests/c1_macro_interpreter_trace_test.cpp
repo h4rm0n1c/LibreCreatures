@@ -124,7 +124,7 @@ public:
     void initialize_object_runtime_state(Object&) override {}
     void set_creature_sleep_indicator(Object&, std::uint32_t) override {}
     void set_creature_dream_countdown(Object&, std::uint32_t) override {}
-    void notify_creature_dependents_on_removal(Object&) override {}
+    void notify_creature_dependents_on_removal(Object&, bool) override {}
     void remove_object_from_event_bar(Object&, bool) override {}
     void add_object_to_event_bar(Object*) override {}
     void stop_creature_involuntary_action(Object&) override {}

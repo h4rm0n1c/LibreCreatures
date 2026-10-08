@@ -456,7 +456,8 @@ public:
     void set_creature_dream_countdown(creatures1::objects::Object& object,
                                       std::uint32_t countdown) override;
     void notify_creature_dependents_on_removal(
-        creatures1::objects::Object& object) override;
+        creatures1::objects::Object& object,
+        bool disappoint_when_empty) override;
     void remove_object_from_event_bar(creatures1::objects::Object& object,
                                       bool record_auxiliary_state) override;
     void add_object_to_event_bar(creatures1::objects::Object* object) override;

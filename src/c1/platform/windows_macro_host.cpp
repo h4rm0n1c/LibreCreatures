@@ -1049,7 +1049,7 @@ void WindowsMacroHost::set_creature_sleep_indicator(
 }
 
 void WindowsMacroHost::notify_creature_dependents_on_removal(
-    creatures1::objects::Object& object) {
+    creatures1::objects::Object& object, bool disappoint_when_empty) {
     // CAOS `drop`: Creature owns the recovered notification order.  Every
     // host it needs already exists -- the world runtime is the object
     // registry, the document is the identity host, and the stimulus source
@@ -1062,7 +1062,7 @@ void WindowsMacroHost::notify_creature_dependents_on_removal(
     WindowsStimulusSourceHost source_host(document_);
     creature->notify_dependents_on_removal(
         document_.object_registry(), immediate_events, document_,
-        source_host, nullptr, active_debug_console());
+        source_host, nullptr, active_debug_console(), disappoint_when_empty);
 }
 
 void WindowsMacroHost::add_object_to_event_bar(

@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "macro.hpp"
+#include "../objects/object.hpp"
 
 namespace creatures1::scripting {
 namespace {
@@ -186,6 +187,10 @@ bool execute_script_for_classifier(objects::Object* script_owner,
     macro->object_context.script_owner =
         script_owner == nullptr ? runtime.selected_creature() : script_owner;
     macro->object_context.from_object = from_object;
+    macro->creature_runs_object_script =
+        script_owner != nullptr &&
+        (script_owner->classifier_base() >> 24) == 4 &&
+        classifier.family != 4;
     macro->load_script_text(
         g_script_definition_entries[selected_definition].script_text);
     runtime.start_macro_execution(*macro);
