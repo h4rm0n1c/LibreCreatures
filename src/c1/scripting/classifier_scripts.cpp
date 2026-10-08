@@ -114,6 +114,44 @@ bool install_script_text_for_classifier(
     return true;
 }
 
+namespace {
+
+bool equal_ignoring_case(std::string_view left, std::string_view right) {
+    if (left.size() != right.size()) {
+        return false;
+    }
+    for (std::size_t index = 0; index < left.size(); ++index) {
+        const auto lower = [](char c) {
+            return c >= 'A' && c <= 'Z' ? static_cast<char>(c - 'A' + 'a') : c;
+        };
+        if (lower(left[index]) != lower(right[index])) {
+            return false;
+        }
+    }
+    return true;
+}
+
+} // namespace
+
+bool is_object_script_for_creatures(std::string_view text) {
+    const std::size_t count =
+        g_script_definition_count < kScriptDefinitionCapacity
+            ? g_script_definition_count
+            : kScriptDefinitionCapacity;
+    bool object_script = false;
+    for (std::size_t index = 0; index < count; ++index) {
+        const ScriptDefinitionEntry& entry = g_script_definition_entries[index];
+        if (!equal_ignoring_case(entry.script_text, text)) {
+            continue;
+        }
+        if (entry.classifier_event.family == 4) {
+            return false;
+        }
+        object_script = true;
+    }
+    return object_script;
+}
+
 bool execute_script_for_classifier(objects::Object* script_owner,
                                    objects::Object* from_object,
                                    ScriptClassifier classifier,
@@ -191,6 +229,7 @@ bool execute_script_for_classifier(objects::Object* script_owner,
         script_owner != nullptr &&
         (script_owner->classifier_base() >> 24) == 4 &&
         classifier.family != 4;
+    macro->object_script_provenance_known = true;
     macro->load_script_text(
         g_script_definition_entries[selected_definition].script_text);
     runtime.start_macro_execution(*macro);

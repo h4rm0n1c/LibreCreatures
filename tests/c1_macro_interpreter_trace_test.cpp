@@ -1,10 +1,15 @@
 #include "scripting/macro.hpp"
+#include "scripting/classifier_scripts.hpp"
+#include "scripting/tables.hpp"
 #include "objects/object.hpp"
 
 #include <cassert>
 #include <cstdint>
 #include <cstdio>
 #include <stdexcept>
+#include <string>
+#include <variant>
+#include <vector>
 
 namespace c1 = creatures1;
 using c1::objects::Object;
@@ -479,9 +484,122 @@ void run_mate_synonym_dispatch_probe(const char* script_text) {
                 static_cast<unsigned>(result));
 }
 
+// A runtime whose one target is a live Creature; records whether each
+// `drop` asked for the empty-handed Disappointment fallback.
+class DropRuntime final : public NullRuntime {
+public:
+    explicit DropRuntime(const Object& creature) : creature_(creature) {}
+    bool is_live_object(const Object* object) const override {
+        return object == &creature_;
+    }
+    bool is_creature_object(const Object& object) const override {
+        return &object == &creature_;
+    }
+    void notify_creature_dependents_on_removal(Object& object,
+                                               bool disappoint_when_empty) override {
+        assert(&object == &creature_);
+        disappointments.push_back(disappoint_when_empty);
+    }
+    std::vector<bool> disappointments;
+
+private:
+    const Object& creature_;
+};
+
+// Holds whatever Macro::serialize writes, in order, and plays it back.
+class MemoryMacroArchive final : public c1::scripting::MacroArchive {
+public:
+    bool loading() const override { return loading_; }
+    void start_loading() { loading_ = true; cursor_ = 0; }
+    std::uint32_t read_uint32() override { return std::get<std::uint32_t>(values_[cursor_++]); }
+    std::int32_t read_int32() override { return std::get<std::int32_t>(values_[cursor_++]); }
+    std::string read_string() override { return std::get<std::string>(values_[cursor_++]); }
+    Object* read_object() override { return std::get<Object*>(values_[cursor_++]); }
+    void write_uint32(std::uint32_t value) override { values_.emplace_back(value); }
+    void write_int32(std::int32_t value) override { values_.emplace_back(value); }
+    void write_string(std::string_view value) override { values_.emplace_back(std::string(value)); }
+    void write_object(Object* object) override { values_.emplace_back(object); }
+
+private:
+    bool loading_ = false;
+    std::size_t cursor_ = 0;
+    std::vector<std::variant<std::uint32_t, std::int32_t, std::string, Object*>> values_;
+};
+
+void set_scriptorium(std::initializer_list<std::pair<std::uint8_t, const char*>> scripts) {
+    std::size_t index = 0;
+    for (const auto& [family, text] : scripts) {
+        c1::scripting::ScriptDefinitionEntry& entry =
+            c1::scripting::g_script_definition_entries[index++];
+        entry.script_text = text;
+        entry.classifier_event = {};
+        entry.classifier_event.family = family;
+    }
+    c1::scripting::g_script_definition_count = index;
+}
+
+// Runs `drop,endm` as a creature's macro, either straight through or after
+// a save and load, and returns whether drop asked for Disappointment.  The
+// started macro's provenance is what execute_script_for_classifier sets.
+bool drop_disappoints(const char* text, bool started_as_object_script,
+                      bool save_and_load) {
+    Object creature;
+    creature.set_classifier_base(0x04010000u);   // a norn
+    DropRuntime runtime(creature);
+    NullDiagnostics diagnostics;
+    Trace trace;
+
+    Macro started;
+    started.load_script_text(text);
+    started.object_context.script_owner = &creature;
+    started.object_context.target_object = &creature;
+    started.creature_runs_object_script = started_as_object_script;
+
+    Macro loaded;
+    Macro* running = &started;
+    if (save_and_load) {
+        MemoryMacroArchive archive;
+        started.serialize(archive);
+        archive.start_loading();
+        loaded.serialize(archive);
+        running = &loaded;
+    }
+
+    c1::scripting::MacroInterpreterBindings bindings;
+    bindings.runtime = &runtime;
+    bindings.diagnostics = &diagnostics;
+    bindings.trace = &trace;
+    running->execute_interpreter(bindings);
+    assert(runtime.disappointments.size() == 1);
+    return runtime.disappointments[0];
+}
+
+// An empty-handed creature's `drop` disappoints it only in its own scripts,
+// not in the script another object gives it to push or pull that object --
+// and a saved world must keep that distinction after it is loaded.
+void run_drop_disappointment_save_load_probe() {
+    set_scriptorium({{2, "drop,endm"}, {4, "drop,wait 1,endm"}});
+
+    // Food's push script, run straight through and after a save/load.
+    assert(!drop_disappoints("drop,endm", true, false));
+    assert(!drop_disappoints("drop,endm", true, true));
+    // The creature's own script disappoints, before and after.
+    assert(drop_disappoints("drop,wait 1,endm", false, false));
+    assert(drop_disappoints("drop,wait 1,endm", false, true));
+    // CAOS from the pipe or the injector is in no scriptorium entry.
+    assert(drop_disappoints("drop,stop,endm", false, true));
+    // A running `appr` rewrites itself to `APPR`; case does not matter.
+    set_scriptorium({{2, "drop,appr,endm"}});
+    assert(!drop_disappoints("drop,APPR,endm", true, true));
+    set_scriptorium({});
+    std::printf("trace_probe case=drop_disappointment_save_load ok\n");
+    std::fflush(stdout);
+}
+
 } // namespace
 
 int main() {
+    run_drop_disappointment_save_load_probe();
     run_mate_synonym_dispatch_probe("mate,endm");
     run_mate_synonym_dispatch_probe("f**k,endm");
     run_endm_trace_probe();
