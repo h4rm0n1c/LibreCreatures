@@ -3405,6 +3405,12 @@ bool Creature::references_object(const objects::Object* candidate) const {
 
 void Creature::clear_references_to_object(
     const objects::Object* candidate) {
+    // An object going away is forgotten as a killed one is: if it was the
+    // attended target, the next UpdateAttention still runs its transition,
+    // and the records that pointed at it lose their attention input.
+    if (candidate != nullptr) {
+        forget_killed_object(*candidate);
+    }
     if (skeleton_.motion_link == candidate) {
         skeleton_.motion_link = nullptr;
     }

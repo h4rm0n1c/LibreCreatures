@@ -912,6 +912,12 @@ bool Skeleton::references_object(objects::Object* object) const {
 }
 
 void Skeleton::clear_references_to(objects::Object* object) {
+    // The owning creature goes first, while the motion link still names the
+    // object: it has to know the object was the one it attended to, to reset
+    // its attention (Creature::clear_references_to_object).
+    if (reference_owner_ != nullptr) {
+        reference_owner_->owner_clear_references_to(object);
+    }
     if (motion_link == object) {
         motion_link = nullptr;
     }
@@ -920,9 +926,6 @@ void Skeleton::clear_references_to(objects::Object* object) {
     }
     if (caos_object_pointer == object) {
         caos_object_pointer = nullptr;
-    }
-    if (reference_owner_ != nullptr) {
-        reference_owner_->owner_clear_references_to(object);
     }
     objects::Object::clear_references_to(object);
 }
