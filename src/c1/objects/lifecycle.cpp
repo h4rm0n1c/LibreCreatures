@@ -68,9 +68,15 @@ void delete_object_and_purge_runtime_references(
     host.move_to_and_redraw(object, 1000, 4000);
     object.disable_ticking();
 
-    // Native clears whatever creature is selected, not only the one being
-    // deleted, then runs the selection-changed refresh sequence.
-    if (host.selected_creature_exists()) {
+    // LibreCreatures deviation.  DeleteObjectAndPurgeRuntimeReferences
+    // @0040e9f0 clears whatever creature is selected, so deleting any
+    // creature -- `kill` on one routes here, as does removing a dead body --
+    // deselected the player's norn and closed its kits.  The native refresh
+    // that follows still tests whether the selected creature is dead, which
+    // only makes sense if the clear was meant for the deleted creature
+    // alone; the ordinary `kill` path (Object::InitializeRuntimeState) tests
+    // it that way.  Deselect only when the deleted object is the selection.
+    if (host.selected_creature_exists() && host.is_selected_creature(object)) {
         host.clear_selected_creature(true);
     }
 
