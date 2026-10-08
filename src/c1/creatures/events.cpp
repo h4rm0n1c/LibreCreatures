@@ -217,40 +217,32 @@ void queue_tact_stimulus_for_overlapping_creatures(
         return;
     }
 
-    for (std::size_t source_index = 0;
-         source_index < host.creature_count(); ++source_index) {
-        Creature* target_creature = host.creature_at(source_index);
+    // LibreCreatures deviation.  QueueTactStimulusForOverlappingCreatures
+    // @00423470 nests two creature loops: the inner one looks for *any*
+    // creature the source touches, then queues the stimulus to the *outer*
+    // creature and breaks -- so one creature touching the source sent the
+    // stimulus to every creature in the world, the source included.  The
+    // intended shape is the one `stim tact` already has: each creature the
+    // source touches (or that rides the source vehicle) gets it.
+    world::WorldRect source_bounds{};
+    source.get_bounds(&source_bounds);
+    for (std::size_t index = 0; index < host.creature_count(); ++index) {
+        Creature* target_creature = host.creature_at(index);
         if (target_creature == nullptr) {
             host.report_invalid_creature_index();
             continue;
         }
+        if (host.is_same_object(*target_creature, source) ||
+            !target_is_in_tactile_region(source, *target_creature,
+                                         source_bounds, host)) {
+            continue;
+        }
 
-        world::WorldRect source_bounds{};
-        source.get_bounds(&source_bounds);
-        for (std::size_t candidate_index = 0;
-             candidate_index < host.creature_count(); ++candidate_index) {
-            Creature* candidate = host.creature_at(candidate_index);
-            if (candidate == nullptr) {
-                host.report_invalid_creature_index();
-                continue;
-            }
-            if (host.is_same_object(*candidate, source) ||
-                !target_is_in_tactile_region(source, *candidate,
-                                             source_bounds, host)) {
-                continue;
-            }
-
-            objects::QueuedCreatureStimulus queued{};
-            // The outer creature is the native `target_creature`: its
-            // indexed built-in context is copied after the inner candidate
-            // proves that the source overlaps something.  The candidate is
-            // not the stimulus-record owner.
-            if (host.copy_built_in_stimulus(
-                    *target_creature, stimulus_index, source, queued) &&
-                host.is_creature_classifier(*target_creature)) {
-                host.queue_creature_stimulus(queued);
-            }
-            break;
+        objects::QueuedCreatureStimulus queued{};
+        if (host.copy_built_in_stimulus(
+                *target_creature, stimulus_index, source, queued) &&
+            host.is_creature_classifier(*target_creature)) {
+            host.queue_creature_stimulus(queued);
         }
     }
 }
