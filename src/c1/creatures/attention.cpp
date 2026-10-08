@@ -25,6 +25,10 @@ std::uint32_t native_attention_record_index(
 
 } // namespace
 
+bool has_attention_record(const AttentionClassifier& classifier) {
+    return native_attention_record_index(classifier) < kAttentionRecordCount;
+}
+
 std::uint32_t get_attention_record_index(const AttentionClassifier& classifier) {
     // GetAttentionRecordIndex @ 0x00426430 (and its inlined copies in
     // Creature::UpdatePerception @ 0x0040bf10) map simple genus g to g,
