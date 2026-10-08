@@ -114,6 +114,10 @@ void Macro::serialize(MacroArchive& archive) {
         }
         script_buffer = std::move(loaded_script);
         script_buffer.resize(std::strlen(script_buffer.c_str()));
+        // The archive does not record whether a creature was running another
+        // object's script; `drop` recovers it from the scriptorium.
+        creature_runs_object_script = false;
+        object_script_provenance_known = false;
         script_cursor_offset = archive.read_uint32();
         script_cursor_offset = std::min(script_cursor_offset,
                                         script_buffer.size());
@@ -1692,6 +1696,13 @@ bool Macro::execute_drop_command(MacroCommand command,
         // norn -- more need for pleasure, boredom and anger each time.  Keep
         // Disappointment for the creature's own drop, not for that prelude.
         // A/B, same founders: lower starvation in every world.
+        if (!object_script_provenance_known) {
+            const objects::Object* owner = object_context.script_owner;
+            creature_runs_object_script =
+                owner != nullptr && (owner->classifier_base() >> 24) == 4 &&
+                is_object_script_for_creatures(script_buffer);
+            object_script_provenance_known = true;
+        }
         runtime.notify_creature_dependents_on_removal(
             *target, !creature_runs_object_script);
     }

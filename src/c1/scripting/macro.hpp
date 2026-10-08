@@ -1333,6 +1333,9 @@ public:
     // A creature running another object's script (the script a norn runs to
     // push or pull that object), not one of the creature's own scripts.
     bool creature_runs_object_script = false;
+    // False for a Macro loaded from a world: the archive does not say where
+    // its script came from, so `drop` works it out from the scriptorium.
+    bool object_script_provenance_known = true;
     bool capture_output_enabled = false;
     std::uint32_t script_capacity_bytes = 0;
     std::string script_buffer;

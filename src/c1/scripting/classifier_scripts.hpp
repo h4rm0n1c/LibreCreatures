@@ -79,6 +79,14 @@ bool install_script_text_for_classifier(ScriptClassifier classifier,
 // removal does not itself guarantee.  Returns whether an entry was removed.
 bool remove_script_definition_for_classifier(ScriptClassifier classifier);
 
+// Whether `text` is a stored script that some other object (family not 4)
+// defines for a creature to run on it, and not also one of the creatures'
+// own scripts.  A Macro loaded from a world does not carry where its script
+// came from (the native archive has no room for it); this recovers it from
+// the scriptorium, which the world loads first.  Letter case is ignored,
+// because a running `appr` rewrites itself to `APPR` in place.
+bool is_object_script_for_creatures(std::string_view text);
+
 bool execute_script_for_classifier(objects::Object* script_owner,
                                    objects::Object* from_object,
                                    ScriptClassifier classifier,
