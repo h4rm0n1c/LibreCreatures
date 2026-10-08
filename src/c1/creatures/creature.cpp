@@ -2751,9 +2751,16 @@ void Creature::update_perception(
     std::size_t object_count = world.non_scenery_object_count();
     while (object_index < object_count) {
         objects::Object* candidate = world.non_scenery_object_at(object_index);
-        if (candidate != nullptr) {
-            const std::uint32_t attention_index = get_attention_record_index(
-                source_host.classify(*candidate));
+        // LibreCreatures: an object whose kind has no attention slot is not
+        // adopted into slot 0, where nothing would ever drop it again (the
+        // visibility passes start at 1) and it would become every fallback
+        // target.
+        const AttentionClassifier candidate_classifier =
+            candidate != nullptr ? source_host.classify(*candidate)
+                                 : AttentionClassifier{};
+        if (candidate != nullptr && has_attention_record(candidate_classifier)) {
+            const std::uint32_t attention_index =
+                get_attention_record_index(candidate_classifier);
             AttentionRecord& record = attention_records_[attention_index];
             if (record.target == nullptr) {
                 if (can_perceive(*candidate, world)) {
@@ -2956,52 +2963,58 @@ void Creature::apply_stimulus(
 
     const AttentionClassifier classifier = source_host.classify(*source_object);
     const std::uint32_t attention_index = get_attention_record_index(classifier);
-    AttentionRecord& record = attention_records_[attention_index];
-    // LibreCreatures deviation (issue #11).  `kill` parks an object at
-    // (1000, 4000) instead of deleting it, and an eaten food's stimulus can
-    // arrive after the kill.  C1 then made the parked object the slot's
-    // target and stored its off-world position as where that kind of object
-    // is; goal direction sent the norn "down" to it through lifts and call
-    // buttons for ever.  A parked object is gone: it does not become the
-    // target, and the slot keeps its last real position.  The stimulus
-    // itself -- chemicals, lobe input, goal learning -- still applies.
-    const int source_x = source_host.sound_source_x(*source_object);
-    const int source_y = source_host.sound_source_y(*source_object);
-    if (is_off_world_position(source_y)) {
-        if (record.target == source_object) {
-            record.target = nullptr;
+    // LibreCreatures: a source whose kind has no attention slot changes no
+    // attention record and feeds no attention input; its chemicals still
+    // apply.  See has_attention_record.
+    const bool has_record = has_attention_record(classifier);
+    if (has_record) {
+        AttentionRecord& record = attention_records_[attention_index];
+        // LibreCreatures deviation (issue #11).  `kill` parks an object at
+        // (1000, 4000) instead of deleting it, and an eaten food's stimulus can
+        // arrive after the kill.  C1 then made the parked object the slot's
+        // target and stored its off-world position as where that kind of object
+        // is; goal direction sent the norn "down" to it through lifts and call
+        // buttons for ever.  A parked object is gone: it does not become the
+        // target, and the slot keeps its last real position.  The stimulus
+        // itself -- chemicals, lobe input, goal learning -- still applies.
+        const int source_x = source_host.sound_source_x(*source_object);
+        const int source_y = source_host.sound_source_y(*source_object);
+        if (is_off_world_position(source_y)) {
+            if (record.target == source_object) {
+                record.target = nullptr;
+            }
+        } else {
+            record.target = source_host.is_this_creature(*source_object, *this)
+                                ? nullptr
+                                : source_object;
+            record.world_x = source_x;
+            record.world_y = source_y;
         }
-    } else {
-        record.target = source_host.is_this_creature(*source_object, *this)
-                            ? nullptr
-                            : source_object;
-        record.world_x = source_x;
-        record.world_y = source_y;
-    }
-    record.target_neuron_index = descriptor.target_neuron_index;
-    record.lobe_activation = descriptor.target_lobe_activation;
-    record.visible = true;
-    record.stimulus_seen = true;
+        record.target_neuron_index = descriptor.target_neuron_index;
+        record.lobe_activation = descriptor.target_lobe_activation;
+        record.visible = true;
+        record.stimulus_seen = true;
 
-    if (brain_ != nullptr) {
-        // The Stimulus-source lobe is indexed by the *attention record*, not by
-        // the descriptor's target neuron: `Creature::ApplyStimulus @ 0x0040b8a0`
-        // writes `lobes[2].neurons[attention_record_index]`.  Indexing it by
-        // `target_neuron_index` sent every write out of range -- that field is
-        // 0xff on the built-in stimuli -- so the lobe was never fed, and the
-        // Attention lobe that reads it almost never fired.
-        brain_->add_lobe_neuron_activation(
-            static_cast<std::uint32_t>(brain::StandardLobeIndex::stimulus_source),
-            attention_index, descriptor.attention_activation);
-        // Native gates the General-sensory write on the attention record's
-        // target -- which is null for a self-stimulus -- against the skeleton's
-        // motion link, and contributes the target lobe activation.
-        if (record.target == skeleton_.motion_link &&
-            descriptor.target_neuron_index < 0x20) {
+        if (brain_ != nullptr) {
+            // The Stimulus-source lobe is indexed by the *attention record*, not by
+            // the descriptor's target neuron: `Creature::ApplyStimulus @ 0x0040b8a0`
+            // writes `lobes[2].neurons[attention_record_index]`.  Indexing it by
+            // `target_neuron_index` sent every write out of range -- that field is
+            // 0xff on the built-in stimuli -- so the lobe was never fed, and the
+            // Attention lobe that reads it almost never fired.
             brain_->add_lobe_neuron_activation(
-                static_cast<std::uint32_t>(brain::StandardLobeIndex::general_sensory),
-                descriptor.target_neuron_index,
-                descriptor.target_lobe_activation);
+                static_cast<std::uint32_t>(brain::StandardLobeIndex::stimulus_source),
+                attention_index, descriptor.attention_activation);
+            // Native gates the General-sensory write on the attention record's
+            // target -- which is null for a self-stimulus -- against the skeleton's
+            // motion link, and contributes the target lobe activation.
+            if (record.target == skeleton_.motion_link &&
+                descriptor.target_neuron_index < 0x20) {
+                brain_->add_lobe_neuron_activation(
+                    static_cast<std::uint32_t>(brain::StandardLobeIndex::general_sensory),
+                    descriptor.target_neuron_index,
+                    descriptor.target_lobe_activation);
+            }
         }
     }
 
@@ -3022,7 +3035,8 @@ void Creature::apply_stimulus(
     // it kept the goal-direction matrix from ever learning which objects
     // relieve which drives.
     const bool is_self = source_host.is_this_creature(*source_object, *this);
-    if (!is_self && attention_index < goal_direction_weight_matrix_.size()) {
+    if (!is_self && has_record &&
+        attention_index < goal_direction_weight_matrix_.size()) {
         const std::array<std::uint8_t, 4> ids = {
             chemical_ids.first, chemical_ids.second, chemical_ids.third,
             chemical_ids.fourth};
