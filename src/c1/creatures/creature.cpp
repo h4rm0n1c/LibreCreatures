@@ -1153,9 +1153,11 @@ void Creature::update_attention(CreatureAttentionHost& host) {
 
     objects::Object* const new_attention_target =
         attention_records_[winner_index].target;
-    if (new_attention_target != skeleton_.motion_link &&
+    if ((new_attention_target != skeleton_.motion_link ||
+         attention_transition_pending_) &&
         (new_attention_target != nullptr ||
          !skeleton_.sleep_indicator_active)) {
+        attention_transition_pending_ = false;
         skeleton_.motion_link = new_attention_target;
         skeleton_.motion_target_part_index = 0;
         if (new_attention_target != nullptr) {
@@ -3332,6 +3334,13 @@ std::uint32_t Creature::first_seen_stimulus_magnitude(
 void Creature::forget_killed_object(const objects::Object& object) {
     if (skeleton_.motion_link == &object) {
         skeleton_.motion_link = nullptr;
+        // Native keeps the killed object as the motion link, so the next
+        // UpdateAttention always sees a change and runs the transition that
+        // clears the decision, general-sense and stimulus-source activity
+        // the object left behind.  With the link cleared here, a winner that
+        // also has no target would look like no change; make sure the
+        // transition still runs once.
+        attention_transition_pending_ = true;
     }
     for (std::size_t index = 0; index < attention_records_.size(); ++index) {
         AttentionRecord& record = attention_records_[index];
