@@ -119,6 +119,7 @@ void KitSheet::handle_kit_message(const c1kit::KitMessage& message) {
         if (message.code == c1kit::kIdentityCodeYourIdIs) {
             // The 1996 kits keep the low byte of aux.
             tool_id_ = message.aux & 0xff;
+            bring_to_front();
         } else if (message.code == c1kit::kIdentityCodeInteger) {
             on_integer_message(message.payload);
         }
@@ -127,6 +128,19 @@ void KitSheet::handle_kit_message(const c1kit::KitMessage& message) {
     if (message.kind == c1kit::kMessageKindControl) {
         on_control_state(message.code);
     }
+}
+
+void KitSheet::bring_to_front() {
+    if (IsIconic()) {
+        ShowWindow(SW_RESTORE);
+    }
+    if (!always_on_top_) {
+        // A topmost round trip raises the window even when Windows refuses
+        // this process the foreground.
+        SetWindowPos(&wndTopMost, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+        SetWindowPos(&wndNoTopMost, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+    }
+    SetForegroundWindow();
 }
 
 void KitSheet::request_game_quit() {
