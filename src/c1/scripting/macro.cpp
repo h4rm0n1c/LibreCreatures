@@ -241,14 +241,18 @@ void Macro::load_script_text(std::string_view script_text) {
         script_capacity_bytes = static_cast<std::uint32_t>(required_capacity);
         script_buffer.reserve(script_capacity_bytes);
     }
-    script_buffer.assign(script_text);
-    if (script_buffer.empty()) {
-        script_buffer = "endm";
-    } else if (script_buffer.size() < 4 ||
-               script_buffer.compare(script_buffer.size() - 4, 4, "endm") != 0) {
-        script_buffer += ",endm";
-    }
+    script_buffer = terminated_script_text(script_text);
     script_cursor_offset = 0;
+}
+
+std::string terminated_script_text(std::string_view script_text) {
+    std::string text(script_text);
+    if (text.empty()) {
+        text = "endm";
+    } else if (text.size() < 4 || text.compare(text.size() - 4, 4, "endm") != 0) {
+        text += ",endm";
+    }
+    return text;
 }
 
 MacroCommandFamily Macro::classify_command(CaosToken token) {

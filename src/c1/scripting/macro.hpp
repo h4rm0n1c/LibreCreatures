@@ -1105,6 +1105,10 @@ struct MacroInterpreterBindings {
     MacroInterpreterTrace* trace = nullptr;
 };
 
+// A script's text as Macro::load_script_text runs it: `endm` on its own
+// when empty, and `,endm` appended unless it already ends in exactly that.
+std::string terminated_script_text(std::string_view script_text);
+
 class Macro {
 public:
     virtual ~Macro();

@@ -83,8 +83,10 @@ bool remove_script_definition_for_classifier(ScriptClassifier classifier);
 // defines for a creature to run on it, and not also one of the creatures'
 // own scripts.  A Macro loaded from a world does not carry where its script
 // came from (the native archive has no room for it); this recovers it from
-// the scriptorium, which the world loads first.  Letter case is ignored,
-// because a running `appr` rewrites itself to `APPR` in place.
+// the scriptorium, which the world loads first.  The stored text is
+// terminated the way Macro::load_script_text does before comparing, and
+// letter case is ignored, because a running `appr` rewrites itself to
+// `APPR` in place.
 bool is_object_script_for_creatures(std::string_view text);
 
 bool execute_script_for_classifier(objects::Object* script_owner,

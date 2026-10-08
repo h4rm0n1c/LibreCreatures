@@ -591,6 +591,12 @@ void run_drop_disappointment_save_load_probe() {
     // A running `appr` rewrites itself to `APPR`; case does not matter.
     set_scriptorium({{2, "drop,appr,endm"}});
     assert(!drop_disappoints("drop,APPR,endm", true, true));
+    // Loading terminates a script that does not end in exactly `endm`, so
+    // the stored text is compared as it was loaded.
+    set_scriptorium({{2, "drop"}});
+    assert(!drop_disappoints("drop", true, true));
+    set_scriptorium({{2, "drop,ENDM"}});
+    assert(!drop_disappoints("drop,ENDM", true, true));
     set_scriptorium({});
     std::printf("trace_probe case=drop_disappointment_save_load ok\n");
     std::fflush(stdout);
