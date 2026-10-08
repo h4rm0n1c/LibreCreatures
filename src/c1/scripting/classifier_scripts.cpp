@@ -141,7 +141,8 @@ bool is_object_script_for_creatures(std::string_view text) {
     bool object_script = false;
     for (std::size_t index = 0; index < count; ++index) {
         const ScriptDefinitionEntry& entry = g_script_definition_entries[index];
-        if (!equal_ignoring_case(entry.script_text, text)) {
+        // A running macro holds the text as loading left it, terminated.
+        if (!equal_ignoring_case(terminated_script_text(entry.script_text), text)) {
             continue;
         }
         if (entry.classifier_event.family == 4) {
