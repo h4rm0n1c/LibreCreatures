@@ -472,6 +472,12 @@ std::uint32_t resolve_pointer_attention_target(PointerAttentionApi& api) {
             candidate.blocks_pointer_attention) {
             continue;
         }
+        // LibreCreatures: an object whose kind has no attention slot cannot
+        // be what the norn is told to look at (see has_attention_record);
+        // it would otherwise win and be turned into category 0.
+        if (!has_attention_record(candidate.classifier)) {
+            continue;
+        }
 
         const int center_x = horizontal_center(candidate.bounds);
         const int center_y = candidate.bounds.min_y +
