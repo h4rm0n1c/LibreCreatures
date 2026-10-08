@@ -366,6 +366,23 @@ void WorldRuntime::destroy_owned_creature(
     owned_creatures_.erase(owner);
 }
 
+namespace {
+
+// Only an untouched shared gallery is worth keeping: a private (cache
+// protected) copy, or one the game has drawn into, belongs to the object
+// that had it.
+bool can_retire(const display::Gallery& gallery) {
+    for (std::uint32_t index = 0; index < gallery.image_count; ++index) {
+        const display::Image& image = gallery.images[index];
+        if (image.is_cache_protected() || image.pixel_version() != 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+} // namespace
+
 void WorldRuntime::release_gallery(display::Gallery& gallery) {
     auto found = std::find_if(
         galleries_.begin(), galleries_.end(),
@@ -380,12 +397,47 @@ void WorldRuntime::release_gallery(display::Gallery& gallery) {
         --(*found)->reference_count;
     }
     if ((*found)->reference_count == 0) {
+        std::unique_ptr<display::Gallery> released = std::move(*found);
         galleries_.erase(found);
+        if (can_retire(*released)) {
+            retired_galleries_.insert(retired_galleries_.begin(), std::move(released));
+            if (retired_galleries_.size() > kRetiredGalleryCapacity) {
+                retired_galleries_.pop_back();
+            }
+        }
     }
 }
 
 void WorldRuntime::clear_galleries() {
+    retired_galleries_.clear();
     galleries_.clear();
+}
+
+display::Gallery* WorldRuntime::revive_gallery(display::SpriteFileId sprite_file_id,
+                                               std::int32_t header_record_index,
+                                               std::uint32_t image_count) {
+    for (auto it = retired_galleries_.begin(); it != retired_galleries_.end(); ++it) {
+        display::Gallery& gallery = **it;
+        if (gallery.sprite_file_id == sprite_file_id &&
+            gallery.header_record_index == header_record_index &&
+            gallery.image_count == image_count) {
+            gallery.reference_count = 1;
+            display::Gallery* revived = it->get();
+            galleries_.push_back(std::move(*it));
+            retired_galleries_.erase(it);
+            return revived;
+        }
+    }
+    return nullptr;
+}
+
+void WorldRuntime::forget_retired_galleries(display::SpriteFileId sprite_file_id) {
+    retired_galleries_.erase(
+        std::remove_if(retired_galleries_.begin(), retired_galleries_.end(),
+                       [sprite_file_id](const std::unique_ptr<display::Gallery>& gallery) {
+                           return gallery->sprite_file_id == sprite_file_id;
+                       }),
+        retired_galleries_.end());
 }
 
 } // namespace creatures1::world

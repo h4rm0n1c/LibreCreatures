@@ -3243,6 +3243,8 @@ std::uint8_t* C1WindowsDocument::current_image_pixels(
     if (pixels == nullptr) {
         return nullptr;
     }
+    // Both callers write into these pixels (fills and text).
+    image.mark_pixels_changed();
     out_width = image.width();
     out_height = image.height();
     return pixels;

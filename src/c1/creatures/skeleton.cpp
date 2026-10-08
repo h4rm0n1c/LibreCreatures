@@ -668,6 +668,9 @@ bool Skeleton::build_creature_sprite_gallery(
         return false;
     }
 
+    // The body sprite file was just rewritten; a kept gallery of the old
+    // file would show the creature as it was.
+    services.gallery_registry.forget_retired_galleries(genome_source_filename);
     display::Gallery* final_gallery = nullptr;
     try {
         const std::string_view alternate_output_directory =

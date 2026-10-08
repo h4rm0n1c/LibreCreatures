@@ -105,6 +105,14 @@ public:
     int width() const { return width_; }
     int height() const { return height_; }
     bool is_pixel_data_resident() const;
+    // A private copy the game may draw into (native "cache protection").
+    // The game recoloured or drew into these pixels while running (a
+    // creature's pigment remap, a fill, text).  Counts the writes.
+    void mark_pixels_changed() { ++pixel_version_; }
+    std::uint32_t pixel_version() const { return pixel_version_; }
+    bool is_cache_protected() const {
+        return has_flag(ImageCacheFlag::cache_protected);
+    }
 
 private:
     friend struct PixelCacheState;
@@ -125,6 +133,7 @@ private:
     int height_ = 0;
     std::uint32_t sprite_data_offset_ = 0;
     std::uint32_t lru_stamp_ = 0;
+    std::uint32_t pixel_version_ = 0;
     Image* cache_prev_ = nullptr;
     Image* cache_next_ = nullptr;
     PixelCacheState* resident_cache_ = nullptr;

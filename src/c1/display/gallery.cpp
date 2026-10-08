@@ -71,6 +71,10 @@ Gallery* acquire_gallery(SpriteFileId sprite_file_id,
                 return gallery;
             }
         }
+        if (Gallery* revived = registry.revive_gallery(
+                sprite_file_id, header_record_index, image_count)) {
+            return revived;
+        }
     }
 
     return create_gallery(sprite_file_id, header_record_index, image_count,
