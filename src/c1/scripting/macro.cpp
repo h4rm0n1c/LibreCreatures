@@ -1684,7 +1684,16 @@ bool Macro::execute_drop_command(MacroCommand command,
     // fallback when no dependent objects are present.
     objects::Object* target = object_context.target_object;
     if (target != nullptr && runtime.is_creature_object(*target)) {
-        runtime.notify_creature_dependents_on_removal(*target);
+        // LibreCreatures deviation.  NotifyDependentsOnRemoval @00408420
+        // gives an empty-handed creature built-in stimulus 0, Disappointment,
+        // on every `drop`.  Most object scripts a creature runs to push or
+        // pull something (all food, drink, herbs and weeds in the 1996 world)
+        // open with `drop` to free its hands, so eating disappointed the
+        // norn -- more need for pleasure, boredom and anger each time.  Keep
+        // Disappointment for the creature's own drop, not for that prelude.
+        // A/B, same founders: lower starvation in every world.
+        runtime.notify_creature_dependents_on_removal(
+            *target, !creature_runs_object_script);
     }
     return true;
 }

@@ -990,7 +990,8 @@ public:
         const CreatureObjectIdentityHost& object_identity,
         const StimulusSourceHost& source_host,
         BuiltInStimulusDebugHost* debug_host = nullptr,
-        common::DebugLogHost* log_host = nullptr);
+        common::DebugLogHost* log_host = nullptr,
+        bool disappoint_when_empty = true);
 
     // Applies the recovered unbounded-world mouse placement policy. The view
     // host clears/returns pending input, while the event queue, Object visual
