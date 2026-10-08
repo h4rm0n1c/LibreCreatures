@@ -166,16 +166,13 @@ void SimpleObject::tick(SimpleObjectTickHost& host) {
 
 void SimpleObject::update_unbounded_position_and_redraw(
     SimpleObjectTickHost& host) {
-    if (host.pointer_input_pending()) {
-        // The native method invokes PointerTool::ProcessPendingInput through
-        // the current SimpleObject receiver. Preserve that call as an
-        // explicit runtime operation; do not make the renderer impersonate
-        // this method.
-        host.process_pending_pointer_input(*this);
-    }
-
     world::WorldRect old_object_bounds{};
     get_bounds(&old_object_bounds);
+    SimpleObject* pointer_tool = host.pointer_tool();
+    world::WorldRect old_pointer_bounds{};
+    if (pointer_tool != nullptr && pointer_tool != this) {
+        pointer_tool->get_bounds(&old_pointer_bounds);
+    }
 
     int world_x = host.pointer_mouse_world_x();
     if (world_x >= kWorldWidth) {
@@ -183,11 +180,28 @@ void SimpleObject::update_unbounded_position_and_redraw(
     }
     const int world_y = host.pointer_mouse_world_y();
 
+    if (host.pointer_input_pending()) {
+        // LibreCreatures deviation.  UpdateUnboundedPositionAndRedraw
+        // @00427fd0 handed the click to PointerTool::ProcessPendingInput
+        // before moving the hand to the mouse, so the object under the click
+        // was found where the hand was a tick ago, while the part (a lift's
+        // up arrow) was then chosen at the mouse.  A click made right after
+        // moving onto a small target found nothing, and only the second
+        // click worked.  Move the hand, and what it holds, to the mouse
+        // first; the click then acts where it was made.
+        move_to(world_x, world_y);
+        if (pointer_tool != nullptr && pointer_tool != this) {
+            pointer_tool->move_to(world_x, world_y - 0x10);
+        }
+        // Native invokes the input routine through the current receiver.
+        host.process_pending_pointer_input(*this);
+        pointer_tool = host.pointer_tool();
+    }
+
     if (entity_ != nullptr) {
         entity_->advance_image_sequence_for_moving_vehicle();
     }
 
-    SimpleObject* pointer_tool = host.pointer_tool();
     if (pointer_tool == this) {
         // The native call lands in the object's virtual MoveToAndRedraw
         // slot.  The clean host exposes only the resulting presentation
@@ -205,8 +219,6 @@ void SimpleObject::update_unbounded_position_and_redraw(
         return;
     }
 
-    world::WorldRect old_pointer_bounds{};
-    pointer_tool->get_bounds(&old_pointer_bounds);
     const world::WorldRect old_union = union_object_and_pointer_bounds(
         old_object_bounds, old_pointer_bounds);
 
