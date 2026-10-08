@@ -1282,9 +1282,17 @@ std::int32_t WindowsCreatureBacteriumEnvironmentHost::room_index_at(
 
 std::int32_t WindowsCreatureBacteriumEnvironmentHost::room_class_at(
     int world_x, int world_y) const {
+    // UpdateGoalDirection @0040ccc0: class 1 when the creature is in no room
+    // or in a room of type 1, class 0 in a room of any other type.  This
+    // returned the raw type instead (-1 for no room), which the caller's
+    // clamp turned into 0 for no room and 1 for types 2 and above.
     const std::int32_t index = document_.map_room_index_at(world_x, world_y);
-    return index < 0 ? -1 : document_.map_room_value(
-                                static_cast<std::uint32_t>(index), 4);
+    if (index < 0) {
+        return 1;
+    }
+    return document_.map_room_value(static_cast<std::uint32_t>(index), 4) == 1
+               ? 1
+               : 0;
 }
 
 std::uint32_t
