@@ -167,6 +167,17 @@ void Vehicle::tick(VehicleTickHost& host) {
 
     position_x_8_8 += velocity_x_8_8;
     position_y_8_8 += velocity_y_8_8;
+    // LibreCreatures deviation.  Vehicle::Tick @0042bd90 wraps the pixel X
+    // once but stores the unwrapped 8.8 position back, so a vehicle that
+    // kept circling the world left it growing: from the second circuit the
+    // once-wrapped X was off the world (8352 and up, or below 0) and the
+    // terrain lookup read past its table.  Keep the stored position inside
+    // one world width, fraction included.
+    constexpr std::int32_t kWorldWidth8_8 = world::kWorldWidth << 8;
+    position_x_8_8 %= kWorldWidth8_8;
+    if (position_x_8_8 < 0) {
+        position_x_8_8 += kWorldWidth8_8;
+    }
     const int new_world_x = wrap_vehicle_x_once(position_x_8_8 >> 8);
     const int new_world_y = position_y_8_8 >> 8;
     const int previous_sound_source_x = sound_source_x();
