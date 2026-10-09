@@ -1,5 +1,7 @@
 #include "lift.hpp"
 
+#include "call_button.hpp"
+
 #include "events.hpp"
 
 #include <algorithm>
@@ -164,6 +166,24 @@ void Lift::tick(LiftRuntimeHost& host) {
     }
 
     Vehicle::tick(host);
+}
+
+bool Lift::references_object(Object* candidate) const {
+    for (const CallButton* button : call_button_refs) {
+        if (button != nullptr && candidate == button) {
+            return true;
+        }
+    }
+    return Vehicle::references_object(candidate);
+}
+
+void Lift::clear_references_to(Object* candidate) {
+    for (CallButton*& button : call_button_refs) {
+        if (button != nullptr && candidate == button) {
+            button = nullptr;
+        }
+    }
+    Vehicle::clear_references_to(candidate);
 }
 
 void Lift::request_move_up(const QueuedObjectEvent& event,
