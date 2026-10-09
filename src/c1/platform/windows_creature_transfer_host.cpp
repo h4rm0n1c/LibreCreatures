@@ -298,11 +298,16 @@ void WindowsCreatureDeserializationHost::save_generated_genome(
 bool WindowsCreatureDeserializationHost::load_materialized_genome(
     creatures1::creatures::Creature& creature,
     creatures1::creatures::Genome& genome) {
-    // Creature::initialize_from_genome rebuilds the Skeleton sprites, voice
-    // and biochemistry from the creature's own stored filename, so the
-    // materialised genome's filename is adopted first.
+    // Creature::Deserialize @ 0x0040dda0 calls Skeleton::LoadGenome alone: the
+    // brain, biochemistry, creature genes and voice were all just restored
+    // from the archive.  The port ran the whole initialize_from_genome, which
+    // appended a second copy of every current-stage reaction, reapplied the
+    // initial-concentration genes over the saved chemistry, and for a baby
+    // rebuilt the brain over what it had learnt.  Rebuild the body only, from
+    // the materialised genome's filename.  Like the native, the import goes
+    // on whatever the body load returns.
     creature.skeleton().genome_source_filename = genome.source_filename();
-    creature.initialize_from_genome(construction_);
+    (void)creature.rebuild_body_sprites(construction_);
     return true;
 }
 
