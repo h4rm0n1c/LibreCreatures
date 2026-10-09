@@ -2122,6 +2122,19 @@ void C1WindowsDocument::release_object_sound_channel(std::size_t index) {
     }
 }
 
+void C1WindowsDocument::release_all_object_sound_channels() {
+    // LibreCreatures deviation.  ToggleMuteAndStopSounds @004333b0 and the
+    // focus suspend only call StopAllSounds, and leave each object's channel
+    // handle set.  Object::UpdateSound @00426190 then finds that channel
+    // silent (or the mixer suspended), takes the sound as finished and clears
+    // its descriptor, so a sndl loop never came back after unmute or after
+    // the window got focus again.  Release the channels first, keeping the
+    // descriptor as the pause sweep does, so the loop restarts.
+    for (std::size_t index = 0; index < non_scenery_object_count(); ++index) {
+        release_object_sound_channel(index);
+    }
+}
+
 bool C1WindowsDocument::sound_mixer_is_suspended() const {
     return g_active_sound_manager == nullptr ||
            g_active_sound_manager->mixer_suspended();
