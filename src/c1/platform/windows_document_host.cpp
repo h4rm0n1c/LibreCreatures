@@ -6474,7 +6474,12 @@ void* C1WindowsDocument::ArchiveHost::create_object(std::string_view name, std::
         return &document_.world_runtime_->adopt_scenery_object(
             std::move(scenery));
     } else if (name == "CallButton") {
-        object = std::make_unique<creatures1::objects::CallButton>();
+        // A CallButton is a SimpleObject: it needs the owner that stops its
+        // sound and releases its gallery, as a new one gets from its
+        // construction host.
+        auto button = std::make_unique<creatures1::objects::CallButton>();
+        button->set_gallery_owner(&document_);
+        object = std::move(button);
     } else if (name == "Lift" || name == "Vehicle" || name == "Blackboard" ||
                name == "CompoundObject") {
         std::unique_ptr<creatures1::objects::CompoundObject> compound;
