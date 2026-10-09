@@ -414,7 +414,8 @@ void ClassicGeneticsPage::fill() {
     CString dendrites;
     if (have_genome) {
         long fewest = 0, most = 0;
-        c1kit::dendrite_range(summary.lobes, per_lobe, fewest, most);
+        c1kit::dendrite_range(c1kit::brain_wiring(genes, subject.sex == 1), per_lobe, fewest,
+                              most);
         dendrites = fewest == most ? number(fewest) : number(fewest) + _T(" - ") + number(most);
     }
     set(kDendrites, dendrites);

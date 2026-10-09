@@ -178,6 +178,15 @@ constexpr std::size_t kLobeGenePayloadBytes = 112;
 constexpr std::size_t kLobeRuleOffset = 18;
 constexpr std::size_t kLobeRuleBytes = 47;
 
+// The most dendrites a rule can grow, as the game reads it
+// (normalize_range_max, CLobeConnectionRule::LoadFromGenome @004023a0): a
+// maximum below the minimum wraps to minimum + maximum % (256 - minimum), so
+// minimum 5 with maximum 3 grows 5 to 8, not exactly 5.
+inline int dendrite_count_max(std::uint8_t minimum, std::uint8_t encoded_maximum) {
+    return encoded_maximum >= minimum ? encoded_maximum
+                                      : minimum + encoded_maximum % (256 - minimum);
+}
+
 inline bool decode_lobe_gene(const Gene& gene, LobeGene& out) {
     if (gene.family != kGeneFamilyBrain || gene.subtype != 0 ||
         gene.payload.size() < kLobeGenePayloadBytes) {
@@ -192,9 +201,7 @@ inline bool decode_lobe_gene(const Gene& gene, LobeGene& out) {
         const std::size_t at = kLobeRuleOffset + kLobeRuleBytes * static_cast<std::size_t>(rule);
         out.source_lobe[rule] = p[at];
         out.dendrites_min[rule] = p[at + 1];
-        // The game raises a maximum below the minimum to the minimum
-        // (normalize_range_max).
-        out.dendrites_max[rule] = p[at + 2] < p[at + 1] ? p[at + 1] : p[at + 2];
+        out.dendrites_max[rule] = dendrite_count_max(p[at + 1], p[at + 2]);
     }
     return true;
 }
@@ -293,7 +300,7 @@ inline std::vector<LobeWiring> brain_wiring(const std::vector<Gene>& genes, bool
                 DendriteRule& rule = lobe.rules[r];
                 rule.source = p[at];
                 rule.fewest = p[at + 1];
-                rule.most = p[at + 2] < p[at + 1] ? p[at + 1] : p[at + 2];
+                rule.most = dendrite_count_max(p[at + 1], p[at + 2]);
                 rule.spread = p[at + 4] > 8 ? p[at + 4] % 9 : p[at + 4];
                 rule.mode = p[at + 9] > 2 ? p[at + 9] % 3 : p[at + 9];
             }
@@ -434,15 +441,18 @@ inline GenomeSummary summarize_genome(const std::vector<Gene>& genes,
 // How many dendrites a brain can grow, given each lobe's neuron count (from
 // the game's `lobe` reply; the genome's widths are adjusted as the lobes are
 // built): the sums of every neuron's fewest and most, over both rules.
-inline void dendrite_range(const std::vector<LobeGene>& lobes,
+// `lobes` must be the brain's own lobes, in its order -- brain_wiring's
+// selection by sex and life stage and its two passes -- not the genes in
+// file order, or a rule is paired with another lobe's neuron count.
+inline void dendrite_range(const std::vector<LobeWiring>& lobes,
                            const std::vector<int>& neurons_per_lobe,
                            long& fewest, long& most) {
     fewest = 0;
     most = 0;
     for (std::size_t i = 0; i < lobes.size() && i < neurons_per_lobe.size(); ++i) {
         const long neurons = neurons_per_lobe[i];
-        fewest += neurons * (lobes[i].dendrites_min[0] + lobes[i].dendrites_min[1]);
-        most += neurons * (lobes[i].dendrites_max[0] + lobes[i].dendrites_max[1]);
+        fewest += neurons * (lobes[i].rules[0].fewest + lobes[i].rules[1].fewest);
+        most += neurons * (lobes[i].rules[0].most + lobes[i].rules[1].most);
     }
 }
 

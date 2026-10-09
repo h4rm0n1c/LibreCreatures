@@ -94,7 +94,7 @@ void test_genome() {
     lobe[kLobeRuleOffset + 1] = 2;  // min
     lobe[kLobeRuleOffset + 2] = 5;  // max
     lobe[kLobeRuleOffset + kLobeRuleBytes + 1] = 3;  // rule 1 min
-    lobe[kLobeRuleOffset + kLobeRuleBytes + 2] = 1;  // max below min -> 3
+    lobe[kLobeRuleOffset + kLobeRuleBytes + 2] = 1;  // max below min -> 3 + 1 % 253 = 4
     const std::string file = gene_bytes(2, 1, 0, genus) + gene_bytes(0, 0, kGeneMutable, lobe) +
                              gene_bytes(1, 0, 0, std::string(8, 'r')) +
                              gene_bytes(2, 6, kGeneMaleOnly, std::string(2, 'p')) + "gend";
@@ -116,11 +116,11 @@ void test_genome() {
            summary.types[1].family == 1 && summary.types[3].subtype == 6);
     assert(summary.types[0].bytes == static_cast<int>(kGeneHeaderBytes + kLobeGenePayloadBytes));
     assert(summary.lobes.size() == 1 && summary.lobes[0].x == 3 &&
-           summary.lobes[0].dendrites_max[0] == 5 && summary.lobes[0].dendrites_max[1] == 3 &&
+           summary.lobes[0].dendrites_max[0] == 5 && summary.lobes[0].dendrites_max[1] == 4 &&
            summary.lobes[0].source_lobe[0] == 8);
     long fewest = 0, most = 0;
-    dendrite_range(summary.lobes, {16}, fewest, most);
-    assert(fewest == 16 * 5 && most == 16 * 8);
+    dendrite_range(brain_wiring(genes, true), {16}, fewest, most);
+    assert(fewest == 16 * 5 && most == 16 * 9);
 
     assert(!parse_genome(bytes_of("junk"), genes));
     assert(!parse_genome(bytes_of(gene_bytes(2, 1, 0, genus)), genes));  // no gend
@@ -296,6 +296,27 @@ void test_brain_wiring() {
            male[1].rules[0].most == 3 && male[1].rules[0].spread == 3 &&
            male[1].rules[0].mode == 1 && male[1].rules[1].mode == 0);
     assert(male[0].rules[1].source == 9 % 2);
+    // A maximum below the minimum wraps as the game reads it.
+    assert(dendrite_count_max(5, 3) == 8 && dendrite_count_max(3, 1) == 4 &&
+           dendrite_count_max(2, 5) == 5 && dendrite_count_max(255, 0) == 255);
+    std::vector<Gene> wrapped(1, lobe_gene(10, 5, 8, 0, 1, 3, 0, 0, 0));
+    wrapped[0].payload[19] = 5;  // rule 0 min 5, encoded max 3
+    assert(brain_wiring(wrapped, true)[0].rules[0].most == 8);
+
+    // Dendrite totals pair each lobe's rules with that lobe's neurons, so they
+    // take the brain's own lobes: a female-only gene is not a male's lobe...
+    std::vector<Gene> by_sex;
+    by_sex.push_back(lobe_gene(0, 0, 4, 0, 0, 9, 0, kGeneFemaleOnly, 0));
+    by_sex.push_back(lobe_gene(0, 0, 4, 0, 0, 1, 0, kGeneMaleOnly, 0));
+    long fewest = 0, most = 0;
+    dendrite_range(brain_wiring(by_sex, true), {1}, fewest, most);
+    assert(fewest == 1 && most == 1);
+    // ...and a lobe from a later generation is built after the first pass.
+    std::vector<Gene> by_pass;
+    by_pass.push_back(lobe_gene(0, 0, 4, 0, 0, 9, 1, 0, 0));
+    by_pass.push_back(lobe_gene(0, 0, 4, 0, 0, 1, 0, 0, 0));
+    dendrite_range(brain_wiring(by_pass, true), {100, 2}, fewest, most);
+    assert(fewest == 102 && most == 100 * 1 + 2 * 9);
     const std::vector<LobeWiring> female = brain_wiring(genes, false);
     assert(female.size() == 3 && female[1].x == 20);
 
