@@ -239,40 +239,43 @@ bool WindowsMacroHost::image_sequence_is_empty(
     return true;
 }
 
-char* WindowsMacroHost::format_brain_activity_report(
-    creatures1::objects::Object* brain_object, char* output_buffer,
+bool WindowsMacroHost::format_brain_activity_report(
+    creatures1::objects::Object* brain_object, std::string& report,
     std::uint32_t report_mode, std::uint32_t rule_index, bool whole_grid) {
     // CreateBrainActivityData @ 0x004101e0 reaches the target object's CBrain
     // and calls FormatActivityReport with the macro's first two work values as
     // the report mode and the rule index.  Both halves are reachable now: the
     // object-to-creature conversion is the same one the rest of this host
     // uses, and Brain::format_activity_report is the report writer.
-    if (brain_object == nullptr || output_buffer == nullptr) {
-        return nullptr;
+    report.clear();
+    if (brain_object == nullptr) {
+        return false;
     }
     creatures1::creatures::Creature* creature = creature_of(*brain_object);
     if (creature == nullptr) {
-        return nullptr;
+        return false;
     }
     creatures1::brain::Brain* brain = creature->brain();
     if (brain == nullptr) {
-        return nullptr;
+        return false;
     }
     // The five recovered modes are firing strength, activation, maximum
     // current weight, average target weight and average dendrite state; a
     // value outside that set is not a mode the writer knows.
     constexpr std::uint32_t kHighestReportMode = 4;
     if (report_mode > kHighestReportMode) {
-        return nullptr;
+        return false;
     }
-    // Brain::format_activity_report answers the byte count it wrote,
-    // terminator included; FormatActivityReport answers the end of what it
-    // wrote, so callers can take the length as end - start.  Return the end.
+    // Sized to the brain: the native wrote into whatever buffer it was given
+    // with no limit.  Brain::format_activity_report answers the byte count
+    // it wrote, terminator included.
+    report.assign(brain->activity_report_capacity(), '\0');
     const std::size_t written = brain->format_activity_report(
-        output_buffer,
+        report.data(),
         static_cast<creatures1::brain::ActivityReportMode>(report_mode),
         static_cast<int>(rule_index), whole_grid);
-    return output_buffer + written;
+    report.resize(written - 1);
+    return true;
 }
 
 

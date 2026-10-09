@@ -157,7 +157,8 @@ std::uint32_t CSfcOLE::RequestCommand(scripting::MacroHolder* holder,
 
     std::array<char, 0x4000> command_buffer{};
     holder->macro()->object_context.script_owner = host_.selected_creature();
-    holder->reset_result_and_invoke_result_entry(command_buffer.data());
+    holder->reset_result_and_invoke_result_entry(command_buffer.data(),
+                                                 command_buffer.size());
     host_.assign_output_bstr(
         std::string_view(command_buffer.data()), output_bstr);
     return holder->callback_result();

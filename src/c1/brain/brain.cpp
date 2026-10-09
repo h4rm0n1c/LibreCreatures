@@ -721,6 +721,17 @@ void Brain::normalize_dream_connection_weights() {
     }
 }
 
+std::size_t Brain::activity_report_capacity() const {
+    const std::size_t count = lobe_count_ < lobes_.size()
+                                  ? static_cast<std::size_t>(lobe_count_)
+                                  : lobes_.size();
+    std::size_t neurons = 0;
+    for (std::size_t lobe_index = 0; lobe_index < count; ++lobe_index) {
+        neurons += lobes_[lobe_index].neuron_count_value();
+    }
+    return neurons * 3 + 1;
+}
+
 std::size_t Brain::format_activity_report(char* output,
                                           ActivityReportMode mode,
                                           int rule_index,

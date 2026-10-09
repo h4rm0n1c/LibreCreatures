@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string>
 
 #include "macro.hpp"
 
@@ -57,8 +58,10 @@ public:
     // it depends on the recovered Creature layout, not base Object.
     // `whole_grid`: the Macro's work value 2 is 1 (see
     // Brain::format_activity_report).
-    virtual char* format_brain_activity_report(
-        objects::Object* brain_object, char* output_buffer,
+    // Fills `report` (no terminator) sized to the brain, so no caller's
+    // buffer is written past its end.
+    virtual bool format_brain_activity_report(
+        objects::Object* brain_object, std::string& report,
         std::uint32_t report_mode, std::uint32_t rule_index,
         bool whole_grid) = 0;
 };
@@ -69,14 +72,17 @@ public:
     ~MacroHolder();
 
     bool invoke_dispatch_entry(void* callback_context);
-    bool reset_result_and_invoke_result_entry(char* output_buffer);
+    // `output_capacity`: the bytes output_buffer holds.
+    bool reset_result_and_invoke_result_entry(char* output_buffer,
+                                              std::size_t output_capacity);
     bool dispatch_start_macro_execution(void* callback_context);
     bool execute_and_publish_macro_output(void* callback_context);
     bool dispatch_format_brain_activity_report(
         void* callback_context);
     bool start_macro_execution(void* callback_context);
     bool execute_macro_to_output_buffer(char* output_buffer);
-    bool format_brain_activity_report(char* output_buffer);
+    bool format_brain_activity_report(char* output_buffer,
+                                      std::size_t output_capacity);
     // Runs the loaded script so that its work values pick the report.
     void run_report_script();
     bool set_zero_callback_result(void* callback_argument);

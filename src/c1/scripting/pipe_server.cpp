@@ -589,7 +589,7 @@ std::string PipeServer::dispatch_command(std::string_view command) {
 
         std::array<char, kFireCommandOutputBufferSize> output{};
         if (!found->second->reset_result_and_invoke_result_entry(
-                output.data())) {
+                output.data(), output.size())) {
             return error_response("Macro execution failed");
         }
         const std::size_t output_length = std::min<std::size_t>(
@@ -674,7 +674,8 @@ std::string PipeServer::execute_fire_command(
         host_.selected_creature();
 
     std::array<char, kFireCommandOutputBufferSize> output{};
-    if (!holder->reset_result_and_invoke_result_entry(output.data())) {
+    if (!holder->reset_result_and_invoke_result_entry(output.data(),
+                                                      output.size())) {
         return error_response("Macro execution failed");
     }
     // This holder is destroyed on return; a started script must outlive it.

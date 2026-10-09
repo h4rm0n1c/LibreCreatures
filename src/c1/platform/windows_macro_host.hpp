@@ -357,8 +357,8 @@ public:
                         char* output_buffer) override;
     bool image_sequence_is_empty(
         creatures1::scripting::MacroHolder& holder) override;
-    char* format_brain_activity_report(
-        creatures1::objects::Object* brain_object, char* output_buffer,
+    bool format_brain_activity_report(
+        creatures1::objects::Object* brain_object, std::string& report,
         std::uint32_t report_mode, std::uint32_t rule_index,
         bool whole_grid) override;
 
