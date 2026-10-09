@@ -414,6 +414,13 @@ public:
     virtual std::size_t non_scenery_object_count() const = 0;
     virtual objects::Object* non_scenery_object_at(
         std::size_t index) const = 0;
+    // Registry removal tracking for `next` (see Macro::enum_removal_serials).
+    // A runtime without it reports no removals: native continuation.
+    virtual std::uint32_t non_scenery_removal_serial() const { return 0; }
+    virtual std::optional<std::int64_t> non_scenery_index_after_removals(
+        std::int64_t index, std::uint32_t /*since*/) const {
+        return index;
+    }
     // Native `rtar` scans the same registry and applies the same
     // IsSoundSourceBelowWorldY exclusion as `enum`, then chooses one match
     // through the process CRT random source. The registry, predicate, and
@@ -1346,6 +1353,10 @@ public:
     std::size_t script_cursor_offset = 0;
     std::array<std::uint32_t, 20> caos_value_stack{};
     std::size_t caos_value_stack_cursor_index = 0;
+    // LibreCreatures, not saved: for an `enum` tuple whose registry index
+    // sits at a stack slot, the runtime's removal serial when it was stored.
+    // A tuple loaded from a world has none and continues as the native does.
+    std::array<std::optional<std::uint32_t>, 20> enum_removal_serials{};
     std::array<std::uint32_t, 10> caos_work_values{};
     MacroObjectContext object_context{};
     std::int32_t selected_part_index = 0;

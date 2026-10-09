@@ -125,6 +125,7 @@ void Macro::serialize(MacroArchive& archive) {
             value = archive.read_uint32();
         }
         caos_value_stack_cursor_index = archive.read_uint32();
+        enum_removal_serials.fill(std::nullopt);
         caos_value_stack_cursor_index =
             std::min(caos_value_stack_cursor_index, caos_value_stack.size());
         for (std::uint32_t& value : caos_work_values) {
@@ -182,6 +183,7 @@ void Macro::serialize(MacroArchive& archive) {
 void Macro::reset_execution_state(const MacroExecutionHost& host) {
     objects::Object* script_owner_snapshot = object_context.script_owner;
     caos_value_stack_cursor_index = 0;
+    enum_removal_serials.fill(std::nullopt);
     execution_terminated = false;
     wait_ticks_remaining = 0;
     object_context.target_object = script_owner_snapshot;
@@ -3240,6 +3242,8 @@ MacroControlFlowResult Macro::execute_object_enumeration_command(
                 !push_value(static_cast<std::uint32_t>(index))) {
                 return MacroControlFlowResult::execution_terminated;
             }
+            enum_removal_serials[caos_value_stack_cursor_index - 1] =
+                runtime.non_scenery_removal_serial();
             return MacroControlFlowResult::iteration_complete;
         }
 
@@ -3257,6 +3261,18 @@ MacroControlFlowResult Macro::execute_object_enumeration_command(
     // enum stores [saved cursor, classifier, mask, registry index].  Native
     // `next` pops that tuple from the top in reverse order, advances the
     // index, and restores the tuple on a successful continuation.
+    //
+    // LibreCreatures deviation.  The native resumes at the saved index + 1,
+    // but `kill` on a creature deletes it from the registry at once and
+    // every later entry moves down one place, so `enum ..,kill targ,next`
+    // skipped every other creature.  The saved index is moved back once for
+    // each registry removal at or before it since it was stored.
+    const std::size_t index_slot =
+        caos_value_stack_cursor_index == 0 ? 0
+                                           : caos_value_stack_cursor_index - 1;
+    const std::optional<std::uint32_t> index_serial =
+        enum_removal_serials[index_slot];
+    enum_removal_serials[index_slot] = std::nullopt;
     const std::optional<std::uint32_t> index_value = pop_value();
     const std::optional<std::uint32_t> mask_value = pop_value();
     const std::optional<std::uint32_t> classifier_value = pop_value();
@@ -3266,7 +3282,15 @@ MacroControlFlowResult Macro::execute_object_enumeration_command(
         return MacroControlFlowResult::execution_terminated;
     }
 
-    for (std::size_t index = static_cast<std::size_t>(*index_value) + 1;
+    std::int64_t resume_after = static_cast<std::int64_t>(*index_value);
+    if (index_serial.has_value()) {
+        if (const std::optional<std::int64_t> moved =
+                runtime.non_scenery_index_after_removals(resume_after,
+                                                         *index_serial)) {
+            resume_after = *moved;
+        }
+    }
+    for (std::size_t index = static_cast<std::size_t>(resume_after + 1);
          index < runtime.non_scenery_object_count(); ++index) {
         objects::Object* candidate = runtime.non_scenery_object_at(index);
         if (candidate == nullptr || !runtime.is_live_object(candidate)) {
@@ -3289,6 +3313,8 @@ MacroControlFlowResult Macro::execute_object_enumeration_command(
             !push_value(static_cast<std::uint32_t>(index))) {
             return MacroControlFlowResult::execution_terminated;
         }
+        enum_removal_serials[caos_value_stack_cursor_index - 1] =
+            runtime.non_scenery_removal_serial();
         return MacroControlFlowResult::cursor_changed;
     }
 

@@ -397,6 +397,9 @@ public:
         std::uint32_t family, std::uint32_t genus,
         std::uint32_t species) const override;
     std::size_t non_scenery_object_count() const override;
+    std::uint32_t non_scenery_removal_serial() const override;
+    std::optional<std::int64_t> non_scenery_index_after_removals(
+        std::int64_t index, std::uint32_t since) const override;
     creatures1::objects::Object* non_scenery_object_at(
         std::size_t index) const override;
     creatures1::objects::Object* random_non_scenery_object(
