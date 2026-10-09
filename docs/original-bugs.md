@@ -51,6 +51,7 @@ files.
 | # | Defect in the original | Native | Fix | Checked |
 | --- | --- | --- | --- | --- |
 | 7 | Mutation can change the four bytes of the `gext` pigment tag, which deletes the pigment extension from the creature and all its descendants (since version 1.04). | `CopyGenomeGeneWithMutation` @00418c70 | e4bfe75 | code, model |
+| 50 | A reaction keeps only the low byte of a product's yield before adding it, so 1 A -> 2 B with 128 A makes no B (256 wraps to 0). | `CBiochemistry::Update` @0042ee10 | f3050aa | code |
 
 ### Creatures
 
