@@ -85,6 +85,7 @@ files.
 | 19 | A script value used as an object pointer is not checked, so a bad value crashes the game. | `stim writ`, `targ`, `mesg writ` and others | bd4c3b5 | code, crash |
 | 20 | `rndv` over the whole 32-bit range divides by zero. | `rndv` | a886d6b | code |
 | 21 | `evnt` with no object stores a null pointer and then uses it. | `evnt` | 140ccd7 | code |
+| 53 | `next` resumes at the saved registry index + 1, but `kill` deletes a creature from the registry at once, so `enum 4 0 0,kill targ,next` skips every other creature. | `next` (ExecuteInterpreter) | 217e83a | code, lab |
 
 ### World, objects and vehicles
 
