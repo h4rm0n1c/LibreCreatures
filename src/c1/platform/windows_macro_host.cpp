@@ -1114,13 +1114,17 @@ void WindowsMacroHost::set_creature_involuntary_action_cooldown(
 
 void WindowsMacroHost::update_creature_bacterium(
     creatures1::objects::Object& object) {
-    // CAOS `snez`: Creature owns the embedded bacterium update.
+    // CAOS `snez` runs CBacterium::Update @ 0x00401d80 on the creature's
+    // bacterium: it may infect a creature that can see the sneezer, or shed
+    // the strain into the environmental pool.  The port called the
+    // creature's per-tick bacterium/environment update instead, so sneezing
+    // spread nothing and ran an extra chemistry, environment and goal pass.
     creatures1::creatures::Creature* creature = creature_of(object);
     if (creature == nullptr) {
         return;
     }
-    WindowsCreatureBacteriumEnvironmentHost host(document_);
-    creature->update_bacterium_and_environment(host, active_debug_console());
+    WindowsBacteriumUpdateHost host(document_);
+    creature->bacterium().update(*creature, host);
 }
 
 void WindowsMacroHost::initialize_creature_default_vocabulary(

@@ -365,6 +365,34 @@ private:
 // phase 1 probabilistically infects one creature from the map's bacteria and
 // whose phase 7 updates every tick-enabled creature's bacterium.  Every
 // service below is an existing document or map one.
+// Concrete BacteriumUpdateHost for CAOS `snez` (CBacterium::Update @
+// 0x00401d80): the creature registry, perception as UpdatePerception asks
+// it, each creature's bacterium, MapData's environmental pool and the CRT
+// random source.
+class WindowsBacteriumUpdateHost final
+    : public creatures1::creatures::BacteriumUpdateHost {
+public:
+    explicit WindowsBacteriumUpdateHost(C1WindowsDocument& document)
+        : document_(document), perception_(document) {}
+
+    std::size_t creature_count() const override;
+    creatures1::creatures::Creature* creature_at(
+        std::size_t index) const override;
+    bool can_perceive(const creatures1::creatures::Creature& owner,
+                      const creatures1::creatures::Creature& target)
+        const override;
+    creatures1::creatures::Bacterium& bacterium_of(
+        creatures1::creatures::Creature& creature) override;
+    creatures1::creatures::Bacterium& environment_bacterium(
+        std::size_t index) override;
+    creatures1::creatures::BacteriumRandomSource& random_source() override;
+
+private:
+    C1WindowsDocument& document_;
+    WindowsCreatureFanoutHost perception_;
+    WindowsBacteriumRandomSource random_;
+};
+
 class WindowsBacteriumServiceHost final
     : public creatures1::world::BacteriumServiceHost {
 public:
