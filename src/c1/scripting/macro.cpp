@@ -3200,6 +3200,16 @@ MacroControlFlowResult Macro::execute_object_enumeration_command(
         std::size_t nested_enums = 0;
         for (std::size_t candidate = script_cursor_offset;
              candidate + sizeof(CaosToken) <= readable_capacity; ++candidate) {
+            // Bracketed text is a string operand, not commands: `[next]`
+            // or `[enum]` in a word or a speech line must not count.
+            if (script_buffer[candidate] == '[') {
+                while (candidate + 1 < readable_capacity &&
+                       script_buffer[candidate + 1] != ']') {
+                    ++candidate;
+                }
+                ++candidate;
+                continue;
+            }
             CaosToken token = 0;
             std::memcpy(&token, script_buffer.data() + candidate,
                         sizeof(token));
@@ -3386,6 +3396,19 @@ MacroControlFlowResult Macro::execute_control_flow_command(
         std::uint32_t nesting_depth = 1;
 
         while (candidate + sizeof(CaosToken) <= readable_capacity) {
+            // LibreCreatures deviation.  The native branch scan reads the
+            // raw script bytes, so `[else]` resumed a false doif inside the
+            // text, `[ending]` (holding "endi") closed it early and `[doif]`
+            // added a level that was never closed.  Bracketed text is a
+            // string operand; skip it whole.
+            if (script_buffer[candidate] == '[') {
+                while (candidate + 1 < readable_capacity &&
+                       script_buffer[candidate + 1] != ']') {
+                    ++candidate;
+                }
+                candidate += 2;
+                continue;
+            }
             CaosToken token = 0;
             std::memcpy(&token, script_buffer.data() + candidate,
                         sizeof(token));
