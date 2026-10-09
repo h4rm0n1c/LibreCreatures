@@ -86,6 +86,12 @@ Beetle that is the same commands as its own `.rcb`.
    coconut's drop script never ran.  This build sends the header with
    single spaces, and removing a COB also removes any such misread copy a
    world already has.
+3. An inject script the game does not take is still counted: the result of
+   ExecuteDdeScript is checked for each install script but not for the
+   inject scripts, so a failed delivery says nothing and uses one up (all
+   of them in inject-all mode).  This build reports the failure and counts
+   nothing; inject-all stops at the failed script, after the ones before
+   it have already reached the world.
 
 The counts are kept only while the kit runs, and are read afresh from the
 files on Refresh; this build does the same (it does not write your COB

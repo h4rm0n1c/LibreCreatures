@@ -291,20 +291,30 @@ bool InjectorSheet::inject(CobEntry& entry, CString& why) {
             return false;
         }
     }
+    // Fix (bug 3): an inject script the game did not take still used one up;
+    // the original checked only the install scripts.  A failed delivery now
+    // says so and counts nothing.  Inject-all stops at the failed script --
+    // the ones before it have already reached the world.
     const int count = static_cast<int>(cob.inject_scripts.size());
     if (count > 0) {
         if (cob.mode == 0) {
             // One inject script per injection, from the last back.
             int index = count - cob.next_inject - 1;
             if (index < 0) index = 0;
-            run(cob.inject_scripts[static_cast<std::size_t>(index)]);
+            if (!run(cob.inject_scripts[static_cast<std::size_t>(index)])) {
+                why = _T("Failed to send a script to Creatures.");
+                return false;
+            }
             if (!ignore_amount()) {
                 ++cob.next_inject;
                 if (!cob.unlimited() && cob.quantity > 0) --cob.quantity;
             }
         } else {
             for (const std::string& script : cob.inject_scripts) {
-                run(script);
+                if (!run(script)) {
+                    why = _T("Failed to send a script to Creatures.");
+                    return false;
+                }
             }
             if (!ignore_amount()) {
                 cob.next_inject = count;
