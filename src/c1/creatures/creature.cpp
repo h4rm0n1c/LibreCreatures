@@ -2566,15 +2566,23 @@ void Creature::select_walk_gait() {
     std::size_t best_gait = 0;
     const auto& gait_levels = instinct_runtime_state_.control_state.gait_locus_levels;
 
-    for (std::size_t gait = 1; gait < kGaitTableEntryCount - 1; ++gait) {
+    // SelectWalkGait @004082c0: gait input k chooses gait k (0..6), and input
+    // 7 chooses gait 7 while the creature has a target.  The port had every
+    // input choosing the next gait up, and never read input 6.
+    // LibreCreatures deviation: the original checks that gait k+1 has an
+    // animation before choosing gait k, and does not check gait 7 at all, so
+    // it could choose an empty gait and leave an approach with nothing to
+    // walk; this checks the gait it chooses.
+    for (std::size_t gait = 0; gait < kGaitTableEntryCount - 1; ++gait) {
         const auto& sequence = skeleton_.gait_animation_table[gait];
-        if (sequence[0] == '\0' || gait_levels[gait - 1] <= best_level) {
+        if (sequence[0] == '\0' || gait_levels[gait] <= best_level) {
             continue;
         }
         best_gait = gait;
-        best_level = gait_levels[gait - 1];
+        best_level = gait_levels[gait];
     }
     if (skeleton_.motion_link != nullptr &&
+        skeleton_.gait_animation_table[kGaitTableEntryCount - 1][0] != '\0' &&
         gait_levels[kGaitTableEntryCount - 1] > best_level) {
         best_gait = kGaitTableEntryCount - 1;
     }
