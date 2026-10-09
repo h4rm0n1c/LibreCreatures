@@ -78,10 +78,15 @@ bool ObjectEventScheduler::take_due_delayed_event(
          index < kObjectEventQueueCapacity && remaining > 0;
          ++index) {
         QueuedObjectEvent& candidate = delayed_events_[index];
+        // ProcessQueuedObjectEventsAndStimuli @00432d20 counts down only
+        // occupied slots (TEST/JZ at 00432d6c skips the DEC for an empty
+        // one), so an empty slot never hides the events after it.
+        if (candidate.due_world_tick == 0) {
+            continue;
+        }
+        --remaining;
         const auto due_tick = static_cast<std::uint32_t>(candidate.due_world_tick);
-        if (candidate.due_world_tick == 0 ||
-            static_cast<std::uint32_t>(world_tick) < due_tick) {
-            --remaining;
+        if (static_cast<std::uint32_t>(world_tick) < due_tick) {
             continue;
         }
 
