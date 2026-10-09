@@ -316,3 +316,66 @@ each room in the map's room table as a 1-pixel outline over the main view:
   back buffer, snapshots and the frame dump do not show the outlines.
 - `world/room_edges.hpp` holds the edge test; `tests/c1_room_edges_test.cpp`
   checks it.
+
+## Fixes since the last test build (bbc0930)
+
+These are game and kit fixes, not renderer work. Every one is also on
+`main`: each was cherry-picked there as it was made, so the normal
+LibreCreatures build has them too. A fix marked *(original)* corrects a bug
+the original game or kit has as well; those are listed in
+`docs/original-bugs.md`. The rest were mistakes in this port.
+
+Creatures, import and export:
+- An export that cannot be written keeps the creature in the world, and
+  the genome file is checked before it is read as well as written.
+  *(original)*
+- An imported pregnant norn keeps the child genome saved for her; a
+  renamed import breeds with its own genome. *(original, the gamete)*
+- Importing a creature rebuilds its body only and keeps its saved
+  chemistry and brain.
+- Norns sense the world's light again.
+- A loaded creature that dies or is killed before its next life stage
+  frees its limbs and body gallery; a creature's looping sound stops when
+  it goes.
+
+Biochemistry and disease:
+- A reaction's full yield reaches its products (a yield over 255 wrapped).
+  *(original)*
+- A reaction with the same chemical in both reactant slots no longer
+  counts its supply twice. *(original)*
+- Shed bacteria move through the pool whole, sneezing spreads them again,
+  and Infect Current Norn infects the norn from the pool.
+
+CAOS and scripts:
+- `enum .. kill targ .. next` visits every creature; an `enum` with no
+  match skips its whole body, nested `enum`s included. *(original)*
+- `doif`/`enum` scans and `gsub` ignore control words inside bracketed
+  text. *(original)*
+- `ltcy` with an empty or whole-range span, and `divv`/`modv` of
+  -2147483648 by -1, no longer stop the game. *(original)*
+- A script that ends no longer costs the next script its turn that tick.
+  *(original)*
+- Pronunciation substitutions keep the rest of the word ("right" now
+  becomes "wight", not "wght").
+
+Vehicles and objects:
+- A vehicle circling the world stays on it, a vehicle a script moves stays
+  where it was moved, and a moving vehicle shows lowercase animation
+  frames as a standing one does. *(original)*
+- Loaded compound objects, call buttons, simple objects and scenery
+  release their galleries and stop their looping sounds when deleted.
+- Speech bubbles on screen at a save keep their words after loading.
+
+Sound:
+- Looping sounds come back after unmute, and after the window gets focus
+  again under `sndf fore`. *(original)*
+
+Kits:
+- Science Kit: dendrite ranges where a gene's maximum is below its minimum
+  read as the game reads them, and dendrite totals use the brain's own
+  lobes (by sex, life stage and build order).
+- Injector: a failed inject script reports the failure and does not use
+  the COB up. *(original kit)*
+- All kits send a script longer than 4 KB whole.
+- A brain activity report is sized to the brain, so a large brain no
+  longer writes past the kit's 4 KB reply buffer. *(original)*
