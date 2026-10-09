@@ -235,7 +235,8 @@ creatures1::ui::CaosExecutionResult C1CaosConsoleDialog::execute_command(
         }
     }
     std::vector<char> output(0x10000, '\0');  // the pipe's FIRECOMMAND buffer
-    if (!holder.reset_result_and_invoke_result_entry(output.data())) {
+    if (!holder.reset_result_and_invoke_result_entry(output.data(),
+                                                     output.size())) {
         result.output = "The script could not run (check the CAOS)";
         return result;
     }

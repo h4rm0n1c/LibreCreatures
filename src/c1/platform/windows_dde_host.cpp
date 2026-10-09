@@ -245,20 +245,23 @@ std::string WindowsDdeCallbackHost::render_macro_output(
 
 std::string WindowsDdeCallbackHost::render_brain_activity(
     creatures1::scripting::Macro& macro, std::size_t output_capacity) {
-    std::string buffer(output_capacity, '\0');
     // CreateBrainActivityData @ 0x004101e0 reports on the macro's TARGET
     // object, and takes the report mode and rule index from the macro's first
     // two work values -- so a kit selects what it wants to see by setting
-    // those before it requests the item.
-    const char* report = WindowsMacroHost::format_brain_activity_report(
-        macro.object_context.target_object, buffer.data(),
-        macro.caos_work_values[0], macro.caos_work_values[1],
-        macro.caos_work_values[2] == 1);
-    if (report == nullptr) {
+    // those before it requests the item.  Its buffer held output_capacity
+    // bytes and the report was written into it unchecked; the report is now
+    // sized to the brain and cut to that capacity.
+    std::string report;
+    if (!WindowsMacroHost::format_brain_activity_report(
+            macro.object_context.target_object, report,
+            macro.caos_work_values[0], macro.caos_work_values[1],
+            macro.caos_work_values[2] == 1)) {
         return std::string();
     }
-    buffer.resize(std::strlen(buffer.c_str()));
-    return buffer;
+    if (output_capacity != 0 && report.size() > output_capacity - 1) {
+        report.resize(output_capacity - 1);
+    }
+    return report;
 }
 
 creatures1::scripting::DdeSystemInfoSnapshot

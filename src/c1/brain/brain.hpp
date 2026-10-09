@@ -87,6 +87,9 @@ public:
                                        ActivityReportMode mode,
                                        int rule_index,
                                        bool whole_grid = false) const;
+    // The most bytes format_activity_report can write: three per neuron and
+    // the terminator.
+    std::size_t activity_report_capacity() const;
 
 private:
     friend class Lobe;

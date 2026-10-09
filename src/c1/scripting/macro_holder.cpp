@@ -4,6 +4,8 @@
 
 #include <algorithm>
 #include <array>
+#include <cstring>
+#include <string>
 
 namespace creatures1::scripting {
 
@@ -69,7 +71,8 @@ bool MacroHolder::invoke_dispatch_entry(void* callback_context) {
     return false;
 }
 
-bool MacroHolder::reset_result_and_invoke_result_entry(char* output_buffer) {
+bool MacroHolder::reset_result_and_invoke_result_entry(
+    char* output_buffer, std::size_t output_capacity) {
     callback_result_ = 0;
     if (macro() == nullptr) {
         return false;
@@ -82,7 +85,7 @@ bool MacroHolder::reset_result_and_invoke_result_entry(char* output_buffer) {
     case MacroExecutionMode::execute_to_output:
         return execute_macro_to_output_buffer(output_buffer);
     case MacroExecutionMode::format_brain_activity_report:
-        return format_brain_activity_report(output_buffer);
+        return format_brain_activity_report(output_buffer, output_capacity);
     case MacroExecutionMode::default_success_3:
     case MacroExecutionMode::default_success_4:
         return host_.default_result(*this, output_buffer);
@@ -120,20 +123,25 @@ bool MacroHolder::dispatch_format_brain_activity_report(
         return false;
     }
 
-    // CMacroHolder::DispatchFormatBrainActivityReport @ 0x00419400 writes the
-    // report into the caller's own buffer -- report_context->output_buffer,
-    // which is the VARIANT's value field.  Passing null here wrote the report
-    // nowhere.
+    // LibreCreatures deviation.  CMacroHolder::DispatchFormatBrainActivityReport
+    // @ 0x00419400 writes the report into the caller's BSTR -- the server's
+    // copy of the kit's 0x1000-byte buffer -- three bytes a neuron with no
+    // limit, so a brain of more than about 1,365 active neurons wrote past
+    // it.  Build the report to the brain's size and hand back a fresh BSTR
+    // holding it, as ExecuteAndPublishMacroOutput @ 0x00419340 does for
+    // macro output; the kits already take their reply from the VARIANT.
     auto* context =
         static_cast<application::OleScriptVariant*>(callback_context);
-    char* const output_buffer =
-        context == nullptr ? nullptr : context->bstr_value;
     run_report_script();
-    char* result = host_.format_brain_activity_report(
-        macro()->object_context.target_object, output_buffer,
-        macro()->caos_work_values[0], macro()->caos_work_values[1],
-        macro()->caos_work_values[2] == 1);
-    return result != nullptr;
+    std::string report;
+    if (!host_.format_brain_activity_report(
+            macro()->object_context.target_object, report,
+            macro()->caos_work_values[0], macro()->caos_work_values[1],
+            macro()->caos_work_values[2] == 1)) {
+        return false;
+    }
+    host_.publish_macro_output(context, report.c_str(), report.size() + 1);
+    return true;
 }
 
 void MacroHolder::run_report_script() {
@@ -174,25 +182,30 @@ bool MacroHolder::execute_macro_to_output_buffer(char* output_buffer) {
     return true;
 }
 
-bool MacroHolder::format_brain_activity_report(char* output_buffer) {
-    if (macro() == nullptr) {
+bool MacroHolder::format_brain_activity_report(char* output_buffer,
+                                               std::size_t output_capacity) {
+    if (macro() == nullptr || output_buffer == nullptr ||
+        output_capacity == 0) {
         return false;
     }
 
     run_report_script();
-    char* result = host_.format_brain_activity_report(
-        macro()->object_context.target_object, output_buffer,
-        macro()->caos_work_values[0], macro()->caos_work_values[1],
-        macro()->caos_work_values[2] == 1);
-    // The report writer answers the end of what it wrote.  The result every
-    // consumer wants is the length, so carry that rather than an address --
-    // the pipe reports this value as its byte count, and a raw pointer there
-    // reads as a nonsense length.
-    callback_result_ =
-        result == nullptr
-            ? 0
-            : static_cast<std::uint32_t>(result - output_buffer);
-    return result != nullptr;
+    std::string report;
+    if (!host_.format_brain_activity_report(
+            macro()->object_context.target_object, report,
+            macro()->caos_work_values[0], macro()->caos_work_values[1],
+            macro()->caos_work_values[2] == 1)) {
+        callback_result_ = 0;
+        return false;
+    }
+    // A fixed buffer takes as much of the report as fits.  The result every
+    // consumer wants is the length written, terminator included -- the pipe
+    // reports it as its byte count.
+    const std::size_t length = std::min(report.size(), output_capacity - 1);
+    std::memcpy(output_buffer, report.data(), length);
+    output_buffer[length] = '\0';
+    callback_result_ = static_cast<std::uint32_t>(length + 1);
+    return true;
 }
 
 bool MacroHolder::set_zero_callback_result(void* callback_argument) {
