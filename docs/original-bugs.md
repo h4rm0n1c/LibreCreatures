@@ -90,6 +90,7 @@ files.
 | 25 | The plane of a carried object is taken from a table indexed by the low byte of a pointer, so in the incubator it depends on heap addresses. | `UpdateEntityForExplicitRectBoundsAndRedraw` @00428d30 | 274c2ba, 53c46ad | code |
 | 26 | Ocean Dome Sound (2 8 15) does not have the "creatures cannot see it" flag, so norns go into the dome to find a vendor (issue #10). | World.sfc, Eden.sfc | 57eeedc | data |
 | 27 | An object let go of in the upper half of a room jumps up onto the floor of the room above. | hand drop placement | 1a663b2 | code |
+| 41 | A lift arrives only when its cabin and the floor fall in the same band of whole-pixel speed, so a lift moving at a fractional speed (yvec 384) can step over its floor and never stop. Stock lifts (yvec 768) are not affected. | `Lift::Tick` @0042c4f0 | 8463856 | code, lab |
 
 ### The hand and the interface
 
