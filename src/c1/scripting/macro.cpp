@@ -159,7 +159,7 @@ void Macro::serialize(MacroArchive& archive) {
             std::min(subroutine_cache_cursor_offset, script_buffer.size());
         wait_ticks_remaining = archive.read_uint32();
         // Not native: the world format has no field for "paused because
-        // new:/sys:/dde:/app: ended its turn" (see execute_script_for_
+        // sys:/dde:/app: ended its turn" (see execute_script_for_
         // classifier), so a script saved in that gap lost it on load, and
         // the first tick -- objects and creatures tick before scripts -- could
         // replace it before its next turn: a norn saved mid-lay left her egg
@@ -4160,16 +4160,26 @@ MacroControlFlowResult Macro::dispatch_interpreter_command(
         // through the keep-running join at 0x00420c6f.  app:, dde:
         // (0x0041e141), sys: (0x0041e1cb) and new: (0x0041e1bf) finish
         // through 0x00420c74 without setting it, so the script's turn ends
-        // there.  This used to keep running for all six, which hid the
-        // egg-in-the-sky bug by accident and changed script pacing.
+        // there.
+        //
+        // LibreCreatures deviation: new: keeps running.  An object made by
+        // new: is at the world origin with classifier 2 0 0 until the script's
+        // following commands set it up, so a turn ending there leaves it half
+        // made whenever anything stops the script before its next turn -- the
+        // egg in the sky.  Holding events, finishing the turn before an owner
+        // purge and keeping the hold across a save each closed one such way
+        // (execute_script_for_classifier, purge_destroy_when_finished_macros,
+        // Macro::serialize), and eggs still reached the sky.  Not ending the
+        // turn closes the gap itself: the script sets the object up in the
+        // same turn that makes it, as a kit's `inst` script always has.
         switch (static_cast<MacroPrefixCommand>(static_cast<CaosToken>(command))) {
         case MacroPrefixCommand::aim:
         case MacroPrefixCommand::blackboard:
+        case MacroPrefixCommand::new_object:
             return MacroControlFlowResult::iteration_complete;
         case MacroPrefixCommand::application:
         case MacroPrefixCommand::dde:
         case MacroPrefixCommand::system:
-        case MacroPrefixCommand::new_object:
             paused_by_prefixed_command = true;
             return MacroControlFlowResult::cursor_changed;
         }
