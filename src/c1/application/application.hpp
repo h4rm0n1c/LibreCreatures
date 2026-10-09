@@ -381,6 +381,9 @@ public:
         creatures1::creatures::GenomeFilenameId source_filename,
         creatures1::creatures::GenomeSex sex,
         creatures1::creatures::GenomeLifeStage life_stage) = 0;
+    // Flushes and closes the file.  False when any write or the close
+    // failed; the export is then not complete.
+    virtual bool finish() = 0;
 };
 
 class CreatureExportHost {
@@ -395,6 +398,9 @@ public:
         begin_export_archive(std::string_view output_path) = 0;
     virtual void clear_selected_creature_references() = 0;
     virtual void restore_selected_creature_runtime_state() = 0;
+    // The file could not be written: keep the creature in the world and
+    // report the failure.  output_path names the incomplete file.
+    virtual void keep_creature_after_failed_export(std::string_view output_path) = 0;
     virtual void log_child_genome_export() = 0;
 };
 
