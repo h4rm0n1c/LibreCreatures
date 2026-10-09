@@ -4310,8 +4310,14 @@ bool Macro::execute_arithmetic_command(MacroCommand command,
         if (second_value == 0) {
             should_assign = false;
         } else {
+            // LibreCreatures deviation (divv and modv).  ExecuteInterpreter
+            // checks only for zero before CDQ; IDIV ECX (00420884 divv,
+            // 00420af2 modv), so -2147483648 divided by -1 overflows and the
+            // game stops with a divide error.  Divide in 64 bits: the
+            // quotient wraps back to -2147483648, the remainder is 0.
             result = static_cast<std::uint32_t>(
-                static_cast<std::int32_t>(first_value) /
+                static_cast<std::int64_t>(
+                    static_cast<std::int32_t>(first_value)) /
                 static_cast<std::int32_t>(second_value));
         }
         break;
@@ -4320,7 +4326,8 @@ bool Macro::execute_arithmetic_command(MacroCommand command,
             should_assign = false;
         } else {
             result = static_cast<std::uint32_t>(
-                static_cast<std::int32_t>(first_value) %
+                static_cast<std::int64_t>(
+                    static_cast<std::int32_t>(first_value)) %
                 static_cast<std::int32_t>(second_value));
         }
         break;
