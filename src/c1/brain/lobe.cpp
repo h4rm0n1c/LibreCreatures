@@ -757,10 +757,15 @@ void Lobe::update_late_phase(Brain* brain, std::uint32_t tick) {
                     // dendrite rejected its own previous target.  When that
                     // target was the only active neuron, the dendrite could
                     // not re-attach while the same input stayed active.  Only
-                    // a different dendrite can make the target a duplicate.
+                    // a different dendrite can make the target a duplicate,
+                    // and only an attached one.  Another loose dendrite's old
+                    // target is no connection, and since the repair always
+                    // takes the first loose dendrite, that later one could
+                    // never move out of the way.
                     bool duplicate = false;
                     for (std::uint8_t index = 0; index < count; ++index) {
                         if (&connection_array[index] != loose &&
+                            connection_array[index].dendrite_state != 0 &&
                             connection_array[index].target_neuron == selected) {
                             duplicate = true;
                             break;

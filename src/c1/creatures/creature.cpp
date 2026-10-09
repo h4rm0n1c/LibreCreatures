@@ -917,6 +917,17 @@ void Creature::process_heard_words(
     std::string words(mutable_words);
     char* token = words.data();
     while (true) {
+        // LibreCreatures deviation.  Native starts the next token right
+        // after one space, so a second space, or a trailing one, gave an
+        // empty token, which was learnt as an unknown word for the attended
+        // object and weakened or erased its name.  Skip spaces, and stop
+        // when no text is left.
+        while (*token == ' ') {
+            token = const_cast<char*>(text_api.next_character(token));
+        }
+        if (*token == '\0') {
+            break;
+        }
         char* word_end = token;
         if (*token == '\0') {
             word_end = nullptr;
