@@ -204,7 +204,7 @@ bool execute_script_for_classifier(objects::Object* script_owner,
         macro->paused_by_prefixed_command) {
         // LibreCreatures deviation.  Native loads the new script into the
         // owner's running Macro here, whatever point that script has reached.
-        // A script paused only because new:/sys:/dde:/app: ended its turn
+        // A script paused only because sys:/dde:/app: ended its turn
         // loses the commands after it -- which is how an egg-laying norn
         // leaves her egg at the world origin, the "egg in the sky".  Hold the
         // event until the paused script has finished that turn instead.

@@ -3732,7 +3732,7 @@ void C1WindowsDocument::add_to_event_bar(
 
 void C1WindowsDocument::purge_destroy_when_finished_macros( creatures1::objects::Object& object) {
     // LibreCreatures deviation (the egg in the sky, continued).  A script
-    // paused only because new:/sys:/dde:/app: ended its turn has not finished
+    // paused only because sys:/dde:/app: ended its turn has not finished
     // what it started: an egg-laying norn's script has made the egg with
     // `new: simp` but not yet classified it or moved it off the world origin.
     // Native purged such a script outright when its owner died, was removed
