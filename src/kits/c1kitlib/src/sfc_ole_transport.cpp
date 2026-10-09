@@ -39,13 +39,12 @@ public:
     // length prefix is what lets the automation marshaller carry it
     // (CScienceSheet::ConnectToCreatures @ 0x0040b870; Observation
     // InitializeSheetPages @ 0x00403660 uses 0x400 bytes).
-    bool allocate_buffer() {
-        BSTR storage = SysAllocStringByteLen(nullptr,
-                                             static_cast<UINT>(buffer_bytes_));
+    bool allocate_buffer(std::size_t bytes) {
+        BSTR storage = SysAllocStringByteLen(nullptr, static_cast<UINT>(bytes));
         if (storage == nullptr) {
             return false;
         }
-        std::memset(storage, 0, buffer_bytes_);
+        std::memset(storage, 0, bytes);
         buffer_.vt = VT_BSTR;
         buffer_.bstrVal = storage;
         return true;
@@ -125,24 +124,27 @@ private:
 
     // The script is written as plain ANSI into the byte-length BSTR, as the
     // kits do.  A reply BSTR may be shorter than the original buffer; the
-    // kits then overrun it, so grow back to buffer_bytes_ instead.
+    // kits then overrun it, so grow back to buffer_bytes_, or to the script
+    // if it is longer.
     bool copy_script(const char* script) {
         if (script == nullptr) {
             return false;
         }
+        // A script longer than the buffer gets a buffer that holds all of it.
+        // Cutting it to buffer_bytes_ - 1 sent the game a script missing its
+        // last commands and still reported success.
         const std::size_t length = std::strlen(script);
+        const std::size_t needed = length + 1 > buffer_bytes_ ? length + 1 : buffer_bytes_;
         if (buffer_.vt != VT_BSTR || buffer_.bstrVal == nullptr ||
-            SysStringByteLen(buffer_.bstrVal) < buffer_bytes_) {
+            SysStringByteLen(buffer_.bstrVal) < needed) {
             VariantClear(&buffer_);
-            if (!allocate_buffer()) {
+            if (!allocate_buffer(needed)) {
                 return false;
             }
         }
-        const std::size_t copied =
-            length < buffer_bytes_ - 1 ? length : buffer_bytes_ - 1;
         char* bytes = reinterpret_cast<char*>(buffer_.bstrVal);
-        std::memcpy(bytes, script, copied);
-        bytes[copied] = '\0';
+        std::memcpy(bytes, script, length);
+        bytes[length] = '\0';
         return true;
     }
 
@@ -230,8 +232,9 @@ MacroTransport* connect_sfc_ole(std::size_t buffer_bytes,
     if (FAILED(queried) || dispatch == nullptr) {
         return fail(ConnectResult::no_dispatch, queried);
     }
-    auto* transport = new SfcOleTransport(dispatch, buffer_bytes < 2 ? 2 : buffer_bytes);
-    if (!transport->allocate_buffer()) {
+    const std::size_t bytes = buffer_bytes < 2 ? 2 : buffer_bytes;
+    auto* transport = new SfcOleTransport(dispatch, bytes);
+    if (!transport->allocate_buffer(bytes)) {
         transport->release();
         if (result != nullptr) {
             *result = ConnectResult::create_failed;
