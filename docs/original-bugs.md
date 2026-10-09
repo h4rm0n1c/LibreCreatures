@@ -86,6 +86,7 @@ files.
 | 20 | `rndv` over the whole 32-bit range divides by zero. | `rndv` | a886d6b | code |
 | 21 | `evnt` with no object stores a null pointer and then uses it. | `evnt` | 140ccd7 | code |
 | 53 | `next` resumes at the saved registry index + 1, but `kill` deletes a creature from the registry at once, so `enum 4 0 0,kill targ,next` skips every other creature. | `next` (ExecuteInterpreter) | 217e83a | code, lab |
+| 54 | An `enum` with no match skips to the first `next`, so with an `enum` nested in its body it resumes inside the body and its own `next` ends the script. | `ExecuteInterpreter` @0041dc40 (scan at 0041fbb8) | 1a04ab7 | code, lab |
 
 ### World, objects and vehicles
 
