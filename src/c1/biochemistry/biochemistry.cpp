@@ -160,8 +160,20 @@ void Biochemistry::update(
                 reaction.reactant_2_amount;
         }
 
-        const std::uint32_t reaction_extent =
+        // LibreCreatures deviation.  CBiochemistry::Update @0042ee10 divides
+        // each reactant's concentration by its own amount, so when both
+        // slots name the same chemical its supply counted twice: 1 A + 1 A
+        // -> B made 10 B from 10 A, the saturating removal hiding the
+        // shortfall.  The same chemical in both slots is shared between them.
+        std::uint32_t reaction_extent =
             std::min(reactant_1_available, reactant_2_available);
+        if (reaction.reactant_1_chemical != 0 &&
+            reaction.reactant_1_chemical == reaction.reactant_2_chemical) {
+            reaction_extent =
+                chemical_states_[reaction.reactant_1_chemical].concentration /
+                (static_cast<std::uint32_t>(reaction.reactant_1_amount) +
+                 reaction.reactant_2_amount);
+        }
         if (reaction_extent == 0) {
             continue;
         }
