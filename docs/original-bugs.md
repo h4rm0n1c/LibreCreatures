@@ -44,7 +44,7 @@ files.
 | 3 | A lobe with zero neurons divides by zero. | `CLobe::UpdateEarlyPhase` @00405010 | afca2d6 | code, crash dump |
 | 4 | Dendrite migration compares the candidate with every active neuron, the migrating neuron included, so the neuron always matches itself and its weights are zeroed instead of moved. | `MigrateRuleConnections` @00405da0 | 6d52950 | code, lab |
 | 5 | The migration duplicate test packs the pointer sum and product into 16 bits each, so different dendrite sets pass as duplicates. A matching test is now confirmed by comparing the target sets. | `MigrateRuleConnections` @00405da0 | 68c25ae, e058524 | code, lab |
-| 6 | A loose dendrite rejects its own previous target as a duplicate. | `CLobe::UpdateLatePhase` @00405170 (attach at 00405990) | 75b9911 | code, lab |
+| 6 | A loose dendrite rejects its own previous target, or another loose dendrite's stale target, as a duplicate. | `CLobe::UpdateLatePhase` @00405170 (attach at 00405990) | 75b9911, a0c2773 | code, lab |
 
 ### Genetics
 
@@ -68,6 +68,7 @@ files.
 | 17 | `stm# tact` sends the stimulus to every creature in the world when one creature touches the source. | `QueueTactStimulusForOverlappingCreatures` @00423470 | c5a6a2d | code, lab |
 | 37 | Heard speech is split into words in the shared buffer, and the spaces are not put back, so after the first listener every creature hears only the first word: "push food" becomes "push". | `ProcessHeardWords` @0040a630 | 3fc38cf | code |
 | 38 | Two creatures with the same unknown (0) mother or father are taken as siblings. | `UpdatePerception` @0040bf10 | 3fc38cf | code |
+| 39 | A second space, or a trailing space, in heard speech makes an empty word, which is learnt as the attended object's name and weakens or erases the real one. | `ProcessHeardWords` @0040a630 | a0c2773 | code |
 
 ### Scripts
 
