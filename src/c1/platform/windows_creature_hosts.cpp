@@ -652,7 +652,7 @@ creatures1::creatures::CreatureMotionLinkFacts
 WindowsCreatureFanoutHost::motion_link_facts(
     const creatures1::objects::Object& object,
     const creatures1::creatures::Creature& creature) const {
-    // UpdatePerception @ 0040e8b0 reads the link's SkeletonRenderPoseState
+    // UpdatePerception @ 0040bf10 reads the link's SkeletonRenderPoseState
     // monikers at offsets 0/4/8 -- genome, mother, father -- which is only
     // meaningful when the link is a creature-family object.
     creatures1::creatures::CreatureMotionLinkFacts facts{};
@@ -676,9 +676,16 @@ WindowsCreatureFanoutHost::motion_link_facts(
     facts.link_is_my_child =
         link_skeleton.mother_moniker == self.genome_source_filename ||
         link_skeleton.father_moniker == self.genome_source_filename;
+    // LibreCreatures deviation.  UpdatePerception @0040bf10 compares the
+    // mothers and the fathers with no test for 0, the moniker of a parent
+    // that is not known.  Two creatures with no known father -- made with
+    // new: crea, or a clone -- were taken as siblings.  Only a known parent
+    // can be shared.
     facts.shares_a_parent =
-        link_skeleton.mother_moniker == self.mother_moniker ||
-        link_skeleton.father_moniker == self.father_moniker;
+        (self.mother_moniker != 0 &&
+         link_skeleton.mother_moniker == self.mother_moniker) ||
+        (self.father_moniker != 0 &&
+         link_skeleton.father_moniker == self.father_moniker);
     // The species test masks off the event and species bytes, leaving family
     // and genus; the sex comparison is the genome sex, not the display gender.
     facts.is_opposite_sex =

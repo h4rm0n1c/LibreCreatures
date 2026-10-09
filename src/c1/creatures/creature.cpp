@@ -907,9 +907,15 @@ void Creature::process_heard_words(
     std::uint32_t attention_magnitude = 0xb4;
     std::int32_t verb_action_neuron = -1;
 
-    // The executable edits the caller's buffer in place: spaces become NUL
-    // terminators, and _mbsinc advances over the resulting token boundary.
-    char* token = mutable_words;
+    // LibreCreatures deviation.  ProcessHeardWords @0040a630 splits the
+    // caller's buffer in place (spaces become NUL at 0040a6c7) and never
+    // restores it.  The buffer is shared: the hand's text, or the speaker's
+    // word record, read by every creature that hears it.  So the first
+    // listener cut "push food" to "push" for every later one, which then
+    // acted on its own attention target.  Split a copy instead; _mbsinc
+    // still advances over each token boundary.
+    std::string words(mutable_words);
+    char* token = words.data();
     while (true) {
         char* word_end = token;
         if (*token == '\0') {
