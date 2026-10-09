@@ -93,6 +93,7 @@ files.
 | 56 | `gsub` finds its `subr` label by scanning the raw script, so `subr <id>` inside bracketed text before the real label sends it to the wrong place, and its cache keeps that place. | `ExecuteInterpreter` @0041dc40 (scan at 0041e420) | dce8d60 | code, lab |
 | 61 | A script that ends is removed by shifting the later scripts down a slot, but the scheduler still steps to the next slot, so the script after it loses its turn that tick and its `wait` runs a tick long. | `SFCDoc::UpdateWorld` @004324e0, `RemoveFromRunningSchedulerAndDestroy` @0041a3e0 | 0d4dcf4 | code, lab |
 | 62 | Mute, and losing focus under `sndf fore`, stop the mixer's channels but leave each object's channel handle set; the next sound update takes the silent channel as a finished sound and clears it, so a `sndl` loop never comes back. | `ToggleMuteAndStopSounds` @004333b0, `Object::UpdateSound` @00426190 | c4cd30d | code |
+| 63 | A brain activity report is written into the caller's buffer, three bytes for each active neuron, with no limit, so a brain of more than about 1,365 active neurons writes past a kit's 4,096-byte buffer. | `CMacroHolder::DispatchFormatBrainActivityReport` @0x00419400 | 43359e8 | code |
 
 ### World, objects and vehicles
 
