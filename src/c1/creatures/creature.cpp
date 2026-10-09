@@ -1427,6 +1427,15 @@ void Creature::update_action_selection(
             }
             return;
         }
+        // LibreCreatures deviation.  UpdateActionSelection @0040c630 marks the
+        // involuntary action active before it looks for the script, and
+        // leaves the mark when there is none.  Ordinary selection below then
+        // runs once; if it also picks "stay", nothing calls SetAction to
+        // clear the mark, and every later update returns at the top as if an
+        // involuntary action were playing -- the creature ignores its brain
+        // until its attention changes.  No script means no involuntary
+        // action is playing.
+        active_involuntary_action_index_ = kNoActiveInvoluntaryAction;
     }
 
     brain::Lobe& decision_lobe = brain_->lobe(static_cast<std::uint32_t>(
