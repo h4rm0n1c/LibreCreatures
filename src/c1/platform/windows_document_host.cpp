@@ -587,8 +587,26 @@ BOOL C1WindowsDocument::OnOpenDocument(LPCTSTR path) {
         return FALSE;
     }
     bind_event_bar();
+    redraw_loaded_bubble_text();
     SetModifiedFlag(FALSE);
     return TRUE;
+}
+
+// A bubble's words are drawn into a per-entity overlay (not native; see
+// Bubble::set_text), which a world file does not hold: Bubble::Serialize
+// restores only the 25-byte text.  Draw each loaded bubble's text again, so
+// a bubble saved on screen comes back with its words.  The file format is
+// unchanged.
+void C1WindowsDocument::redraw_loaded_bubble_text() {
+    for (std::size_t index = 0; index < non_scenery_object_count(); ++index) {
+        auto* bubble = dynamic_cast<creatures1::objects::Bubble*>(
+            non_scenery_object_at(index));
+        if (bubble == nullptr || bubble->text_buffer[0] == '\0') {
+            continue;
+        }
+        const std::string text(bubble->text_buffer.data());
+        bubble->set_text(text, *this);
+    }
 }
 
 // The event bar reaches the world through this document (its click handler,
