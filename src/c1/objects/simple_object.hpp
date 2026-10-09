@@ -84,12 +84,14 @@ enum class InteractionEventFlag : std::uint8_t {
 // Gallery acquisition, Entity registration, and movement-bound recompute are
 // owner services. The constructor keeps the native object-assembly order
 // while leaving those registries and file/cache details outside SimpleObject.
-// Releases a SimpleObject's gallery when the object is destroyed.  It must
-// outlive every SimpleObject it is given to (the document does), and must not
-// throw if the world's gallery registry has already been cleared.
+// Stops a SimpleObject's continuous sound and releases its gallery when the
+// object is destroyed.  It must outlive every SimpleObject it is given to (the
+// document does), and must not throw if the world's gallery registry has
+// already been cleared.
 class SimpleObjectGalleryOwnerHost {
 public:
     virtual ~SimpleObjectGalleryOwnerHost() = default;
+    virtual void stop_continuous_sound(int sound_handle) = 0;
     virtual void release_simple_object_gallery(display::Gallery& gallery) = 0;
 };
 

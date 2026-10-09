@@ -104,6 +104,13 @@ SimpleObject::~SimpleObject() {
     // renderable-set, sound, gallery, and registry teardown. Resetting the
     // unique owner expresses that ordering without reproducing ABI wrappers.
     entity_.reset();
+    // Native ~Object stops a continuous sound before the gallery goes.  The
+    // port's Object base has no cleanup host here, so a deleted object's
+    // looping sound kept its channel until every channel was taken.
+    if (gallery_owner_ != nullptr && continuous_sound_handle() >= 0) {
+        gallery_owner_->stop_continuous_sound(continuous_sound_handle());
+        clear_continuous_sound_state();
+    }
     // Native ~SimpleObject @ 00426e30 releases the gallery.  The port never
     // did: shared galleries kept a stale count, and each protected gallery
     // (speech bubbles had one each) stayed pinned in the pixel cache until
