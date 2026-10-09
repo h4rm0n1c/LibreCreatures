@@ -1729,6 +1729,9 @@ private:
     // failure reason is already recorded for the report.
     std::string save_path_in_progress_;
     bool save_reason_recorded_ = false;
+    // The object the save walk's destroy step just freed; its slot is
+    // removed only while that object still holds it.
+    const creatures1::objects::Object* save_destroyed_object_ = nullptr;
     std::vector<std::size_t> hovered_rooms_;
     mutable int world_speed_ = 0;  // 0 until read from the registry
     bool motion_snapshot_valid_ = false;
