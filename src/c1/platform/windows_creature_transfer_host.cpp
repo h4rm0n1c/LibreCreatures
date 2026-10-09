@@ -1,5 +1,10 @@
 #include "windows_creature_transfer_host.hpp"
 
+#include "windows_error_dialog.hpp"
+
+#include <cstdio>
+#include <exception>
+
 namespace creatures1::platform {
 namespace {
 
@@ -17,9 +22,13 @@ public:
           host_(document, *archive_),
           creature_(document.selected_creature()) {}
 
+    // An archive never finished is abandoned without flushing; nothing may
+    // throw out of a destructor.
     ~MfcCreatureExportArchive() override {
-        archive_->Close();
-        file_->Close();
+        if (!finished_) {
+            archive_->Abort();
+            file_->Abort();
+        }
     }
 
     // Native holds the selected creature from the start of the export:
@@ -31,8 +40,26 @@ public:
         }
         // The archive identifies a Creature record by the Skeleton the
         // registry holds, not by the Creature itself.
-        host_.dynamic_objects().write_object_reference(&creature->skeleton(),
-                                                       "Creature");
+        guarded([&] {
+            host_.dynamic_objects().write_object_reference(
+                &creature->skeleton(), "Creature");
+        });
+    }
+
+    bool finish() override {
+        if (finished_) {
+            return !failed_;
+        }
+        guarded([&] {
+            archive_->Close();
+            file_->Close();
+        });
+        if (failed_) {
+            archive_->Abort();
+            file_->Abort();
+        }
+        finished_ = true;
+        return !failed_;
     }
 
     void write_genome(creatures1::creatures::GenomeFilenameId source_filename,
@@ -45,10 +72,31 @@ public:
         // filename, sex, life stage, payload).
         creatures1::creatures::Genome genome(source_filename, sex, life_stage,
                                              &document_.genome_files());
-        host_.dynamic_objects().write_object_reference(&genome, "CGenome");
+        guarded([&] {
+            host_.dynamic_objects().write_object_reference(&genome, "CGenome");
+        });
     }
 
 private:
+    // A write after a failure is skipped; a failure (an MFC file or archive
+    // exception, or one of our serializer's) is recorded, not thrown.
+    template <typename Write>
+    void guarded(Write&& write) {
+        if (failed_) {
+            return;
+        }
+        try {
+            write();
+        } catch (CException* exception) {
+            exception->Delete();
+            failed_ = true;
+        } catch (const std::exception&) {
+            failed_ = true;
+        }
+    }
+
+    bool failed_ = false;
+    bool finished_ = false;
     C1WindowsDocument& document_;
     std::unique_ptr<CFile> file_;
     std::unique_ptr<CArchive> archive_;
@@ -143,6 +191,31 @@ void WindowsCreatureExportHost::restore_selected_creature_runtime_state() {
         document_.delete_creature(*exported_);
         exported_ = nullptr;
     }
+}
+
+void WindowsCreatureExportHost::keep_creature_after_failed_export(
+    std::string_view output_path) {
+    // Not native.  The creature was taken out of the world for writing
+    // (RemoveFromWorld) but is still in the registry: rebuilding the
+    // selection takes it back, and it is selected, counted and announced to
+    // the kits again as an imported creature is.  What it held stays let go.
+    creatures1::creatures::Creature* creature = exported_;
+    exported_ = nullptr;
+    const std::string path(output_path);
+    std::remove(path.c_str());
+    if (creature != nullptr) {
+        document_.rebuild_creature_selection_menu();
+        document_.increment_living_norn_score();
+        creatures1::application::apply_selected_creature(document_, creature,
+                                                          true);
+        document_.publish_periodic_score_to_embedded_control({});
+    }
+    show_error_report(AfxGetMainWnd(), "Creatures",
+                      "The creature could not be exported, so it stays in the "
+                      "world.",
+                      "The file " + path + " could not be written completely "
+                      "and has been removed. Check that the disk has room and "
+                      "that the folder can be written to.");
 }
 
 void WindowsCreatureExportHost::log_child_genome_export() {

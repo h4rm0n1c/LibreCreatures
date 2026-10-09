@@ -477,6 +477,17 @@ void export_current_creature(CreatureExportHost& host) {
         }
     }
 
+    // LibreCreatures deviation.  OnExportCurrentCreature @00431d20 deletes
+    // the creature (slot 16) and only then lets ~CArchive flush and close
+    // the file, and a write that throws leaves it removed from the world
+    // but not deleted.  A full disk lost the norn either way.  Finish the
+    // file first; delete the creature only when it was written.
+    if (!archive->finish()) {
+        archive.reset();
+        host.keep_creature_after_failed_export(output_path);
+        return;
+    }
+    archive.reset();
     host.restore_selected_creature_runtime_state();
 }
 

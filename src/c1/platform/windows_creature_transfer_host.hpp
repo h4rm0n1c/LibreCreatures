@@ -26,6 +26,7 @@ public:
     begin_export_archive(std::string_view output_path) override;
     void clear_selected_creature_references() override;
     void restore_selected_creature_runtime_state() override;
+    void keep_creature_after_failed_export(std::string_view output_path) override;
     void log_child_genome_export() override;
 
 private:
