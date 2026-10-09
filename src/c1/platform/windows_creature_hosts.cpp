@@ -820,6 +820,39 @@ int WindowsBacteriumServiceHost::smoothed_idle_cycle_index() const {
                : g_active_app_state->idle_cadence.smoothed_idle_cycle;
 }
 
+std::size_t WindowsBacteriumUpdateHost::creature_count() const {
+    return document_.creature_count();
+}
+
+creatures1::creatures::Creature* WindowsBacteriumUpdateHost::creature_at(
+    std::size_t index) const {
+    return static_cast<creatures1::creatures::Creature*>(
+        document_.creature_at(index));
+}
+
+bool WindowsBacteriumUpdateHost::can_perceive(
+    const creatures1::creatures::Creature& owner,
+    const creatures1::creatures::Creature& target) const {
+    // CanPerceiveObject takes the target as an Object: a creature's Object
+    // is its Skeleton.
+    return owner.can_perceive(target.skeleton(), perception_);
+}
+
+creatures1::creatures::Bacterium& WindowsBacteriumUpdateHost::bacterium_of(
+    creatures1::creatures::Creature& creature) {
+    return creature.bacterium();
+}
+
+creatures1::creatures::Bacterium&
+WindowsBacteriumUpdateHost::environment_bacterium(std::size_t index) {
+    return document_.world_runtime()->map_data().bacterium_at(index);
+}
+
+creatures1::creatures::BacteriumRandomSource&
+WindowsBacteriumUpdateHost::random_source() {
+    return random_;
+}
+
 std::uint32_t WindowsBacteriumServiceHost::next_random() {
     return static_cast<std::uint32_t>(std::rand());
 }
