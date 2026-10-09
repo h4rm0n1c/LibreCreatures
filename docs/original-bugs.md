@@ -20,8 +20,10 @@ When a commit fixes a defect of the original game:
 
 1. Mark the change in the source with a `LibreCreatures deviation`
    comment that names the native function and address.
-2. Add a row to the correct table below in the same commit, with the
-   commit hash. Add later commits for the same defect to the same row.
+2. Add a row to the correct table below, with the fix's commit hash,
+   in the commit straight after the fix (a commit cannot name its own
+   hash). A new row takes the next free number; numbers do not
+   change. Add later commits for the same defect to the same row.
 3. If the defect was in our translation and not in the original, do not
    add it here.
 
@@ -64,6 +66,8 @@ files.
 | 15 | With a zero gestation chemical, the status report repeats the previous field as the pregnancy stage. | creature status report | 71431ba | code |
 | 16 | If a creature's generated body sprite file is missing, the creature stays invisible for ever. | `Skeleton` sprite check on world open | b1f6c2d | code, lab |
 | 17 | `stm# tact` sends the stimulus to every creature in the world when one creature touches the source. | `QueueTactStimulusForOverlappingCreatures` @00423470 | c5a6a2d | code, lab |
+| 37 | Heard speech is split into words in the shared buffer, and the spaces are not put back, so after the first listener every creature hears only the first word: "push food" becomes "push". | `ProcessHeardWords` @0040a630 | 3fc38cf | code |
+| 38 | Two creatures with the same unknown (0) mother or father are taken as siblings. | `UpdatePerception` @0040bf10 | 3fc38cf | code |
 
 ### Scripts
 
