@@ -1274,14 +1274,20 @@ void Creature::update_attention(CreatureAttentionHost& host) {
             }
         }
 
+        // LibreCreatures deviation.  UpdateAttention @0040bbc0 delivers a
+        // deferred command verb only when the new attention target is an
+        // object, so a command for attention category 0 -- "rest", which
+        // waits for attention to clear -- was dropped when it did clear.
+        // No target counts as category 0, as ApplyGoalDirection counts it.
         const std::int32_t pending_attention_index =
             goal_direction_state_.attention_record_index;
         if (pending_attention_index != -1 &&
-            goal_direction_state_.delivery_countdown != 0 &&
-            skeleton_.motion_link != nullptr) {
+            goal_direction_state_.delivery_countdown != 0) {
             const std::uint32_t target_attention_index =
-                get_attention_record_index(host.classify_object(
-                    *skeleton_.motion_link));
+                skeleton_.motion_link == nullptr
+                    ? 0u
+                    : get_attention_record_index(host.classify_object(
+                          *skeleton_.motion_link));
             if (static_cast<std::int32_t>(target_attention_index) ==
                 pending_attention_index) {
                 brain::Lobe& verb_lobe = brain_->lobe(static_cast<std::uint32_t>(
