@@ -1372,6 +1372,12 @@ public:
 
 extern std::vector<Macro*> g_running_macros;
 
+// The slot the world scheduler runs next.  Every removal from
+// g_running_macros that shifts that slot down moves this down with it, so a
+// script ending (or a script removing another one) does not make the
+// scheduler pass over its neighbour.  0 outside the scheduler loop.
+extern std::size_t g_running_macro_scheduler_next;
+
 // SFCDoc::DeleteContents removes and destroys every scheduler-owned macro
 // before script definitions are reset. The scheduler list is the owner for
 // this lifecycle operation; callers must not merely clear the pointer vector.

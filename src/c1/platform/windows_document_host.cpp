@@ -2523,7 +2523,7 @@ void C1WindowsDocument::update_selected_creature_follow_viewport() {
 }
 
 
-void C1WindowsDocument::execute_running_macro(std::size_t index) {
+std::size_t C1WindowsDocument::execute_running_macro(std::size_t index) {
     // SFCDoc::UpdateWorld @ 00432770 walks g_running_macro_slots and calls
     // Macro::ExecuteInterpreter on each one, re-reading the count every
     // iteration so a macro that removes itself is handled.  Until this was
@@ -2532,13 +2532,15 @@ void C1WindowsDocument::execute_running_macro(std::size_t index) {
     // whenever a command yields (for example `wait` or `over`), and
     // nothing ever resumed it. Conditional branch skips do not yield.
     if (index >= creatures1::scripting::g_running_macros.size()) {
-        return;
+        return index + 1;
     }
     creatures1::scripting::Macro* macro =
         creatures1::scripting::g_running_macros[index];
     if (macro == nullptr) {
-        return;
+        return index + 1;
     }
+    // Removals during the turn move the next slot down with the list.
+    creatures1::scripting::g_running_macro_scheduler_next = index + 1;
     WindowsMacroHost host(*this);
     // Read before the turn: the Macro may end and delete itself during it.
     creatures1::objects::Object* const owner =
@@ -2549,6 +2551,10 @@ void C1WindowsDocument::execute_running_macro(std::size_t index) {
     // had its turn.
     WindowsScriptExecutionHost scripts(*this, host);
     creatures1::scripting::apply_deferred_script_events(owner, scripts);
+    const std::size_t next =
+        creatures1::scripting::g_running_macro_scheduler_next;
+    creatures1::scripting::g_running_macro_scheduler_next = 0;
+    return next;
 }
 
 std::uint32_t C1WindowsDocument::creature_update_cohort() const {

@@ -15,6 +15,22 @@
 namespace creatures1::scripting {
 
 std::vector<Macro*> g_running_macros;
+std::size_t g_running_macro_scheduler_next = 0;
+
+namespace {
+
+// Remove one scheduler slot.  A slot before the scheduler's next one shifts
+// that one down, so the scheduler's next slot moves down with it.
+void erase_running_macro_slot(std::vector<Macro*>::iterator slot) {
+    const std::size_t index =
+        static_cast<std::size_t>(slot - g_running_macros.begin());
+    g_running_macros.erase(slot);
+    if (index < g_running_macro_scheduler_next) {
+        --g_running_macro_scheduler_next;
+    }
+}
+
+} // namespace
 
 void clear_running_macros() {
     while (!g_running_macros.empty()) {
@@ -69,7 +85,7 @@ void purge_destroy_when_finished_macros_for_owner(
 
         // Remove the slot before destruction. Macro destruction can observe
         // the registry, so the live list must already exclude this object.
-        g_running_macros.erase(g_running_macros.begin() + index);
+        erase_running_macro_slot(g_running_macros.begin() + index);
         // A creature that dies inside its own script purges the Macro still
         // executing that command; deleting it here left the interpreter
         // running on freed memory.  Mark it and let the interpreter delete it
@@ -218,7 +234,7 @@ void Macro::remove_from_running_scheduler_and_release() {
     const auto it = std::find(g_running_macros.begin(), g_running_macros.end(),
                               this);
     if (it != g_running_macros.end()) {
-        g_running_macros.erase(it);
+        erase_running_macro_slot(it);
     }
     if (!capture_output_enabled || destroy_when_finished) {
         destroy_when_finished = true;
@@ -230,7 +246,7 @@ void Macro::remove_from_running_scheduler_and_destroy() {
     const auto it = std::find(g_running_macros.begin(), g_running_macros.end(),
                               this);
     if (it != g_running_macros.end()) {
-        g_running_macros.erase(it);
+        erase_running_macro_slot(it);
     }
     if (destroy_when_finished) {
         delete this;

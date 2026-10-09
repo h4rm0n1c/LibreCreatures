@@ -275,7 +275,8 @@ public:
 
     virtual void update_selected_creature_follow_viewport() = 0;
     virtual std::size_t running_macro_count() const = 0;
-    virtual void execute_running_macro(std::size_t index) = 0;
+    // Runs the macro in slot `index` and returns the slot to run next.
+    virtual std::size_t execute_running_macro(std::size_t index) = 0;
 
     virtual std::size_t creature_count() const = 0;
     virtual std::uint32_t creature_update_cohort() const = 0;
