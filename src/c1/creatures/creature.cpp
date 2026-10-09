@@ -3332,19 +3332,34 @@ std::string Creature::format_status_for_external_query(
     }
     field(sickness);
 
-    // The room is the FIRST whose horizontal span contains the down foot; the
-    // native's second test compares the distance to that room's bottom edge
-    // against the distance to 9999, which admits any sane foot position.
+    // FormatStatusForExternalQuery @0040e520 (0040e8f0..0040e918) takes the
+    // FIRST room whose horizontal span contains the down foot; its second
+    // test compares the distance to that room's bottom edge against the
+    // distance to 9999, which only passes over rooms with no floor.
+    // LibreCreatures deviation: it never tests height, so where rooms are
+    // stacked it named the upper one -- a norn on room 1's floor at
+    // (1339, 787) was reported in room 0.  Take the room the foot is in
+    // (top < y <= floor: a norn on a floor is in the room above it), and
+    // keep the native choice only when no room holds the foot.
     const int foot_x = skeleton_.down_foot_x;
     const int foot_y = skeleton_.down_foot_y;
     int room_index = -1;
+    int native_room_index = -1;
     for (std::size_t index = 0; index < rooms.room_count; ++index) {
         const world::MapRoom& room = rooms.rooms[index];
         if (room.bounds.left <= foot_x && foot_x <= room.bounds.right &&
             std::abs(foot_y - room.bounds.bottom) < std::abs(foot_y - 9999)) {
-            room_index = static_cast<int>(index);
-            break;
+            if (native_room_index == -1) {
+                native_room_index = static_cast<int>(index);
+            }
+            if (room.bounds.top < foot_y && foot_y <= room.bounds.bottom) {
+                room_index = static_cast<int>(index);
+                break;
+            }
         }
+    }
+    if (room_index == -1) {
+        room_index = native_room_index;
     }
     field(std::to_string(room_index));
     field(std::to_string(foot_x));
