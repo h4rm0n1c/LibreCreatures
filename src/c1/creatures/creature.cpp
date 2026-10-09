@@ -832,6 +832,10 @@ void Creature::speak_dominant_drive_phrase(
         case 7:
         case 8: {
             append_response(dominant_drive_index == 7 ? 4 : 5);
+            // LibreCreatures deviation: SpeakDominantDrivePhrase @0040b160
+            // joins the verb and the creature's own kind with no space, so a
+            // lonely norn said "comeNorn" and a crowded one "runNorn".
+            append_space();
             const objects::Object& creature_object =
                 phrase_host.object_for_creature(*this);
             const std::int32_t attention_index =
