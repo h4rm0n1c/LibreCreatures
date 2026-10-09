@@ -105,11 +105,15 @@ void Bacterium::update(Creature& owner, BacteriumUpdateHost& host) {
         return;
     }
 
-    // The executable shifts the four output bytes of each environmental
-    // bacterium, not the complete twelve-byte native records.
+    // CBacterium::Update @ 0x00401d80 shifts bytes +4..+0xb of each 12-byte
+    // record down a slot -- the activity state, input chemical, both
+    // thresholds and the four outputs, everything but the vtable pointer.
+    // (The decompiler shows them as output_chemical_ids[-4..3].)  An earlier
+    // port moved the outputs alone, so a strain's toxins travelled through
+    // the pool and its antigen and thresholds stayed behind.
     for (std::size_t index = 0; index < 99; ++index) {
-        host.environment_bacterium(index).output_chemical_ids() =
-            host.environment_bacterium(index + 1).output_chemical_ids();
+        host.environment_bacterium(index) =
+            host.environment_bacterium(index + 1);
     }
     replicate_and_mutate(host.environment_bacterium(99),
                          host.random_source());
