@@ -140,7 +140,7 @@ void normalize_learned_word_response(
                     substitution.replacement_fragment,
                     replacement_size);
         std::memcpy(normalized + prefix_size + replacement_size,
-                    suffix + source_size,
+                    suffix,
                     suffix_size + 1);
         copy_record_text(record.response_word, normalized, text_api);
         return;
