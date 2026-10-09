@@ -387,10 +387,13 @@ void infect_selected_creature_with_random_bacterium(
     if (selected != nullptr &&
         selected->bacterium().activity_state() <
             creatures1::creatures::BacteriumActivityState::active) {
+        // InfectSelectedCreatureWithRandomBacterium @ 0x004348c0 replicates a
+        // random pool strain INTO the selected creature.  The port had the
+        // two the other way round: the norn stayed uninfected and its own
+        // strain overwrote a pool slot.
         constexpr std::size_t kWorldBacteriumCount = 100;
-        selected->bacterium().replicate_and_mutate(
-            host.world_bacterium_at(random_value % kWorldBacteriumCount),
-            random);
+        host.world_bacterium_at(random_value % kWorldBacteriumCount)
+            .replicate_and_mutate(selected->bacterium(), random);
     }
     if (host.debug_console_visible()) {
         host.log_infection();
