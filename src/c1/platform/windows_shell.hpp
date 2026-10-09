@@ -1123,6 +1123,10 @@ public:
     void mark_world_update_timer_running() override;
     std::int32_t object_sound_channel(std::size_t index) const override;
     void release_object_sound_channel(std::size_t index) override;
+    // Drops every object's channel and keeps a persistent sound to restart,
+    // as the pause sweep does.  Call before the mixer's channels are stopped
+    // by a mute or a focus suspend.
+    void release_all_object_sound_channels();
     bool sound_mixer_is_suspended() const override;
     void clear_sound_channel_active(std::size_t channel) override;
     void stop_sound_channel(std::size_t channel) override;

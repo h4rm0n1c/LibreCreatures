@@ -62,6 +62,7 @@ void C1NativeMuteControl::set_mute_enabled(bool enabled) {
 }
 
 void C1NativeMuteControl::stop_all_sounds() {
+    document_.release_all_object_sound_channels();
     if (g_active_sound_manager != nullptr) {
         g_active_sound_manager->stop_all_sounds();
     }

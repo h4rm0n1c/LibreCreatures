@@ -244,6 +244,10 @@ void C1WindowsView::restore_sound_mixer() {
 
 
 void C1WindowsView::suspend_sound_mixer() {
+    if (document() != nullptr && g_active_sound_manager != nullptr &&
+        !g_active_sound_manager->mixer_suspended()) {
+        document()->release_all_object_sound_channels();
+    }
     if (g_active_sound_manager != nullptr) {
         g_active_sound_manager->suspend_mixer();
     }
