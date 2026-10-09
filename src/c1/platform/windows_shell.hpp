@@ -733,6 +733,8 @@ public:
 
     void refresh_event_bar_object_display_panes() override;
     void bind_event_bar();
+    // Draws the text of every bubble a world was saved with (see .cpp).
+    void redraw_loaded_bubble_text();
 
     void update_event_bar_status_panes() override;
 
