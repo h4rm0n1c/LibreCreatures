@@ -11,6 +11,7 @@
 
 #include "../application/sfc_ole.hpp"
 #include "../brain/lobe.hpp"
+#include "../objects/vehicle.hpp"
 #include "../common/logging.hpp"
 #include "../scripting/classifier_scripts.hpp"
 
@@ -1929,14 +1930,33 @@ void WindowsGeneratedCreatureHost::set_edit_object(
 
 // --- MacroObjectMotionHost --------------------------------------------------
 
+namespace {
+
+// LibreCreatures deviation.  A Vehicle integrates its own 8.8 position each
+// tick, and the native resynchronises it from the drawn position only when
+// an activate event starts it (Vehicle::HandleQueuedEvent1/2 @ 0x0042c170)
+// or a drop places it.  `mvto`, `mvby` and `mcrt` move only the drawn parts,
+// so a moving vehicle -- or one a script then restarts with `setv xvec` --
+// went straight back to where it had been.  A script move resynchronises it.
+void resynchronize_moved_vehicle(creatures1::objects::Object& object) {
+    if (auto* vehicle = dynamic_cast<creatures1::objects::Vehicle*>(&object)) {
+        vehicle->position_x_8_8 = vehicle->sound_source_x() << 8;
+        vehicle->position_y_8_8 = vehicle->sound_source_y() << 8;
+    }
+}
+
+} // namespace
+
 void WindowsMacroHost::move_to_and_redraw(creatures1::objects::Object& object,
                                           int world_x, int world_y) {
     document_.move_to_and_redraw(object, world_x, world_y);
+    resynchronize_moved_vehicle(object);
 }
 
 void WindowsMacroHost::move_by_and_redraw(creatures1::objects::Object& object,
                                           int delta_x, int delta_y) {
     document_.move_by_and_redraw(object, delta_x, delta_y);
+    resynchronize_moved_vehicle(object);
 }
 
 void WindowsMacroHost::set_motion_target_part_index(
