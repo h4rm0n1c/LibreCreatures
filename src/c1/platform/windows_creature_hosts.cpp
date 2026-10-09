@@ -261,6 +261,16 @@ WindowsCreatureEnvironmentHost::sample_at(int world_x, int world_y) const {
         creatures1::world::get_ambient_temperature_at_point(
             rooms, map.ambient_environment_index_value(), ambient, world_x,
             world_y, document_);
+    // Creature::UpdateEnvironmentAndLifeStage @ 0x0040c8d0 sets the light
+    // signal from g_ambient_light_level_by_environment[map ambient index]
+    // -- the world's setting, not the room.  The port never filled it, so
+    // every creature sensed darkness (0) and light-driven emitters never
+    // fired.
+    const std::uint32_t environment = map.ambient_environment_index_value();
+    if (environment < creatures1::world::kAmbientLightProfiles.size()) {
+        sample.ambient_light_level =
+            creatures1::world::kAmbientLightProfiles[environment].light_level;
+    }
     return sample;
 }
 
