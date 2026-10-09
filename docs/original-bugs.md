@@ -70,6 +70,8 @@ files.
 | 38 | Two creatures with the same unknown (0) mother or father are taken as siblings. | `UpdatePerception` @0040bf10 | 3fc38cf | code |
 | 39 | A second space, or a trailing space, in heard speech makes an empty word, which is learnt as the attended object's name and weakens or erases the real one. | `ProcessHeardWords` @0040a630 | a0c2773 | code |
 | 40 | A command whose noun is not the attended object waits for attention to move to it, but is delivered only when the new target is an object, so "rest" (category 0, no object) is lost when attention clears. | `UpdateAttention` @0040bbc0 | 9357a5f | code |
+| 42 | A mutated bacterium's output chemical loses the -0x18 offset new bacteria use, so it becomes chemical 0-3 (nothing, pain, need for pleasure, hunger) instead of a disease chemical 232-235 (histamine A or B, sleep toxin, fever toxin). | `ReplicateAndMutate` @00401c70 | 41dbe9a | code |
+| 43 | The creature status report names the first room spanning the norn's x that has a floor, so where rooms are stacked it reports the upper room. | `FormatStatusForExternalQuery` @0040e520 | 41dbe9a | code, lab |
 
 ### Scripts
 
