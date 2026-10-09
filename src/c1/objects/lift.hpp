@@ -46,6 +46,13 @@ public:
 
     void serialize(ObjectArchive& archive);
 
+    // LibreCreatures deviation: the native Lift has no ReferencesObject or
+    // ClearReferencesToObject of its own, so a call button deleted with a
+    // call pending left its slot pointing at freed memory, which the next
+    // call selection read.  A pending call is a reference.
+    bool references_object(Object* candidate) const override;
+    void clear_references_to(Object* candidate) override;
+
     void initialize_state(LiftRuntimeHost& host);
     void update_bounds_and_queue_redraw(LiftRuntimeHost& host);
     void tick(LiftRuntimeHost& host);

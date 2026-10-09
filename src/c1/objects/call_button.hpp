@@ -55,6 +55,13 @@ public:
     // the lift's runtime host, which cannot reach the protected setter.
     void deactivate(ObjectScriptDispatchHost& scripts);
 
+    // LibreCreatures deviation: the native CallButton keeps its lift pointer
+    // when the lift is deleted and dereferences it unconditionally.  The
+    // lift is a reference, cleared with it; a button with no lift does
+    // nothing when pressed or placed.
+    bool references_object(Object* candidate) const override;
+    void clear_references_to(Object* candidate) override;
+
     Lift* lift() const { return lift_; }
     void set_lift(Lift* lift) { lift_ = lift; }
 

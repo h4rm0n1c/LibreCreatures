@@ -61,15 +61,35 @@ void queue_lift_stimulus(CallButton& button, const Object& source,
 
 } // namespace
 
+bool CallButton::references_object(Object* candidate) const {
+    return (lift_ != nullptr && candidate == lift_) ||
+           SimpleObject::references_object(candidate);
+}
+
+void CallButton::clear_references_to(Object* candidate) {
+    if (lift_ != nullptr && candidate == lift_) {
+        lift_ = nullptr;
+    }
+    SimpleObject::clear_references_to(candidate);
+}
+
 void CallButton::update_lift_state_and_queue_redraw(
     CallButtonRuntimeHost& host) {
-    Lift& lift = *lift_;
-
-    if (floor_index == 0xff) {
-        const int button_x = sound_source_x();
-        const int button_y = sound_source_y();
-        const int button_room =
-            find_room_containing_point(host, button_x, button_y);
+    // LibreCreatures deviation: CallButton::UpdateLiftStateAndQueueRedraw
+    // @00429a70 writes the lift's floor table at floor_count unchecked, so a
+    // ninth button on one lift wrote past its eight floors, and a button in
+    // no room indexed the room table with -1.  Such a button stays
+    // unregistered (floor 0xff), and request_lift_call ignores it.
+    const int button_room =
+        lift_ == nullptr || floor_index != 0xff
+            ? -1
+            : find_room_containing_point(host, sound_source_x(),
+                                         sound_source_y());
+    if (lift_ != nullptr && floor_index == 0xff && button_room >= 0 &&
+        lift_->floor_count >= 0 &&
+        static_cast<std::size_t>(lift_->floor_count) <
+            Lift::kCallButtonCapacity) {
+        Lift& lift = *lift_;
         lift.floor_y_by_index[static_cast<std::size_t>(lift.floor_count)] =
             host.room_bottom(static_cast<std::size_t>(button_room));
 
@@ -98,6 +118,9 @@ void CallButton::deactivate(ObjectScriptDispatchHost& scripts) {
 
 void CallButton::request_lift_call(const QueuedObjectEvent& event,
                                    CallButtonRuntimeHost& host) {
+    if (lift_ == nullptr || floor_index == 0xff) {
+        return;
+    }
     Lift& lift = *lift_;
     Object* source = event.source;
 
