@@ -32,6 +32,9 @@ same path.
 10. [neorender](neorender.md) is the branch work on true-colour art, zoom,
     SDL3 rendering and the fixed-step world loop.
 
+[Bugs in the original game](original-bugs.md) lists the defects of
+Creatures 1 and its kits that LibreCreatures fixes.
+
 For build prerequisites, packaging, and supplying game data, see
 [Building and packaging](building.md).
 
