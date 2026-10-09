@@ -266,8 +266,13 @@ void WindowsCreatureDeserializationHost::ensure_unique_primary_genome_filename(
 void WindowsCreatureDeserializationHost::ensure_unique_child_genome_filename(
     creatures1::creatures::Genome& genome,
     const creatures1::creatures::Creature& current_creature) {
-    // The child scan has its own native loop and deliberately does not
-    // inherit the primary scan's exclusion.
+    // Creature::Deserialize @ 0x0040dda0 counts every creature whose OWN
+    // genome has the child genome's name (no self-exclusion) and every
+    // family-4 world object -- an egg -- with it; eggs are creatures in this
+    // registry, so one loop covers both.  The port compared the other
+    // creatures' child genomes instead, the mother's own included, so every
+    // pregnant import renamed its child and a clash with a living creature
+    // or egg went unseen.
     static_cast<void>(current_creature);
     for (std::size_t index = 0; index < document_.creature_count(); ++index) {
         const auto* other = dynamic_cast<const creatures1::creatures::Creature*>(
@@ -275,7 +280,7 @@ void WindowsCreatureDeserializationHost::ensure_unique_child_genome_filename(
         if (other == nullptr) {
             continue;
         }
-        if (other->child_genome_source_filename() ==
+        if (other->skeleton().genome_source_filename ==
             genome.source_filename()) {
             genome.set_source_filename(0);
             creatures1::creatures::generate_unique_genome_filename(

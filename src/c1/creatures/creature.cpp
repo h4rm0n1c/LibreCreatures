@@ -4122,6 +4122,10 @@ void Creature::deserialize(CreatureArchive& archive,
         auto child_genome = host.read_genome_reference(archive);
         if (child_genome != nullptr) {
             host.ensure_unique_child_genome_filename(*child_genome, *this);
+            // The native stores the resolved name back on the mother
+            // (child_genome_source_filename = genome->source_filename), so
+            // the egg she lays and BABY use the file just saved.
+            child_genome_source_filename_ = child_genome->source_filename();
             host.save_generated_genome(*child_genome);
             child_genome.reset();
         }
