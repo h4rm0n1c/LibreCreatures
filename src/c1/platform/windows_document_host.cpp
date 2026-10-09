@@ -5518,14 +5518,24 @@ void* C1WindowsDocument::ArchiveHost::create_object(std::string_view name, std::
             std::make_unique<creatures1::objects::Scenery>());
     } else if (name == "CallButton") {
         object = std::make_unique<creatures1::objects::CallButton>();
-    } else if (name == "Lift") {
-        object = std::make_unique<creatures1::objects::Lift>();
-    } else if (name == "Vehicle") {
-        object = std::make_unique<creatures1::objects::Vehicle>();
-    } else if (name == "Blackboard") {
-        object = std::make_unique<creatures1::brain::Blackboard>();
-    } else if (name == "CompoundObject") {
-        object = std::make_unique<creatures1::objects::CompoundObject>();
+    } else if (name == "Lift" || name == "Vehicle" || name == "Blackboard" ||
+               name == "CompoundObject") {
+        std::unique_ptr<creatures1::objects::CompoundObject> compound;
+        if (name == "Lift") {
+            compound = std::make_unique<creatures1::objects::Lift>();
+        } else if (name == "Vehicle") {
+            compound = std::make_unique<creatures1::objects::Vehicle>();
+        } else if (name == "Blackboard") {
+            compound = std::make_unique<creatures1::brain::Blackboard>();
+        } else {
+            compound = std::make_unique<creatures1::objects::CompoundObject>();
+        }
+        // As for a new object (WindowsNewObjectHost::create_compound_object):
+        // without the host, ~CompoundObject skips releasing its gallery and
+        // stopping its sound, so a loaded object deleted later kept its
+        // gallery reference.
+        compound->set_lifetime_host(&document_);
+        object = std::move(compound);
     } else if (name == "SimpleObject") {
         auto simple = std::make_unique<creatures1::objects::SimpleObject>();
         simple->set_gallery_owner(&document_);
