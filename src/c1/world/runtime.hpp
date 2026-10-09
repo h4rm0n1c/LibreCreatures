@@ -12,6 +12,9 @@
 #include <cstddef>
 #include <memory>
 #include <vector>
+#include <utility>
+#include <optional>
+#include <deque>
 
 namespace creatures1::world {
 
@@ -42,6 +45,12 @@ public:
 
     void add_object(objects::Object* object) override;
     std::size_t object_count() const override { return objects_.size(); }
+    // Counts registry removals; a position saved at serial `since` is moved
+    // back once for each removal at or before it since then.  Nullopt when
+    // the log no longer reaches back that far.
+    std::uint32_t object_removal_serial() const { return object_removal_serial_; }
+    std::optional<std::int64_t> object_index_after_removals(
+        std::int64_t index, std::uint32_t since) const;
     objects::Object* object_at(std::size_t index) const override;
     void remove_object_at(std::size_t index) override;
     void report_invalid_object_index() const;
@@ -124,6 +133,12 @@ private:
     MapData map_data_{};
     std::vector<objects::Entity*> entities_;
     std::vector<objects::Object*> objects_;
+    // Every removal from objects_, newest last, so a CAOS `enum` paused at
+    // a registry position can be moved back past entries removed under it.
+    std::deque<std::pair<std::uint32_t, std::size_t>> object_removals_;
+    std::uint32_t object_removal_serial_ = 0;
+    void erase_object_entry(std::size_t index);
+    void erase_object_entry(objects::Object& object);
     std::vector<objects::Object*> renderable_objects_;
     std::vector<creatures1::creatures::CreatureSelectionEntry*> creatures_;
     std::vector<std::unique_ptr<display::Gallery>> galleries_;

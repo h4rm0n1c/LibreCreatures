@@ -547,6 +547,20 @@ std::size_t WindowsMacroHost::non_scenery_object_count() const {
     return document_.non_scenery_object_count();
 }
 
+std::uint32_t WindowsMacroHost::non_scenery_removal_serial() const {
+    const creatures1::world::WorldRuntime* runtime = document_.world_runtime();
+    return runtime == nullptr ? 0 : runtime->object_removal_serial();
+}
+
+std::optional<std::int64_t> WindowsMacroHost::non_scenery_index_after_removals(
+    std::int64_t index, std::uint32_t since) const {
+    const creatures1::world::WorldRuntime* runtime = document_.world_runtime();
+    if (runtime == nullptr) {
+        return index;
+    }
+    return runtime->object_index_after_removals(index, since);
+}
+
 creatures1::objects::Object* WindowsMacroHost::non_scenery_object_at(
     std::size_t index) const {
     return document_.non_scenery_object_at(index);

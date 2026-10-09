@@ -44,7 +44,40 @@ void WorldRuntime::remove_object_at(std::size_t index) {
     if (index >= objects_.size()) {
         report_invalid_object_index();
     }
+    erase_object_entry(index);
+}
+
+void WorldRuntime::erase_object_entry(std::size_t index) {
+    constexpr std::size_t kRemovalLogLimit = 1024;
     objects_.erase(objects_.begin() + static_cast<std::ptrdiff_t>(index));
+    object_removals_.emplace_back(++object_removal_serial_, index);
+    if (object_removals_.size() > kRemovalLogLimit) {
+        object_removals_.pop_front();
+    }
+}
+
+void WorldRuntime::erase_object_entry(objects::Object& object) {
+    const auto found = std::find(objects_.begin(), objects_.end(), &object);
+    if (found != objects_.end()) {
+        erase_object_entry(static_cast<std::size_t>(found - objects_.begin()));
+    }
+}
+
+std::optional<std::int64_t> WorldRuntime::object_index_after_removals(
+    std::int64_t index, std::uint32_t since) const {
+    if (object_removal_serial_ == since) {
+        return index;
+    }
+    if (object_removals_.empty() ||
+        object_removals_.front().first > since + 1) {
+        return std::nullopt;
+    }
+    for (const auto& [serial, removed] : object_removals_) {
+        if (serial > since && static_cast<std::int64_t>(removed) <= index) {
+            --index;
+        }
+    }
+    return index;
 }
 
 void WorldRuntime::report_invalid_object_index() const {
@@ -85,9 +118,7 @@ creatures1::creatures::Creature& WorldRuntime::adopt_creature(
             std::remove(creatures_.begin(), creatures_.end(),
                         static_cast<creatures1::creatures::CreatureSelectionEntry*>(raw)),
             creatures_.end());
-        objects_.erase(
-            std::remove(objects_.begin(), objects_.end(), object_identity),
-            objects_.end());
+        erase_object_entry(*object_identity);
         owned_creatures_.pop_back();
         throw;
     }
@@ -140,7 +171,7 @@ void WorldRuntime::destroy_first_non_scenery_object() {
         return;
     }
 
-    objects_.erase(objects_.begin());
+    erase_object_entry(0);
     remove_world_object(*target);
     erase(*target);
     owned_objects_.erase(owner);
@@ -276,8 +307,7 @@ void WorldRuntime::destroy_world_object(objects::Object& object) {
             return candidate.get() == &object;
         });
     if (object_owner != owned_objects_.end()) {
-        objects_.erase(std::remove(objects_.begin(), objects_.end(), &object),
-                       objects_.end());
+        erase_object_entry(object);
         erase(object);
         owned_objects_.erase(object_owner);
         return;
@@ -356,9 +386,7 @@ void WorldRuntime::destroy_owned_creature(
         std::remove(creatures_.begin(), creatures_.end(), &creature),
         creatures_.end());
     objects::Object& object_identity = creature.skeleton();
-    objects_.erase(
-        std::remove(objects_.begin(), objects_.end(), &object_identity),
-        objects_.end());
+    erase_object_entry(object_identity);
     if (remove_world_object_slot) {
         remove_world_object(object_identity);
     }
