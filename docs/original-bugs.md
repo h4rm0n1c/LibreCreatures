@@ -91,6 +91,7 @@ files.
 | 54 | An `enum` with no match skips to the first `next`, so with an `enum` nested in its body it resumes inside the body and its own `next` ends the script. | `ExecuteInterpreter` @0041dc40 (scan at 0041fbb8) | 1a04ab7 | code, lab |
 | 55 | The scans that skip an `enum` body or a `doif` branch read the raw script, so control words inside bracketed text count: `[next]` or `[else]` resumes inside the text, `[ending]` closes a `doif` early. | `ExecuteInterpreter` @0041dc40 | b6cee7d | code, lab |
 | 56 | `gsub` finds its `subr` label by scanning the raw script, so `subr <id>` inside bracketed text before the real label sends it to the wrong place, and its cache keeps that place. | `ExecuteInterpreter` @0041dc40 (scan at 0041e420) | dce8d60 | code, lab |
+| 61 | A script that ends is removed by shifting the later scripts down a slot, but the scheduler still steps to the next slot, so the script after it loses its turn that tick and its `wait` runs a tick long. | `SFCDoc::UpdateWorld` @004324e0, `RemoveFromRunningSchedulerAndDestroy` @0041a3e0 | 0d4dcf4 | code, lab |
 
 ### World, objects and vehicles
 
