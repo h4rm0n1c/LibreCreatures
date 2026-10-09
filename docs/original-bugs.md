@@ -72,6 +72,7 @@ files.
 | 40 | A command whose noun is not the attended object waits for attention to move to it, but is delivered only when the new target is an object, so "rest" (category 0, no object) is lost when attention clears. | `UpdateAttention` @0040bbc0 | 9357a5f | code |
 | 42 | A mutated bacterium's output chemical loses the -0x18 offset new bacteria use, so it becomes chemical 0-3 (nothing, pain, need for pleasure, hunger) instead of a disease chemical 232-235 (histamine A or B, sleep toxin, fever toxin). | `ReplicateAndMutate` @00401c70 | 41dbe9a | code |
 | 43 | The creature status report names the first room spanning the norn's x that has a floor, so where rooms are stacked it reports the upper room. | `FormatStatusForExternalQuery` @0040e520 | 41dbe9a | code, lab |
+| 44 | A bacterial threshold mutation adds its step into the byte before clamping, so a step past 255 or below 0 wraps: kill threshold 250 + 10 becomes 130, activation threshold 0 - 1 becomes 130. | `ReplicateAndMutate` @00401c70 | 0693c52 | code |
 
 ### Scripts
 
@@ -93,6 +94,7 @@ files.
 | 26 | Ocean Dome Sound (2 8 15) does not have the "creatures cannot see it" flag, so norns go into the dome to find a vendor (issue #10). | World.sfc, Eden.sfc | 57eeedc | data |
 | 27 | An object let go of in the upper half of a room jumps up onto the floor of the room above. | hand drop placement | 1a663b2 | code |
 | 41 | A lift arrives only when its cabin and the floor fall in the same band of whole-pixel speed, so a lift moving at a fractional speed (yvec 384) can step over its floor and never stop. Stock lifts (yvec 768) are not affected. | `Lift::Tick` @0042c4f0 | 8463856 | code, lab |
+| 45 | Call buttons queue lift calls in eight slots, but the lift only reads slots 0-3, so with more than four calls waiting the later ones are never answered. Stock lifts have fewer buttons. | `SelectNearestCallButtonAndStartMove` @0042c590, `RequestLiftCall` @00429c10 | 0693c52 | code |
 
 ### The hand and the interface
 
