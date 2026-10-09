@@ -143,7 +143,8 @@ void GeneticsPage::fill() {
     add_row(_T("Neurons"), number(neurons));
     if (have_genome) {
         long fewest = 0, most = 0;
-        c1kit::dendrite_range(summary.lobes, per_lobe, fewest, most);
+        c1kit::dendrite_range(c1kit::brain_wiring(genes, subject.sex == 1), per_lobe,
+                              fewest, most);
         add_row(_T("Dendrites (the genes allow)"),
                 fewest == most ? number(fewest) : number(fewest) + _T(" to ") + number(most));
     }
