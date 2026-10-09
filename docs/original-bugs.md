@@ -95,6 +95,8 @@ files.
 | 27 | An object let go of in the upper half of a room jumps up onto the floor of the room above. | hand drop placement | 1a663b2 | code |
 | 41 | A lift arrives only when its cabin and the floor fall in the same band of whole-pixel speed, so a lift moving at a fractional speed (yvec 384) can step over its floor and never stop. Stock lifts (yvec 768) are not affected. | `Lift::Tick` @0042c4f0 | 8463856 | code, lab |
 | 45 | Call buttons queue lift calls in eight slots, but the lift only reads slots 0-3, so with more than four calls waiting the later ones are never answered. Stock lifts have fewer buttons. | `SelectNearestCallButtonAndStartMove` @0042c590, `RequestLiftCall` @00429c10 | 0693c52 | code |
+| 46 | A lift and its call buttons hold pointers to each other but report neither as a reference, so a button deleted with a call pending (or freed at save) leaves the lift reading freed memory, and a button whose lift is deleted keeps using it. | Lift, CallButton (no ReferencesObject / ClearReferencesToObject; `~CallButton` @00423840, `~Lift` @0042c3a0) | 1fe2091 | code, lab |
+| 47 | Placing a call button writes the lift's eight-entry floor table at floor_count unchecked, so a ninth button writes past it, and a button in no room indexes the room table with -1. | `CallButton::UpdateLiftStateAndQueueRedraw` @00429a70 | 1fe2091 | code |
 
 ### The hand and the interface
 
