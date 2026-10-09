@@ -937,7 +937,9 @@ void Creature::process_heard_words(
             matching_slot = verb_slot;
             verb_slot = matching_slot;
         } else if (matching_slot >= 0) {
-            if (matching_slot >= 0x11 && matching_slot <= 0x36) {
+            // ProcessHeardWords @0040a79b: LEA EAX,[ESI-0x11]; CMP EAX,0x26;
+            // JA -- noun slots are 0x11..0x37, the 39 categories after hand.
+            if (matching_slot >= 0x11 && matching_slot <= 0x37) {
                 noun_slot = matching_slot;
             } else {
                 verb_slot = matching_slot;
@@ -961,7 +963,7 @@ void Creature::process_heard_words(
         }
 
         noun_slot = matching_slot >= 0 && matching_slot >= 0x11 &&
-                            matching_slot <= 0x36
+                            matching_slot <= 0x37
                         ? matching_slot
                         : noun_slot;
 
