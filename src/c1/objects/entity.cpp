@@ -162,12 +162,16 @@ void Entity::advance_image_sequence_for_moving_vehicle() {
         sequence_byte = (*image_sequence_)[image_sequence_cursor_];
     }
 
-    // The moving Vehicle path uses the executable's direct byte formula;
-    // unlike Entity::advance_image_sequence it does not map lowercase
-    // sequence bytes through the general animation convention.
+    // LibreCreatures deviation.  The native moving-Vehicle path (Vehicle::Tick
+    // @ 0x0042bd90) always subtracts '0', so a lowercase frame code -- 'a'
+    // for frame 10 -- picked frame 49 while moving and 10 while standing.
+    // Decode it as Entity::advance_image_sequence does.  No stock vehicle
+    // animates a lowercase frame while moving.
+    const int frame = static_cast<unsigned char>(sequence_byte) < 'a'
+                          ? static_cast<unsigned char>(sequence_byte) - '0'
+                          : static_cast<unsigned char>(sequence_byte) - 'W';
     current_image_index_ = static_cast<std::uint8_t>(
-        static_cast<int>(image_index_base_) - '0' +
-        static_cast<unsigned char>(sequence_byte));
+        static_cast<int>(image_index_base_) + frame);
     ++image_sequence_cursor_;
     normalize_current_image_index();
 }
