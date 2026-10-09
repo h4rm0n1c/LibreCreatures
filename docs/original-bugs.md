@@ -66,6 +66,7 @@ files.
 | 15 | With a zero gestation chemical, the status report repeats the previous field as the pregnancy stage. | creature status report | 71431ba | code |
 | 16 | If a creature's generated body sprite file is missing, the creature stays invisible for ever. | `Skeleton` sprite check on world open | b1f6c2d | code, lab |
 | 17 | `stm# tact` sends the stimulus to every creature in the world when one creature touches the source. | `QueueTactStimulusForOverlappingCreatures` @00423470 | c5a6a2d | code, lab |
+| 49 | An imported creature whose genome is renamed to avoid a clash keeps its gamete under the old name, so it breeds with whichever creature's genome now has that name. | `Creature::Deserialize` @0040dda0 | 81f4fc2 | code |
 | 37 | Heard speech is split into words in the shared buffer, and the spaces are not put back, so after the first listener every creature hears only the first word: "push food" becomes "push". | `ProcessHeardWords` @0040a630 | 3fc38cf | code |
 | 38 | Two creatures with the same unknown (0) mother or father are taken as siblings. | `UpdatePerception` @0040bf10 | 3fc38cf | code |
 | 39 | A second space, or a trailing space, in heard speech makes an empty word, which is learnt as the attended object's name and weakens or erases the real one. | `ProcessHeardWords` @0040a630 | a0c2773 | code |
