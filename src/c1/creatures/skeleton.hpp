@@ -333,7 +333,6 @@ public:
     SkeletonReferenceOwner* reference_owner_ = nullptr;
     bool boundary_correction_pending = false;
     int normal_render_plane = 100;
-    int continuous_sound_handle = -1;
     // The creature's composite sprite gallery is the Object one native
     // keeps at +0x40: the world save restores it there, and
     // ValidateBodySprites compares the generated .spr against it.  A
