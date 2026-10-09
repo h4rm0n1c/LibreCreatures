@@ -213,10 +213,16 @@ void Biochemistry::update(
                             chemical_states_[reaction.reactant_2_chemical]
                                 .concentration);
 
+        // LibreCreatures deviation.  CBiochemistry::Update @0042ee10 keeps
+        // only the low byte of a product's yield before the saturating add,
+        // so 1 A -> 2 B with 128 A made no B at all (256 wrapped to 0).  The
+        // full yield is added and the concentration saturates at 255.  A
+        // reactant's removal, amount * (concentration / amount), cannot pass
+        // 255 and keeps the native byte.
         if (reaction.product_1_chemical != 0) {
             const std::uint32_t amount =
-                (static_cast<std::uint32_t>(reaction.product_1_amount) *
-                 processed_extent) & 0xffu;
+                static_cast<std::uint32_t>(reaction.product_1_amount) *
+                processed_extent;
             chemical_states_[reaction.product_1_chemical].concentration =
                 saturating_add(
                     chemical_states_[reaction.product_1_chemical].concentration,
@@ -224,17 +230,16 @@ void Biochemistry::update(
         }
         log_chemical_change(log_host,
                             "Add %d moles of Chemical %d (conc->%d)\n",
-                            (static_cast<std::uint32_t>(
-                                 reaction.product_1_amount) * processed_extent) &
-                                0xffu,
+                            static_cast<std::uint32_t>(
+                                reaction.product_1_amount) * processed_extent,
                             reaction.product_1_chemical,
                             chemical_states_[reaction.product_1_chemical]
                                 .concentration);
 
         if (reaction.product_2_chemical != 0) {
             const std::uint32_t amount =
-                (static_cast<std::uint32_t>(reaction.product_2_amount) *
-                 processed_extent) & 0xffu;
+                static_cast<std::uint32_t>(reaction.product_2_amount) *
+                processed_extent;
             chemical_states_[reaction.product_2_chemical].concentration =
                 saturating_add(
                     chemical_states_[reaction.product_2_chemical].concentration,
@@ -242,9 +247,8 @@ void Biochemistry::update(
         }
         log_chemical_change(log_host,
                             "Add %d moles of Chemical %d (conc->%d)\n",
-                            (static_cast<std::uint32_t>(
-                                 reaction.product_2_amount) * processed_extent) &
-                                0xffu,
+                            static_cast<std::uint32_t>(
+                                reaction.product_2_amount) * processed_extent,
                             reaction.product_2_chemical,
                             chemical_states_[reaction.product_2_chemical]
                                 .concentration);
