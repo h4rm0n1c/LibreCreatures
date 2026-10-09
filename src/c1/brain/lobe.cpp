@@ -750,9 +750,18 @@ void Lobe::update_late_phase(Brain* brain, std::uint32_t tick) {
                     LobeNeuron* selected = target_lobe.active_neuron(
                         static_cast<std::uint32_t>(std::rand() %
                                                     target_lobe.active_neuron_count()));
+                    // LibreCreatures deviation.  UpdateLatePhase @00405990
+                    // checks the selected target against every dendrite of
+                    // the neuron, the loose one included.  Decay zeroes a
+                    // dendrite's weights but keeps its target, so the loose
+                    // dendrite rejected its own previous target.  When that
+                    // target was the only active neuron, the dendrite could
+                    // not re-attach while the same input stayed active.  Only
+                    // a different dendrite can make the target a duplicate.
                     bool duplicate = false;
                     for (std::uint8_t index = 0; index < count; ++index) {
-                        if (connection_array[index].target_neuron == selected) {
+                        if (&connection_array[index] != loose &&
+                            connection_array[index].target_neuron == selected) {
                             duplicate = true;
                             break;
                         }
