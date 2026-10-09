@@ -84,17 +84,6 @@ enum class InteractionEventFlag : std::uint8_t {
 // Gallery acquisition, Entity registration, and movement-bound recompute are
 // owner services. The constructor keeps the native object-assembly order
 // while leaving those registries and file/cache details outside SimpleObject.
-// Stops a SimpleObject's continuous sound and releases its gallery when the
-// object is destroyed.  It must outlive every SimpleObject it is given to (the
-// document does), and must not throw if the world's gallery registry has
-// already been cleared.
-class SimpleObjectGalleryOwnerHost {
-public:
-    virtual ~SimpleObjectGalleryOwnerHost() = default;
-    virtual void stop_continuous_sound(int sound_handle) = 0;
-    virtual void release_simple_object_gallery(display::Gallery& gallery) = 0;
-};
-
 class SimpleObjectConstructionHost {
 public:
     virtual ~SimpleObjectConstructionHost() = default;
@@ -103,7 +92,7 @@ public:
         std::uint32_t image_count, bool cache_protected) = 0;
     // The long-lived owner that releases the gallery acquired above when the
     // object is destroyed (the construction host itself may be temporary).
-    virtual SimpleObjectGalleryOwnerHost* gallery_owner() = 0;
+    virtual ObjectGalleryOwnerHost* gallery_owner() = 0;
     virtual EntityRegistryHost& entity_registry() = 0;
     virtual void update_movement_bounds(SimpleObject& object) = 0;
 };
@@ -174,7 +163,7 @@ public:
 
     // An object read back from a world file is built by the default
     // constructor; the loader names the owner its gallery goes back to.
-    void set_gallery_owner(SimpleObjectGalleryOwnerHost* owner) {
+    void set_gallery_owner(ObjectGalleryOwnerHost* owner) {
         gallery_owner_ = owner;
     }
     std::unique_ptr<Bubble> create_bubble(
@@ -300,7 +289,7 @@ private:
     std::unique_ptr<Entity> entity_;
     // Releases the gallery when this object is destroyed (null for objects
     // made without a construction host).
-    SimpleObjectGalleryOwnerHost* gallery_owner_ = nullptr;
+    ObjectGalleryOwnerHost* gallery_owner_ = nullptr;
 
     // Not native (LibreCreatures): a dropped object falls to where it comes
     // to rest instead of appearing there.  While `falling_` is set, each

@@ -26,6 +26,25 @@ Scenery::Scenery(display::Gallery* gallery, std::uint32_t image_index,
     entity_ = std::move(entity);
 }
 
+Scenery::~Scenery() {
+    // As ~SimpleObject: the Entity goes first, then native ~Object stops a
+    // continuous sound and releases the gallery.  The port's Object base has
+    // no cleanup host here, so removed scenery kept its gallery reference.
+    entity_.reset();
+    if (gallery_owner_ == nullptr) {
+        return;
+    }
+    if (continuous_sound_handle() >= 0) {
+        gallery_owner_->stop_continuous_sound(continuous_sound_handle());
+        clear_continuous_sound_state();
+    }
+    if (gallery() != nullptr) {
+        display::Gallery* owned_gallery = gallery();
+        set_gallery(nullptr);
+        gallery_owner_->release_object_gallery(*owned_gallery);
+    }
+}
+
 void Scenery::serialize(ObjectArchive& archive) {
     Object::serialize(archive);
 

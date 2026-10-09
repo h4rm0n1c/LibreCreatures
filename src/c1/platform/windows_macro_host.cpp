@@ -2146,7 +2146,7 @@ creatures1::display::Gallery* WindowsNewObjectHost::acquire_gallery(
                                      image_count, cache_protected);
 }
 
-creatures1::objects::SimpleObjectGalleryOwnerHost*
+creatures1::objects::ObjectGalleryOwnerHost*
 WindowsNewObjectHost::gallery_owner() {
     return &document_;
 }
@@ -2299,6 +2299,7 @@ creatures1::objects::Object* WindowsNewObjectHost::create_scenery(
         gallery, request.image_index,
         static_cast<int>(request.render_plane), entity_registry(), document_,
         document_.object_registry());
+    scenery->set_gallery_owner(&document_);
     // Scenery lives in its own registry, not the non-scenery one.
     return &runtime->adopt_scenery_object(std::move(scenery));
 }
