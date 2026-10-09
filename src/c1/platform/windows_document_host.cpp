@@ -5412,9 +5412,13 @@ void* C1WindowsDocument::ArchiveHost::create_object(std::string_view name, std::
         // the Skeleton is what the non-scenery registry holds.  The archive
         // therefore identifies a Creature record by its Skeleton, so a
         // back-reference from any Object slot resolves to a real Object.
-        return &document_.world_runtime_
-                    ->adopt_creature(
-                        std::make_unique<creatures1::creatures::Creature>())
+        // A new creature's Skeleton gets the document as its lifetime host
+        // from Skeleton::load_genome; a loaded one only reaches that when its
+        // body sprites are rebuilt.  Without the host ~Skeleton skipped the
+        // limbs, the body gallery and the continuous sound.
+        auto creature = std::make_unique<creatures1::creatures::Creature>();
+        creature->skeleton().set_lifetime_host(&document_);
+        return &document_.world_runtime_->adopt_creature(std::move(creature))
                     .skeleton();
     }
     if (name == "CGenome") {
