@@ -144,11 +144,11 @@ kit source marks its fixes `Fix (bug N)`.
 | Funeral Kit | 6 | [ORIGINAL.md](../src/kits/funeral/ORIGINAL.md) |
 | Hatchery | 2 | [ORIGINAL.md](../src/kits/hatchery/ORIGINAL.md) |
 | Health Kit | 3 | [ORIGINAL.md](../src/kits/health/ORIGINAL.md) |
-| Object Injector | 2 | [ORIGINAL.md](../src/kits/injector/ORIGINAL.md) |
+| Object Injector | 3 | [ORIGINAL.md](../src/kits/injector/ORIGINAL.md) |
 | Observation Kit | 17 | [ORIGINAL.md](../src/kits/observation/ORIGINAL.md) |
 | Owner's Kit | 9 | [ORIGINAL.md](../src/kits/owner/ORIGINAL.md) |
 | Science Kit | 5 | [ORIGINAL.md](../src/kits/science/ORIGINAL.md) |
 | Score Kit | 12 | [ORIGINAL.md](../src/kits/score/ORIGINAL.md) |
-| **Total** | **61** | |
+| **Total** | **62** | |
 
 Science Kit bug 5 is the game defect in row 35.
