@@ -92,6 +92,7 @@ files.
 | 55 | The scans that skip an `enum` body or a `doif` branch read the raw script, so control words inside bracketed text count: `[next]` or `[else]` resumes inside the text, `[ending]` closes a `doif` early. | `ExecuteInterpreter` @0041dc40 | b6cee7d | code, lab |
 | 56 | `gsub` finds its `subr` label by scanning the raw script, so `subr <id>` inside bracketed text before the real label sends it to the wrong place, and its cache keeps that place. | `ExecuteInterpreter` @0041dc40 (scan at 0041e420) | dce8d60 | code, lab |
 | 61 | A script that ends is removed by shifting the later scripts down a slot, but the scheduler still steps to the next slot, so the script after it loses its turn that tick and its `wait` runs a tick long. | `SFCDoc::UpdateWorld` @004324e0, `RemoveFromRunningSchedulerAndDestroy` @0041a3e0 | 0d4dcf4 | code, lab |
+| 62 | Mute, and losing focus under `sndf fore`, stop the mixer's channels but leave each object's channel handle set; the next sound update takes the silent channel as a finished sound and clears it, so a `sndl` loop never comes back. | `ToggleMuteAndStopSounds` @004333b0, `Object::UpdateSound` @00426190 | c4cd30d | code |
 
 ### World, objects and vehicles
 
