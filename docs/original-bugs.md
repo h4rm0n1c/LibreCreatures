@@ -97,7 +97,7 @@ files.
 | 45 | Call buttons queue lift calls in eight slots, but the lift only reads slots 0-3, so with more than four calls waiting the later ones are never answered. Stock lifts have fewer buttons. | `SelectNearestCallButtonAndStartMove` @0042c590, `RequestLiftCall` @00429c10 | 0693c52 | code |
 | 46 | A lift and its call buttons hold pointers to each other but report neither as a reference, so a button deleted with a call pending (or freed at save) leaves the lift reading freed memory, and a button whose lift is deleted keeps using it. | Lift, CallButton (no ReferencesObject / ClearReferencesToObject; `~CallButton` @00423840, `~Lift` @0042c3a0) | 1fe2091 | code, lab |
 | 47 | Placing a call button writes the lift's eight-entry floor table at floor_count unchecked, so a ninth button writes past it, and a button in no room indexes the room table with -1. | `CallButton::UpdateLiftStateAndQueueRedraw` @00429a70 | 1fe2091 | code |
-| 48 | Exporting a creature deletes it before the file is flushed and closed, and a failed write leaves it removed from the world but not deleted, so a full disk loses the norn. | `OnExportCurrentCreature` @00431d20 | bd85a4e | code |
+| 48 | Exporting a creature deletes it before the file is flushed and closed, and a failed write leaves it removed from the world but not deleted, so a full disk loses the norn. | `OnExportCurrentCreature` @00431d20 | bd85a4e, 31af2db | code |
 
 ### The hand and the interface
 
