@@ -81,7 +81,7 @@ files.
 
 | # | Defect in the original | Native | Fix | Checked |
 | --- | --- | --- | --- | --- |
-| 18 | The egg in the sky: an event that reaches a norn between `new: simp` and the next turn of her egg-laying script replaces the script, and the egg stays at the world origin. | `ExecuteScriptForClassifier`, owner purge | c3d446e, ac8bfa4, 7c7f309 | code, lab (CE) |
+| 18 | The egg in the sky: `new:` ends a script's turn with the new object still at the world origin as 2 0 0, so anything that stops the script before its next turn (an event replacing it, its owner dying or being removed, a save) leaves the egg there. | `ExecuteScriptForClassifier`, owner purge, `ExecuteInterpreter` (new: at 0x0041e1bf) | c3d446e, ac8bfa4, 7c7f309, 13c6477 | code, lab (CE) |
 | 19 | A script value used as an object pointer is not checked, so a bad value crashes the game. | `stim writ`, `targ`, `mesg writ` and others | bd4c3b5 | code, crash |
 | 20 | `rndv` over the whole 32-bit range divides by zero. | `rndv` | a886d6b | code |
 | 58 | `ltcy` divides by zero when its upper bound is one below the lower (`ltcy 0 10 9`) or the bounds cover the whole 32-bit range. | `ltcy` (ExecuteInterpreter) | e80b81f | code, lab |
