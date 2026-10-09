@@ -529,6 +529,18 @@ MacroControlFlowResult Macro::execute_global_subroutine_command() {
         make_caos_token(std::string_view("subr"));
     std::size_t scan_offset = 0;
     while (scan_offset + sizeof(CaosToken) <= readable_capacity) {
+        // LibreCreatures deviation.  The native scan also matched `subr`
+        // inside bracketed text, so `dbgm [subr test]` before the real label
+        // sent gsub to the byte after the message (and the cache kept it).
+        // Bracketed text is a string operand; skip it whole.
+        if (script_buffer[scan_offset] == '[') {
+            while (scan_offset + 1 < readable_capacity &&
+                   script_buffer[scan_offset + 1] != ']') {
+                ++scan_offset;
+            }
+            scan_offset += 2;
+            continue;
+        }
         CaosToken token = 0;
         std::memcpy(&token, script_buffer.data() + scan_offset,
                     sizeof(token));
