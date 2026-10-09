@@ -185,9 +185,15 @@ void Lift::select_nearest_call_button_and_start_move(LiftRuntimeHost& host) {
         return;
     }
 
+    // LibreCreatures deviation.  CallButton::RequestLiftCall @00429c10 queues
+    // a call in any of the eight slots, but SelectNearestCallButtonAndStartMove
+    // @0042c590 only reads slots 0-3, so with more than four calls waiting
+    // (a COB lift with five or more floors) the later ones were never
+    // answered and their buttons stayed lit.  Read every slot; the nearest
+    // floor still wins and the first of equals is kept.
     selected_call_button_index = -1;
     int nearest_floor_distance = 999;
-    for (std::size_t index = 0; index < 4; ++index) {
+    for (std::size_t index = 0; index < kCallButtonCapacity; ++index) {
         CallButton* button = call_button_refs[index];
         if (button == nullptr) {
             continue;

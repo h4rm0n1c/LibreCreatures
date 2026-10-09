@@ -1,5 +1,6 @@
 #include "bacterium.hpp"
 
+#include <algorithm>
 #include <cstdlib>
 
 namespace creatures1::creatures {
@@ -132,21 +133,25 @@ void Bacterium::replicate_and_mutate(
                         random_input_chemical_id(random_source);
                 }
             } else {
-                offspring.kill_threshold_ = static_cast<std::uint8_t>(
+                // LibreCreatures deviation (both thresholds).  The native
+                // adds the step into the byte first (ADD byte [ESI+6], DL at
+                // 00401d1d; [ESI+7] at 00401cfc) and clamps after, so a step
+                // past 255 or below 0 wrapped: a kill threshold of 250 + 10
+                // became 4 and was raised to 130, an activation threshold of
+                // 0 - 1 became 255 and was capped at 130.  Clamp the sum.
+                const std::int32_t kill =
                     static_cast<std::int32_t>(offspring.kill_threshold_) +
                     static_cast<std::int32_t>(random_source.next() % 0x15u) -
-                    10);
-                if (offspring.kill_threshold_ < 0x82u) {
-                    offspring.kill_threshold_ = 0x82u;
-                }
+                    10;
+                offspring.kill_threshold_ =
+                    static_cast<std::uint8_t>(std::clamp(kill, 0x82, 0xff));
             }
         } else {
-            offspring.activation_threshold_ = static_cast<std::uint8_t>(
+            const std::int32_t activation =
                 static_cast<std::int32_t>(offspring.activation_threshold_) +
-                static_cast<std::int32_t>(random_source.next() % 0x15u) - 10);
-            if (offspring.activation_threshold_ > 0x82u) {
-                offspring.activation_threshold_ = 0x82u;
-            }
+                static_cast<std::int32_t>(random_source.next() % 0x15u) - 10;
+            offspring.activation_threshold_ =
+                static_cast<std::uint8_t>(std::clamp(activation, 0, 0x82));
         }
     } else {
         // LibreCreatures deviation.  ReplicateAndMutate @00401c70 stores
