@@ -4111,6 +4111,15 @@ void Creature::deserialize(CreatureArchive& archive,
     register_state_.history().mother_moniker =
         host.format_moniker(skeleton_.mother_moniker);
 
+    // LibreCreatures deviation.  A fertile creature's gamete is its own
+    // genome name, copied while it ovulates (update_environment_and_life_stage),
+    // and Creature::Deserialize @0040dda0 renames the genome without it, so a
+    // renamed import kept breeding with the old file -- whichever creature's
+    // genome now has that name.  Follow the rename; no gamete stays none.
+    if (gamete_genome_source_filename_ != 0) {
+        gamete_genome_source_filename_ = skeleton_.genome_source_filename;
+    }
+
     genome.reset();
 
     if (child_genome_source_filename_ != 0) {
