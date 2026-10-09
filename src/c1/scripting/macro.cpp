@@ -1817,7 +1817,19 @@ bool Macro::execute_creature_runtime_command(
             const std::uint32_t span_bits =
                 upper_value - lower_value + 1u;
             const auto span = static_cast<std::int32_t>(span_bits);
-            const auto offset = static_cast<std::int32_t>(std::rand()) % span;
+            // LibreCreatures deviation.  The span is 0 when the upper bound
+            // is one below the lower (`ltcy 0 10 9`) or the bounds cover the
+            // whole 32-bit range, and the native rand() % span then divides
+            // by zero and crashes.  As `rndv` does: reversed bounds give the
+            // lower bound, the whole range any value.  Every other span keeps
+            // the native result.
+            std::int32_t offset = 0;
+            if (span_bits != 0u) {
+                offset = static_cast<std::int32_t>(std::rand()) % span;
+            } else if (static_cast<std::int32_t>(upper_value) >=
+                       static_cast<std::int32_t>(lower_value)) {
+                offset = static_cast<std::int32_t>(std::rand());
+            }
             const auto result = static_cast<std::uint32_t>(
                 static_cast<std::int32_t>(lower_value) + offset);
             runtime.set_creature_involuntary_action_cooldown(
