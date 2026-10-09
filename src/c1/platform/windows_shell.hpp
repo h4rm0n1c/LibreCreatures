@@ -1576,6 +1576,9 @@ private:
     // failure reason is already recorded for the report.
     std::string save_path_in_progress_;
     bool save_reason_recorded_ = false;
+    // The object the save walk's destroy step just freed; its slot is
+    // removed only while that object still holds it.
+    const creatures1::objects::Object* save_destroyed_object_ = nullptr;
     creatures1::objects::ObjectEventScheduler event_scheduler_;
     creatures1::creatures::CreatureSelectionState selection_;
     creatures1::creatures::CreatureSelectionEntry* selected_creature_entry_ =

@@ -999,15 +999,24 @@ void C1WindowsDocument::destroy_world_object(std::size_t index) {
     if (object == nullptr) {
         throw std::logic_error("C1 world-object registry contains null");
     }
+    save_destroyed_object_ = object;
     world_runtime_->destroy_world_object(*object);
 }
 
 void C1WindowsDocument::remove_world_object(std::size_t index) {
+    // SFCDoc::OnSaveDocument @ 00430f10 deletes the object and then removes
+    // its slot by index.  In this port the destructors of compound objects,
+    // vehicles, lifts and blackboards already take the object out of this
+    // registry (unregister_from_object_registry), so by now the index may be
+    // past the end, or hold the next object.  Remove the slot only while it
+    // still holds the object just destroyed.
+    const creatures1::objects::Object* destroyed = save_destroyed_object_;
+    save_destroyed_object_ = nullptr;
     if (world_runtime_ == nullptr || index >= world_runtime_->world_object_count()) {
-        throw std::out_of_range("C1 world-object registry index");
+        return;
     }
     auto* object = world_runtime_->world_object_at(index);
-    if (object != nullptr) {
+    if (object != nullptr && object == destroyed) {
         world_runtime_->remove_world_object(*object);
     }
 }
