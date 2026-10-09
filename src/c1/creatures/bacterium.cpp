@@ -149,8 +149,15 @@ void Bacterium::replicate_and_mutate(
             }
         }
     } else {
+        // LibreCreatures deviation.  ReplicateAndMutate @00401c70 stores
+        // `rand & 3` here (00401cc8..00401ce3) without the -0x18 that the
+        // constructor and the input branch (SUB AL,8 at 00401d3f) apply, so
+        // a mutated output became chemical 0-3 -- nothing, pain, need for
+        // pleasure or hunger -- instead of one of the four disease
+        // chemicals 232-235 (histamine A and B, sleep and fever toxin).
+        // Mutate among the disease chemicals, as new bacteria choose.
         const std::int32_t chemical_id = normalized_masked_random(
-            random_source.next(), 0x80000003u);
+            random_source.next(), 0x80000003u) - 0x18;
         const std::uint32_t output_slot = static_cast<std::uint32_t>(
             normalized_masked_random(random_source.next(), 0x80000003u));
         offspring.output_chemical_ids_[output_slot] =
