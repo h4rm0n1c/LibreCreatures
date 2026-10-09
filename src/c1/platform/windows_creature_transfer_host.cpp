@@ -70,9 +70,12 @@ public:
         // stored file and writes it with CArchive::WriteObject: a CGenome
         // class record, then CGenome::Serialize @ 004185c0 (payload size,
         // filename, sex, life stage, payload).
-        creatures1::creatures::Genome genome(source_filename, sex, life_stage,
-                                             &document_.genome_files());
+        // Reading the genome file can fail too (a missing or unreadable
+        // .gen), so it is guarded with the write.
         guarded([&] {
+            creatures1::creatures::Genome genome(source_filename, sex,
+                                                 life_stage,
+                                                 &document_.genome_files());
             host_.dynamic_objects().write_object_reference(&genome, "CGenome");
         });
     }
