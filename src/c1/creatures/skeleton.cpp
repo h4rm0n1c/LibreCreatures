@@ -280,9 +280,12 @@ Skeleton::~Skeleton() {
     if (lifetime_host_ != nullptr) {
         clear_body_parts_and_gallery(*lifetime_host_);
         lifetime_host_->remove_from_renderable_set(*this);
-        if (continuous_sound_handle >= 0) {
-            lifetime_host_->stop_continuous_sound(continuous_sound_handle);
-            continuous_sound_handle = -1;
+        // The handle is Object's, which `sndl` sets.  A separate Skeleton
+        // field shadowed it and stayed -1, so a looping sound on a creature
+        // played on after the creature was gone.
+        if (continuous_sound_handle() >= 0) {
+            lifetime_host_->stop_continuous_sound(continuous_sound_handle());
+            clear_continuous_sound_state();
         }
         lifetime_host_->unregister_from_object_registry(*this);
     }
@@ -322,7 +325,6 @@ void Skeleton::initialize_pose_and_motion_state() {
     drive_threshold_state = 1;
     eyes_open = true;
     set_gallery(nullptr);
-    continuous_sound_handle = -1;
 
     // Native InitializePoseAndMotionState @0043ad5c: `OR byte ptr [ESI+9],
     // 0x44` -- Wallbound plus Activatable -- immediately before resetting the
