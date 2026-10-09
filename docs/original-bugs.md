@@ -69,6 +69,7 @@ files.
 | 37 | Heard speech is split into words in the shared buffer, and the spaces are not put back, so after the first listener every creature hears only the first word: "push food" becomes "push". | `ProcessHeardWords` @0040a630 | 3fc38cf | code |
 | 38 | Two creatures with the same unknown (0) mother or father are taken as siblings. | `UpdatePerception` @0040bf10 | 3fc38cf | code |
 | 39 | A second space, or a trailing space, in heard speech makes an empty word, which is learnt as the attended object's name and weakens or erases the real one. | `ProcessHeardWords` @0040a630 | a0c2773 | code |
+| 40 | A command whose noun is not the attended object waits for attention to move to it, but is delivered only when the new target is an object, so "rest" (category 0, no object) is lost when attention clears. | `UpdateAttention` @0040bbc0 | 9357a5f | code |
 
 ### Scripts
 
