@@ -2,6 +2,8 @@
 
 #include "brain.hpp"
 
+#include <array>
+#include <algorithm>
 #include <cstdint>
 #include <cstdlib>
 
@@ -53,6 +55,26 @@ struct ConnectionSetSignature {
                pointer_product_low == other.pointer_product_low;
     }
 };
+
+// LibreCreatures deviation.  The signature is only a quick filter: with
+// neurons 16 bytes apart in one array, the product of four or five target
+// pointers has no low 16 bits left, so it reduces to the pointer sum, and
+// different target sets with the same sum looked like duplicates.  A
+// matching signature is confirmed by comparing the target sets themselves,
+// order ignored and repeats counted.
+bool same_target_set(const LobeConnection* first, const LobeConnection* second,
+                     std::uint8_t count) {
+    std::array<const LobeNeuron*, 256> first_targets{};
+    std::array<const LobeNeuron*, 256> second_targets{};
+    for (std::uint8_t index = 0; index < count; ++index) {
+        first_targets[index] = first[index].target_neuron;
+        second_targets[index] = second[index].target_neuron;
+    }
+    std::sort(first_targets.begin(), first_targets.begin() + count);
+    std::sort(second_targets.begin(), second_targets.begin() + count);
+    return std::equal(first_targets.begin(), first_targets.begin() + count,
+                      second_targets.begin());
+}
 
 std::uint32_t original_pointer_value(const LobeNeuron* neuron) {
     // Creatures 1 is a 32-bit process.  Keep the recovered arithmetic's
@@ -196,7 +218,9 @@ void migrate_rule_connections(LobeNeuron& neuron, Brain& owner_brain,
                 rule_index == 0 ? existing->rule0_connections_begin
                                 : existing->rule1_connections_begin;
             if (connection_set_signature(existing_connections, existing_count) ==
-                candidate_signature) {
+                    candidate_signature &&
+                same_target_set(existing_connections, connections,
+                                existing_count)) {
                 duplicate = true;
                 break;
             }
