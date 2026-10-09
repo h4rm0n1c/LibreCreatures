@@ -132,10 +132,22 @@ void Lift::tick(LiftRuntimeHost& host) {
         if (arrival_divisor == 0) {
             arrival_divisor = 1;
         }
-        const int cabin_bottom = creature_event_bounds_local.max_y;
-        if ((cabin_bottom + sound_source_y()) / arrival_divisor ==
-            floor_y_by_index[static_cast<std::size_t>(current_floor_index)] /
-                arrival_divisor) {
+        const int cabin_y = creature_event_bounds_local.max_y +
+                            sound_source_y();
+        const int floor_y =
+            floor_y_by_index[static_cast<std::size_t>(current_floor_index)];
+        // LibreCreatures deviation.  Lift::Tick @0042c4f0 arrives only when
+        // the cabin and the floor fall in the same band of whole-pixel
+        // speed.  A speed with a fraction (yvec 384, 1.5 px a tick) can step
+        // over the floor's band, and the lift then never arrives.  A lift
+        // that has reached or passed its floor, moving towards it, also
+        // arrives.  Stock lifts move 3 px a tick and always meet the band
+        // first, so they arrive as before.
+        const bool reached_floor =
+            (velocity_y_8_8 > 0 && cabin_y >= floor_y) ||
+            (velocity_y_8_8 < 0 && cabin_y <= floor_y);
+        if (cabin_y / arrival_divisor == floor_y / arrival_divisor ||
+            reached_floor) {
             complete_floor_arrival(host, host);
             if (selected_call_button_index != -1) {
                 const std::size_t button_index = static_cast<std::size_t>(
