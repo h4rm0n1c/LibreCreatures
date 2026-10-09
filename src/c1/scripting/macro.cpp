@@ -3188,13 +3188,31 @@ MacroControlFlowResult Macro::execute_object_enumeration_command(
         // token embedded in a variable-length script stream.  It resumes at
         // the first byte after the enum operands and leaves the cursor just
         // after the matching token.
+        //
+        // LibreCreatures deviation.  The native scan (0x0041fbb8) stops at
+        // the first `next`, so an enum with no match whose body holds
+        // another enum resumed inside its own body, after the inner `next`,
+        // and its own `next` then found an empty stack and ended the script.
+        // Count the enums passed over; only the `next` matching this one
+        // ends the scan.
         const std::size_t readable_capacity = std::min<std::size_t>(
             script_capacity_bytes, script_buffer.size());
+        std::size_t nested_enums = 0;
         for (std::size_t candidate = script_cursor_offset;
              candidate + sizeof(CaosToken) <= readable_capacity; ++candidate) {
             CaosToken token = 0;
             std::memcpy(&token, script_buffer.data() + candidate,
                         sizeof(token));
+            if (token ==
+                static_cast<CaosToken>(MacroCommand::enumerate_objects)) {
+                ++nested_enums;
+                continue;
+            }
+            if (token == static_cast<CaosToken>(MacroCommand::next) &&
+                nested_enums != 0) {
+                --nested_enums;
+                continue;
+            }
             if (token == static_cast<CaosToken>(MacroCommand::next)) {
                 if (candidate + sizeof(CaosToken) + 1 > readable_capacity) {
                     execution_terminated = true;
