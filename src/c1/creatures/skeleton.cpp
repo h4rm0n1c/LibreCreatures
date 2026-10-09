@@ -830,8 +830,12 @@ std::uint32_t Skeleton::select_target_pose_for_motion(
         return 1;
     }
 
-    const int pose_column = std::clamp(
-        floor_divide(motion_target_x - down_foot_x, 0x12), 0, 2);
+    // Native @0043bf8f divides the signed offset by 0x12 and, when the
+    // quotient is negative, divides again by -0x12 (IMUL 0xc71c71c7), so a
+    // target to the left picks the same column as one at the same distance
+    // to the right.
+    const int pose_column = std::min(
+        std::abs(motion_target_x - down_foot_x) / 0x12, 2);
     const int pose_row = std::clamp(floor_divide(down_foot_y - motion_target_y,
                                                 0x12),
                                       0, 3);
