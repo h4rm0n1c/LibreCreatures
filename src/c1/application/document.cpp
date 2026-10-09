@@ -352,10 +352,16 @@ void Document::update_world(DocumentWorldUpdateHost& host) {
 
     host.update_selected_creature_follow_viewport();
 
-    for (std::size_t index = 0; index < host.running_macro_count(); ++index) {
+    // LibreCreatures deviation.  SFCDoc::UpdateWorld @004324e0 steps its
+    // index after every ExecuteInterpreter, but a script that ends is removed
+    // from g_running_macro_slots by compacting the array
+    // (RemoveFromRunningSchedulerAndDestroy @0041a3e0), so the next script
+    // moves into the slot just run and loses its turn that tick.  The host
+    // returns the next slot with removals accounted for.
+    for (std::size_t index = 0; index < host.running_macro_count();) {
         // ExecuteInterpreter remains a separate held semantic row; this
         // adapter is its typed world-scheduler boundary.
-        host.execute_running_macro(index);
+        index = host.execute_running_macro(index);
     }
 
     const std::uint32_t cohort = host.creature_update_cohort();

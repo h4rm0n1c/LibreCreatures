@@ -968,7 +968,7 @@ public:
 
     void update_selected_creature_follow_viewport() override;
 
-    void execute_running_macro(std::size_t index) override;
+    std::size_t execute_running_macro(std::size_t index) override;
 
     std::uint32_t creature_update_cohort() const override;
 
