@@ -43,6 +43,14 @@ public:
             int render_plane, EntityRegistryHost& entities,
             ObjectMovementBoundsHost& bounds, ObjectRegistryHost& registry);
 
+    ~Scenery() override;
+
+    // Both `new: scen` and the loader name the owner that stops the sound and
+    // takes the gallery back when the scenery is destroyed.
+    void set_gallery_owner(ObjectGalleryOwnerHost* owner) {
+        gallery_owner_ = owner;
+    }
+
     Entity* entity() { return entity_.get(); }
     const Entity* entity() const { return entity_.get(); }
     void set_entity(std::unique_ptr<Entity> entity) {
@@ -67,6 +75,7 @@ public:
 
 private:
     std::unique_ptr<Entity> entity_;
+    ObjectGalleryOwnerHost* gallery_owner_ = nullptr;
 };
 
 } // namespace creatures1::objects

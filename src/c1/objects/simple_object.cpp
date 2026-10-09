@@ -118,7 +118,7 @@ SimpleObject::~SimpleObject() {
     if (gallery_owner_ != nullptr && gallery() != nullptr) {
         display::Gallery* owned_gallery = gallery();
         set_gallery(nullptr);
-        gallery_owner_->release_simple_object_gallery(*owned_gallery);
+        gallery_owner_->release_object_gallery(*owned_gallery);
     }
 }
 

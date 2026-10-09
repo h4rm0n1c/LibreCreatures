@@ -1275,11 +1275,11 @@ void C1WindowsDocument::release_gallery(
     }
 }
 
-void C1WindowsDocument::release_simple_object_gallery(
+void C1WindowsDocument::release_object_gallery(
     creatures1::display::Gallery& gallery) {
-    // Called from ~SimpleObject.  When a world is torn down the gallery
-    // registry can already be empty; releasing then must be a no-op, not a
-    // throw out of a destructor.
+    // Called from ~SimpleObject and ~Scenery.  When a world is torn down the
+    // gallery registry can already be empty; releasing then must be a no-op,
+    // not a throw out of a destructor.
     if (world_runtime_ == nullptr) {
         return;
     }
@@ -5514,8 +5514,10 @@ void* C1WindowsDocument::ArchiveHost::create_object(std::string_view name, std::
 
     std::unique_ptr<creatures1::objects::Object> object;
     if (name == "Scenery") {
+        auto scenery = std::make_unique<creatures1::objects::Scenery>();
+        scenery->set_gallery_owner(&document_);
         return &document_.world_runtime_->adopt_scenery_object(
-            std::make_unique<creatures1::objects::Scenery>());
+            std::move(scenery));
     } else if (name == "CallButton") {
         object = std::make_unique<creatures1::objects::CallButton>();
     } else if (name == "Lift" || name == "Vehicle" || name == "Blackboard" ||

@@ -72,7 +72,7 @@ public:
     creatures1::display::Gallery* acquire_gallery(
         std::uint32_t sprite_file_id, int header_record_index,
         std::uint32_t image_count, bool cache_protected) override;
-    creatures1::objects::SimpleObjectGalleryOwnerHost* gallery_owner() override;
+    creatures1::objects::ObjectGalleryOwnerHost* gallery_owner() override;
     creatures1::objects::EntityRegistryHost& entity_registry() override;
     void update_movement_bounds(
         creatures1::objects::SimpleObject& object) override;

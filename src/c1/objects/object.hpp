@@ -90,6 +90,17 @@ public:
     virtual void unregister_from_object_registry(Object& object) = 0;
 };
 
+// Stops an object's continuous sound and releases its gallery when a
+// SimpleObject or Scenery is destroyed.  It must outlive every object it is
+// given to (the document does), and must not throw if the world's gallery
+// registry has already been cleared.
+class ObjectGalleryOwnerHost {
+public:
+    virtual ~ObjectGalleryOwnerHost() = default;
+    virtual void stop_continuous_sound(int sound_handle) = 0;
+    virtual void release_object_gallery(display::Gallery& gallery) = 0;
+};
+
 class ObjectEventDispatchHost {
 public:
     virtual ~ObjectEventDispatchHost() = default;
