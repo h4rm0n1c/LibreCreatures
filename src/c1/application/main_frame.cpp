@@ -1,5 +1,7 @@
 #include "main_frame.hpp"
 
+#include "../common/lab_trace.hpp"
+
 #include <algorithm>
 #include <cstring>
 
@@ -247,6 +249,10 @@ void toggle_embedded_kit_tool(MainFrameEmbeddedKitTogglePlatform& platform,
         return;
     }
 
+    creatures1::common::lab_trace(
+        creatures1::common::LabTrace::kits, "menu toggle slot=%u running=%d",
+        static_cast<unsigned>(tool_index),
+        platform.embedded_kit_is_running(tool_index) ? 1 : 0);
     if (!platform.embedded_kit_is_running(tool_index)) {
         platform.execute_embedded_kit_tool(tool_index);
         if (tool_index == kFuneralKitIndex) {

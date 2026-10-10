@@ -6,6 +6,7 @@
 #include <array>
 #include <string>
 
+#include "../common/lab_trace.hpp"
 #include "../common/logging.hpp"
 #include "environment.hpp"
 #include "windows_com_host.hpp"
@@ -56,6 +57,12 @@ bool invoke_kit_communicate(
             &payload);
         log_kit_traffic_line(std::string(line) +
                              (accepted != FALSE ? "  ->  TRUE" : "  ->  FALSE"));
+        creatures1::common::lab_trace(
+            creatures1::common::LabTrace::kits,
+            "communicate header=%08lx payload=%08lx -> %s",
+            static_cast<unsigned long>(message.header),
+            static_cast<unsigned long>(message.payload),
+            accepted != FALSE ? "true" : "false");
         return accepted != FALSE;
     } catch (CException* error) {
         char detail[512] = {};
@@ -70,6 +77,11 @@ bool invoke_kit_communicate(
             error->Delete();
         }
         log_kit_traffic_line(std::string(line) + "  ->  failed: " + detail);
+        creatures1::common::lab_trace(
+            creatures1::common::LabTrace::kits,
+            "communicate header=%08lx payload=%08lx -> failed: %s",
+            static_cast<unsigned long>(message.header),
+            static_cast<unsigned long>(message.payload), detail);
         C1DebugConsoleDialog* console = active_debug_console();
         if (console != nullptr) {
             creatures1::common::debug_log(

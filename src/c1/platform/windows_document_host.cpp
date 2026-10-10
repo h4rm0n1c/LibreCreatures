@@ -8,6 +8,7 @@
 #include "windows_embedded_kit_host.hpp"
 
 #include "../brain/lobe.hpp"
+#include "../common/lab_trace.hpp"
 #include "../display/bitmap.hpp"
 #include "../world/viewport.hpp"
 #include "../archive/funeral_kit.hpp"
@@ -596,8 +597,16 @@ BOOL C1WindowsDocument::OnOpenDocument(LPCTSTR path) {
     if (!semantic_document_->open_document(
             *this, std::string_view(native_path.GetString(),
                                     native_path.GetLength()))) {
+        creatures1::common::lab_trace(creatures1::common::LabTrace::lifecycle,
+                                      "world open failed path=%s",
+                                      native_path.GetString());
         return FALSE;
     }
+    creatures1::common::lab_trace(
+        creatures1::common::LabTrace::lifecycle,
+        "world opened path=%s creatures=%u objects=%u",
+        native_path.GetString(), static_cast<unsigned>(creature_count()),
+        static_cast<unsigned>(non_scenery_object_count()));
     bind_event_bar();
     redraw_loaded_bubble_text();
     SetModifiedFlag(FALSE);
@@ -643,12 +652,14 @@ BOOL C1WindowsDocument::OnSaveDocument(LPCTSTR path) {
     }
     const CStringA native_path(path);
     try {
-        return semantic_document_->save(
-                   *this,
-                   std::string_view(native_path.GetString(),
-                                    native_path.GetLength()))
-                   ? TRUE
-                   : FALSE;
+        const bool saved = semantic_document_->save(
+            *this, std::string_view(native_path.GetString(),
+                                    native_path.GetLength()));
+        creatures1::common::lab_trace(creatures1::common::LabTrace::lifecycle,
+                                      "world save path=%s -> %s",
+                                      native_path.GetString(),
+                                      saved ? "ok" : "failed");
+        return saved ? TRUE : FALSE;
     } catch (const std::exception& error) {
         log_world_save_failure(native_path.GetString(), error.what());
         return FALSE;
@@ -1054,7 +1065,10 @@ void C1WindowsDocument::remove_world_object(std::size_t index) {
     }
 }
 
-void C1WindowsDocument::reset_world_tick_count() { world_tick_count_ = 0; }
+void C1WindowsDocument::reset_world_tick_count() {
+    world_tick_count_ = 0;
+    creatures1::common::lab_trace_set_world_tick(0);
+}
 
 
 void C1WindowsDocument::clear_favourite_place_names( creatures1::application::Document& /*document*/) {
@@ -1546,6 +1560,27 @@ void C1WindowsDocument::set_selected_creature( creatures1::creatures::CreatureSe
     // world, and UpdateCreatureNameComboHistory @ 00432360 is the only code
     // that adds to it.  Refilling it with creature names threw that history
     // away every time the selection changed.
+    if (creature != selected_creature_entry_ &&
+        creatures1::common::lab_trace_enabled(
+            creatures1::common::LabTrace::selection)) {
+        const auto* chosen =
+            dynamic_cast<const creatures1::creatures::Creature*>(creature);
+        if (chosen == nullptr) {
+            creatures1::common::lab_trace(creatures1::common::LabTrace::selection,
+                                          "selected none");
+        } else {
+            creatures1::common::lab_trace(
+                creatures1::common::LabTrace::selection,
+                "selected moniker=%08lx name=\"%s\" dead=%d",
+                static_cast<unsigned long>(
+                    chosen->skeleton().genome_source_filename),
+                chosen->display_name().c_str(),
+                chosen->life_state() ==
+                        creatures1::creatures::CreatureLifeState::dead
+                    ? 1
+                    : 0);
+        }
+    }
     selected_creature_entry_ = creature;
 }
 
@@ -2558,7 +2593,27 @@ std::size_t C1WindowsDocument::execute_running_macro(std::size_t index) {
     // Read before the turn: the Macro may end and delete itself during it.
     creatures1::objects::Object* const owner =
         macro->object_context.script_owner;
-    macro->execute_interpreter(host.interpreter_bindings());
+    {
+        const std::uint32_t owner_classifier =
+            owner != nullptr && creatures1::common::lab_trace_enabled(
+                                    creatures1::common::LabTrace::camera)
+                ? owner->classifier_base()
+                : 0;
+        const creatures1::common::LabTraceContext trace_context(
+            "turn owner=%p clas=%u %u %u", static_cast<void*>(owner),
+            (owner_classifier >> 24) & 0xffu, (owner_classifier >> 16) & 0xffu,
+            (owner_classifier >> 8) & 0xffu);
+        macro->execute_interpreter(host.interpreter_bindings());
+    }
+    if (creatures1::common::lab_trace_enabled(
+            creatures1::common::LabTrace::scheduler)) {
+        const auto& running = creatures1::scripting::g_running_macros;
+        if (std::find(running.begin(), running.end(), macro) == running.end()) {
+            creatures1::common::lab_trace(
+                creatures1::common::LabTrace::scheduler,
+                "script ended owner=%p", static_cast<void*>(owner));
+        }
+    }
     // An event held back while this script was paused on a prefixed command
     // (see execute_script_for_classifier) is applied now that the script has
     // had its turn.
@@ -2935,6 +2990,7 @@ std::size_t C1WindowsDocument::selected_creature_count() const {
 
 void C1WindowsDocument::set_world_tick_count(std::uint32_t count) {
     world_tick_count_ = count;
+    creatures1::common::lab_trace_set_world_tick(count);
 }
 
 void C1WindowsDocument::publish_periodic_score_to_embedded_control(
@@ -3563,6 +3619,11 @@ void C1WindowsDocument::set_renderer_viewport_origin(int world_x,
                                                      int world_y) {
 
     if (renderer_ != nullptr) {
+        creatures1::common::lab_trace(
+            creatures1::common::LabTrace::camera,
+            "set origin from=%d,%d to=%d,%d by=%s", renderer_->viewport_left(),
+            renderer_->viewport_top(), world_x, world_y,
+            creatures1::common::lab_trace_context());
         renderer_->set_viewport_origin(world_x, world_y);
     }
 }
@@ -3964,6 +4025,12 @@ bool C1WindowsDocument::remove_from_creature_registry(
         auto* creature =
             dynamic_cast<creatures1::creatures::Creature*>(creature_at(index));
         if (creature != nullptr && &creature->skeleton() == &object) {
+            creatures1::common::lab_trace(
+                creatures1::common::LabTrace::lifecycle,
+                "creature removed moniker=%08lx name=\"%s\"",
+                static_cast<unsigned long>(
+                    creature->skeleton().genome_source_filename),
+                creature->display_name().c_str());
             return remove_at(index);
         }
     }
@@ -5065,6 +5132,9 @@ void C1WindowsDocument::request_renderer_origin(int world_x, int world_y) {
 // to) with Smooth Scrolling on, a saved spot within a screen of 0,0 panned
 // in from the corner over several seconds.
 void C1WindowsDocument::place_renderer_origin(int world_x, int world_y) {
+    creatures1::common::lab_trace(creatures1::common::LabTrace::camera,
+                                  "place saved origin to=%d,%d renderer=%d",
+                                  world_x, world_y, renderer_ != nullptr ? 1 : 0);
     if (renderer_ != nullptr) {
         renderer_->reset_navigation();
         renderer_->set_viewport_origin(world_x, world_y);
@@ -5870,6 +5940,9 @@ void C1WindowsDocument::ensure_renderer(CWnd& view, bool smooth_scrolling_enable
     if (pending_renderer_origin_.has_value()) {
         const auto [origin_x, origin_y] = *pending_renderer_origin_;
         pending_renderer_origin_.reset();
+        creatures1::common::lab_trace(creatures1::common::LabTrace::camera,
+                                      "place pending origin to=%d,%d",
+                                      origin_x, origin_y);
         // Placed, not scrolled to (see place_renderer_origin).
         renderer_->set_viewport_origin(origin_x, origin_y);
         snap_camera_to_followed_creature();

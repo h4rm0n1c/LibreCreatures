@@ -1,5 +1,7 @@
 #include "pipe_server.hpp"
 
+#include "../common/lab_trace.hpp"
+
 #include <algorithm>
 #include <array>
 #include <charconv>
@@ -648,6 +650,8 @@ std::string PipeServer::dispatch_command(std::string_view command) {
         if (tool_index >= 0x14) {
             return error_response("Tool ID out of range");
         }
+        creatures1::common::lab_trace(creatures1::common::LabTrace::kits,
+                                      "KITQUIT slot=%u", tool_index);
         host_.shutdown_embedded_kit_tool(tool_index);
         return success_response("Kit cleaned up");
     }

@@ -1,5 +1,7 @@
 #include "rendering.hpp"
 
+#include "../common/lab_trace.hpp"
+
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -9,6 +11,24 @@
 #include <vector>
 
 namespace creatures1::display {
+
+namespace {
+
+// Camera moves in the lab trace: where the view was, where it is sent, and
+// what was running when it was sent.
+void trace_camera(const char* what, int from_x, int from_y, int to_x,
+                  int to_y) {
+    using creatures1::common::LabTrace;
+    if (!creatures1::common::lab_trace_enabled(LabTrace::camera)) {
+        return;
+    }
+    creatures1::common::lab_trace(LabTrace::camera,
+                                  "%s from=%d,%d to=%d,%d by=%s", what, from_x,
+                                  from_y, to_x, to_y,
+                                  creatures1::common::lab_trace_context());
+}
+
+} // namespace
 
 namespace {
 
@@ -658,6 +678,8 @@ void WorldRenderer::queue_dirty_world_rect(int world_left,
 }
 
 void WorldRenderer::request_viewport_origin(int world_x, int world_y) {
+    trace_camera(smooth_scrolling_enabled_ ? "request (smooth)" : "request",
+                 viewport_left_, viewport_top_, world_x, world_y);
     if (!smooth_scrolling_enabled_) {
         set_viewport_origin(world_x, world_y);
     }
@@ -728,6 +750,8 @@ void WorldRenderer::center_viewport_on_world_point_if_in_navigation_bounds(
     const int origin_x = wrap_world_x(
         world_x - (viewport_right_ - viewport_left_) / 2);
     const int origin_y = world_y - (viewport_bottom_ - viewport_top_) / 2;
+    trace_camera("center on point", viewport_left_, viewport_top_, origin_x,
+                 origin_y);
     set_viewport_origin(origin_x, origin_y);
 }
 
@@ -750,6 +774,8 @@ void WorldRenderer::center_viewport_on_selected_creature_if_in_pan_region() {
         origin_x -= world::kWorldWidth;
     }
     const int vertical_offset = (viewport_top_ - viewport_bottom_) * 5;
+    trace_camera("center on selected creature", viewport_left_, viewport_top_,
+                 origin_x, foot_y + vertical_offset / 8);
     set_viewport_origin(origin_x, foot_y + vertical_offset / 8);
 }
 
@@ -768,6 +794,8 @@ void WorldRenderer::snap_viewport_to_selected_creature() {
     // the foot and (top * 3 + bottom * 5) / 8, i.e. top + 5/8 of the height.
     const int width = viewport_right_ - viewport_left_;
     const int height = viewport_bottom_ - viewport_top_;
+    trace_camera("snap to selected creature", viewport_left_, viewport_top_,
+                 foot_x - width / 2, foot_y - height * 5 / 8);
     reset_navigation();
     set_viewport_origin(foot_x - width / 2, foot_y - height * 5 / 8);
 }
@@ -778,6 +806,10 @@ void WorldRenderer::follow_selected_creature_viewport() {
     if (selected == nullptr) {
         followed_creature_ = nullptr;
         return;
+    }
+    if (followed_creature_ != selected) {
+        trace_camera("follow starts", viewport_left_, viewport_top_,
+                     viewport_left_, viewport_top_);
     }
     followed_creature_ = selected;
 
@@ -817,6 +849,9 @@ void WorldRenderer::follow_selected_creature_viewport() {
         // two views is a jump, as native's.
         if (viewport_width * 2 < std::abs(horizontal_delta) ||
             viewport_height * 2 < std::abs(vertical_delta)) {
+            trace_camera("follow jump", viewport_left_, viewport_top_,
+                         viewport_left_ + horizontal_delta,
+                         viewport_top_ + vertical_delta);
             clear_camera_target();
             scroll_viewport(horizontal_delta, vertical_delta);
         } else if (horizontal_delta != 0 || vertical_delta != 0) {
@@ -826,6 +861,11 @@ void WorldRenderer::follow_selected_creature_viewport() {
     }
     if (large_delta) {
         if (horizontal_delta != 0 || vertical_delta != 0) {
+            if (smooth_scrolling_enabled_) {
+                trace_camera("follow jump", viewport_left_, viewport_top_,
+                             viewport_left_ + horizontal_delta,
+                             viewport_top_ + vertical_delta);
+            }
             scroll_viewport(horizontal_delta, vertical_delta);
         }
         return;

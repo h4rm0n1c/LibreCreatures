@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../common/lab_trace.hpp"
 #include "../sound/sound.hpp"
 
 #include <string>
@@ -61,7 +62,11 @@ public:
         const std::vector<const sound::CachedSound*>& entries,
         int total_bytes) override;
     // C1_SOUND_LOG names a file that receives the manager's trace lines.
-    bool trace_enabled() const override { return !trace_path_.empty(); }
+    bool trace_enabled() const override {
+        return !trace_path_.empty() ||
+               creatures1::common::lab_trace_enabled(
+                   creatures1::common::LabTrace::sound);
+    }
     void trace(std::string_view line) override;
 
 private:

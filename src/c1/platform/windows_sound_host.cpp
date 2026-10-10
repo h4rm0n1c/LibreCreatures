@@ -57,6 +57,8 @@ WindowsSoundSystemHost::WindowsSoundSystemHost(
 }
 
 void WindowsSoundSystemHost::trace(std::string_view line) {
+    creatures1::common::lab_trace(creatures1::common::LabTrace::sound, "%.*s",
+                                  static_cast<int>(line.size()), line.data());
     if (trace_path_.empty()) {
         return;
     }

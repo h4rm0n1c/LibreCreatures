@@ -44,6 +44,23 @@ differ over the area they share, and the texture memory in use.
 **Tick timing.** `C1_TRACE_TICK=1`, or a `trace_tick` file in the world
 folder, appends a summary line to `Creatures.tick.log` every 110 ticks.
 
+**Lab trace.** `C1_LAB_TRACE=<file>` appends one line per event:
+`<world tick> TAB <ms> TAB <category> TAB <text>`. `C1_LAB_TRACE_CATEGORIES`
+picks categories, comma separated (default all):
+
+| category | events |
+| --- | --- |
+| `kits` | kit launch, shutdown and its cause (menu, `KITQUIT`, shutdown message), every broadcast with the slots it reached, every message sent to a kit |
+| `kitpipe` | every kit request on the pipe and its answer |
+| `selection` | selected creature changes |
+| `camera` | every camera move: from, to, and what caused it (`by=script <family> <genus> <species> <event>`, `turn owner=...`, `injected pipe/dde/start`); navigation mode changes; placement on load |
+| `scheduler` | object scripts started, held back and ended |
+| `sound` | the sound manager's trace lines (as `C1_SOUND_LOG`) |
+| `lifecycle` | world opened and saved, deaths, creatures removed |
+
+The trace only observes. The c1-lab `launch(trace=...)` sets it, and its
+`trace` and `trace_wait` tools read it.
+
 Baseline before any neorender change (lab, two norns, 612 x 358 view,
 2026-09-29), per 110-tick window:
 

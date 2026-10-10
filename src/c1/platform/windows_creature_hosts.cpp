@@ -2,6 +2,7 @@
 
 #include "../objects/object.hpp"
 #include "../objects/debug.hpp"
+#include "../common/lab_trace.hpp"
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -56,8 +57,14 @@ void WindowsCreatureDeathHost::purge_destroy_when_finished_macros(
 }
 
 void WindowsCreatureDeathHost::log_death_message(
-    const creatures1::creatures::Creature& /*creature*/) {
+    const creatures1::creatures::Creature& creature) {
     OutputDebugStringA("Creature died\n");
+    creatures1::common::lab_trace(
+        creatures1::common::LabTrace::lifecycle,
+        "death moniker=%08lx name=\"%s\" selected=%d",
+        static_cast<unsigned long>(creature.skeleton().genome_source_filename),
+        creature.display_name().c_str(),
+        is_selected_creature(creature) ? 1 : 0);
 }
 
 void WindowsCreatureDeathHost::dispatch_death_event(
