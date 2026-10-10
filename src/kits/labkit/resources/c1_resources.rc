@@ -1,0 +1,11 @@
+// The Lab Kit's resources.  It is new in LibreCreatures and is a tool for
+// the c1-lab test harness, so nothing here comes from a 1996 kit.  Its icon
+// is the Ecology Kit's.
+#pragma code_page(65001)
+#include "resource_ids.h"
+
+LANGUAGE 9, 1
+
+#include "version/1033/1.rcinc"
+#include "lc_resources.rcinc"
+128 ICON "images/icon/128.ico"

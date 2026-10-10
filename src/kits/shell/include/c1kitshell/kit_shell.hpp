@@ -108,6 +108,13 @@ public:
     // Game -> kit.  kind 1 / code 3 records the tool id; the rest go to the
     // virtual hooks below.
     void handle_kit_message(const c1kit::KitMessage& message);
+    // The whole Communicate call: handles the message and returns the kit's
+    // VT_BOOL answer.  Every 1996 kit's handler answered TRUE; the Lab Kit
+    // overrides this to answer as the lab tells it.
+    virtual bool on_communicate_message(const c1kit::KitMessage& message) {
+        handle_kit_message(message);
+        return true;
+    }
 
     // Kit -> game.
     c1kit::MacroTransport* transport() const { return transport_; }

@@ -18,6 +18,7 @@ menu and talks to over OLE automation.
 | `science/` | The Science Kit (Tools slot 4), `Science Kit.exe`: chemical levels over time (up to 16 at once, with themes), the genome as a property list read from the genome file, a live brain map with every lobe outlined and each neuron named, the decision lobe, and medicine injections. Reads `allchemicals.str`, `decision.str`, `injections.str` and `themes.str`; saves themes to `Science Kit Themes`. Classic skin: the 1996 pages on their own templates (four-chemical graph, genetic summary with the spinning DNA, scanner dots on the brain picture, decision bars, syringe), the cover and the `kits` loop, with a mute checkbox. |
 | `score/` | The Score Kit, titled "Performance Kit" (Tools slot 8), `Score Kit.exe`. Reads its art (`AllNumbers.spr`, `Score.spr`, `Time.spr`, `Scorebgd.bmp`, `Brdscore.bmp`) from the game's main directory. Classic look: the cover (`Score.bmp`), the 1996 fixed window and the `kitp` loop, with a mute checkbox. |
 | `ecology/` | The Ecology Kit (Tools slot 10, new in LibreCreatures; Creatures 2's Ecology Kit was its model), `Ecology Kit.exe`: a small map of the world from `back.spr`, its rooms coloured by temperature, crowding, food and drink, toys and instruments, or disease, every creature as a dot (norns green, grendels red-brown, the dead grey, the infected ringed), and every egg as a small cream egg. A click on a creature selects it and moves the camera to it. The rooms, temperatures and creatures come from the LibreCreatures `dde: ecol` query; against another game the kit shows only the map. It registers in slot 10 and raises the game's `NumTools` to include it. |
+| `labkit/` | The Lab Kit (Tools slot 11, new in LibreCreatures), `Lab Kit.exe`: the c1-lab test harness's kit. It records every message the game sends it, with the answer it gave, in `Lab Kit.log` in the world's folder, and takes orders from the lab on the pipe `\\.\pipe\c1-labkit`: what to answer, hanging or ending inside a message, whether state 8 closes it, and CAOS over its own SFC.OLE connection (`labkit/src/labkit_protocol.hpp`). Not for players. |
 
 Each kit keeps the original's OLE ProgID, CLSID and Tools slot, so the game
 opens it in the original's place. Run a kit once on its own (no arguments)
@@ -112,4 +113,6 @@ g++ -std=c++17 -D'__declspec(x)=' -Iobservation/src -Ic1kitlib/include \
     observation/tests/creature_monitor_test.cpp -o monitor_test && ./monitor_test
 g++ -std=c++17 -Ic1kitlib/include \
     c1kitlib/tests/crash_report_test.cpp -o crash_report_test && ./crash_report_test
+g++ -std=c++17 -Ilabkit/src labkit/tests/labkit_protocol_test.cpp \
+    -o labkit_protocol_test && ./labkit_protocol_test
 ```
