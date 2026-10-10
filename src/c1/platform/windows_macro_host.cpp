@@ -633,12 +633,15 @@ creatures1::objects::Object* WindowsMacroHost::random_non_scenery_object(
 
 void WindowsMacroHost::set_selected_creature(
     creatures1::objects::Object* creature, bool notify) {
-    static_cast<void>(notify);
-    if (creature == nullptr) {
-        document_.set_selected_creature(nullptr);
-        return;
-    }
-    document_.set_selected_creature(creature_of(*creature));
+    // `setv norn` is Macro::AssignLValue @ 0x0041b9f0 calling
+    // SetSelectedCreature(norn, 1) @ 0x00433850: the whole selection -- the
+    // kits told (state 6, or 8 for none or a dead creature), the title and
+    // the eye view updated -- and then, with that 1, the view returns to the
+    // creature and tracks it (ReturnViewportNavigationToSelectedCreature).
+    // Storing the pointer alone skipped all of it, so a kit or script that
+    // selected a creature left the kits, the title and the camera behind.
+    creatures1::application::apply_selected_creature(
+        document_, creature == nullptr ? nullptr : creature_of(*creature), notify);
 }
 
 void WindowsMacroHost::set_edit_object(creatures1::objects::Object* object) {
