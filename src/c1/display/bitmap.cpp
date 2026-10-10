@@ -61,9 +61,14 @@ bool write_dib_rect_to_file(const IndexedDib& dib,
         dib.pixels + static_cast<std::ptrdiff_t>(source_rect.top) *
                          source_row_stride + source_rect.left;
     std::ptrdiff_t row_step = source_row_stride;
-    if (dib.height < 0) {
+    if (dib.height < 0 && row_count != 0) {
+        // LibreCreatures deviation.  WriteDibRectToFile @ 0x00445900 starts
+        // the turned-over copy at row top + row_count, one row below the
+        // rectangle, so it never copies the top row, and a rectangle that
+        // touches the bottom of the view reads one row past the DIB.  Start
+        // at the rectangle's last row.
         source_row += static_cast<std::ptrdiff_t>(source_row_stride) *
-                      row_count;
+                      (row_count - 1);
         row_step = -source_row_stride;
     }
 
