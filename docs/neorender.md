@@ -317,6 +317,16 @@ each room in the map's room table as a 1-pixel outline over the main view:
 - `world/room_edges.hpp` holds the edge test; `tests/c1_room_edges_test.cpp`
   checks it.
 
+## Fixes since the 34f556b test build
+
+- The egg in the sky: `new:` no longer ends a script's turn, so a norn's
+  egg-laying script sets the egg up in the same turn it lays it, and
+  nothing can catch the egg half made at the world origin. *(original)*
+  Eggs already stuck at the origin stay; remove them from the CAOS
+  console (View > Developer view) with
+  `enum 2 0 0,doif clas eq 33554432,doif posl eq 0,doif post eq 0,kill targ,endi,endi,endi,next`.
+  Also on `main`.
+
 ## Fixes since the last test build (bbc0930)
 
 These are game and kit fixes, not renderer work. Every one is also on
