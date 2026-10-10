@@ -45,7 +45,8 @@ differ over the area they share, and the texture memory in use.
 folder, appends a summary line to `Creatures.tick.log` every 110 ticks.
 
 **Lab trace.** `C1_LAB_TRACE=<file>` appends one line per event:
-`<world tick> TAB <ms> TAB <category> TAB <text>`. `C1_LAB_TRACE_CATEGORIES`
+`<world tick> TAB <ms> TAB <category> TAB <text>`, where `<ms>` is Windows'
+uptime (`GetTickCount64`), the same clock as the Lab Kit's log. `C1_LAB_TRACE_CATEGORIES`
 picks categories, comma separated (default all):
 
 | category | events |

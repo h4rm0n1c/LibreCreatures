@@ -10,7 +10,9 @@ namespace creatures1::common {
 // name, comma separated, or "all" (the default when it is unset).
 //
 // One line per event, tab separated:
-//     <world tick> <milliseconds since the first event> <category> <text>
+//     <world tick> <milliseconds> <category> <text>
+// The milliseconds are Windows' uptime (GetTickCount64), the clock the Lab
+// Kit's log uses too.
 // Each line is flushed as it is written, so the lab can read the file while
 // the game runs.  The trace observes only; it never changes behaviour.
 enum class LabTrace : std::uint32_t {

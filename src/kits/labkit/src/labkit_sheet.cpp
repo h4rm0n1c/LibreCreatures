@@ -67,7 +67,6 @@ LabKitSheet::LabKitSheet(CFont& default_font)
     m_psh.dwFlags |= PSH_USEHICON;
     m_psh.hIcon = AfxGetApp()->LoadIcon(kIconKit);
     AddPage(&page_);
-    started_ms_ = GetTickCount();
     // The world's folder: each lab instance has its own.
     log_path_ = std::string(CStringA(c1kitshell::game_directory_setting(
                     "Main Directory", c1kit::GameDirectory::world))) +
@@ -104,10 +103,10 @@ void LabKitSheet::log(const char* format, ...) {
     va_start(arguments, format);
     std::vsnprintf(text, sizeof(text), format, arguments);
     va_end(arguments);
-    const DWORD ms = GetTickCount() - started_ms_;
+    // Windows' uptime, the clock the game's lab trace uses too.
+    const ULONGLONG ms = GetTickCount64();
     char line[1100];
-    std::snprintf(line, sizeof(line), "%lu\t%s\n", static_cast<unsigned long>(ms),
-                  text);
+    std::snprintf(line, sizeof(line), "%llu\t%s\n", ms, text);
     if (std::FILE* file = std::fopen(log_path_.c_str(), "a")) {
         std::fputs(line, file);
         std::fclose(file);
