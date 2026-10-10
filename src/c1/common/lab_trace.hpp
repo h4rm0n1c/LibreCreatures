@@ -23,6 +23,7 @@ enum class LabTrace : std::uint32_t {
     sound = 1u << 4,     // the sound manager's trace lines
     lifecycle = 1u << 5, // world load and save, births, deaths
     kit_pipe = 1u << 6,  // every kit request on the pipe and its answer
+    attention = 1u << 7, // what each creature attends to, and from which slot
 };
 
 bool lab_trace_enabled(LabTrace category);
