@@ -242,7 +242,27 @@ void test_overview_sort_order() {
     assert(compare_overview_cells("", "a") < 0);
 }
 
+void test_select_by_moniker() {
+    assert(creature_at_index_query(2) ==
+           "setv var0 0,enum 4 0 0,doif var0 eq 2,dde: getb monk,dde: putv targ,"
+           "endi,addv var0 1,next,endm");
+    std::string moniker;
+    std::string handle;
+    assert(parse_moniker_and_handle("56424d31|22819760", moniker, handle));
+    assert(moniker == "56424d31" && handle == "22819760");
+    // The game's reply ends in a NUL; the handle stops at the digits.
+    assert(parse_moniker_and_handle(std::string("4b5a4633|22669568\0", 18), moniker, handle));
+    assert(handle == "22669568");
+    assert(!parse_moniker_and_handle("", moniker, handle));  // past the last creature
+    assert(!parse_moniker_and_handle("|5", moniker, handle));
+    assert(select_and_track_creature_script("22819760", true) ==
+           "inst,setv norn 22819760,dde: panc,sys: cmnd 32783,sys: cmnd 113");
+    assert(select_and_track_creature_script("5", false) ==
+           "inst,setv norn 5,dde: panc,sys: cmnd 32783");
+}
+
 int main() {
+    test_select_by_moniker();
     test_communicate();
     test_launch_args();
     test_take_field();

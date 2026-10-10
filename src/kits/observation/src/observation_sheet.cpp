@@ -211,6 +211,41 @@ bool ObservationSheet::load_overview() {
     return true;
 }
 
+bool ObservationSheet::select_creature(const std::string& moniker) {
+    c1kit::MacroTransport* game = transport();
+    if (game == nullptr || quitting() || !conversation_) {
+        return false;
+    }
+    for (const c1kit::OverviewRecord& record : records_) {
+        if (record[c1kit::kOverviewMoniker] == moniker &&
+            !is_alive(record[c1kit::kOverviewLifeForce])) {
+            return false;
+        }
+    }
+    // The world has a few dozen creatures at most; stop at the first empty
+    // reply (past the last one).
+    constexpr std::size_t kMostCreatures = 256;
+    for (std::size_t index = 0; index < kMostCreatures; ++index) {
+        std::string reply;
+        if (!conversation_->query_reusing_holder(
+                c1kit::kMacroModeQuery, c1kit::creature_at_index_query(index).c_str(),
+                reply)) {
+            return false;
+        }
+        std::string found;
+        std::string handle;
+        if (!c1kit::parse_moniker_and_handle(reply, found, handle)) {
+            return false;
+        }
+        if (found == moniker) {
+            return c1kit::execute_scheduled(
+                *game, c1kit::select_and_track_creature_script(handle, true).c_str(),
+                false);
+        }
+    }
+    return false;
+}
+
 void ObservationSheet::poll() {
     if (!load_overview()) {
         return;

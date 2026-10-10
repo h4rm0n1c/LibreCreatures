@@ -191,6 +191,46 @@ enum OverviewField : std::size_t {
     kOverviewRoom = 7,
 };
 
+// Selecting a creature by its moniker.  `setv norn` takes a handle and
+// `dde: getb monk` reads the target's moniker, but a getb replaces the
+// output so far, so one query cannot list them all: ask for the creature
+// at each position of `enum 4 0 0` in turn.  The reply is "moniker|handle",
+// or empty past the last creature.
+inline std::string creature_at_index_query(std::size_t index) {
+    return "setv var0 0,enum 4 0 0,doif var0 eq " + std::to_string(index) +
+           ",dde: getb monk,dde: putv targ,endi,addv var0 1,next,endm";
+}
+
+inline bool parse_moniker_and_handle(const std::string& reply, std::string& moniker,
+                                     std::string& handle) {
+    const std::size_t bar = reply.find('|');
+    if (bar == std::string::npos || bar == 0) {
+        return false;
+    }
+    moniker = reply.substr(0, bar);
+    handle.clear();
+    for (std::size_t at = bar + 1;
+         at < reply.size() && std::isdigit(static_cast<unsigned char>(reply[at])); ++at) {
+        handle.push_back(reply[at]);
+    }
+    return !handle.empty();
+}
+
+// Selects a creature with Track Creature on, using only C1's own commands,
+// in one `inst` turn (a kit's scheduled script does not outlive its turn).
+// `setv norn` (SetSelectedCreature(norn, 1)) selects it and, unless
+// tracking is off, tracks it; `dde: panc` then makes the view manual, or
+// leaves it off; the Track Creature command (32783, a toggle, posted to the
+// game's window and so run after the script) turns either into tracking
+// and moves the view to the selected creature.  `show` adds "Which is my
+// creature?" (command 113, the world's own script on the selected
+// creature), posted after the toggle.
+inline std::string select_and_track_creature_script(const std::string& handle,
+                                                    bool show) {
+    return "inst,setv norn " + handle + ",dde: panc,sys: cmnd 32783" +
+           (show ? ",sys: cmnd 113" : "");
+}
+
 struct OverviewRecord {
     std::string fields[8];
     const std::string& operator[](OverviewField field) const {

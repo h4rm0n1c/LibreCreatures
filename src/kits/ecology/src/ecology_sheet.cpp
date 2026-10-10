@@ -202,14 +202,16 @@ void EcologySheet::poll() {
     page_.refresh();
 }
 
-// `setv norn` is the game's own selection (the Creatures menu's), and
-// `dde: panc` pans the view to the selected creature.  Both run on the
+// The game's own selection with Track Creature on, so the view goes to the
+// creature (c1kit::select_and_track_creature_script).  It runs on the
 // game's scheduler, not in a query: a selection is announced to the kits,
 // this one too, and a query waits for its reply.
 void EcologySheet::select_creature(std::uint32_t handle) {
     if (c1kit::MacroTransport* game = transport()) {
         c1kit::execute_scheduled(
-            *game, ("inst,setv norn " + std::to_string(handle) + ",dde: panc").c_str(), false);
+            *game,
+            c1kit::select_and_track_creature_script(std::to_string(handle), false).c_str(),
+            false);
     }
 }
 
