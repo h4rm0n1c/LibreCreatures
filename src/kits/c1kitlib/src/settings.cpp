@@ -187,13 +187,28 @@ bool write_tool_registration(int slot, const char* value_prog_id,
     char value_name[32];
     char value[256];
     std::snprintf(value_name, sizeof(value_name), "Tool%d", slot);
-    std::snprintf(value, sizeof(value), "%s|%s|%s|%d",
-                  value_prog_id == nullptr ? "" : value_prog_id,
-                  name == nullptr ? "" : name, help == nullptr ? "" : help,
-                  slot);
+    // The game reads each Tool<N> value into a 64-byte buffer
+    // (PopulateEmbeddedKitMenuAndToolbarFromRegistry @ 0x004440e0); a longer
+    // value fails to read, and the slot gets no menu item and no record --
+    // its command then fails with "Cannot find executable path for kit."
+    // Shorten the help text until the value fits, NUL included.
+    constexpr std::size_t kGameValueBytes = 0x40;
+    char suffix[16];
+    std::snprintf(suffix, sizeof(suffix), "|%d", slot);
+    const std::string head = std::string(value_prog_id == nullptr ? "" : value_prog_id) +
+                             "|" + (name == nullptr ? "" : name) + "|";
+    std::string help_text = help == nullptr ? "" : help;
+    const std::size_t fixed = head.size() + std::strlen(suffix);
+    if (fixed + help_text.size() >= kGameValueBytes) {
+        help_text.resize(fixed < kGameValueBytes - 1 ? kGameValueBytes - 1 - fixed : 0);
+    }
+    std::snprintf(value, sizeof(value), "%s%s%s", head.c_str(), help_text.c_str(),
+                  suffix);
     const bool ok = settings->is_open() && settings->write_string(value_name, value);
-    // The game lists Tool0 to Tool<NumTools - 1> only.  A kit in a slot past
-    // the ten 1996 kits (the Ecology Kit, slot 10) raises the count.
+    // The menu reads all twenty Tool<N> values whatever NumTools says; the
+    // count is what CAOS tool registration appends after.  A kit in a slot
+    // past the ten 1996 kits (the Ecology Kit, slot 10) raises it so a later
+    // registration does not take the same slot.
     std::uint32_t tool_count = 0;
     // Only raised, never made: with no count yet, the game's own default
     // stands.
