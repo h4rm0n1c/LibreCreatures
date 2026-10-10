@@ -4,7 +4,7 @@ BEGIN
     101 "Lab Kit"
     108 " - Paused"
     200 "Lab Kit"
-    201 "The test harness's kit: records what the game sends kits"
+    201 "Records what the game sends kits"
     202 "Messages"
 END
 
