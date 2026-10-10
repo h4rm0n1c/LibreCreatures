@@ -78,6 +78,7 @@ CString sex_text(const std::string& field) {
 BEGIN_MESSAGE_MAP(OverviewPage, CPropertyPage)
     ON_WM_SIZE()
     ON_NOTIFY(LVN_COLUMNCLICK, kControlOverviewList, &OverviewPage::OnColumnClick)
+    ON_NOTIFY(NM_DBLCLK, kControlOverviewList, &OverviewPage::OnDoubleClick)
 END_MESSAGE_MAP()
 
 OverviewPage::OverviewPage(ObservationSheet& sheet)
@@ -143,6 +144,18 @@ BOOL OverviewPage::OnInitDialog() {
     show_sort_arrow();
     fit_last_column();
     return TRUE;
+}
+
+void OverviewPage::OnDoubleClick(NMHDR* header, LRESULT* result) {
+    *result = 0;
+    const auto* activate = reinterpret_cast<NMITEMACTIVATE*>(header);
+    if (activate->iItem < 0) {
+        return;
+    }
+    const CString moniker = list_.GetItemText(activate->iItem, 1);
+    if (!moniker.IsEmpty()) {
+        sheet_.select_creature(std::string(CStringA(moniker)));
+    }
 }
 
 int OverviewPage::find_row(const CString& moniker) const {

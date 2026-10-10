@@ -39,6 +39,7 @@ protected:
     BOOL OnInitDialog() override;
     afx_msg void OnSize(UINT type, int cx, int cy);
     afx_msg void OnColumnClick(NMHDR* header, LRESULT* result);
+    afx_msg void OnDoubleClick(NMHDR* header, LRESULT* result);
     DECLARE_MESSAGE_MAP()
 
 private:
@@ -155,6 +156,11 @@ public:
     const std::vector<c1kit::OverviewRecord>& records() const {
         return records_;
     }
+    // Not in the 1996 kit: a double-click on a creature in the list selects
+    // it, tracks it and shows it ("Which is my creature?").  False when the
+    // creature is dead (selecting it would make the game close the kits) or
+    // the game no longer has it.
+    bool select_creature(const std::string& moniker);
     // The kit's settings, for the Details list's sort ("Sort Column",
     // "Sort Descending").
     c1kit::KitSettings* registry() const { return registry_; }
