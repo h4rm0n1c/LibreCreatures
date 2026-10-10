@@ -1,6 +1,7 @@
 #include "rendering.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <cstring>
 #include <iterator>
 #include <limits>
@@ -672,6 +673,10 @@ void WorldRenderer::request_viewport_origin(int world_x, int world_y) {
     const int viewport_height = viewport_bottom_ - viewport_top_;
     if (delta_x >= -viewport_width && delta_x <= viewport_width &&
         delta_y >= -viewport_height && delta_y <= viewport_height) {
+        if (frame_camera_) {
+            set_camera_target(delta_x, delta_y, true);
+            return;
+        }
         smooth_scroll_remaining_x_ = delta_x;
         smooth_scroll_remaining_y_ = delta_y;
         smooth_scroll_step_x_ = 0;
@@ -807,6 +812,18 @@ void WorldRenderer::follow_selected_creature_viewport() {
         !smooth_scrolling_enabled_ ||
         viewport_width * 2 < std::abs(horizontal_delta) ||
         viewport_height * 2 < std::abs(vertical_delta);
+    if (frame_camera_) {
+        // Eased on real time by advance_frame_camera; a move of more than
+        // two views is a jump, as native's.
+        if (viewport_width * 2 < std::abs(horizontal_delta) ||
+            viewport_height * 2 < std::abs(vertical_delta)) {
+            clear_camera_target();
+            scroll_viewport(horizontal_delta, vertical_delta);
+        } else if (horizontal_delta != 0 || vertical_delta != 0) {
+            set_camera_target(horizontal_delta, vertical_delta, false);
+        }
+        return;
+    }
     if (large_delta) {
         if (horizontal_delta != 0 || vertical_delta != 0) {
             scroll_viewport(horizontal_delta, vertical_delta);
@@ -941,7 +958,90 @@ void WorldRenderer::scroll_viewport(int& in_out_delta_x,
     in_out_delta_x += world_wrap_direction * world::kWorldWidth;
 }
 
+void WorldRenderer::set_frame_camera(bool enabled) {
+    if (frame_camera_ == enabled) {
+        return;
+    }
+    frame_camera_ = enabled;
+    clear_camera_target();
+    smooth_scroll_remaining_x_ = 0;
+    smooth_scroll_remaining_y_ = 0;
+    smooth_scroll_step_x_ = 0;
+    smooth_scroll_step_y_ = 0;
+    smooth_scroll_accumulated_x_ = 0;
+    smooth_scroll_accumulated_y_ = 0;
+}
+
+void WorldRenderer::set_camera_target(int delta_x, int delta_y,
+                                      bool is_request) {
+    // A request in progress keeps its claim on the camera until it arrives;
+    // a follow target does not displace it (native follows only once
+    // advance_smooth_scroll has finished).
+    if (camera_target_set_ && camera_target_is_request_ && !is_request) {
+        return;
+    }
+    camera_target_left_ = wrap_world_x(viewport_left_ + delta_x);
+    camera_target_top_ = viewport_top_ + delta_y;
+    camera_target_set_ = true;
+    camera_target_is_request_ = is_request;
+}
+
+void WorldRenderer::clear_camera_target() {
+    camera_target_set_ = false;
+    camera_target_is_request_ = false;
+    camera_carry_x_ = 0.0;
+    camera_carry_y_ = 0.0;
+}
+
+bool WorldRenderer::advance_frame_camera(double elapsed_ms) {
+    if (!frame_camera_ || !camera_target_set_ || elapsed_ms <= 0.0) {
+        return false;
+    }
+    int delta_x = camera_target_left_ - viewport_left_;
+    if (delta_x < -world::kWorldWidth / 2) {
+        delta_x += world::kWorldWidth;
+    } else if (delta_x > world::kWorldWidth / 2) {
+        delta_x -= world::kWorldWidth;
+    }
+    const int delta_y = camera_target_top_ - viewport_top_;
+    if (std::abs(delta_x) <= 1 && std::abs(delta_y) <= 1) {
+        int step_x = delta_x;
+        int step_y = delta_y;
+        if (step_x != 0 || step_y != 0) {
+            scroll_viewport(step_x, step_y);
+        }
+        clear_camera_target();
+        return step_x != 0 || step_y != 0;
+    }
+    // Exponential ease: the fraction of the remaining distance covered in
+    // `elapsed_ms`, for a 150 ms time constant.  Sub-pixel progress carries
+    // over to the next frame.
+    constexpr double kTimeConstantMs = 150.0;
+    const double fraction = 1.0 - std::exp(-elapsed_ms / kTimeConstantMs);
+    camera_carry_x_ += delta_x * fraction;
+    camera_carry_y_ += delta_y * fraction;
+    int step_x = static_cast<int>(camera_carry_x_);
+    int step_y = static_cast<int>(camera_carry_y_);
+    camera_carry_x_ -= step_x;
+    camera_carry_y_ -= step_y;
+    if (step_x == 0 && step_y == 0) {
+        return false;
+    }
+    const int wanted_y = step_y;
+    scroll_viewport(step_x, step_y);
+    if (step_y != wanted_y) {
+        // Clamped at the top or bottom of the world: that axis has arrived.
+        camera_target_top_ = viewport_top_;
+        camera_carry_y_ = 0.0;
+    }
+    return true;
+}
+
 bool WorldRenderer::advance_smooth_scroll() {
+    if (frame_camera_) {
+        // A request still easing holds off the world tick's follow.
+        return camera_target_set_ && camera_target_is_request_;
+    }
     if (!smooth_scrolling_enabled_ ||
         (smooth_scroll_remaining_x_ == 0 &&
          smooth_scroll_remaining_y_ == 0)) {
@@ -964,6 +1064,7 @@ bool WorldRenderer::advance_smooth_scroll() {
 }
 
 void WorldRenderer::reset_navigation() {
+    clear_camera_target();
     smooth_scroll_remaining_x_ = 0;
     smooth_scroll_remaining_y_ = 0;
     smooth_scroll_accumulated_x_ = 0;
@@ -979,6 +1080,8 @@ void WorldRenderer::reset_navigation() {
 }
 
 void WorldRenderer::set_viewport_origin(int world_x, int world_y) {
+    // A placed origin (camt, cmra, a load) ends any eased move.
+    clear_camera_target();
     const int previous_left = viewport_left_;
     const int previous_top = viewport_top_;
     const int height = viewport_bottom_ - viewport_top_;

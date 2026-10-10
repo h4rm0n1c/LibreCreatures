@@ -248,6 +248,18 @@ public:
     bool is_selected_creature_within_safe_area() const;
     void scroll_viewport(int& in_out_delta_x, int& in_out_delta_y);
     bool advance_smooth_scroll();
+    // Frame camera (LibreCreatures, SDL view with Smooth motion on).  The
+    // native camera moves on world ticks -- follow steps and smooth scrolls
+    // in tick-sized amounts -- which steps between frames and speeds up with
+    // World speed.  With the frame camera on, those moves set a target
+    // instead, and advance_frame_camera eases the view towards it on real
+    // time each display frame.  When the camera moves and in which mode stay
+    // the native per-tick decisions.
+    void set_frame_camera(bool enabled);
+    bool frame_camera() const { return frame_camera_; }
+    // Moves the view part of the way to the target for `elapsed_ms` of real
+    // time.  Returns true if the view moved.
+    bool advance_frame_camera(double elapsed_ms);
     void reset_navigation();
     void set_viewport_origin(int world_x, int world_y);
     // CEyeView writes its viewport directly after following the selected
@@ -300,6 +312,17 @@ private:
     int dib_width_ = 0;
     int dib_height_ = 0;
     bool smooth_scrolling_enabled_ = false;
+    bool frame_camera_ = false;
+    bool camera_target_set_ = false;
+    // A smooth-scroll request (not a follow) is easing: the world tick does
+    // not follow meanwhile, as native's advance_smooth_scroll returning true.
+    bool camera_target_is_request_ = false;
+    int camera_target_left_ = 0;
+    int camera_target_top_ = 0;
+    double camera_carry_x_ = 0.0;
+    double camera_carry_y_ = 0.0;
+    void set_camera_target(int delta_x, int delta_y, bool is_request);
+    void clear_camera_target();
     // The main renderer owns the document's screen-space renderable set and
     // therefore applies native ScrollViewport/SetViewportOrigin movement to
     // it.  CEyeView has a second renderer over the same document and must

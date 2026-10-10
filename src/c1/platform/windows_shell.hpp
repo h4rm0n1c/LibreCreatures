@@ -1751,6 +1751,8 @@ private:
     int previous_view_left_ = 0;
     int previous_view_top_ = 0;
     double tick_started_ms_ = 0.0;
+    // When present_between_ticks last advanced the frame camera.
+    double camera_advanced_ms_ = 0.0;
     float drawn_tick_progress_ = 1.0f;
     void snapshot_motion();
     // 0 just after a tick, 1 by the next; 1 whenever nothing glides.

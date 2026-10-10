@@ -4614,9 +4614,29 @@ void C1WindowsDocument::present_between_ticks() {
     if (sdl_view_ == nullptr || renderer_ == nullptr) {
         return;
     }
-    // A frame whenever something glides or the mouse has moved, and one
-    // more when a glide has just finished.
-    if (tick_progress() >= 1.0f && drawn_tick_progress_ >= 1.0f &&
+    // The camera eases on real time (WorldRenderer::advance_frame_camera)
+    // when the SDL view draws with Smooth motion on; otherwise it keeps the
+    // native per-tick steps.
+    renderer_->set_frame_camera(smooth_motion_);
+    const double now = performance_counter_ms();
+    const double elapsed = camera_advanced_ms_ == 0.0
+                               ? 0.0
+                               : (std::min)(now - camera_advanced_ms_, 100.0);
+    camera_advanced_ms_ = now;
+    const int left_before = renderer_->viewport_left();
+    const int top_before = renderer_->viewport_top();
+    const bool camera_moved = renderer_->advance_frame_camera(elapsed);
+    if (camera_moved) {
+        // The eased move is already smooth: carry the tick-start view along
+        // with it, so the between-tick glide (still used for per-tick moves
+        // such as keyboard scrolling) does not drag it back.
+        previous_view_left_ +=
+            wrapped_world_delta(renderer_->viewport_left() - left_before);
+        previous_view_top_ += renderer_->viewport_top() - top_before;
+    }
+    // A frame whenever something glides, the camera moves or the mouse has
+    // moved, and one more when a glide has just finished.
+    if (!camera_moved && tick_progress() >= 1.0f && drawn_tick_progress_ >= 1.0f &&
         mouse_client_x() == drawn_mouse_client_x_ &&
         mouse_client_y() == drawn_mouse_client_y_) {
         return;
