@@ -4176,8 +4176,13 @@ bool C1WindowsDocument::write_renderer_dib_rect(
         return false;
     }
 
+    // The back buffer is a top-down DIB (biHeight = -height, as
+    // CreateBackBufferDIB @ 0x00413a20 makes it), and WriteDibRectToFile
+    // turns a top-down DIB's rows over so the file is bottom-up, as the
+    // kits read it.  Passing the height as positive wrote every Owner's Kit
+    // photograph upside down.
     const creatures1::display::IndexedDib dib{
-        8, renderer_->dib_width(), renderer_->dib_height(),
+        8, renderer_->dib_width(), -renderer_->dib_height(),
         renderer_->dib_pixels()};
     const creatures1::display::PixelRect source_rect{
         viewport_rect.min_x, viewport_rect.min_y, viewport_rect.max_x,
