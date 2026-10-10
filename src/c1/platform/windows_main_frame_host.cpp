@@ -463,6 +463,12 @@ BEGIN_MESSAGE_MAP(C1MainFrame, CFrameWnd)
     ON_WM_INITMENUPOPUP()
     ON_MESSAGE(0x402, &C1MainFrame::OnPipeServerCommand)
     ON_MESSAGE(0x401, &C1MainFrame::OnShutdownEmbeddedKitTool)
+    // MFC routes every tooltip request with id 0 (the command is in
+    // idFrom), so these take all of them, as CFrameWnd's own entries do,
+    // and hide CFrameWnd's handler: OnKitToolTipText answers a kit's button
+    // and passes every other request to CFrameWnd::OnToolTipText.
+    ON_NOTIFY_EX_RANGE(TTN_NEEDTEXTA, 0, 0xffff, &C1MainFrame::OnKitToolTipText)
+    ON_NOTIFY_EX_RANGE(TTN_NEEDTEXTW, 0, 0xffff, &C1MainFrame::OnKitToolTipText)
 END_MESSAGE_MAP()
 
 int C1MainFrame::OnCreate(LPCREATESTRUCT create_struct) {
@@ -478,6 +484,44 @@ LRESULT C1MainFrame::OnPipeServerCommand(WPARAM wparam, LPARAM) {
             wparam);
     return creatures1::application::handle_pipe_server_command(
         *this, posted_command);
+}
+
+// LibreCreatures deviation.  MFC takes a toolbar tooltip from the string
+// resource for the button's command, and the kit buttons' entries are a
+// fixed table for slots 0-9 copied from the original: some are empty (in
+// English the Biochemistry, Observation and Injector kits'), the
+// languages disagree, and slots 10 and up have none.  The status bar text
+// already comes from each kit's Tool<N> registration (GetMessageString);
+// the tooltip now does too, with the kit's name as the Tools menu shows it.
+// Other buttons, and a slot with no registration, keep MFC's lookup.
+BOOL C1MainFrame::OnKitToolTipText(UINT id, NMHDR* header, LRESULT* result) {
+    constexpr UINT kFirstKitCommand = 0x8086;
+    const auto* text_a = reinterpret_cast<TOOLTIPTEXTA*>(header);
+    const auto* text_w = reinterpret_cast<TOOLTIPTEXTW*>(header);
+    const UINT flags = header->code == TTN_NEEDTEXTA ? text_a->uFlags : text_w->uFlags;
+    const UINT_PTR command = header->idFrom;
+    if ((flags & TTF_IDISHWND) != 0 || command < kFirstKitCommand ||
+        command >= kFirstKitCommand + embedded_kit_definitions().size() ||
+        embedded_kit_definitions()[command - kFirstKitCommand]
+            .display_name.empty()) {
+        return CFrameWnd::OnToolTipText(id, header, result);
+    }
+    const std::string& name =
+        embedded_kit_definitions()[command - kFirstKitCommand].display_name;
+    if (header->code == TTN_NEEDTEXTA) {
+        auto* tip = reinterpret_cast<TOOLTIPTEXTA*>(header);
+        strncpy_s(tip->szText, name.c_str(), _TRUNCATE);
+    } else {
+        auto* tip = reinterpret_cast<TOOLTIPTEXTW*>(header);
+        MultiByteToWideChar(CP_ACP, 0, name.c_str(), -1, tip->szText,
+                            static_cast<int>(_countof(tip->szText)));
+        tip->szText[_countof(tip->szText) - 1] = L'\0';
+    }
+    *result = 0;
+    // As MFC's own handler does: keep the tooltip above other windows.
+    ::SetWindowPos(header->hwndFrom, HWND_TOP, 0, 0, 0, 0,
+                   SWP_NOACTIVATE | SWP_NOSIZE | SWP_NOMOVE | SWP_NOOWNERZORDER);
+    return TRUE;
 }
 
 LRESULT C1MainFrame::OnShutdownEmbeddedKitTool(WPARAM tool_index, LPARAM) {
@@ -697,7 +741,12 @@ C1MainFrame::WindowsToolbarPlatform::load_bitmap_file(std::string_view path,
     const HBITMAP bitmap = static_cast<HBITMAP>(
         LoadImageA(nullptr, std::string(path).c_str(), IMAGE_BITMAP,
                   static_cast<int>(width), static_cast<int>(height),
-                  LR_LOADFROMFILE));
+                  // AddKitToolbarBitmapFromProgId @ 0x00443ff0 passes
+                  // 0x1010: the 3D-colour mapping turns the bitmap's
+                  // silver, grey and light grey into the button face and
+                  // shadow colours, so a kit icon drawn on 1996 silver has
+                  // no grey square on a modern toolbar.
+                  LR_LOADFROMFILE | LR_LOADMAP3DCOLORS));
     return reinterpret_cast<creatures1::ui::BitmapHandle>(bitmap);
 }
 

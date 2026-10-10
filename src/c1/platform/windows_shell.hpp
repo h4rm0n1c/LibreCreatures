@@ -341,6 +341,11 @@ protected:
     // the default window proc and was silently dropped.
     afx_msg LRESULT OnShutdownEmbeddedKitTool(WPARAM tool_index, LPARAM);
 
+    // Not native: a kit's toolbar tooltip is the kit's name from its
+    // Tool<N> registration (the Tools menu's text), not the fixed string
+    // table entry for its slot.
+    afx_msg BOOL OnKitToolTipText(UINT id, NMHDR* header, LRESULT* result);
+
     void OnDestroy();
 
     afx_msg void OnClose();
