@@ -58,6 +58,7 @@ picks categories, comma separated (default all):
 | `scheduler` | object scripts started, held back and ended |
 | `sound` | the sound manager's trace lines (as `C1_SOUND_LOG`) |
 | `lifecycle` | world opened and saved, deaths, creatures removed |
+| `attention` | each change of what a creature attends to: the winning attention slot, the target's classifier and position, its distance, and whether the creature can see it |
 
 The trace only observes. The c1-lab `launch(trace=...)` sets it, and its
 `trace` and `trace_wait` tools read it.

@@ -989,7 +989,43 @@ void WindowsCreatureWorldUpdateHost::update_perception(
 void WindowsCreatureWorldUpdateHost::update_attention(
     creatures1::creatures::Creature& creature) {
     WindowsCreatureAttentionHost attention(document_);
+    const creatures1::objects::Object* const before =
+        creature.skeleton().motion_link;
     creature.update_attention(attention);
+    const creatures1::objects::Object* const after =
+        creature.skeleton().motion_link;
+    if (after == before ||
+        !creatures1::common::lab_trace_enabled(
+            creatures1::common::LabTrace::attention)) {
+        return;
+    }
+    const unsigned long moniker = static_cast<unsigned long>(
+        creature.skeleton().genome_source_filename);
+    if (after == nullptr) {
+        creatures1::common::lab_trace(creatures1::common::LabTrace::attention,
+                                      "moniker=%08lx attends to nothing", moniker);
+        return;
+    }
+    int slot = -1;
+    const auto& records = creature.attention_records();
+    for (std::size_t index = 0; index < records.size(); ++index) {
+        if (records[index].target == after) {
+            slot = static_cast<int>(index);
+            break;
+        }
+    }
+    const std::uint32_t classifier = after->classifier_base();
+    const int target_x = after->sound_source_x();
+    const int target_y = after->sound_source_y();
+    const int own_x = creature.skeleton().sound_source_x();
+    const bool visible = slot >= 0 && records[static_cast<std::size_t>(slot)].visible;
+    creatures1::common::lab_trace(
+        creatures1::common::LabTrace::attention,
+        "moniker=%08lx attends to slot=%d clas=%u %u %u at=%d,%d distance=%d "
+        "visible=%d",
+        moniker, slot, (classifier >> 24) & 0xffu, (classifier >> 16) & 0xffu,
+        (classifier >> 8) & 0xffu, target_x, target_y, std::abs(target_x - own_x),
+        visible ? 1 : 0);
 }
 
 creatures1::world::WorldRect
