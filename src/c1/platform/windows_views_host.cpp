@@ -32,6 +32,11 @@ void C1WindowsView::toggle_smooth_scrolling() {
     }
 }
 
+bool C1WindowsView::navigation_disabled() const {
+    return view_state_.viewport_navigation_mode ==
+           creatures1::ui::ViewportNavigationMode::disabled;
+}
+
 bool C1WindowsView::camera_tracks_selected_creature() const {
     return view_state_.viewport_navigation_mode ==
            creatures1::ui::ViewportNavigationMode::follow_selected_creature;

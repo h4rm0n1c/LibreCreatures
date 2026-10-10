@@ -838,7 +838,9 @@ public:
 
     bool viewport_navigation_is_disabled() const;
 
-    void disable_viewport_navigation();
+    // SFCView::SetViewportNavigationMode on the world view: disabled
+    // (tracking off) or manual.
+    void set_world_view_navigation_mode(creatures1::ui::ViewportNavigationMode mode);
 
     void request_event_bar_viewport_origin(int world_x, int world_y);
 
@@ -1704,7 +1706,8 @@ public:
 
     void flush_funeral_kit_state() override;
 
-    void disable_viewport_navigation() override;
+    void set_manual_viewport_navigation() override;
+    void stop_tracking_selected_creature() override;
 
     void refresh_display_panes() override;
 
@@ -2247,6 +2250,7 @@ public:
     void toggle_smooth_scrolling();
 
     bool camera_tracks_selected_creature() const;
+    bool navigation_disabled() const;
 
     bool selected_creature_exists_for_command() const;
 

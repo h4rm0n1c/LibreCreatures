@@ -188,7 +188,7 @@ void EventBar::remove_object(objects::Object* object,
             policy.flush_funeral_kit_state();
         }
         policy.flush_funeral_kit_state();
-        policy.disable_viewport_navigation();
+        policy.set_manual_viewport_navigation();
     }
 
     for (std::size_t index = match; index + 1 < displayed_count_; ++index) {
@@ -313,15 +313,21 @@ void EventBar::on_left_button_down(
         if (object == nullptr) {
             continue;
         }
+        // CEventBar::OnLButtonDown @ 0x00416da0 requests the view origin
+        // first and then, for an object that is not a creature, turns
+        // tracking off -- which clears the smooth-scroll request just made,
+        // so with Smooth Scrolling on, an object within a view of the camera
+        // was never scrolled to.  LibreCreatures deviation: tracking goes
+        // off first, so the request survives.
+        const bool is_creature = interaction.is_creature(*object);
+        if (!is_creature && !interaction.viewport_navigation_is_disabled()) {
+            interaction.stop_tracking_selected_creature();
+        }
         interaction.request_viewport_origin(
             object->sound_source_x() - interaction.viewport_width() / 2,
             object->sound_source_y() - interaction.viewport_height() / 2);
 
-        if (!interaction.is_creature(*object)) {
-            if (interaction.viewport_navigation_is_disabled()) {
-                return;
-            }
-            interaction.disable_viewport_navigation();
+        if (!is_creature) {
             return;
         }
 

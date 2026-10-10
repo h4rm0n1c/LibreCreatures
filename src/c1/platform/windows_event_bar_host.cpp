@@ -229,8 +229,14 @@ void C1EventBarObjectAdapter::flush_funeral_kit_state() {
     document_.flush_funeral_state();
 }
 
-void C1EventBarObjectAdapter::disable_viewport_navigation() {
-    document_.disable_viewport_navigation();
+void C1EventBarObjectAdapter::set_manual_viewport_navigation() {
+    document_.set_world_view_navigation_mode(
+        creatures1::ui::ViewportNavigationMode::manual);
+}
+
+void C1EventBarObjectAdapter::stop_tracking_selected_creature() {
+    document_.set_world_view_navigation_mode(
+        creatures1::ui::ViewportNavigationMode::disabled);
 }
 
 void C1EventBarObjectAdapter::refresh_display_panes() {

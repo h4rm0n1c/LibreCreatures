@@ -74,7 +74,8 @@ public:
     virtual std::size_t funeral_state_word_count() const = 0;
     virtual void append_funeral_state_word(std::uint32_t value) = 0;
     virtual void flush_funeral_kit_state() = 0;
-    virtual void disable_viewport_navigation() = 0;
+    // SFCView::SetViewportNavigationMode(1): manual navigation.
+    virtual void set_manual_viewport_navigation() = 0;
     virtual void refresh_display_panes() = 0;
 };
 
@@ -127,7 +128,9 @@ public:
     virtual int viewport_height() const = 0;
     virtual void request_viewport_origin(int x, int y) = 0;
     virtual bool viewport_navigation_is_disabled() const = 0;
-    virtual void disable_viewport_navigation() = 0;
+    // Native sets SFCView::viewport_navigation_mode to disabled inline: the
+    // view stops tracking the selected creature.
+    virtual void stop_tracking_selected_creature() = 0;
 
     virtual bool is_creature(const objects::Object& object) const = 0;
     virtual void select_creature(objects::Object& object) = 0;
