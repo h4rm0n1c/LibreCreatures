@@ -1,5 +1,8 @@
 #include "windows_pipe_dispatch_proxy.hpp"
 
+#include "../common/lab_trace.hpp"
+#include "windows_shell.hpp"
+
 namespace creatures1::platform {
 
 WindowsPipeDispatchProxy::WindowsPipeDispatchProxy(std::size_t tool_index)
@@ -66,6 +69,39 @@ HRESULT STDMETHODCALLTYPE WindowsPipeDispatchProxy::GetIDsOfNames(
     return S_OK;
 }
 
+bool WindowsPipeDispatchProxy::kit_process_has_exited() const {
+    C1MainFrame* frame = active_main_frame();
+    if (frame == nullptr) {
+        return false;
+    }
+    const auto process =
+        reinterpret_cast<HANDLE>(frame->embedded_kit_process_handle(tool_index_));
+    DWORD exit_code = 0;
+    return process != nullptr && GetExitCodeProcess(process, &exit_code) != FALSE &&
+           exit_code != STILL_ACTIVE;
+}
+
+// LibreCreatures deviation.  A kit that ends normally tells the game (its
+// "app: quit" or the proxy in the kit posts message 0x401) and the slot is
+// shut down.  A kit that crashed or was killed never does: native keeps the
+// slot as running, so every later message to it fails, and the first click
+// on its Tools item only shuts the slot down instead of opening the kit.
+// Ask for the same shutdown here, once, when the kit's process is gone.
+void WindowsPipeDispatchProxy::request_shutdown_of_exited_kit() const {
+    if (shutdown_requested_ || !kit_process_has_exited()) {
+        return;
+    }
+    C1MainFrame* frame = active_main_frame();
+    if (frame == nullptr || frame->GetSafeHwnd() == nullptr) {
+        return;
+    }
+    shutdown_requested_ = true;
+    creatures1::common::lab_trace(creatures1::common::LabTrace::kits,
+                                  "kit process gone slot=%u: shutting the slot down",
+                                  static_cast<unsigned>(tool_index_));
+    frame->PostMessage(0x401, static_cast<WPARAM>(tool_index_), 0);
+}
+
 bool WindowsPipeDispatchProxy::send_to_kit(std::uint32_t first_word,
                                            std::uint32_t second_word) const {
     // Keep trying for up to a second: straight after one message (a new
@@ -84,6 +120,12 @@ bool WindowsPipeDispatchProxy::send_to_kit(std::uint32_t first_word,
             break;
         }
         const DWORD error = GetLastError();
+        // Native gives up at once on a missing pipe.  The wait above is for
+        // a kit still starting; one whose process has ended never will.
+        if (error == ERROR_FILE_NOT_FOUND && kit_process_has_exited()) {
+            request_shutdown_of_exited_kit();
+            return false;
+        }
         if (GetTickCount() - started >= 1000) {
             if (error == ERROR_FILE_NOT_FOUND) {
                 OutputDebugStringA(
@@ -147,6 +189,9 @@ HRESULT STDMETHODCALLTYPE WindowsPipeDispatchProxy::Invoke(
 
     const bool sent = send_to_kit(static_cast<std::uint32_t>(second->lVal),
                                   static_cast<std::uint32_t>(first->lVal));
+    if (!sent) {
+        request_shutdown_of_exited_kit();
+    }
 
     if (result_out != nullptr) {
         result_out->vt = VT_BOOL;

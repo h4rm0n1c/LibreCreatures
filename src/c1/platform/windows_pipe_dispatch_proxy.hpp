@@ -37,10 +37,15 @@ public:
 
 private:
     bool send_to_kit(std::uint32_t first_word, std::uint32_t second_word) const;
+    // Not native: whether the kit's process (LaunchKitWithInjection's
+    // handle) has ended, and the one shutdown request posted for it.
+    bool kit_process_has_exited() const;
+    void request_shutdown_of_exited_kit() const;
 
     LONG reference_count_ = 1;
     std::size_t tool_index_ = 0;
     std::array<char, 0x40> pipe_name_{};
+    mutable bool shutdown_requested_ = false;
 };
 
 } // namespace creatures1::platform
