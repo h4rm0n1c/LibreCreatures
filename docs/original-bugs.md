@@ -123,6 +123,7 @@ files.
 | 31 | If an object in the hand is killed or deleted, the hand stays frozen. | `kill`, object delete | ba7dae8 | code |
 | 32 | Return with nothing typed makes the hand say an empty word. | Return key handling | b30f6fd | code |
 | 33 | Save, Save As and a speed change start the world timer again even when the world is paused. | @00434950, @004349b0, @00417f80 | c0d8352, 40962a3 | code |
+| 67 | Kit toolbar buttons take their tooltips from a fixed table for slots 0-9: in English the Biochemistry, Observation and Injector kits' entries are empty, the languages disagree, and a kit in slot 10 or later has none. | string table 32902-32911 (`CFrameWnd::OnToolTipText`) | f421ff2 | code, lab |
 
 ### Kit protocol and sound
 
