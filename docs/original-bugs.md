@@ -94,6 +94,7 @@ files.
 | 61 | A script that ends is removed by shifting the later scripts down a slot, but the scheduler still steps to the next slot, so the script after it loses its turn that tick and its `wait` runs a tick long. | `SFCDoc::UpdateWorld` @004324e0, `RemoveFromRunningSchedulerAndDestroy` @0041a3e0 | 0d4dcf4 | code, lab |
 | 62 | Mute, and losing focus under `sndf fore`, stop the mixer's channels but leave each object's channel handle set; the next sound update takes the silent channel as a finished sound and clears it, so a `sndl` loop never comes back. | `ToggleMuteAndStopSounds` @004333b0, `Object::UpdateSound` @00426190 | c4cd30d | code |
 | 63 | A brain activity report is written into the caller's buffer, three bytes for each active neuron, with no limit, so a brain of more than about 1,365 active neurons writes past a kit's 4,096-byte buffer. | `CMacroHolder::DispatchFormatBrainActivityReport` @0x00419400 | 43359e8 | code |
+| 64 | Under Wine, a kit that crashes or is killed never tells the game, so its slot stays open: each later message to it fails, and the first click on its Tools item only closes the slot instead of opening the kit. | `CPipeDispatchProxy::Invoke` @00449950, `ExecuteEmbeddedKitTool` @004444e0 | 37cf5e1 | code, lab |
 
 ### World, objects and vehicles
 
