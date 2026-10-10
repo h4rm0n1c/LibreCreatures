@@ -124,6 +124,7 @@ files.
 | 32 | Return with nothing typed makes the hand say an empty word. | Return key handling | b30f6fd | code |
 | 33 | Save, Save As and a speed change start the world timer again even when the world is paused. | @00434950, @004349b0, @00417f80 | c0d8352, 40962a3 | code |
 | 67 | Kit toolbar buttons take their tooltips from a fixed table for slots 0-9: in English the Biochemistry, Observation and Injector kits' entries are empty, the languages disagree, and a kit in slot 10 or later has none. | string table 32902-32911 (`CFrameWnd::OnToolTipText`) | f421ff2 | code, lab |
+| 68 | A click on an event bar entry that is not a creature requests the camera move and then turns tracking off, which clears the smooth-scroll request: with Smooth Scrolling on, an object within a view of the camera is not scrolled to. | `CEventBar::OnLButtonDown` @0x00416da0 | fb17df2 | code, lab |
 
 ### Kit protocol and sound
 
