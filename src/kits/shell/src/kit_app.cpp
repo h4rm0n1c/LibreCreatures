@@ -138,7 +138,8 @@ LRESULT KitApp::ProcessWndProcException(CException* error, const MSG* message) {
 bool KitApp::on_communicate(std::int32_t header, std::int32_t payload) {
     auto* sheet = dynamic_cast<KitSheet*>(m_pMainWnd);
     if (sheet != nullptr && ::IsWindow(sheet->GetSafeHwnd())) {
-        sheet->handle_kit_message(c1kit::decode_communicate(header, payload));
+        return sheet->on_communicate_message(
+            c1kit::decode_communicate(header, payload));
     }
     // The kits' Communicate handlers always answer TRUE.
     return true;
