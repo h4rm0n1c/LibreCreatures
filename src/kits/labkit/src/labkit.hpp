@@ -90,7 +90,6 @@ private:
     MessagesPage page_;
     std::unique_ptr<c1kit::MacroConversation> conversation_;
     std::string log_path_;
-    DWORD started_ms_ = 0;
     bool connected_ = false;
     bool paused_ = false;
     unsigned messages_ = 0;

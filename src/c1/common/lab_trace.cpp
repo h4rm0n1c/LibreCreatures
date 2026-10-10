@@ -9,6 +9,10 @@
 #include <string>
 #include <utility>
 
+#if defined(_WIN32)
+#include <windows.h>
+#endif
+
 namespace creatures1::common {
 
 namespace {
@@ -83,23 +87,35 @@ public:
         while (length != 0 && text[length - 1] == ' ') {
             text[--length] = '\0';
         }
-        const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::steady_clock::now() - start_);
+        const long long elapsed_ms = now_ms();
         std::lock_guard<std::mutex> lock(mutex_);
         std::fprintf(file_, "%lu\t%lld\t%s\t%s\n",
                      static_cast<unsigned long>(world_tick_),
-                     static_cast<long long>(elapsed.count()),
+                     elapsed_ms,
                      category_name(category), text);
         std::fflush(file_);
     }
 
     void set_world_tick(std::uint32_t tick) { world_tick_ = tick; }
 
+    // Windows' uptime in milliseconds, the clock the Lab Kit's log uses
+    // too, so the lab can put the two in one timeline.
+    static long long now_ms() {
+#if defined(_WIN32)
+        return static_cast<long long>(GetTickCount64());
+#else
+        return static_cast<long long>(
+            std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now().time_since_epoch())
+                .count());
+#endif
+    }
+
     bool active() const { return file_ != nullptr && mask_ != 0; }
     std::string& context() { return context_; }
 
 private:
-    Trace() : start_(std::chrono::steady_clock::now()) {
+    Trace() {
         const char* path = std::getenv("C1_LAB_TRACE");
         if (path == nullptr || *path == '\0') {
             return;
@@ -112,7 +128,6 @@ private:
     std::uint32_t mask_ = 0;
     std::uint32_t world_tick_ = 0;
     std::string context_;
-    std::chrono::steady_clock::time_point start_;
     std::mutex mutex_;
 };
 
