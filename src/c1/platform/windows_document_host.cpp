@@ -1513,14 +1513,21 @@ void C1WindowsDocument::flush_funeral_state() {
 }
 
 
+// The view's navigation mode, as native's g_SFCView->viewport_navigation_mode:
+// "disabled" is Track Creature off.  The document's own flag only stood in
+// for it, and following the selected creature never read that flag, so an
+// event bar click on an object left tracking on and the camera went
+// straight back to the creature.
 bool C1WindowsDocument::viewport_navigation_is_disabled() const {
-    return viewport_navigation_disabled_;
+    return world_view_ != nullptr ? world_view_->navigation_disabled()
+                                  : viewport_navigation_disabled_;
 }
 
-void C1WindowsDocument::disable_viewport_navigation() {
-    viewport_navigation_disabled_ = true;
-    reset_renderer_navigation();
-    invalidate_main_toolbar();
+void C1WindowsDocument::set_world_view_navigation_mode(
+    creatures1::ui::ViewportNavigationMode mode) {
+    if (world_view_ != nullptr) {
+        world_view_->set_navigation_mode(mode);
+    }
 }
 
 void C1WindowsDocument::request_event_bar_viewport_origin(int world_x, int world_y) {
