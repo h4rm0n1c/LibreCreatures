@@ -223,6 +223,13 @@ public:
                                                                   int world_y);
     void center_viewport_on_selected_creature_if_in_pan_region();
     void follow_selected_creature_viewport();
+    // Places the view where following would bring it -- the selected
+    // creature centred across, its foot five-eighths of the way down -- at
+    // once, with no smooth scroll.  For a world just loaded: the saved origin
+    // can be well away from the creature (a world saved at "scale world
+    // height to window" stores the top as 0), and following from there
+    // started the view in the sky and panned down to the creature.
+    void snap_viewport_to_selected_creature();
     bool is_selected_creature_within_safe_area() const;
     void scroll_viewport(int& in_out_delta_x, int& in_out_delta_y);
     bool advance_smooth_scroll();

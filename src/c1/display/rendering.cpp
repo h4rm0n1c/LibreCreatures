@@ -735,6 +735,25 @@ void WorldRenderer::center_viewport_on_selected_creature_if_in_pan_region() {
     set_viewport_origin(origin_x, foot_y + vertical_offset / 8);
 }
 
+void WorldRenderer::snap_viewport_to_selected_creature() {
+    if (host_.selected_creature() == nullptr ||
+        host_.selected_creature_is_edit_object() ||
+        !host_.selected_creature_is_bounded()) {
+        return;
+    }
+    int foot_x = 0;
+    int foot_y = 0;
+    if (!host_.selected_creature_down_foot(foot_x, foot_y)) {
+        return;
+    }
+    // follow_selected_creature_viewport aims the view's horizontal centre at
+    // the foot and (top * 3 + bottom * 5) / 8, i.e. top + 5/8 of the height.
+    const int width = viewport_right_ - viewport_left_;
+    const int height = viewport_bottom_ - viewport_top_;
+    reset_navigation();
+    set_viewport_origin(foot_x - width / 2, foot_y - height * 5 / 8);
+}
+
 void WorldRenderer::follow_selected_creature_viewport() {
     ::creatures1::creatures::Creature* selected =
         host_.selected_creature();

@@ -4136,9 +4136,23 @@ void C1WindowsDocument::place_renderer_origin(int world_x, int world_y) {
     if (renderer_ != nullptr) {
         renderer_->reset_navigation();
         renderer_->set_viewport_origin(world_x, world_y);
+        snap_camera_to_followed_creature();
         return;
     }
     pending_renderer_origin_ = std::make_pair(world_x, world_y);
+}
+
+// LibreCreatures deviation.  A loaded world in Track Creature mode opens on
+// the selected creature, where following would take the view anyway, instead
+// of at the saved origin and then catching up: a saved origin far from the
+// creature (a world saved at "scale world height to window" stores its top as
+// 0, as the stock world does) showed the sky for a second or two and then
+// scrolled, or with Smooth Scrolling panned, down to the creature.  With the
+// camera not tracking, the saved origin stands.
+void C1WindowsDocument::snap_camera_to_followed_creature() {
+    if (renderer_ != nullptr && follows_selected_creature_viewport()) {
+        renderer_->snap_viewport_to_selected_creature();
+    }
 }
 
 void C1WindowsDocument::center_renderer_on_world_point_if_in_navigation_bounds(
@@ -4879,6 +4893,7 @@ void C1WindowsDocument::ensure_renderer(CWnd& view, bool smooth_scrolling_enable
         pending_renderer_origin_.reset();
         // Placed, not scrolled to (see place_renderer_origin).
         renderer_->set_viewport_origin(origin_x, origin_y);
+        snap_camera_to_followed_creature();
     }
 }
 
