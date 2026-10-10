@@ -110,6 +110,13 @@ void WindowsMacroHost::report_too_many_macros(
 
 // --- MacroCommandHost / MacroExceptionHost ---------------------------------
 
+// LibreCreatures deviation.  Macro::ReportSyntaxError @0041daa0 stops the
+// world timer and shows a modal box, "Press OK to continue, or Cancel to kill
+// the macro", from inside the running script.  Cancel on a script a kit or
+// the lab sent through the pipe ends the CE game: the C runtime aborts while
+// a string is released (MsvcBasicString_Reset @00406420; lab, 2026-10-10).
+// Here the error goes to the debug console and the script carries on, as
+// OK does; no box is shown and nothing ends the macro under its own feet.
 void WindowsMacroHost::report_syntax_error(
     creatures1::scripting::Macro& macro,
     const creatures1::scripting::MacroSyntaxDiagnostic& diagnostic) {
