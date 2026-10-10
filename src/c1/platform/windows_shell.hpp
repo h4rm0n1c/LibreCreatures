@@ -1123,6 +1123,9 @@ public:
     void set_world_tick_count(std::uint32_t count) override;
 
     void publish_periodic_score_to_embedded_control(const creatures1::application::DocumentScore& /*score*/) override;
+    // NotifyDDEScoreChanged @ 0042f740: tells the kit in embedded record 8
+    // (the Score Kit) to re-read the score.
+    void notify_score_kit();
 
     std::uint32_t current_time_ms() const override;
     void construct_semantic_document();
