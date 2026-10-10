@@ -1392,6 +1392,7 @@ void C1WindowsDocument::delete_framework_contents( creatures1::application::Docu
     }
     world_update_timer_interval_ms_ = 0;
     world_tick_count_ = 0;
+    creatures1::common::lab_trace_set_world_tick(0);
     world_update_in_progress_ = false;
     creature_update_cohort_ = 0;
     ambient_sound_cooldown_ticks_ = 0;
@@ -6293,7 +6294,7 @@ std::uint32_t C1WindowsDocument::ArchiveHost::read_world_tick_count() {
 }
 
 void C1WindowsDocument::ArchiveHost::set_world_tick_count(std::uint32_t count) {
-    document_.world_tick_count_ = count;
+    document_.set_world_tick_count(count);
 }
 
 std::uint32_t C1WindowsDocument::ArchiveHost::read_document_state_word_count() {
