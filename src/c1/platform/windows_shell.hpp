@@ -1503,6 +1503,7 @@ public:
 
     void request_renderer_origin(int world_x, int world_y);
     void place_renderer_origin(int world_x, int world_y);
+    void snap_camera_to_followed_creature();
     void center_renderer_on_world_point_if_in_navigation_bounds(int world_x,
                                                                   int world_y);
     void set_renderer_debug_highlight_rect(int left, int top, int right,
