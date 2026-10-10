@@ -81,7 +81,7 @@ files.
 
 | # | Defect in the original | Native | Fix | Checked |
 | --- | --- | --- | --- | --- |
-| 18 | The egg in the sky: `new:` ends a script's turn with the new object still at the world origin as 2 0 0, so anything that stops the script before its next turn (an event replacing it, its owner dying or being removed, a save) leaves the egg there. | `ExecuteScriptForClassifier`, owner purge, `ExecuteInterpreter` (new: at 0x0041e1bf) | c3d446e, ac8bfa4, 7c7f309, 13c6477 | code, lab (CE) |
+| 18 | The egg in the sky: `new:` ends a script's turn with the new object still at the world origin as 2 0 0, so anything that stops the script before its next turn (an event replacing it, its owner dying or being removed, a save) leaves the egg there. C2 and C3 avoided it in their scripts, not their engines: their egg scripts make and place the egg inside one `inst` block (C2 Eden.sfc: `inst,new: simp …,mvto …,slim`; C3 creatureBreeding.cos: `inst`, `new: simp 3 4 1 "eggs"`, `mvsf`, `gene move`, `slow`). C1's egg script ends with `slim` but has no `inst` before its `new:`. Their engine (as openc2e has it) still lets an event replace a running script unless the script called `lock`. | `ExecuteScriptForClassifier`, owner purge, `ExecuteInterpreter` (new: at 0x0041e1bf) | c3d446e, ac8bfa4, 7c7f309, 13c6477 | code, lab (CE) |
 | 19 | A script value used as an object pointer is not checked, so a bad value crashes the game. | `stim writ`, `targ`, `mesg writ` and others | bd4c3b5 | code, crash |
 | 20 | `rndv` over the whole 32-bit range divides by zero. | `rndv` | a886d6b | code |
 | 58 | `ltcy` divides by zero when its upper bound is one below the lower (`ltcy 0 10 9`) or the bounds cover the whole 32-bit range. | `ltcy` (ExecuteInterpreter) | e80b81f | code, lab |
@@ -92,9 +92,6 @@ files.
 | 55 | The scans that skip an `enum` body or a `doif` branch read the raw script, so control words inside bracketed text count: `[next]` or `[else]` resumes inside the text, `[ending]` closes a `doif` early. | `ExecuteInterpreter` @0041dc40 | b6cee7d | code, lab |
 | 56 | `gsub` finds its `subr` label by scanning the raw script, so `subr <id>` inside bracketed text before the real label sends it to the wrong place, and its cache keeps that place. | `ExecuteInterpreter` @0041dc40 (scan at 0041e420) | dce8d60 | code, lab |
 | 61 | A script that ends is removed by shifting the later scripts down a slot, but the scheduler still steps to the next slot, so the script after it loses its turn that tick and its `wait` runs a tick long. | `SFCDoc::UpdateWorld` @004324e0, `RemoveFromRunningSchedulerAndDestroy` @0041a3e0 | 0d4dcf4 | code, lab |
-| 62 | Mute, and losing focus under `sndf fore`, stop the mixer's channels but leave each object's channel handle set; the next sound update takes the silent channel as a finished sound and clears it, so a `sndl` loop never comes back. | `ToggleMuteAndStopSounds` @004333b0, `Object::UpdateSound` @00426190 | c4cd30d | code |
-| 63 | A brain activity report is written into the caller's buffer, three bytes for each active neuron, with no limit, so a brain of more than about 1,365 active neurons writes past a kit's 4,096-byte buffer. | `CMacroHolder::DispatchFormatBrainActivityReport` @0x00419400 | 43359e8 | code |
-| 64 | Under Wine, a kit that crashes or is killed never tells the game, so its slot stays open: each later message to it fails, and the first click on its Tools item only closes the slot instead of opening the kit. | `CPipeDispatchProxy::Invoke` @00449950, `ExecuteEmbeddedKitTool` @004444e0 | 37cf5e1 | code, lab |
 | 65 | A syntax error in a script shows a modal box, "Press OK to continue, or Cancel to kill the macro", from inside the running script. Cancel on a script a kit sent through the pipe ends the game: the C runtime aborts while a string is released. | `Macro::ReportSyntaxError` @0041daa0, `MsvcBasicString_Reset` @00406420 | 71431ba, 02dea96 | code, lab |
 
 ### World, objects and vehicles
@@ -134,6 +131,9 @@ files.
 | 34 | The pipe server gives the UI thread the address of a stack variable and returns after 30 s, so a slow command reads freed memory. | `PipeServerMarshalCommandToMainThread` @00446620 | c0d8352 | code, crash |
 | 35 | Over SFC.OLE a brain report does not run its holder's script, so the kits always get firing strength, whatever measure they ask for. | `DispatchFormatBrainActivityReport` @00419400 | 2dcb4fc | code, kit traffic |
 | 36 | The 512 KB sound cache is smaller than one looping sound plus a few others, so sounds are dropped with no error. | sound cache | f410c47 | lab |
+| 62 | Mute, and losing focus under `sndf fore`, stop the mixer's channels but leave each object's channel handle set; the next sound update takes the silent channel as a finished sound and clears it, so a `sndl` loop never comes back. | `ToggleMuteAndStopSounds` @004333b0, `Object::UpdateSound` @00426190 | c4cd30d | code |
+| 63 | A brain activity report is written into the caller's buffer, three bytes for each active neuron, with no limit, so a brain of more than about 1,365 active neurons writes past a kit's 4,096-byte buffer. | `CMacroHolder::DispatchFormatBrainActivityReport` @0x00419400 | 43359e8 | code |
+| 64 | Under Wine, a kit that crashes or is killed never tells the game, so its slot stays open: each later message to it fails, and the first click on its Tools item only closes the slot instead of opening the kit. | `CPipeDispatchProxy::Invoke` @00449950, `ExecuteEmbeddedKitTool` @004444e0 | 37cf5e1 | code, lab |
 
 ## Kits
 
