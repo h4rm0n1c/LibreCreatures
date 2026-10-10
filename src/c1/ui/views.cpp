@@ -1,5 +1,6 @@
 #include "views.hpp"
 
+#include "../common/lab_trace.hpp"
 #include "../objects/object.hpp"
 
 #include <algorithm>
@@ -148,6 +149,9 @@ void set_viewport_navigation_mode(SfcViewState& state, SfcViewHost& host,
     } else {
         state.viewport_navigation_mode = ViewportNavigationMode::disabled;
     }
+    common::lab_trace(common::LabTrace::camera, "navigation mode=%s by=%s",
+                      manual_mode_requested ? "manual" : "disabled",
+                      common::lab_trace_context());
 
     host.reset_renderer_navigation();
     state.manual_navigation_safe_frame_count = 0;
@@ -162,9 +166,13 @@ void toggle_follow_selected_creature_mode(SfcViewState& state,
         reset_world_scrollbars(host, settings.half_width, settings.half_height);
         state.viewport_navigation_mode =
             ViewportNavigationMode::follow_selected_creature;
+        common::lab_trace(common::LabTrace::camera,
+                          "navigation mode=follow (toggle)");
         host.request_renderer_origin_for_selected_creature();
     } else {
         state.viewport_navigation_mode = ViewportNavigationMode::disabled;
+        common::lab_trace(common::LabTrace::camera,
+                          "navigation mode=disabled (toggle)");
         host.reset_renderer_navigation();
         state.manual_navigation_safe_frame_count = 0;
     }

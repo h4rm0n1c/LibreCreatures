@@ -1,12 +1,28 @@
 #include "embedded_kits.hpp"
 
 #include <array>
+#include <string>
+
+#include "../common/lab_trace.hpp"
 
 namespace creatures1::application {
 
 namespace {
 
 constexpr std::size_t kFuneralKitIndex = 9;
+
+using creatures1::common::LabTrace;
+using creatures1::common::lab_trace;
+
+const char* control_state_name(std::uint8_t state_code) {
+    switch (state_code) {
+    case 6: return "selected";
+    case 7: return "name";
+    case 8: return "close";
+    case 9: return "pause";
+    default: return "?";
+    }
+}
 
 } // namespace
 
@@ -129,14 +145,29 @@ bool register_embedded_kit_tool(
 
 bool execute_embedded_kit_tool(EmbeddedKitExecutionApi& api,
                                std::size_t tool_index) {
-    if (api.running_under_wine()) {
-        return api.launch_via_wine_proxy(tool_index);
-    }
-    return api.launch_via_native_com(tool_index);
+    const bool launched = api.running_under_wine()
+                              ? api.launch_via_wine_proxy(tool_index)
+                              : api.launch_via_native_com(tool_index);
+    lab_trace(LabTrace::kits, "launch slot=%u -> %s",
+              static_cast<unsigned>(tool_index), launched ? "ok" : "failed");
+    return launched;
 }
 
 void broadcast_embedded_control_state(EmbeddedKitControlApi& api,
                                       std::uint8_t state_code) {
+    if (creatures1::common::lab_trace_enabled(LabTrace::kits)) {
+        std::string listeners;
+        for (std::size_t tool_index = 0; tool_index < kEmbeddedKitSlotCount;
+             ++tool_index) {
+            if (api.has_dispatch(tool_index)) {
+                listeners += (listeners.empty() ? "" : ",") +
+                             std::to_string(tool_index);
+            }
+        }
+        lab_trace(LabTrace::kits, "broadcast state=%u (%s) slots=[%s]",
+                  static_cast<unsigned>(state_code),
+                  control_state_name(state_code), listeners.c_str());
+    }
     for (std::size_t tool_index = 0;
          tool_index < kEmbeddedKitSlotCount;
          ++tool_index) {
@@ -153,6 +184,9 @@ void broadcast_embedded_control_state(EmbeddedKitControlApi& api,
 bool shutdown_embedded_kit_tool(EmbeddedKitShutdownApi& api,
                                 std::size_t tool_index,
                                 int& active_tool_count) {
+    lab_trace(LabTrace::kits, "shutdown slot=%u connected=%d",
+              static_cast<unsigned>(tool_index),
+              api.has_dispatch(tool_index) ? 1 : 0);
     if (api.has_dispatch(tool_index)) {
         api.release_dispatch(tool_index);
         --active_tool_count;

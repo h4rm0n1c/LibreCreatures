@@ -1,6 +1,7 @@
 #include "windows_embedded_kit_host.hpp"
 #include "windows_creature_transfer_host.hpp"
 #include "windows_egg_transfer.hpp"
+#include "../common/lab_trace.hpp"
 #include "windows_macro_host.hpp"
 #include "windows_creature_hosts.hpp"
 #include "windows_shell.hpp"
@@ -483,6 +484,9 @@ LRESULT C1MainFrame::OnShutdownEmbeddedKitTool(WPARAM tool_index, LPARAM) {
     // Native: `if (tool_index < 0x14) { ShutdownEmbeddedKitTool(tool_index); }
     // return 0;` -- 20 embedded-tool slots, same bound as the rest of the
     // embedded-kit machinery.
+    creatures1::common::lab_trace(creatures1::common::LabTrace::kits,
+                                  "shutdown message slot=%u",
+                                  static_cast<unsigned>(tool_index));
     if (tool_index < 0x14) {
         shutdown_embedded_kit_tool(static_cast<std::size_t>(tool_index));
     }

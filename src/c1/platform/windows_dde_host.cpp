@@ -1,6 +1,7 @@
 #include "windows_dde_host.hpp"
 
 #include "windows_shell.hpp"
+#include "../common/lab_trace.hpp"
 
 #include <ddeml.h>
 
@@ -234,6 +235,7 @@ std::string WindowsDdeCallbackHost::render_macro_output(
     // NUL over the final separator, which is exactly what the native sends.
     creatures1::scripting::MacroSchedulerHostAdapter scheduler(*this, *this);
     std::string output;
+    const creatures1::common::LabTraceContext trace_context("injected dde");
     const std::size_t written =
         macro.execute_to_output_buffer(scheduler, output);
     output.resize((std::min)(written, output_capacity));

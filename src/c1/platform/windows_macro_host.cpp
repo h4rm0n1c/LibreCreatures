@@ -12,6 +12,7 @@
 #include "../application/sfc_ole.hpp"
 #include "../brain/lobe.hpp"
 #include "../objects/vehicle.hpp"
+#include "../common/lab_trace.hpp"
 #include "../common/logging.hpp"
 #include "../scripting/classifier_scripts.hpp"
 
@@ -156,6 +157,7 @@ std::uint32_t WindowsMacroHost::execute_macro_to_output_buffer(
     creatures1::scripting::Macro& macro, char* output_buffer) {
     creatures1::scripting::MacroSchedulerHostAdapter scheduler(*this, *this);
     std::string output;
+    const creatures1::common::LabTraceContext trace_context("injected pipe");
     const std::size_t written = macro.execute_to_output_buffer(scheduler,
                                                                output);
     if (output_buffer != nullptr) {
@@ -173,6 +175,7 @@ std::uint32_t WindowsMacroHost::execute_macro_to_output_buffer(
 bool WindowsMacroHost::dispatch_start_macro_execution(
     creatures1::scripting::MacroHolder& holder, void* context) {
     static_cast<void>(context);
+    const creatures1::common::LabTraceContext trace_context("injected start");
     return holder.macro() != nullptr && start_macro(*holder.macro());
 }
 
@@ -215,6 +218,7 @@ void WindowsMacroHost::publish_macro_output(
 bool WindowsMacroHost::start_macro_execution(
     creatures1::scripting::MacroHolder& holder, char* output_buffer) {
     static_cast<void>(output_buffer);
+    const creatures1::common::LabTraceContext trace_context("injected start");
     return holder.macro() != nullptr && start_macro(*holder.macro());
 }
 

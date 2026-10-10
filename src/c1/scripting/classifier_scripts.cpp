@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "macro.hpp"
+#include "../common/lab_trace.hpp"
 #include "../objects/object.hpp"
 
 namespace creatures1::scripting {
@@ -208,6 +209,12 @@ bool execute_script_for_classifier(objects::Object* script_owner,
         // loses the commands after it -- which is how an egg-laying norn
         // leaves her egg at the world origin, the "egg in the sky".  Hold the
         // event until the paused script has finished that turn instead.
+        common::lab_trace(common::LabTrace::scheduler,
+                          "defer script %u %u %u %u owner=%p",
+                          classifier.family, classifier.genus,
+                          classifier.species,
+                          static_cast<unsigned>(classifier.event),
+                          static_cast<void*>(script_owner));
         defer_script_event(script_owner, from_object, classifier);
         return true;
     }
@@ -233,6 +240,15 @@ bool execute_script_for_classifier(objects::Object* script_owner,
     macro->object_script_provenance_known = true;
     macro->load_script_text(
         g_script_definition_entries[selected_definition].script_text);
+    const common::LabTraceContext trace_context(
+        "script %u %u %u %u", classifier.family, classifier.genus,
+        classifier.species, static_cast<unsigned>(classifier.event));
+    common::lab_trace(common::LabTrace::scheduler,
+                      "start script %u %u %u %u owner=%p restart=%d",
+                      classifier.family, classifier.genus, classifier.species,
+                      static_cast<unsigned>(classifier.event),
+                      static_cast<void*>(macro->object_context.script_owner),
+                      force_restart ? 1 : 0);
     runtime.start_macro_execution(*macro);
     return true;
 }

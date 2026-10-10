@@ -1,5 +1,7 @@
 #include "windows_pipe_server_boundary.hpp"
 
+#include "../common/lab_trace.hpp"
+
 #include <utility>
 
 namespace creatures1::platform {
@@ -72,6 +74,11 @@ namespace {
 // A request and the game's answer; field separators (0x1E) are written as
 // '|'.
 void log_kit_traffic(std::string_view request, const std::string& response) {
+    const bool traced = creatures1::common::lab_trace_enabled(
+        creatures1::common::LabTrace::kit_pipe);
+    if (!traced && GetEnvironmentVariableA("C1_KIT_TRAFFIC_LOG", nullptr, 0) == 0) {
+        return;
+    }
     const auto printable = [](std::string_view text) {
         std::string out;
         for (const char c : text) {
@@ -87,7 +94,12 @@ void log_kit_traffic(std::string_view request, const std::string& response) {
         }
         return out;
     };
-    log_kit_traffic_line(printable(request) + "  ->  " + printable(response));
+    const std::string line = printable(request) + "  ->  " + printable(response);
+    log_kit_traffic_line(line);
+    if (traced) {
+        creatures1::common::lab_trace(creatures1::common::LabTrace::kit_pipe,
+                                      "%s", line.c_str());
+    }
 }
 
 } // namespace
