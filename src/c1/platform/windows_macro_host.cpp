@@ -2881,8 +2881,10 @@ void report_unrecovered_dde_query(const char* query) {
     }
 }
 
-// NotifyDDEScoreChanged crosses into the embedded kits through record 8's
-// IDispatch; the document owns that broadcast.
+// NotifyDDEScoreChanged @ 0042f740 invokes only embedded record 8 (the
+// Score Kit), with a data message telling it to re-read the score.  This used
+// to broadcast control state 8 to every kit -- the close command -- so any
+// score change (an egg laid, a hatchery egg, a birth) closed every open kit.
 class DocumentScoreNotification final
     : public creatures1::scripting::DdeScoreNotificationHost {
 public:
@@ -2893,7 +2895,7 @@ public:
         return true;
     }
     void notify_score_changed() override {
-        document_.broadcast_embedded_control_state(8);
+        document_.notify_score_kit();
     }
 
 private:

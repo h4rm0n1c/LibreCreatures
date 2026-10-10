@@ -2910,6 +2910,10 @@ void C1WindowsDocument::publish_periodic_score_to_embedded_control(
     // and two fixed I4 arguments, and the kit reads the score itself.  The
     // score parameter is therefore deliberately unused here.
     static_cast<void>(score);
+    notify_score_kit();
+}
+
+void C1WindowsDocument::notify_score_kit() {
     C1MainFrame* frame = active_main_frame();
     if (frame == nullptr) {
         return;
