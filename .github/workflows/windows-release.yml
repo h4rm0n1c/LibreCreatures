@@ -82,7 +82,7 @@ jobs:
           Two builds of the same game. Choose one:
 
           - **LibreCreatures-windows-x86.zip** is the regular build. It draws the world as the original does.
-          - **LibreCreatures-neorender-windows-x86.zip** is the neorender build. It adds SDL3 drawing, zoom, S32 and @2x art, smooth motion and world speed. `SDL3.dll` must stay beside `Creatures.exe`.
+          - **LibreCreatures-neorender-windows-x86.zip** is the neorender build. It adds SDL3 drawing, zoom, S32 and double-resolution (`@2x.s32`) art, smooth motion and world speed. `SDL3.dll` must stay beside `Creatures.exe`.
 
           Each zip has `Creatures.exe`, the kits and `c1kitlib.dll`. Copy them into a Creatures 1 install (keep copies of the files you replace), then run each kit once on its own so that it registers. Both builds need the x86 Visual C++ 2015-2022 runtime with MFC. The original game's data is not included.
 
