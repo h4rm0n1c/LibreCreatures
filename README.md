@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/logo.png" width="160" alt="The LibreCreatures logo: a cracked egg in grass">
+</p>
+
 # LibreCreatures
 
 LibreCreatures is an independent, GPL-licensed reimplementation of the
