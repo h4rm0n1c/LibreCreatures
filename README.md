@@ -19,6 +19,10 @@ terms: world ticks, creatures, brains, chemistry, objects, CAOS and kits,
 persistence, rendering, and sound. The source is organised around the same
 boundaries, so the guide is a useful starting point before changing code.
 
+[Changes from Creatures 1 Community Edition](docs/changes-from-ce.md) lists
+every way LibreCreatures behaves differently from CE and the 1996 kits:
+fixed defects, new features, and deliberate changes.
+
 ## Status
 
 This is a work in progress. The main simulation, creature systems, CAOS
