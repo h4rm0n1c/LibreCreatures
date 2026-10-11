@@ -4,6 +4,9 @@ This page shows each LibreCreatures change to dendrite migration and loose
 dendrite re-attachment as a pseudocode diff against the native code. It
 covers rows 4, 5 and 6 of [original-bugs.md](original-bugs.md).
 
+Thanks to Altimor of the CAOS Coding Cave Discord, who asked for this
+review of the changes and supplied the C1 dendrite terms used here.
+
 "Native" means the Creatures 1 Community Edition 10.3 `Creatures.exe`. The
 native pseudocode was read from the disassembly, and the addresses are given
 so it can be checked. Offsets are the evidence; the names below are C1's
