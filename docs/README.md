@@ -30,8 +30,12 @@ same path.
    family/genus/species encoding reused for both object identity and CAOS
    script dispatch, and where its wildcard-matching rules apply.
 
+[Changes from Creatures 1 Community Edition](changes-from-ce.md) lists every
+way LibreCreatures behaves differently from CE and the 1996 kits: fixes,
+additions and deliberate changes.
+
 [Bugs in the original game](original-bugs.md) lists the defects of
-Creatures 1 and its kits that LibreCreatures fixes.
+Creatures 1 and its kits that LibreCreatures fixes, with the evidence.
 
 For build prerequisites, packaging, and supplying game data, see
 [Building and packaging](building.md).
