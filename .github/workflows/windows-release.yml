@@ -86,6 +86,8 @@ jobs:
 
           Each zip has `Creatures.exe`, the kits and `c1kitlib.dll`. Copy them into a Creatures 1 install (keep copies of the files you replace), then run each kit once on its own so that it registers. Both builds need the x86 Visual C++ 2015-2022 runtime with MFC. The original game's data is not included.
 
+          What LibreCreatures changes from Creatures 1 CE and the 1996 kits (fixes, new features and deliberate changes) is listed in [Changes from Creatures 1 Community Edition](https://github.com/h4rm0n1c/LibreCreatures/blob/main/docs/changes-from-ce.md).
+
           `SOURCE-CODE.txt` in each zip names the commit it was built from.
           EOF
           gh release create "$GITHUB_REF_NAME" \
