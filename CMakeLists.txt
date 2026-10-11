@@ -210,4 +210,7 @@ install(FILES
     SOURCE-CODE.txt
     DESTINATION .
 )
+# SDL3.dll must sit beside Creatures.exe, with SDL's licence.
+install(FILES ${SDL3_ROOT}/lib/x86/SDL3.dll DESTINATION .)
+install(FILES ${SDL3_ROOT}/LICENSE.txt DESTINATION . RENAME SDL3-LICENSE.txt)
 install(DIRECTORY docs DESTINATION .)
