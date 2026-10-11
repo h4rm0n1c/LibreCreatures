@@ -25,8 +25,12 @@ here still loads in the original game.
   `.spr`). The tier setting changes drawing only.
 - A `.s32` must match the 1x frame count and sizes; an `@2x.s32` must be
   exactly twice the size. A tier that doesn't match is ignored.
-- Images the game draws into while it runs (blackboards, speech, creature
-  pigment) are always drawn from their 1x pixels.
+- Images the game draws into while it runs (blackboards, speech) are always
+  drawn from their 1x pixels.
+- A creature's body file is made at run time from its body-part files
+  (`a006.spr` and so on), recoloured by its genome's pigment. Its S32 tiers
+  come from those parts' own tier files (`a006@2x.s32`), put through the
+  same recolouring per pixel.
 - With no `.s32` files, at 1x, the picture is pixel-identical to the
   8-bit renderer.
 - The snapshot command still writes an 8-bit `temp.spr`.
@@ -92,6 +96,20 @@ twice it), and picks the best tier under a cap (tests:
 `tests/c1_image_tiers_test.cpp`). An image the game draws into while running
 (pigment, speech, blackboards, fills) is marked by `Image::mark_pixels_changed`
 and always drawn from its own pixels.
+
+**Creature bodies.** A creature is drawn from `<moniker>.spr`, a file the
+game writes from the body-part files with the genome's pigment, hue rotation
+and colour swap applied through a palette remap. When the body is built,
+`Skeleton::build_creature_sprite_gallery` tells `ImageTierStore` which part
+file and frame range each block of the body file came from
+(`set_derived_gallery`). Each part then draws from its source's
+`.s32`/`@2x.s32`, recoloured per pixel by `apply_creature_colour_transform`:
+the same arithmetic as the remap (`CreatureColourTransform`), without the
+snap to the nearest palette colour. A part whose tier file is missing or
+the wrong size is drawn from the body file, so a creature can mix tiers. A
+world that is opened reuses up-to-date body files without rebuilding them;
+`Skeleton::describe_body_tiers` gives the tier store the same information
+for those. The tier files are looked for where the part's `.spr` was found.
 
 With `C1_FRAME_DUMP_DIR` set, `sys: cmnd 32941` writes `tiers.txt` there:
 each loaded gallery and its tiers, then any tier file refused and why.

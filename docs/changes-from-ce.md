@@ -267,6 +267,8 @@ are fixed.
 - **Art tiers:** galleries draw from `.spr`, `.s32` or `@2x.s32` files.
   Game logic always uses the `.spr` frame sizes; a tier only changes what is
   drawn.  Art that ships only as `.s32` works, and the kits read it too.
+  Creature body parts can have tiers too (`a006@2x.s32`); they are
+  recoloured by each creature's pigment genes, as the 1x art is.
 - **SDL3 drawing** in the world view and the creature's view.  The
   `Renderer` setting (or `C1_RENDERER=gdi`) goes back to the 8-bit GDI
   drawing.

@@ -1,15 +1,19 @@
 // display/image_tiers: finding NAME.s32 / NAME@2x.s32 beside a gallery,
-// checking them against its 1x frames, choosing a tier under a cap.
+// checking them against its 1x frames, choosing a tier under a cap; and a
+// derived gallery (a creature's body file) drawing each part from its
+// source's tier file, recoloured.
 // Build: c++ -std=c++17 -I src/c1 tests/c1_image_tiers_test.cpp
 //            src/c1/display/image_tiers.cpp src/c1/display/image.cpp
 //            src/c1/display/sprite_cache.cpp src/c1/display/s32.cpp
 //            src/c1/display/png_decode.cpp src/c1/display/blit.cpp
+//            src/c1/display/palette.cpp
 
 #include "display/image_tiers.hpp"
 #include "s32_test_files.hpp"
 
 #include <cassert>
 #include <cstdio>
+#include <array>
 #include <map>
 #include <memory>
 #include <string>
@@ -183,6 +187,72 @@ int main() {
         files.files.erase("C:\\world\\Images\\Back.s32");
         assert(store.decode(*gallery, 0, ImageTier::s32, paths, files, out));
         assert(out.rgba[1] == 0xbb);
+    }
+
+    // A derived gallery: frames 0-1 copied from Head (2 frames), frames 2-4
+    // from Body (3 frames).  Only Body has @2x art, so the head stays .spr
+    // while the body draws at 2x, recoloured by the creature's genes.
+    {
+        constexpr display::SpriteFileId kHead =
+            'h' | ('e' << 8) | ('a' << 16) | ('d' << 24);
+        constexpr display::SpriteFileId kBody =
+            'b' | ('o' << 8) | ('d' << 16) | ('y' << 24);
+        const std::vector<std::pair<int, int>> head = {{4, 3}, {2, 5}};
+        const std::vector<std::pair<int, int>> body = {{6, 1}, {3, 3}, {5, 2}};
+        std::vector<std::pair<int, int>> all = head;
+        all.insert(all.end(), body.begin(), body.end());
+
+        MemoryFiles files;
+        files.files["C:\\body\\body@2x.s32"] = s32_of(body, 2, 0x204060ffu);
+        // Head's @2x has the wrong size (padded art): refused, logged.
+        files.files["C:\\body\\head@2x.s32"] = s32_of(head, 3, 0xffu);
+        // The creature's own name has a tier file that must be ignored.
+        files.files["C:\\world\\Images\\Back@2x.s32"] =
+            s32_of(all, 2, 0xffffffffu);
+
+        display::DerivedGallery derived;
+        derived.parts.push_back({kHead, "C:\\body\\", 0, 2});
+        derived.parts.push_back({kBody, "C:\\body\\", 2, 3});
+        // Hue rotation 0xff turns (r, g, b) into about (g, b, r).
+        derived.colour =
+            display::make_creature_colour_transform(0x80, 0x80, 0x80, 0xff, 0x80);
+        const std::array<int, 3> expected = derived.colour.apply(0x20, 0x40, 0x60);
+
+        display::ImageTierStore store;
+        store.set_derived_gallery(kBack, std::move(derived));
+        auto gallery = make_gallery(0, all);
+        assert(store.best_tier(*gallery, 0, ImageTier::s32_2x, paths, files) ==
+               ImageTier::spr);
+        assert(store.best_tier(*gallery, 3, ImageTier::s32_2x, paths, files) ==
+               ImageTier::s32_2x);
+        assert(store.best_tier(*gallery, 3, ImageTier::s32, paths, files) ==
+               ImageTier::spr);
+        assert(store.tiers_for(*gallery, paths, files) == 0b101);
+
+        display::RgbaImage out;
+        assert(!store.decode(*gallery, 1, ImageTier::s32_2x, paths, files, out));
+        assert(store.decode(*gallery, 3, ImageTier::s32_2x, paths, files, out));
+        assert(out.width == 6 && out.height == 6);  // Body frame 1, doubled
+        assert(out.rgba[0] == expected[0] && out.rgba[1] == expected[1] &&
+               out.rgba[2] == expected[2] && out.rgba[3] == 0xff);
+        assert(out.rgba[2] < out.rgba[0]);  // the colour really moved
+
+        const auto log = store.take_log();
+        assert(log.size() == 1 && log[0].find("head@2x.s32") != std::string::npos);
+
+        // Aged up: a new recipe for the same file replaces the old one.
+        display::DerivedGallery older;
+        older.parts.push_back({kHead, "C:\\body\\", 0, 5});
+        older.colour =
+            display::make_creature_colour_transform(0x80, 0x80, 0x80, 0x80, 0x80);
+        store.set_derived_gallery(kBack, std::move(older));
+        assert(store.best_tier(*gallery, 3, ImageTier::s32_2x, paths, files) ==
+               ImageTier::spr);
+
+        // clear() forgets derived galleries: the file's own tiers are back.
+        store.clear();
+        assert(store.best_tier(*gallery, 0, ImageTier::s32_2x, paths, files) ==
+               ImageTier::s32_2x);
     }
 
     std::puts("c1_image_tiers_test: ok");

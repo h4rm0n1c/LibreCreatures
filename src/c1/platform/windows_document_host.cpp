@@ -851,6 +851,10 @@ void C1WindowsDocument::validate_creature_body_sprites(std::size_t index) {
         // creature whose sprite file disagrees with its gallery gets the file
         // written again from its genome.
         (void)rebuild_creature_body_sprites(*this, *creature);
+    } else {
+        // The file is reused as it is, so nothing rebuilt it this session;
+        // its S32 tiers still need to know which body files it came from.
+        describe_creature_body_tiers(*this, *creature);
     }
 }
 
@@ -7222,7 +7226,8 @@ C1WindowsDocument::skeleton_services(
         secondary_resource_directory(kImageDirectoryIndex),
         resource_paths_[kImageDirectoryIndex],
         &entity_registry(),
-        100};
+        100,
+        &image_tiers_};
 }
 
 } // namespace creatures1::platform

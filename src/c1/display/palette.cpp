@@ -51,14 +51,10 @@ int truncated_float_to_int(float value) {
 
 } // namespace
 
-void build_creature_palette_remap(PaletteRemapTable& output,
-                                  const PaletteDtaBuffer& palette,
-                                  std::uint8_t red_control,
-                                  std::uint8_t green_control,
-                                  std::uint8_t blue_control,
-                                  std::uint8_t hue_rotation_control,
-                                  std::uint8_t colour_swap_control,
-                                  std::uint32_t& build_count) {
+CreatureColourTransform make_creature_colour_transform(
+    std::uint8_t red_control, std::uint8_t green_control,
+    std::uint8_t blue_control, std::uint8_t hue_rotation_control,
+    std::uint8_t colour_swap_control) {
     const int red_offset = centred_control_offset(red_control, 0x14);
     const int green_offset = centred_control_offset(green_control, 0x14);
     const int blue_offset = centred_control_offset(blue_control, 0x14);
@@ -67,15 +63,81 @@ void build_creature_palette_remap(PaletteRemapTable& output,
     const int green_range = centred_control_offset(green_control, 0x20);
     const int blue_range = centred_control_offset(blue_control, 0x20);
 
-    PaletteChannelRamp red_ramp;
-    PaletteChannelRamp green_ramp;
-    PaletteChannelRamp blue_ramp;
-    build_palette_channel_ramp(red_ramp, red_offset + 0x40,
+    CreatureColourTransform transform;
+    build_palette_channel_ramp(transform.red_ramp, red_offset + 0x40,
                                red_range + 0x80, red_offset + 0xc0);
-    build_palette_channel_ramp(green_ramp, green_offset + 0x40,
+    build_palette_channel_ramp(transform.green_ramp, green_offset + 0x40,
                                green_range + 0x80, green_offset + 0xc0);
-    build_palette_channel_ramp(blue_ramp, blue_offset + 0x40,
+    build_palette_channel_ramp(transform.blue_ramp, blue_offset + 0x40,
                                blue_range + 0x80, blue_offset + 0xc0);
+    transform.hue_rotation_control = hue_rotation_control;
+    transform.colour_swap_factor =
+        (static_cast<float>(colour_swap_control) - 128.0f) / 128.0f;
+    transform.colour_swap_complement = 1.0f - transform.colour_swap_factor;
+    return transform;
+}
+
+std::array<int, 3> CreatureColourTransform::apply(std::uint8_t source_red,
+                                                  std::uint8_t source_green,
+                                                  std::uint8_t source_blue) const {
+    const float red = static_cast<float>(
+        red_ramp.intensity_by_control[source_red]);
+    const float green = static_cast<float>(
+        green_ramp.intensity_by_control[source_green]);
+    const float blue = static_cast<float>(
+        blue_ramp.intensity_by_control[source_blue]);
+
+    float hue_factor;
+    float transformed_red;
+    float transformed_green;
+    float transformed_blue;
+    if (hue_rotation_control < 0x80) {
+        hue_factor = (127.0f - static_cast<float>(hue_rotation_control)) /
+                     127.0f;
+        const float unchanged_factor = 1.0f - hue_factor;
+        transformed_red = blue * hue_factor + unchanged_factor * red;
+        transformed_green = unchanged_factor * green + hue_factor * red;
+        transformed_blue = hue_factor * green + unchanged_factor * blue;
+    } else {
+        hue_factor = (static_cast<float>(hue_rotation_control) - 128.0f) /
+                     127.0f;
+        const float unchanged_factor = 1.0f - hue_factor;
+        transformed_red = hue_factor * green + unchanged_factor * red;
+        transformed_green = hue_factor * blue + unchanged_factor * green;
+        transformed_blue = hue_factor * red + unchanged_factor * blue;
+    }
+
+    return {truncated_float_to_int(transformed_red * colour_swap_complement +
+                                   transformed_blue * colour_swap_factor),
+            truncated_float_to_int(transformed_green),
+            truncated_float_to_int(transformed_red * colour_swap_factor +
+                                   transformed_blue * colour_swap_complement)};
+}
+
+void apply_creature_colour_transform(const CreatureColourTransform& transform,
+                                     std::uint8_t* rgba,
+                                     std::size_t pixel_count) {
+    for (std::size_t index = 0; index < pixel_count; ++index, rgba += 4) {
+        const std::array<int, 3> target =
+            transform.apply(rgba[0], rgba[1], rgba[2]);
+        for (std::size_t channel = 0; channel < 3; ++channel) {
+            rgba[channel] =
+                static_cast<std::uint8_t>(std::clamp(target[channel], 0, 255));
+        }
+    }
+}
+
+void build_creature_palette_remap(PaletteRemapTable& output,
+                                  const PaletteDtaBuffer& palette,
+                                  std::uint8_t red_control,
+                                  std::uint8_t green_control,
+                                  std::uint8_t blue_control,
+                                  std::uint8_t hue_rotation_control,
+                                  std::uint8_t colour_swap_control,
+                                  std::uint32_t& build_count) {
+    const CreatureColourTransform transform = make_creature_colour_transform(
+        red_control, green_control, blue_control, hue_rotation_control,
+        colour_swap_control);
 
     for (std::size_t index = 0; index < 10; ++index) {
         output.remapped_palette_index[index] =
@@ -86,47 +148,14 @@ void build_creature_palette_remap(PaletteRemapTable& output,
             static_cast<std::uint8_t>(index);
     }
 
-    const float colour_swap_factor =
-        (static_cast<float>(colour_swap_control) - 128.0f) / 128.0f;
-    const float colour_swap_complement = 1.0f - colour_swap_factor;
-
     for (std::size_t source_index = 0;
          source_index < palette.colours.size(); ++source_index) {
         const PaletteColour& source = palette.colours[source_index];
-        const float red = static_cast<float>(
-            red_ramp.intensity_by_control[source.red]);
-        const float green = static_cast<float>(
-            green_ramp.intensity_by_control[source.green]);
-        const float blue = static_cast<float>(
-            blue_ramp.intensity_by_control[source.blue]);
-
-        float hue_factor;
-        float transformed_red;
-        float transformed_green;
-        float transformed_blue;
-        if (hue_rotation_control < 0x80) {
-            hue_factor = (127.0f - static_cast<float>(hue_rotation_control)) /
-                         127.0f;
-            const float unchanged_factor = 1.0f - hue_factor;
-            transformed_red = blue * hue_factor + unchanged_factor * red;
-            transformed_green = unchanged_factor * green + hue_factor * red;
-            transformed_blue = hue_factor * green + unchanged_factor * blue;
-        } else {
-            hue_factor = (static_cast<float>(hue_rotation_control) - 128.0f) /
-                         127.0f;
-            const float unchanged_factor = 1.0f - hue_factor;
-            transformed_red = hue_factor * green + unchanged_factor * red;
-            transformed_green = hue_factor * blue + unchanged_factor * green;
-            transformed_blue = hue_factor * red + unchanged_factor * blue;
-        }
-
-        const int target_red = truncated_float_to_int(
-            transformed_red * colour_swap_complement +
-            transformed_blue * colour_swap_factor);
-        const int target_green = truncated_float_to_int(transformed_green);
-        const int target_blue = truncated_float_to_int(
-            transformed_red * colour_swap_factor +
-            transformed_blue * colour_swap_complement);
+        const std::array<int, 3> target =
+            transform.apply(source.red, source.green, source.blue);
+        const int target_red = target[0];
+        const int target_green = target[1];
+        const int target_blue = target[2];
 
         std::size_t nearest_index = 0;
         std::uint32_t minimum_distance =

@@ -2476,6 +2476,14 @@ void Creature::initialize_from_genome(GenomeInitializationHost& host) {
     voice_.load_voice_file(voice_filename, host.voice_files());
 }
 
+void Creature::describe_body_tiers(GenomeInitializationHost& host) {
+    Genome genome(skeleton_.genome_source_filename,
+                  genome_sex_,
+                  genome_life_stage(),
+                  &host.genome_files());
+    skeleton_.describe_body_tiers(genome, host.skeleton_services());
+}
+
 bool Creature::rebuild_body_sprites(GenomeInitializationHost& host) {
     Genome genome(skeleton_.genome_source_filename,
                   genome_sex_,

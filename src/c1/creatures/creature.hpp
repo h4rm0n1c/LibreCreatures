@@ -1070,6 +1070,9 @@ public:
     // genome and runs Skeleton::LoadGenome alone, leaving the brain,
     // biochemistry and voice it already loaded untouched.
     bool rebuild_body_sprites(GenomeInitializationHost& host);
+    // Not native (neorender): Skeleton::describe_body_tiers for a body file
+    // that is already up to date.
+    void describe_body_tiers(GenomeInitializationHost& host);
     void load_genome(Genome& genome);
     void select_walk_gait();
     objects::ObjectEventId click_event_id_at_world_position(int world_x,

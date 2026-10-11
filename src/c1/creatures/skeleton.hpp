@@ -2,6 +2,7 @@
 
 #include "../display/gallery.hpp"
 #include "../display/image.hpp"
+#include "../display/image_tiers.hpp"
 #include "../objects/object.hpp"
 #include "../world/geometry.hpp"
 
@@ -93,6 +94,9 @@ struct SkeletonSpriteBuildServices {
     std::string primary_image_directory;
     objects::EntityRegistryHost* entity_registry = nullptr;
     int normal_render_plane = 100;
+    // Not native (neorender): told where each built body file's frames came
+    // from, so its S32 tiers can be drawn from the body-part tier files.
+    display::ImageTierStore* image_tiers = nullptr;
 };
 
 constexpr std::size_t kPoseStringLength = 15;
@@ -186,6 +190,11 @@ public:
     // decompiler's local buffers.
     bool build_creature_sprite_gallery(
         Genome& genome, const SkeletonSpriteBuildServices& services);
+    // Not native (neorender).  Tells services.image_tiers where this
+    // creature's body file came from, without writing it: for a body file a
+    // loaded world already has up to date.
+    void describe_body_tiers(Genome& genome,
+                             const SkeletonSpriteBuildServices& services) const;
     // Runs the recovered Skeleton-owned LoadGenome stages in native order.
     // Creature's stimulus/pose/gait/instinct consumers remain its own caller
     // stages; this operation owns only identity, appearance, sprite, and

@@ -84,6 +84,34 @@ void build_palette_channel_ramp(PaletteChannelRamp& output,
                                 int middle_intensity,
                                 int high_intensity);
 
+// The colour change C1 makes to a creature's body from its genome's pigment
+// controls (Skeleton::LoadGenome -> the palette remapper).  `apply` gives the
+// changed colour before the remapper snaps it to the nearest palette entry;
+// it can fall outside 0..255.
+struct CreatureColourTransform {
+    PaletteChannelRamp red_ramp;
+    PaletteChannelRamp green_ramp;
+    PaletteChannelRamp blue_ramp;
+    std::uint8_t hue_rotation_control = 0x80;
+    float colour_swap_factor = 0.0f;
+    float colour_swap_complement = 1.0f;
+
+    std::array<int, 3> apply(std::uint8_t red, std::uint8_t green,
+                             std::uint8_t blue) const;
+};
+
+CreatureColourTransform make_creature_colour_transform(
+    std::uint8_t red_control, std::uint8_t green_control,
+    std::uint8_t blue_control, std::uint8_t hue_rotation_control,
+    std::uint8_t colour_swap_control);
+
+// Not native (neorender): the same change made to true-colour pixels, for a
+// creature's S32 body art.  Each RGB triple is changed in place and clamped
+// to 0..255; alpha is kept.
+void apply_creature_colour_transform(const CreatureColourTransform& transform,
+                                     std::uint8_t* rgba,
+                                     std::size_t pixel_count);
+
 void build_creature_palette_remap(PaletteRemapTable& output,
                                   const PaletteDtaBuffer& palette,
                                   std::uint8_t red_control,

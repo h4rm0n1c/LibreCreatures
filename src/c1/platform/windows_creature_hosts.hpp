@@ -51,6 +51,10 @@ private:
 // the state they already hold.
 bool rebuild_creature_body_sprites(C1WindowsDocument& document,
                                    creatures1::creatures::Creature& creature);
+// Not native (neorender): where a creature's up-to-date body file came from,
+// for its S32 tiers (Skeleton::describe_body_tiers).
+void describe_creature_body_tiers(C1WindowsDocument& document,
+                                  creatures1::creatures::Creature& creature);
 
 // Concrete CreatureRemovalHost for Creature vtable slot 24, RemoveFromWorld
 // (0040e0d0), which Export runs before writing the creature out.  Every step

@@ -359,17 +359,16 @@ void Skeleton::initialize_pose_and_motion_state() {
     gait_animation_table[0][8] = 'R';
 }
 
-void Skeleton::load_genus_identity(Genome& genome) {
+namespace {
+
+// The last genus gene that reads whole, or zeros when there is none.
+CreatureGenusGenePayload read_last_genus_gene(Genome& genome) {
     constexpr std::uint8_t kCreatureFamily =
         static_cast<std::uint8_t>(GenomeGeneFamily::creature);
     constexpr std::uint8_t kGenusSubtype = 1;
     constexpr std::uint8_t kSubtypeModulus = 7;
 
-    genome_source_filename = genome.source_filename();
-    creature_genus_selector = 0;
-    mother_moniker = 0;
-    father_moniker = 0;
-
+    CreatureGenusGenePayload last{};
     genome.set_cursor(0);
     while (genome.find_next_matching_gene(
         kCreatureFamily, kGenusSubtype, kSubtypeModulus,
@@ -378,14 +377,33 @@ void Skeleton::load_genus_identity(Genome& genome) {
         if (!genome.read_payload_record(payload)) {
             break;
         }
-
-        // The native selector is reduced with & 3 (equivalent to modulo 4
-        // for this unsigned byte) before it becomes the creature genus.
-        creature_genus_selector = static_cast<std::uint8_t>(
-            payload.genus_selector & 3U);
-        mother_moniker = payload.mother_moniker;
-        father_moniker = payload.father_moniker;
+        last = payload;
     }
+    return last;
+}
+
+// The native selector is reduced with & 3 (equivalent to modulo 4 for this
+// unsigned byte) before it becomes the creature genus.
+std::uint8_t genus_selector_of(const CreatureGenusGenePayload& gene) {
+    return static_cast<std::uint8_t>(gene.genus_selector & 3U);
+}
+
+display::CreatureColourTransform creature_colour_transform(
+    const CreaturePaletteControls& controls) {
+    return display::make_creature_colour_transform(
+        controls.pigment_channels[0], controls.pigment_channels[1],
+        controls.pigment_channels[2], controls.hue_rotation,
+        controls.colour_swap);
+}
+
+} // namespace
+
+void Skeleton::load_genus_identity(Genome& genome) {
+    genome_source_filename = genome.source_filename();
+    const CreatureGenusGenePayload gene = read_last_genus_gene(genome);
+    creature_genus_selector = genus_selector_of(gene);
+    mother_moniker = gene.mother_moniker;
+    father_moniker = gene.father_moniker;
 
     // Native LoadGenome @ 0043c800: classifier_base =
     // ((genus + 1) << 16) | ((sex | 0x40000) << 8) -- family 4, genus 1..4,
@@ -619,6 +637,7 @@ bool Skeleton::build_creature_sprite_gallery(
     if (!writer.begin()) {
         return false;
     }
+    display::DerivedGallery derived;
 
     for (std::size_t part_number = 0; part_number < part_count;
          ++part_number) {
@@ -630,6 +649,9 @@ bool Skeleton::build_creature_sprite_gallery(
         if (source.resource.stem == 0) {
             return false;
         }
+        derived.parts.push_back({source.resource.stem, source.directory,
+                                 image_index_base[part_number],
+                                 kBodyPartSpriteFrameCounts[part_number]});
 
         // Use the resolved directory for both sides of this search.  This
         // preserves the native directory decision even when the same stem is
@@ -692,7 +714,46 @@ bool Skeleton::build_creature_sprite_gallery(
 
     body_part_image_index_base = image_index_base;
     set_gallery(final_gallery);
+    if (services.image_tiers != nullptr) {
+        derived.colour = creature_colour_transform(controls);
+        services.image_tiers->set_derived_gallery(genome_source_filename,
+                                                  std::move(derived));
+    }
     return true;
+}
+
+void Skeleton::describe_body_tiers(
+    Genome& genome, const SkeletonSpriteBuildServices& services) const {
+    if (services.image_tiers == nullptr || genome_source_filename == 0) {
+        return;
+    }
+    // The same sources build_creature_sprite_gallery reads, from the same
+    // genes, without touching this skeleton's state.
+    const std::uint8_t genus = genus_selector_of(read_last_genus_gene(genome));
+    const BodyAppearanceSelection appearance =
+        read_body_appearance_genes(genome);
+    const std::size_t part_count =
+        appearance.tail_variant_count == 0 ? 12 : 14;
+    display::DerivedGallery derived;
+    std::uint32_t first_image = 0;
+    for (std::size_t part_number = 0; part_number < part_count;
+         ++part_number) {
+        const SpriteSourceResolution source = resolve_sprite_source(
+            static_cast<BodyPartIndex>(part_number), genus, genome.sex(),
+            genome.life_stage(), appearance.variant_by_part[part_number],
+            genome_source_filename, services.body_resources);
+        if (source.resource.stem == 0) {
+            return;
+        }
+        derived.parts.push_back({source.resource.stem, source.directory,
+                                 first_image,
+                                 kBodyPartSpriteFrameCounts[part_number]});
+        first_image += kBodyPartSpriteFrameCounts[part_number];
+    }
+    derived.colour =
+        creature_colour_transform(read_creature_palette_controls(genome));
+    services.image_tiers->set_derived_gallery(genome_source_filename,
+                                              std::move(derived));
 }
 
 bool Skeleton::load_genome(

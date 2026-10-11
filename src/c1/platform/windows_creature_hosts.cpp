@@ -354,6 +354,17 @@ bool rebuild_creature_body_sprites(C1WindowsDocument& document,
     return creature.rebuild_body_sprites(host);
 }
 
+void describe_creature_body_tiers(C1WindowsDocument& document,
+                                  creatures1::creatures::Creature& creature) {
+    creatures1::biochemistry::Biochemistry* biochemistry =
+        creature.biochemistry();
+    if (biochemistry == nullptr) {
+        return;
+    }
+    GenomeInitializationAdapter host(document, *biochemistry);
+    creature.describe_body_tiers(host);
+}
+
 void WindowsCreatureEnvironmentHost::initialize_from_genome(
     creatures1::creatures::Creature& creature) {
     // Every member of GenomeInitializationHost now has an owner: the document
