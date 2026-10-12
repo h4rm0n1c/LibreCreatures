@@ -14,10 +14,13 @@ class Brain;
 //
 // One file per creature brain, <moniker>-<part>.c1brain, little-endian:
 //
-//   header   "C1BR", u32 version (3), u32 moniker, u32 lobe count, then per
+//   header   "C1BR", u32 version (4), u32 moniker, u32 lobe count, then per
 //            lobe: u32 neuron count, u8 grid width, u8 grid height,
-//            u8 rule 0 target lobe, u8 rule 1 target lobe, and per neuron:
-//            u8 rule 0 dendrite count, u8 rule 1 dendrite count.
+//            u8 rule 0 target lobe, u8 rule 1 target lobe, u8 perception
+//            copy (0 none, 1 copied, 2 copied mutually exclusive), and per
+//            neuron: u8 rule 0 dendrite count, u8 rule 1 dendrite count.
+//            The perception lobe (lobe 0) holds the copied lobes' neurons
+//            one after another, in lobe order.
 //   chunks   the rest of the file: u32 raw size, u32 compressed size, then
 //            a zlib stream holding whole records; one chunk per 32 frames.
 //   records  each starts with a u8 type and a u32 world tick:

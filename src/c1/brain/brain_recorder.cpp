@@ -27,7 +27,7 @@
 namespace creatures1::brain {
 namespace {
 
-constexpr std::uint32_t kFormatVersion = 3;
+constexpr std::uint32_t kFormatVersion = 4;
 // Frames are buffered and written as one compressed chunk this often, so a
 // game that is killed loses at most this many frames.
 constexpr std::uint32_t kFramesPerChunk = 32;
@@ -229,6 +229,8 @@ Snapshot take_snapshot(const Brain& brain) {
             layout.push_back(static_cast<std::uint8_t>(
                 lobe.connection_rule(rule).target_lobe_index));
         }
+        layout.push_back(
+            static_cast<std::uint8_t>(lobe.perception_copy_state()));
         for (std::uint32_t index = 0; index < lobe.neuron_count_value();
              ++index) {
             const LobeNeuron& neuron = lobe.neuron(index);

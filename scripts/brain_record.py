@@ -26,6 +26,7 @@ class Lobe:
     grid_height: int
     rule_targets: tuple
     dendrite_counts: list  # per neuron: (rule 0 count, rule 1 count)
+    perception_copy: int | None = None  # 0 none, 1 copied, 2 mutually exclusive; None in v3
 
     @property
     def name(self):
@@ -36,10 +37,12 @@ class Lobe:
 class Layout:
     moniker: int
     lobes: list
+    version: int = 4
     neuron_keys: list = field(default_factory=list)    # (lobe, neuron)
     dendrite_keys: list = field(default_factory=list)  # (lobe, neuron, rule, dendrite)
 
     def __post_init__(self):
+        self.neuron_keys, self.dendrite_keys = [], []
         for lobe in self.lobes:
             for neuron, (count0, count1) in enumerate(lobe.dendrite_counts):
                 self.neuron_keys.append((lobe.index, neuron))
@@ -93,16 +96,17 @@ def read_layout(r):
         raise ValueError("not a C1 brain recording")
     r.pos = 4
     version = r.take("I")
-    if version != 3:
+    if version not in (3, 4):
         raise ValueError(f"unknown recording version {version}")
     moniker = r.take("I")
     lobes = []
     for index in range(r.take("I")):
         count = r.take("I")
         width, height, rule0, rule1 = r.take("4B")
+        copy = r.take("B") if version >= 4 else None
         counts = [r.take("2B") for _ in range(count)]
-        lobes.append(Lobe(index, count, width, height, (rule0, rule1), counts))
-    return Layout(moniker, lobes)
+        lobes.append(Lobe(index, count, width, height, (rule0, rule1), counts, copy))
+    return Layout(moniker, lobes, version=version)
 
 
 def read_chunks(r):
