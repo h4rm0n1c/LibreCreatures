@@ -1,6 +1,7 @@
 #include "lift.hpp"
 
 #include "call_button.hpp"
+#include "../common/lab_trace.hpp"
 
 #include "events.hpp"
 
@@ -40,6 +41,19 @@ void request_move(Lift& lift, const QueuedObjectEvent& event,
                                      ? lift.current_floor_index <
                                            lift.floor_count - 1
                                      : lift.current_floor_index > 0;
+    if (event.source != nullptr) {
+        // Floors run from the top down, so move_up (the next floor index)
+        // goes down the screen.
+        common::lab_trace(common::LabTrace::lifts,
+                          "request at=%d %s creature=%d actv=%u obv0=%u "
+                          "floor=%d/%d dest=%d ok=%d",
+                          lift.sound_source_x(), move_up ? "down" : "up",
+                          host.source_is_creature(*event.source) ? 1 : 0,
+                          lift.interaction_event(), lift.object_variable_0(),
+                          lift.current_floor_index, lift.floor_count,
+                          has_destination ? 1 : 0,
+                          (available && has_destination) ? 1 : 0);
+    }
     if (available && has_destination) {
         lift.set_interaction_event(1);
         lift.current_floor_index += move_up ? 1 : -1;

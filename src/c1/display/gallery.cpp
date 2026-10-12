@@ -1,4 +1,5 @@
 #include "gallery.hpp"
+#include "../common/lab_trace.hpp"
 
 #include <stdexcept>
 
@@ -19,6 +20,10 @@ Gallery* create_gallery(
     gallery->image_count = image_count;
     gallery->reference_count = 1;
     gallery->images = std::make_unique<Image[]>(image_count);
+    common::lab_trace(common::LabTrace::sprites, "gallery create %08x %d %u %d",
+                      static_cast<unsigned>(sprite_file_id), header_record_index,
+                      static_cast<unsigned>(image_count),
+                      cache_protection ? 1 : 0);
 
     const std::string filename = host.sprite_metadata_path(
         secondary_image_directory, sprite_file_id);

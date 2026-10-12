@@ -1,4 +1,5 @@
 #include "runtime.hpp"
+#include "../common/lab_trace.hpp"
 
 #include <algorithm>
 #include <stdexcept>
@@ -425,6 +426,11 @@ void WorldRuntime::release_gallery(display::Gallery& gallery) {
         --(*found)->reference_count;
     }
     if ((*found)->reference_count == 0) {
+        common::lab_trace(common::LabTrace::sprites,
+                          "gallery release %08x %d %u",
+                          static_cast<unsigned>((*found)->sprite_file_id),
+                          (*found)->header_record_index,
+                          static_cast<unsigned>((*found)->image_count));
         std::unique_ptr<display::Gallery> released = std::move(*found);
         galleries_.erase(found);
         if (can_retire(*released)) {
@@ -450,6 +456,10 @@ display::Gallery* WorldRuntime::revive_gallery(display::SpriteFileId sprite_file
             gallery.header_record_index == header_record_index &&
             gallery.image_count == image_count) {
             gallery.reference_count = 1;
+            common::lab_trace(common::LabTrace::sprites,
+                              "gallery revive %08x %d",
+                              static_cast<unsigned>(sprite_file_id),
+                              header_record_index);
             display::Gallery* revived = it->get();
             galleries_.push_back(std::move(*it));
             retired_galleries_.erase(it);

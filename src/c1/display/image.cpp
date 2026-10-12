@@ -1,4 +1,5 @@
 #include "image.hpp"
+#include "../common/lab_trace.hpp"
 
 #include "blit.hpp"
 #include "../world/geometry.hpp"
@@ -405,6 +406,8 @@ std::uint8_t* Image::load_pixel_data(
     SpriteFileCache& sprite_files,
     const SpriteFileSearchPaths& paths,
     BinaryResourceFileSystem& files) {
+    common::lab_trace(common::LabTrace::sprites, "pixels load %d %d",
+                      static_cast<int>(width()), static_cast<int>(height()));
     if (gallery_ == nullptr || width_ < 0 || height_ < 0) {
         return nullptr;
     }

@@ -1079,6 +1079,10 @@ public:
     // Lab trace (category "rides"): this creature boarding or leaving a
     // vehicle or lift.
     void trace_ride(const char* what, const objects::Object& vehicle) const;
+    // Lab trace (category "actions"): an action's script run, through its
+    // target's script ("it"), the creature's own ("own"), or none.
+    void trace_action_run(std::uint32_t action_id,
+                          std::uint32_t target_classifier, const char* script);
     void load_genome(Genome& genome);
     void select_walk_gait();
     objects::ObjectEventId click_event_id_at_world_position(int world_x,

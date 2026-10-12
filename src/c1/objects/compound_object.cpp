@@ -1,4 +1,5 @@
 #include "compound_object.hpp"
+#include "../common/lab_trace.hpp"
 
 #include <algorithm>
 #include <new>
@@ -323,8 +324,22 @@ void CompoundObject::handle_queued_event(
     const std::uint32_t previous_event = current_interaction_event_id();
     const std::uint32_t interaction_value =
         static_cast<std::uint32_t>(interaction_event);
+    // Lab trace (category "lifts"): each event reaching a lift and what came
+    // of it: -1 ignored as a repeat, 0 no script ran, 1 its script ran.
+    const auto trace_lift_event = [&](int outcome) {
+        if ((classifier_base() >> 16) == 0x0302u) {
+            common::lab_trace(common::LabTrace::lifts,
+                              "event at=%d,%d req=%u prev=%u obv0=%u "
+                              "creature=%d outcome=%d",
+                              sound_source_x(), sound_source_y(),
+                              interaction_value, previous_event,
+                              object_variable(0), source_is_creature ? 1 : 0,
+                              outcome);
+        }
+    };
 
     if (previous_event == interaction_value) {
+        trace_lift_event(-1);
         if (!source_is_creature) {
             return;
         }
@@ -332,8 +347,10 @@ void CompoundObject::handle_queued_event(
                creature_event_config.event_config_value[config_index] != -1) {
         set_current_interaction_event_id(interaction_value);
         if (host.dispatch_script_event(*this, source, script_event) != 0) {
+            trace_lift_event(1);
             return;
         }
+        trace_lift_event(0);
         set_current_interaction_event_id(previous_event);
         if (!host.source_is_creature(*source)) {
             return;

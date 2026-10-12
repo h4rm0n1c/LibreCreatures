@@ -27,7 +27,10 @@ constexpr CategoryName kCategoryNames[] = {
     {"camera", LabTrace::camera},       {"scheduler", LabTrace::scheduler},
     {"sound", LabTrace::sound},         {"lifecycle", LabTrace::lifecycle},
     {"kitpipe", LabTrace::kit_pipe},    {"attention", LabTrace::attention},
-    {"rides", LabTrace::rides},
+    {"rides", LabTrace::rides},         {"actions", LabTrace::actions},
+    {"goals", LabTrace::goals},         {"touch", LabTrace::touch},
+    {"lifts", LabTrace::lifts},         {"sprites", LabTrace::sprites},
+    {"dendrites", LabTrace::dendrites},
 };
 
 const char* category_name(LabTrace category) {
