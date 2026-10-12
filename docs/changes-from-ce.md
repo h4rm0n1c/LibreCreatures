@@ -188,6 +188,8 @@ added), or `Fix (bug N)` in the kits (that kit's `ORIGINAL.md`).
   animation, and Say Need gives sleepiness the tired pose.  (rows 69, 70)
 - Norns can play the drum: it no longer loads stuck in the active state,
   and playing it clears that state again.  (row 71)
+- The island boat runs on a working timer, as the rafts and the cart do:
+  the timer docks it at each end and sends it back.  (row 72)
 
 ### Files and windows
 
