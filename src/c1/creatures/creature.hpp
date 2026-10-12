@@ -272,6 +272,12 @@ public:
         const objects::Object& reference) const = 0;
     virtual void nearest_map_room_bounds(int world_x, int world_y,
                                          world::WorldRect& out_bounds) const = 0;
+    // LibreCreatures: true while `target` is a `new:` object still at its
+    // spawn point, the world origin (Object::awaiting_first_placement).
+    // Clears the mark once `bounds` no longer contain the origin.
+    virtual bool is_unplaced_new_object(
+        const objects::Object& target,
+        const world::WorldRect& bounds) const = 0;
 };
 
 // Goal-direction delivery needs one Object fact from the world-owned motion

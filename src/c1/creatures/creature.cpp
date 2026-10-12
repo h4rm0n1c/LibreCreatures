@@ -2704,6 +2704,24 @@ bool Creature::can_perceive(const objects::Object& target,
         return false;
     }
 
+    // LibreCreatures deviation.  CanPerceiveObject @00409750 lets a creature
+    // riding a vehicle outside every room see the whole world, so it can
+    // notice things it cannot reach.  Two artefacts of the simulation are
+    // kept out of that.  An object `new:` has just made, still waiting at
+    // the world origin for its script to place it (the egg in the sky), is
+    // not perceived.  A creature parked outside the world, such as a norn in
+    // its egg before it hatches, perceives nothing.  (Native already keeps
+    // that creature itself unseen: it lies outside the world rectangle.)
+    if (world.is_unplaced_new_object(target, target_bounds)) {
+        return false;
+    }
+    if (skeleton_.down_foot_x < 0 ||
+        skeleton_.down_foot_x > world::kWorldWidth ||
+        skeleton_.down_foot_y < 0 ||
+        skeleton_.down_foot_y > world::kWorldHeight) {
+        return false;
+    }
+
     const int foot_x = skeleton_.down_foot_x;
     if (skeleton_.facing_direction == FacingDirection::west &&
         foot_x < target_bounds.min_x) {

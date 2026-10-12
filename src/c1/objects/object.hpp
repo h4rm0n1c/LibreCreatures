@@ -556,6 +556,17 @@ public:
         current_interaction_event_reserved_2_ = static_cast<std::uint8_t>(value >> 24);
     }
 
+    // LibreCreatures deviation.  `new:` makes every object at the world
+    // origin, and its script places it on a later turn (the egg in the sky
+    // is one waiting there).  Creatures do not perceive an object the
+    // creation host marked here while it is still at the origin
+    // (Creature::can_perceive); the mark clears once it is seen anywhere
+    // else.  Not saved.
+    bool awaiting_first_placement() const { return awaiting_first_placement_; }
+    void set_awaiting_first_placement(bool value) {
+        awaiting_first_placement_ = value;
+    }
+
     bool uses_unbounded_world_position() const {
         return bounds_mode_ == BoundsMode::unbounded_1;
     }
@@ -655,6 +666,7 @@ private:
     std::uint8_t current_interaction_event_reserved_0_ = 0;
     std::uint8_t current_interaction_event_reserved_1_ = 0;
     std::uint8_t current_interaction_event_reserved_2_ = 0;
+    bool awaiting_first_placement_ = false;
     std::uint32_t caos_object_variable_0_ = 0;
     std::uint32_t caos_object_variable_1_ = 0;
     std::uint32_t caos_object_variable_2_ = 0;
