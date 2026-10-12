@@ -56,7 +56,11 @@ in chunks of 32. `C1_BRAIN_RECORD_MONIKERS` (hex monikers, comma separated)
 records only those creatures. A norn takes about 3 MB per in-game hour.
 `scripts/brain_record.py` reads the files back (`summary`, `frames`, or as a
 module that rebuilds the full brain at each frame). The format is described
-in `src/c1/brain/brain_recorder.hpp`.
+in `src/c1/brain/brain_recorder.hpp`. `scripts/brain_concepts.py` decodes a
+recording: what each perception neuron stands for (`perception`), the busiest
+concept neurons with their inputs and what was attended and done while each
+fired (`concepts`), the strongest learned concept-to-action links (`rules`),
+and one line per change of action with place and top drives (`timeline`).
 
 **Lab trace.** `C1_LAB_TRACE=<file>` appends one line per event:
 `<world tick> TAB <ms> TAB <category> TAB <text>`, where `<ms>` is Windows'
