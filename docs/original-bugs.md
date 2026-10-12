@@ -105,6 +105,7 @@ files.
 | 26 | Ocean Dome Sound (2 8 15) does not have the "creatures cannot see it" flag, so norns go into the dome to find a vendor (issue #10). | World.sfc, Eden.sfc | 57eeedc | data |
 | 69 | The creature Retreat script (4 0 0 21) closes its pain branch with a stray `endi`, so every retreat ends in that branch's "pose 12 ... stop" and the plain retreat (`anim [49505152R]`) never runs. | World.sfc, Eden.sfc | a2da5b5 | data, lab |
 | 70 | The creature Say Need scripts (4 0 0 24 and 40) test drive 5 twice, so sleepiness (drive 6) does not get the tired pose. | World.sfc, Eden.sfc | a2da5b5 | data, lab |
+| 71 | The drum (2 9 2) is saved active, and its Activate 1 script never clears that state, so norns cannot play it: a creature's activation is refused while the object is already active. | World.sfc, Eden.sfc | 16d136e | data, lab |
 | 27 | An object let go of in the upper half of a room jumps up onto the floor of the room above. | hand drop placement | 1a663b2 | code |
 | 41 | A lift arrives only when its cabin and the floor fall in the same band of whole-pixel speed, so a lift moving at a fractional speed (yvec 384) can step over its floor and never stop. Stock lifts (yvec 768) are not affected. | `Lift::Tick` @0042c4f0 | 8463856 | code, lab |
 | 45 | Call buttons queue lift calls in eight slots, but the lift only reads slots 0-3, so with more than four calls waiting the later ones are never answered. Stock lifts have fewer buttons. | `SelectNearestCallButtonAndStartMove` @0042c590, `RequestLiftCall` @00429c10 | 0693c52 | code |
