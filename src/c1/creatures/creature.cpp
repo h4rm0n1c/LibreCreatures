@@ -10,6 +10,7 @@
 #include "../world/geometry.hpp"
 #include "../objects/events.hpp"
 #include "../common/lab_trace.hpp"
+#include "../brain/brain_recorder.hpp"
 
 #include <unordered_map>
 
@@ -3987,6 +3988,21 @@ void Creature::process_dreaming(bool selected_creature,
                                 common::DebugLogHost* log_host) {
     if (instinct_runtime_state_.dream_countdown == 0) {
         return;
+    }
+
+    // Lab only: the brain recorder marks this step's dendrite events as made
+    // while dreaming.
+    struct DreamMark {
+        const brain::Brain* brain = nullptr;
+        ~DreamMark() {
+            if (brain != nullptr) {
+                brain::set_brain_dreaming(brain, false);
+            }
+        }
+    } dream_mark;
+    if (brain::g_brain_events_wanted && brain_ != nullptr) {
+        dream_mark.brain = brain_.get();
+        brain::set_brain_dreaming(dream_mark.brain, true);
     }
 
     if (instinct_runtime_state_.instinct_count == 0) {

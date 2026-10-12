@@ -9,6 +9,17 @@
                                             concept -> decision links
     brain_concepts.py timeline FILE         one line per change of action: tick,
                                             place, drives, what was attended
+    brain_concepts.py learning FILE [N]     each concept -> decision link through
+                                            its life: when it attached (migration
+                                            or re-attachment) and to what, when it
+                                            went loose, how its LTW and STW moved
+                                            while it stayed attached, and whether
+                                            the concept it reads was rewired meanwhile
+
+`rules` shows the brain's last state only.  A dendrite that migrates gets a
+new source and fresh weights from the genome's range, and concept neurons
+migrate too, so only `learning`, which reads the recorded dendrite events
+(format 5), separates learning from rewiring.
 
 Names assume the standard C1 lobe order (0 perception, 1 drive, 2 stimulus
 source, 3 verb, 4 noun, 5 general sense, 6 decision, 7 attention, 8 concept),
@@ -204,10 +215,129 @@ def cmd_timeline(path):
               f"-> {attended(frame)}\t[{top}]")
 
 
+def concept_meaning(layout, perception, dendrites, neuron):
+    """What a concept neuron reads now: its attached inputs (strength > 0),
+    or "loose" when none are attached."""
+    lobe = layout.lobes[CONCEPT]
+    count0, count1 = lobe.dendrite_counts[neuron]
+    inputs = []
+    for rule, count in ((0, count0), (1, count1)):
+        for d in range(count):
+            target, _, _, _, strength = dendrites[(CONCEPT, neuron, rule, d)]
+            if strength and target != 0xffff:
+                inputs.append(target_label(layout, perception, CONCEPT, rule, target))
+    return tuple(sorted(inputs)) or ("loose",)
+
+
+OPENING = {"migrate", "attach", "rescue"}
+CLOSING = {"went loose", "migrate failed"}
+
+
+def cmd_learning(path, top=12):
+    """Each concept -> decision link through its life, from the recorded
+    events (format 5): how it attached, every weight change with its cause,
+    and how it ended.  Nothing is inferred from field values."""
+    links = []
+    open_links = {}
+    concept_changes = collections.Counter()
+    meanings = {}
+    layout = perception = None
+    start_tick = last_tick = None
+    totals = collections.Counter()
+
+    def open_link(key, values, tick, how, dendrites):
+        target = values[0]
+        link = {"key": key, "target": target, "start": tick, "began": how,
+                "ltw0": values[3], "stw0": values[2], "ltw": values[3], "stw": values[2],
+                "end": None, "ended": None, "causes": collections.Counter(),
+                "ltw_awake": 0, "ltw_dream": 0,
+                "meaning": concept_meaning(layout, perception, dendrites, target)
+                if target != 0xffff else ("none",)}
+        links.append(link)
+        open_links[key] = link
+
+    for layout_now, frame in read_recording(path):
+        if layout is None:
+            layout = layout_now
+            if layout.version < 5:
+                print(f"format {layout.version} recording: it has no events, and "
+                      "learning cannot be told apart from rewiring without them")
+                return
+            perception = perception_labels(layout)
+            start_tick = frame.tick
+            for key, values in frame.dendrites.items():
+                if key[0] == DECISION and values[4] and values[0] != 0xffff:
+                    open_link(key, values, frame.tick, "present at start", frame.dendrites)
+        for event in frame.events:
+            totals[(event.key[0], event.kind)] += 1
+            if event.key[0] == CONCEPT:
+                if event.kind in OPENING or event.kind in CLOSING:
+                    concept_changes[event.key[1]] += 1
+                continue
+            if event.key[0] != DECISION:
+                continue
+            link = open_links.get(event.key)
+            if event.kind in OPENING:
+                if link:
+                    link["end"], link["ended"] = frame.tick, "replaced by " + event.kind
+                    del open_links[event.key]
+                open_link(event.key, event.after, frame.tick, event.kind, frame.dendrites)
+                continue
+            if link is None:
+                continue
+            link["causes"][event.kind + (" (dream)" if event.dreaming else "")] += 1
+            ltw_change = event.after[3] - event.before[3]
+            if ltw_change:
+                if event.dreaming or event.kind == "dream LTW raise":
+                    link["ltw_dream"] += ltw_change
+                else:
+                    link["ltw_awake"] += ltw_change
+            link["ltw"], link["stw"] = event.after[3], event.after[2]
+            if event.kind in CLOSING:
+                link["end"], link["ended"] = frame.tick, event.kind
+                del open_links[event.key]
+        last_tick = frame.tick
+    if layout is None:
+        return
+
+    print(f"ticks {start_tick}-{last_tick}")
+    print("decision lobe events: " + ", ".join(
+        f"{kind} {count}" for (lobe, kind), count in totals.most_common() if lobe == DECISION))
+    print("concept lobe events:  " + ", ".join(
+        f"{kind} {count}" for (lobe, kind), count in totals.most_common() if lobe == CONCEPT))
+    print(f"concept neurons rewired (attach/migrate/went loose) during the run: "
+          f"{len(concept_changes)} of {layout.lobes[CONCEPT].neuron_count}")
+
+    def describe(link):
+        _, neuron, rule, _ = link["key"]
+        span = f"{link['start']}-{link['end'] or 'end'}"
+        ended = f", {link['ended']}" if link["ended"] else ""
+        causes = ", ".join(f"{k} {v}" for k, v in link["causes"].most_common(4))
+        return (f"{action_name(neuron):11s} type {rule}  LTW {link['ltw0']:3d} -> {link['ltw']:3d} "
+                f"(awake {link['ltw_awake']:+d}, dreaming {link['ltw_dream']:+d})  "
+                f"ticks {span} ({link['began']}{ended})  concept {link['target']} "
+                f"[{'; '.join(link['meaning'])}]  events: {causes}")
+
+    awake = sorted((l for l in links if l["ltw_awake"]),
+                   key=lambda l: abs(l["ltw_awake"]), reverse=True)
+    print(f"\nlinks whose LTW changed while awake (learning from experience): {len(awake)}")
+    for link in awake[:top]:
+        print("   " + describe(link))
+    dream = sorted((l for l in links if l["ltw_dream"]),
+                   key=lambda l: abs(l["ltw_dream"]), reverse=True)
+    print(f"\nlinks whose LTW changed while dreaming (instincts): {len(dream)}")
+    for link in dream[:top]:
+        print("   " + describe(link))
+    print("\nlinks opened during the run, by how: " + ", ".join(
+        f"{k} {v}" for k, v in collections.Counter(
+            l["began"] for l in links if l["began"] != "present at start").most_common()))
+
+
 if __name__ == "__main__":
     signal.signal(signal.SIGPIPE, signal.SIG_DFL)
     commands = {"perception": cmd_perception, "concepts": cmd_concepts,
-                "rules": cmd_rules, "timeline": cmd_timeline}
+                "rules": cmd_rules, "timeline": cmd_timeline,
+                "learning": cmd_learning}
     if len(sys.argv) < 3 or sys.argv[1] not in commands:
         print(__doc__)
         sys.exit(2)

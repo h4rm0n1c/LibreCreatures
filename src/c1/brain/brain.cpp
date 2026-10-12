@@ -1,4 +1,5 @@
 #include "brain.hpp"
+#include "brain_recorder.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -689,7 +690,7 @@ void Brain::reset_runtime_activity() {
                                   ? static_cast<std::size_t>(lobe_count_)
                                   : lobes_.size();
     for (std::size_t index = 0; index < count; ++index) {
-        lobes_[index].reset_runtime_activity();
+        lobes_[index].reset_runtime_activity(this);
     }
 }
 
@@ -713,7 +714,13 @@ void Brain::normalize_dream_connection_weights() {
                      connection_index < count; ++connection_index) {
                     LobeConnection& connection = connections[connection_index];
                     if (connection.baseline_weight < connection.target_weight) {
+                        const LobeConnection before = connection;
                         connection.baseline_weight = connection.target_weight;
+                        if (g_brain_events_wanted) {
+                            record_dendrite_event(this, connection,
+                                                  DendriteEvent::dream_ltw_raise,
+                                                  before);
+                        }
                     }
                 }
             }
