@@ -1,6 +1,7 @@
 #include "windows_shell.hpp"
 
 #include "sdl_world_view.hpp"
+#include "../common/lab_trace.hpp"
 
 #include <SDL3/SDL.h>
 
@@ -164,6 +165,8 @@ void SdlWorldView::clear_textures() {
 
 SDL_Texture* SdlWorldView::upload(const std::uint8_t* rgba, int width,
                                   int height, std::size_t& bytes) {
+    common::lab_trace(common::LabTrace::sprites, "texture upload %d %d", width,
+                      height);
     SDL_Texture* texture =
         SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_RGBA32,
                           SDL_TEXTUREACCESS_STATIC, width, height);

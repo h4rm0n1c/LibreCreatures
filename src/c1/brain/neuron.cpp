@@ -1,6 +1,7 @@
 #include "neuron.hpp"
 
 #include "brain.hpp"
+#include "../common/lab_trace.hpp"
 
 #include <array>
 #include <algorithm>
@@ -174,6 +175,10 @@ void migrate_rule_connections(LobeNeuron& neuron, Brain& owner_brain,
     }
 
     const std::uint32_t candidate_limit = target_count - old_connection_count;
+    // Lab trace counts (category "dendrites"): candidates rejected as real
+    // duplicates, and signature matches the target-set check overturned.
+    unsigned duplicate_rejects = 0;
+    unsigned false_matches = 0;
     for (std::uint32_t start = 0; start <= candidate_limit; ++start) {
         if (has_repeated_nonzero_source_lobe(mutable_target_lobe, start,
                                              old_connection_count)) {
@@ -218,10 +223,14 @@ void migrate_rule_connections(LobeNeuron& neuron, Brain& owner_brain,
                 rule_index == 0 ? existing->rule0_connections_begin
                                 : existing->rule1_connections_begin;
             if (connection_set_signature(existing_connections, existing_count) ==
-                    candidate_signature &&
-                same_target_set(existing_connections, connections,
-                                existing_count)) {
+                candidate_signature) {
+                if (!same_target_set(existing_connections, connections,
+                                     existing_count)) {
+                    ++false_matches;
+                    continue;
+                }
                 duplicate = true;
+                ++duplicate_rejects;
                 break;
             }
         }
@@ -235,8 +244,15 @@ void migrate_rule_connections(LobeNeuron& neuron, Brain& owner_brain,
         if (loose_count != 0) {
             --loose_count;
         }
+        common::lab_trace(common::LabTrace::dendrites,
+                          "migrate ok rule=%d duplicates=%u false_matches=%u",
+                          connection_rule_index, duplicate_rejects,
+                          false_matches);
         return;
     }
+    common::lab_trace(common::LabTrace::dendrites,
+                      "migrate fail rule=%d duplicates=%u false_matches=%u",
+                      connection_rule_index, duplicate_rejects, false_matches);
 
     for (std::uint8_t index = 0; index < old_connection_count; ++index) {
         connections[index].target_neuron = saved_targets[index];

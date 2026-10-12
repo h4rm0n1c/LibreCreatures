@@ -8,6 +8,7 @@
 
 #include "../creatures/stimulus.hpp"
 #include "../objects/object.hpp"
+#include "../common/lab_trace.hpp"
 #include "classifier_scripts.hpp"
 #include "macro_holder.hpp"
 #include "tables.hpp"
@@ -958,9 +959,18 @@ std::uint32_t Macro::parse_rvalue(MacroRuntimeHost& runtime,
             !second->get_bounds(&second_bounds)) {
             return 0;
         }
-        return world::wrapped_world_rects_overlap(first_bounds, second_bounds)
-                   ? 1u
-                   : 0u;
+        const bool touching =
+            world::wrapped_world_rects_overlap(first_bounds, second_bounds);
+        common::lab_trace(common::LabTrace::touch,
+                          "touc %d [%d,%d,%d,%d] %d [%d,%d,%d,%d] = %d",
+                          runtime.is_creature_object(*first) ? 1 : 0,
+                          first_bounds.min_x, first_bounds.min_y,
+                          first_bounds.max_x, first_bounds.max_y,
+                          runtime.is_creature_object(*second) ? 1 : 0,
+                          second_bounds.min_x, second_bounds.min_y,
+                          second_bounds.max_x, second_bounds.max_y,
+                          touching ? 1 : 0);
+        return touching ? 1u : 0u;
     }
     if (token == kRvalueDead) {
         return target == nullptr || !runtime.is_creature_object(*target)

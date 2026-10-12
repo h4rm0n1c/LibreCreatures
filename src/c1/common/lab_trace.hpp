@@ -26,6 +26,14 @@ enum class LabTrace : std::uint32_t {
     attention = 1u << 7, // what each creature attends to, and from which slot
     rides = 1u << 8,     // creatures boarding and leaving vehicles and lifts,
                          // and every object event a creature's script sends
+    actions = 1u << 9,   // each action a creature chooses and how it ran,
+                         // its drives then, attention handovers, stimuli
+    goals = 1u << 10,    // goal direction: chosen goal, scores, boosts
+    touch = 1u << 11,    // every `touc` test: both bounds and the answer
+    lifts = 1u << 12,    // lift requests and each event reaching a lift
+    sprites = 1u << 13,  // gallery create/release/revive, pixel loads,
+                         // texture uploads
+    dendrites = 1u << 14, // loose dendrite re-attachment, migration results
 };
 
 bool lab_trace_enabled(LabTrace category);

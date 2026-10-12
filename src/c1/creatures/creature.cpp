@@ -11,8 +11,18 @@
 #include "../objects/events.hpp"
 #include "../common/lab_trace.hpp"
 
+#include <unordered_map>
+
 namespace creatures1::creatures {
 namespace {
+
+// Lab trace (category "actions"): attention updates since each creature's
+// last action script ran.  Kept only while that category is traced.
+std::unordered_map<const void*, std::uint32_t> g_updates_since_action;
+
+unsigned long trace_moniker(std::uint32_t genome_source_filename) {
+    return static_cast<unsigned long>(genome_source_filename);
+}
 
 // Exact C1 .data strings recovered at 004667e0 and 004667b4.
 constexpr char kLearnedWordVowels[] = "aeiouAEIOU";
@@ -1153,6 +1163,9 @@ void Creature::update_attention(CreatureAttentionHost& host) {
     if (goal_direction_state_.delivery_countdown != 0) {
         --goal_direction_state_.delivery_countdown;
     }
+    if (common::lab_trace_enabled(common::LabTrace::actions)) {
+        ++g_updates_since_action[this];
+    }
 
     // The native routine assumes a fully initialized brain. The clean model
     // can be observed during construction, so keep that malformed object from
@@ -1188,6 +1201,38 @@ void Creature::update_attention(CreatureAttentionHost& host) {
         (new_attention_target != nullptr ||
          !skeleton_.sleep_indicator_active)) {
         attention_transition_pending_ = false;
+        if (common::lab_trace_enabled(common::LabTrace::actions)) {
+            std::size_t top = 0;
+            std::uint8_t top_firing = 0;
+            for (std::size_t i = 0; i < attention_lobe.neuron_count_value() &&
+                                    i < kAttentionRecordCount;
+                 ++i) {
+                const std::uint8_t firing =
+                    attention_lobe.neuron(static_cast<std::uint32_t>(i))
+                        .firing_strength;
+                if (firing > top_firing) {
+                    top = i;
+                    top_firing = firing;
+                }
+            }
+            common::lab_trace(
+                common::LabTrace::actions,
+                "moniker=%08lx handover top=%u fire=%u null=%d n0=%u sel=%d "
+                "since=%u from=%08x to=%08x win=%u",
+                trace_moniker(skeleton_.genome_source_filename),
+                static_cast<unsigned>(top), top_firing,
+                attention_records_[top].target == nullptr ? 1 : 0,
+                attention_lobe.neuron(0).firing_strength,
+                static_cast<int>(static_cast<std::int8_t>(selected_action_id_)),
+                g_updates_since_action[this],
+                skeleton_.motion_link == nullptr
+                    ? 0u
+                    : host.classifier_base(*skeleton_.motion_link),
+                new_attention_target == nullptr
+                    ? 0u
+                    : host.classifier_base(*new_attention_target),
+                static_cast<unsigned>(winner_index));
+        }
         skeleton_.motion_link = new_attention_target;
         skeleton_.motion_target_part_index = 0;
         if (new_attention_target != nullptr) {
@@ -1320,6 +1365,15 @@ void Creature::set_action(std::uint32_t action_id,
     constexpr std::uint32_t kQuiescentAction = 0;
 
     objects::Object& creature_object = host.object_for_creature(*this);
+    if (common::lab_trace_enabled(common::LabTrace::actions)) {
+        const auto& d =
+            instinct_runtime_state_.control_state.goal_direction_drive_levels;
+        common::lab_trace(common::LabTrace::actions,
+                          "moniker=%08lx decide a=%u hunger=%u nfp=%u sex=%u "
+                          "bored=%u",
+                          trace_moniker(skeleton_.genome_source_filename),
+                          action_id, d.hunger, d.nfp, d.sex, d.boredom);
+    }
     for (;;) {
         objects::Object* const bounds_reference =
             skeleton_.bounds_reference_object();
@@ -1352,6 +1406,8 @@ void Creature::set_action(std::uint32_t action_id,
             if (host.execute_script_for_classifier(
                     *this, &creature_object, target_action_classifier, false) !=
                 0) {
+                trace_action_run(action_id, host.classifier_base(*motion_link),
+                                 "it");
                 if (host.debug_console_visible() &&
                     host.is_selected_creature(*this)) {
                     host.log_override_action_script_selected(
@@ -1365,8 +1421,18 @@ void Creature::set_action(std::uint32_t action_id,
             skeleton_.classifier_base() + action_id + event_offset;
         if (host.execute_script_for_classifier(
                 *this, &creature_object, own_action_classifier, false) != 0) {
+            trace_action_run(action_id,
+                             motion_link == nullptr
+                                 ? 0u
+                                 : host.classifier_base(*motion_link),
+                             "own");
             return;
         }
+        trace_action_run(action_id,
+                         motion_link == nullptr
+                             ? 0u
+                             : host.classifier_base(*motion_link),
+                         "none");
 
         if (host.debug_console_visible() &&
             host.is_selected_creature(*this)) {
@@ -1858,6 +1924,11 @@ void Creature::update_goal_direction(const CreatureGoalDirectionHost& world) {
         }
     }
     if (best_score < 1) {
+        common::lab_trace(common::LabTrace::goals,
+                          "moniker=%08lx goal none best=%d baseline=%d "
+                          "hunger=%u",
+                          trace_moniker(skeleton_.genome_source_filename),
+                          best_score, drive_baseline, drives.hunger);
         return;
     }
 
@@ -1903,6 +1974,12 @@ void Creature::update_goal_direction(const CreatureGoalDirectionHost& world) {
                     static_cast<std::uint32_t>(drive_baseline);
                 neuron.activation = static_cast<std::uint8_t>(
                     activation > 0xffu ? 0xffu : activation);
+                common::lab_trace(
+                    common::LabTrace::goals,
+                    "moniker=%08lx goal boost idx=%u amount=%u hunger=%u",
+                    trace_moniker(skeleton_.genome_source_filename),
+                    static_cast<unsigned>(best_attention_index),
+                    static_cast<unsigned>(drive_baseline), drives.hunger);
             }
         }
         return;
@@ -1958,6 +2035,20 @@ void Creature::update_goal_direction(const CreatureGoalDirectionHost& world) {
         std::distance(candidate_scores.begin(),
                       std::max_element(candidate_scores.begin(),
                                        candidate_scores.end())));
+    common::lab_trace(
+        common::LabTrace::goals,
+        "moniker=%08lx goal choose goal=%u gx=%d gy=%d cx=%d cy=%d above=%d "
+        "below=%d lift=%d button=%d best=%u scores=%d,%d,%d,%d,%d,%d "
+        "score=%d hunger=%u baseline=%d",
+        trace_moniker(skeleton_.genome_source_filename),
+        static_cast<unsigned>(best_attention_index), selected.world_x,
+        selected.world_y, creature_x, creature_y, goal_above ? 1 : 0,
+        goal_below ? 1 : 0, preferred_goal_target != nullptr ? 1 : 0,
+        static_cast<int>(interaction_context),
+        static_cast<unsigned>(best_candidate), candidate_scores[0],
+        candidate_scores[1], candidate_scores[2], candidate_scores[3],
+        candidate_scores[4], candidate_scores[5], best_score, drives.hunger,
+        drive_baseline);
     if (candidate_scores[best_candidate] < 1) {
         return;
     }
@@ -2221,6 +2312,21 @@ void Creature::queue_event_8_after_bounds_update(
                                       objects::ObjectEventId::event_8, 0);
 }
 
+void Creature::trace_action_run(std::uint32_t action_id,
+                                std::uint32_t target_classifier,
+                                const char* script) {
+    if (!common::lab_trace_enabled(common::LabTrace::actions)) {
+        return;
+    }
+    if (script[0] != 'n') {
+        g_updates_since_action[this] = 0;
+    }
+    common::lab_trace(common::LabTrace::actions,
+                      "moniker=%08lx act a=%u target=%08x script=%s",
+                      trace_moniker(skeleton_.genome_source_filename),
+                      action_id, target_classifier, script);
+}
+
 void Creature::trace_ride(const char* what,
                           const objects::Object& vehicle) const {
     if (!common::lab_trace_enabled(common::LabTrace::rides)) {
@@ -2229,8 +2335,7 @@ void Creature::trace_ride(const char* what,
     const std::uint32_t classifier = vehicle.classifier_base();
     common::lab_trace(common::LabTrace::rides,
                       "moniker=%08lx %s %u %u %u at=%d,%d",
-                      static_cast<unsigned long>(
-                          skeleton_.genome_source_filename),
+                      trace_moniker(skeleton_.genome_source_filename),
                       what, classifier >> 24, (classifier >> 16) & 0xffu,
                       (classifier >> 8) & 0xffu, skeleton_.down_foot_x,
                       skeleton_.down_foot_y);
@@ -3101,6 +3206,12 @@ void Creature::apply_stimulus(
             brain_->add_lobe_neuron_activation(
                 static_cast<std::uint32_t>(brain::StandardLobeIndex::stimulus_source),
                 attention_index, descriptor.attention_activation);
+            common::lab_trace(common::LabTrace::actions,
+                              "moniker=%08lx stimulus idx=%u amount=%u",
+                              trace_moniker(skeleton_.genome_source_filename),
+                              static_cast<unsigned>(attention_index),
+                              static_cast<unsigned>(
+                                  descriptor.attention_activation));
             // Native gates the General-sensory write on the attention record's
             // target -- which is null for a self-stimulus -- against the skeleton's
             // motion link, and contributes the target lobe activation.

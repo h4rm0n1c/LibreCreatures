@@ -1,5 +1,6 @@
 #include "lobe.hpp"
 #include "neuron.hpp"
+#include "../common/lab_trace.hpp"
 #include "rules.hpp"
 #include "brain.hpp"
 #include "../../../include/C1BiochemistrySelectorData.hpp"
@@ -774,6 +775,12 @@ void Lobe::update_late_phase(Brain* brain, std::uint32_t tick) {
                     if (duplicate) {
                         continue;
                     }
+                    common::lab_trace(
+                        common::LabTrace::dendrites,
+                        "loose %s rule=%d active=%u",
+                        loose->target_neuron == selected ? "rescue" : "attach",
+                        static_cast<int>(rule_index),
+                        target_lobe.active_neuron_count());
                     loose->target_neuron = selected;
                     loose->baseline_weight = random_inclusive(
                         rule.baseline_weight_min, rule.baseline_weight_max);

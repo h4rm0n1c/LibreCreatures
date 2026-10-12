@@ -63,6 +63,13 @@ picks categories, comma separated (default all):
 | `sound` | the sound manager's trace lines (as `C1_SOUND_LOG`) |
 | `lifecycle` | world opened and saved, deaths, creatures removed |
 | `attention` | each change of what a creature attends to: the winning attention slot, the target's classifier and position, its distance, and whether the creature can see it |
+| `rides` | a creature boarding or leaving a vehicle or lift, and every object event a creature's script sends (event, target, positions) |
+| `actions` | each action a creature chooses (with its drives), how its script ran (the target's, its own, or none), attention handovers, and stimuli into the source lobe |
+| `goals` | goal direction: no goal, the goal chosen with its scores, and boosts |
+| `touch` | every `touc` test: both objects' bounds and the answer |
+| `lifts` | lift requests and each event reaching a lift, with its outcome |
+| `sprites` | gallery create, release and revive, pixel loads, texture uploads |
+| `dendrites` | loose dendrite re-attachment, and each migration's result with its duplicate and false-match counts |
 
 The trace only observes. The c1-lab `launch(trace=...)` sets it, and its
 `trace` and `trace_wait` tools read it.

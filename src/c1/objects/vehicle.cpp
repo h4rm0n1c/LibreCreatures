@@ -1,6 +1,7 @@
 #include "vehicle.hpp"
 
 #include "events.hpp"
+#include "../common/lab_trace.hpp"
 #include "simple_object.hpp"
 
 #include "../world/geometry.hpp"
@@ -332,9 +333,23 @@ void Vehicle::start_interaction(const QueuedObjectEvent& event,
         return;
     }
     const bool source_is_creature = host.source_is_creature(*source);
+    const std::uint32_t previous_event = current_interaction_event_id();
+    // Lab trace (category "lifts"), as CompoundObject::handle_queued_event.
+    const auto trace_lift_event = [&](int outcome) {
+        if ((classifier_base() >> 16) == 0x0302u) {
+            common::lab_trace(common::LabTrace::lifts,
+                              "event at=%d,%d req=%u prev=%u obv0=%u "
+                              "creature=%d outcome=%d",
+                              sound_source_x(), sound_source_y(),
+                              static_cast<unsigned>(interaction),
+                              previous_event, object_variable(0),
+                              source_is_creature ? 1 : 0, outcome);
+        }
+    };
     if (current_interaction_event_id() ==
         static_cast<std::uint32_t>(interaction)) {
         if (!source_is_creature) {
+            trace_lift_event(-1);
             return;
         }
     } else if (!source_is_creature ||
@@ -343,8 +358,10 @@ void Vehicle::start_interaction(const QueuedObjectEvent& event,
             static_cast<std::uint32_t>(interaction));
         synchronize_fixed_point_position(*this);
         host.dispatch_script_event(*this, source, interaction);
+        trace_lift_event(1);
         return;
     }
+    trace_lift_event(-1);
     queue_built_in_creature_stimulus(*this, *source, host);
 }
 
