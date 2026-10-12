@@ -1076,6 +1076,9 @@ public:
     // genome and runs Skeleton::LoadGenome alone, leaving the brain,
     // biochemistry and voice it already loaded untouched.
     bool rebuild_body_sprites(GenomeInitializationHost& host);
+    // Lab trace (category "rides"): this creature boarding or leaving a
+    // vehicle or lift.
+    void trace_ride(const char* what, const objects::Object& vehicle) const;
     // Not native (neorender): Skeleton::describe_body_tiers for a body file
     // that is already up to date.
     void describe_body_tiers(GenomeInitializationHost& host);
