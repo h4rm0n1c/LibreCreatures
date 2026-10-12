@@ -96,11 +96,11 @@ LibreCreatures adds two rules. They apply to all perception.
 - The world file. The mark is not saved. After a world loads, no object
   has the mark.
 
-## 5. Possible side effect
+## 5. Objects that are never moved
 
-An object that a script makes and never moves stays at the origin. A
-creature cannot perceive it. The origin is the top-left corner of the
-sky. No room is there, and only a creature in a vehicle could see it.
+An object that a script makes and never moves stays at the origin. No
+creature perceives it, in a vehicle or not. Before this change, a
+creature in a vehicle could see it there.
 
 ## 6. Lab results
 
