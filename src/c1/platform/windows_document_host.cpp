@@ -8,6 +8,7 @@
 #include "windows_embedded_kit_host.hpp"
 
 #include "../brain/lobe.hpp"
+#include "../brain/brain_recorder.hpp"
 #include "../common/lab_trace.hpp"
 #include "../scripting/tables.hpp"
 #include "../display/bitmap.hpp"
@@ -2892,6 +2893,30 @@ void C1WindowsDocument::update_creature_brain(std::size_t index) {
         return;
     }
     creature->brain()->update(creature->biochemistry_tick());
+    if (creatures1::brain::brain_recording_enabled()) {
+        // Lab only (C1_BRAIN_RECORD): one frame after each brain update.
+        const auto& skeleton = creature->skeleton();
+        creatures1::brain::BrainRecordContext context;
+        context.world_tick = world_tick_count();
+        context.moniker = skeleton.genome_source_filename;
+        context.x = skeleton.down_foot_x;
+        context.y = skeleton.down_foot_y;
+        context.action =
+            static_cast<std::uint8_t>(creature->selected_action_id());
+        if (skeleton.motion_link != nullptr) {
+            context.attention_classifier =
+                skeleton.motion_link->classifier_base();
+            const auto& records = creature->attention_records();
+            for (std::size_t slot = 0; slot < records.size(); ++slot) {
+                if (records[slot].target == skeleton.motion_link) {
+                    context.attention_slot = static_cast<std::int8_t>(slot);
+                    break;
+                }
+            }
+        }
+        creatures1::brain::record_brain_frame(creature, *creature->brain(),
+                                              context);
+    }
 }
 
 void C1WindowsDocument::update_creature_biochemistry(std::size_t index) {

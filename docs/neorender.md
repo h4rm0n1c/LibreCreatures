@@ -48,6 +48,16 @@ differ over the area they share, and the texture memory in use.
 **Tick timing.** `C1_TRACE_TICK=1`, or a `trace_tick` file in the world
 folder, appends a summary line to `Creatures.tick.log` every 110 ticks.
 
+**Brain recordings.** `C1_BRAIN_RECORD=<folder>` writes one file per
+creature brain (`<moniker>-<part>.c1brain`): after every brain update, the
+creature's place, chosen action and attention, and every neuron and dendrite
+that changed, with a full keyframe every 256 frames. Frames are compressed
+in chunks of 32. `C1_BRAIN_RECORD_MONIKERS` (hex monikers, comma separated)
+records only those creatures. A norn takes about 3 MB per in-game hour.
+`scripts/brain_record.py` reads the files back (`summary`, `frames`, or as a
+module that rebuilds the full brain at each frame). The format is described
+in `src/c1/brain/brain_recorder.hpp`.
+
 **Lab trace.** `C1_LAB_TRACE=<file>` appends one line per event:
 `<world tick> TAB <ms> TAB <category> TAB <text>`, where `<ms>` is Windows'
 uptime (`GetTickCount64`), the same clock as the Lab Kit's log. `C1_LAB_TRACE_CATEGORIES`
