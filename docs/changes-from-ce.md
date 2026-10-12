@@ -315,7 +315,7 @@ Off unless set; none changes the game's behaviour.
 
 | Environment variable | Build | Effect |
 | --- | --- | --- |
-| `C1_LAB_TRACE`, `C1_LAB_TRACE_CATEGORIES` | both | An event trace (kits, selection, camera, scripts, sound, attention) for the c1-lab harness. |
+| `C1_LAB_TRACE`, `C1_LAB_TRACE_CATEGORIES` | both | An event trace for the c1-lab harness: kits, kit pipe, selection, camera, scripts, sound, lifecycle, attention, rides, actions, goals, touch, lifts, sprites, dendrites. |
 | `C1_TRACE_TICK` | both | World tick timing to `Creatures.tick.log`. |
 | `C1_TRACE_CREATURE` | both | Per-creature placement and movement probes. |
 | `C1_KIT_TRAFFIC_LOG`, `C1_SOUND_LOG` | both | Kit traffic and sound manager logs. |
