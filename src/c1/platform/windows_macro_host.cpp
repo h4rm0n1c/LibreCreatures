@@ -2153,6 +2153,7 @@ creatures1::objects::Object* WindowsNewObjectHost::adopt(
     if (object == nullptr || runtime == nullptr) {
         return nullptr;
     }
+    object->set_awaiting_first_placement(true);
     return &runtime->adopt_non_scenery_object(std::move(object));
 }
 
@@ -2354,6 +2355,7 @@ creatures1::objects::Object* WindowsNewObjectHost::create_creature(
         construction);
     creatures1::creatures::Creature& adopted =
         runtime->adopt_creature(std::move(creature));
+    adopted.skeleton().set_awaiting_first_placement(true);
     // The constructor's native-order menu refresh precedes adopt_creature in
     // this composition.  Repeat it after adoption so NEW: CREA exposes the
     // newborn through the normal creature-selection path.

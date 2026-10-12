@@ -749,6 +749,21 @@ bool WindowsCreatureFanoutHost::is_map_room_reference(
     return (reference.classifier_base() & 0xffff0000u) == 0x03020000u;
 }
 
+bool WindowsCreatureFanoutHost::is_unplaced_new_object(
+    const creatures1::objects::Object& target,
+    const creatures1::world::WorldRect& bounds) const {
+    if (!target.awaiting_first_placement()) {
+        return false;
+    }
+    if (bounds.min_x <= 0 && 0 <= bounds.max_x && bounds.min_y <= 0 &&
+        0 <= bounds.max_y) {
+        return true;
+    }
+    const_cast<creatures1::objects::Object&>(target)
+        .set_awaiting_first_placement(false);
+    return false;
+}
+
 void WindowsCreatureFanoutHost::nearest_map_room_bounds(
     int world_x, int world_y,
     creatures1::world::WorldRect& out_bounds) const {

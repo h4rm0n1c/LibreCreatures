@@ -331,6 +331,9 @@ public:
                      creatures1::world::WorldRect& out_bounds) const override;
     bool is_map_room_reference(
         const creatures1::objects::Object& reference) const override;
+    bool is_unplaced_new_object(
+        const creatures1::objects::Object& target,
+        const creatures1::world::WorldRect& bounds) const override;
     void nearest_map_room_bounds(
         int world_x, int world_y,
         creatures1::world::WorldRect& out_bounds) const override;
