@@ -61,7 +61,7 @@ def item_name(lobe, index):
     return f"neuron {index}"
 
 
-LOBE_WORDS = {DRIVE: "drive", SOURCE: "stimulus from", VERB: "heard verb",
+LOBE_WORDS = {DRIVE: "drive", SOURCE: "stimulus from", VERB: "verb", ATTENTION: "attending",
               NOUN: "heard/seen noun", GENERAL: "general sense"}
 
 
