@@ -1,6 +1,7 @@
 #include "neuron.hpp"
 
 #include "brain.hpp"
+#include "brain_recorder.hpp"
 #include "../common/lab_trace.hpp"
 
 #include <array>
@@ -164,6 +165,24 @@ void migrate_rule_connections(LobeNeuron& neuron, Brain& owner_brain,
     for (std::uint8_t index = 0; index < old_connection_count; ++index) {
         saved_targets[index] = connections[index].target_neuron;
     }
+    // The dendrites as they were, for the brain recorder's events: a
+    // migration may try several candidate sets before it settles, and only
+    // where it ends is an event.
+    std::array<LobeConnection, 256> entry_state{};
+    if (g_brain_events_wanted) {
+        for (std::uint8_t index = 0; index < old_connection_count; ++index) {
+            entry_state[index] = connections[index];
+        }
+    }
+    const auto record_outcome = [&](DendriteEvent kind) {
+        if (!g_brain_events_wanted) {
+            return;
+        }
+        for (std::uint8_t index = 0; index < old_connection_count; ++index) {
+            record_dendrite_event(&owner_brain, connections[index], kind,
+                                  entry_state[index]);
+        }
+    };
 
     // This is the original in-place rand()%N shuffle, retained as a named
     // operation because it is part of the C1 migration behavior.
@@ -248,6 +267,7 @@ void migrate_rule_connections(LobeNeuron& neuron, Brain& owner_brain,
                           "migrate ok rule=%d duplicates=%u false_matches=%u",
                           connection_rule_index, duplicate_rejects,
                           false_matches);
+        record_outcome(DendriteEvent::migrate);
         return;
     }
     common::lab_trace(common::LabTrace::dendrites,
@@ -260,6 +280,7 @@ void migrate_rule_connections(LobeNeuron& neuron, Brain& owner_brain,
         connections[index].baseline_weight = 0;
         connections[index].dendrite_state = 0;
     }
+    record_outcome(DendriteEvent::migrate_failed);
 }
 
 } // namespace creatures1::brain

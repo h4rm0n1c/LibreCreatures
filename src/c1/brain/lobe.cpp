@@ -3,6 +3,7 @@
 #include "../common/lab_trace.hpp"
 #include "rules.hpp"
 #include "brain.hpp"
+#include "brain_recorder.hpp"
 #include "../../../include/C1BiochemistrySelectorData.hpp"
 #include <algorithm>
 #include <cstdlib>
@@ -578,8 +579,13 @@ void Lobe::update_late_phase(Brain* brain, std::uint32_t tick) {
                             static_cast<std::uint32_t>(connection.target_weight) +
                             static_cast<std::uint8_t>(
                                 static_cast<int>(weighted_signal) - headroom);
+                        const LobeConnection before = connection;
                         connection.target_weight = static_cast<std::uint8_t>(
                             std::min(raised, static_cast<std::uint32_t>(0xff)));
+                        if (g_brain_events_wanted) {
+                            record_dendrite_event(brain, connection,
+                                                  DendriteEvent::reinforce, before);
+                        }
                     }
                 }
 
@@ -599,20 +605,31 @@ void Lobe::update_late_phase(Brain* brain, std::uint32_t tick) {
                              g_biochemistry_tick_selector_q16_multipliers[
                                  selector]) >>
                             16);
+                        const LobeConnection before = connection;
                         connection.target_weight =
                             connection.baseline_weight < connection.target_weight
                                 ? static_cast<std::uint8_t>(
                                       connection.baseline_weight + delta)
                                 : static_cast<std::uint8_t>(
                                       connection.baseline_weight - delta);
+                        if (g_brain_events_wanted &&
+                            connection.target_weight != before.target_weight) {
+                            record_dendrite_event(brain, connection,
+                                                  DendriteEvent::relax, before);
+                        }
                     }
                     if (connection.target_weight != connection.baseline_weight &&
                         rule.baseline_weight_step_interval != 0 &&
                         tick % rule.baseline_weight_step_interval == 0) {
+                        const LobeConnection before = connection;
                         if (connection.baseline_weight < connection.target_weight) {
                             ++connection.baseline_weight;
                         } else {
                             --connection.baseline_weight;
+                        }
+                        if (g_brain_events_wanted) {
+                            record_dendrite_event(brain, connection,
+                                                  DendriteEvent::ltw_step, before);
                         }
                     }
                 }
@@ -623,7 +640,12 @@ void Lobe::update_late_phase(Brain* brain, std::uint32_t tick) {
                     const std::uint8_t growth = evaluate_rule_expression(
                         rule.dendrite_growth_expression, registers);
                     if (connection.dendrite_state < growth) {
+                        const LobeConnection before = connection;
                         connection.dendrite_state = growth;
+                        if (g_brain_events_wanted) {
+                            record_dendrite_event(brain, connection,
+                                                  DendriteEvent::strengthen, before);
+                        }
                     }
                 }
                 if (rule.dendrite_decay_interval != 0 &&
@@ -631,6 +653,7 @@ void Lobe::update_late_phase(Brain* brain, std::uint32_t tick) {
                     tick % rule.dendrite_decay_interval == 0 &&
                     evaluate_rule_expression(rule.dendrite_decay_expression,
                                              registers) != 0) {
+                    const LobeConnection before = connection;
                     --connection.dendrite_state;
                     if (connection.dendrite_state == 0) {
                         ++loose_connection_count;
@@ -639,6 +662,14 @@ void Lobe::update_late_phase(Brain* brain, std::uint32_t tick) {
                         connection.baseline_weight = 0;
                         neuron.firing_strength = 0;
                         neuron.activation = 0;
+                    }
+                    if (g_brain_events_wanted) {
+                        record_dendrite_event(
+                            brain, connection,
+                            connection.dendrite_state == 0
+                                ? DendriteEvent::went_loose
+                                : DendriteEvent::weaken,
+                            before);
                     }
                 }
             }
@@ -781,12 +812,21 @@ void Lobe::update_late_phase(Brain* brain, std::uint32_t tick) {
                         loose->target_neuron == selected ? "rescue" : "attach",
                         static_cast<int>(rule_index),
                         target_lobe.active_neuron_count());
+                    const LobeConnection before = *loose;
                     loose->target_neuron = selected;
                     loose->baseline_weight = random_inclusive(
                         rule.baseline_weight_min, rule.baseline_weight_max);
                     loose->target_weight = loose->baseline_weight;
                     loose->dendrite_state = random_inclusive(
                         rule.dendrite_state_min, rule.dendrite_state_max);
+                    if (g_brain_events_wanted) {
+                        record_dendrite_event(
+                            brain, *loose,
+                            before.target_neuron == selected
+                                ? DendriteEvent::rescue
+                                : DendriteEvent::attach,
+                            before);
+                    }
                     auto& remaining =
                         late_phase_runtime_state.per_rule_loose_dendrite_count[
                             rule_index];
@@ -984,7 +1024,7 @@ void Lobe::set_neuron_activation(std::uint32_t index,
     neurons[index].firing_strength = activation;
 }
 
-void Lobe::reset_runtime_activity() {
+void Lobe::reset_runtime_activity(const Brain* brain) {
     for (std::uint32_t index = 0; index < neuron_count; ++index) {
         LobeNeuron& target = neurons[index];
         target.firing_strength = 0;
@@ -1000,8 +1040,15 @@ void Lobe::reset_runtime_activity() {
             for (std::uint8_t connection_index = 0;
                  connection_index < count; ++connection_index) {
                 LobeConnection& connection = connection_array[connection_index];
+                const LobeConnection before = connection;
                 connection.current_weight = 0;
                 connection.target_weight = connection.baseline_weight;
+                if (g_brain_events_wanted &&
+                    (before.current_weight != 0 ||
+                     before.target_weight != connection.target_weight)) {
+                    record_dendrite_event(brain, connection,
+                                          DendriteEvent::reset, before);
+                }
             }
         }
     }

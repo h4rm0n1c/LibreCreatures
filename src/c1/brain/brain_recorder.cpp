@@ -9,6 +9,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 // The vendored stb_image_write (third_party/stb, public domain / MIT), for
@@ -27,7 +28,7 @@
 namespace creatures1::brain {
 namespace {
 
-constexpr std::uint32_t kFormatVersion = 4;
+constexpr std::uint32_t kFormatVersion = 5;
 // Frames are buffered and written as one compressed chunk this often, so a
 // game that is killed loses at most this many frames.
 constexpr std::uint32_t kFramesPerChunk = 32;
@@ -95,7 +96,16 @@ private:
     std::vector<std::uint8_t>& out_;
 };
 
+// Where one dendrite sits in the file: its number in keyframe order and the
+// lobe its source is in.
+struct ConnectionPlace {
+    std::uint32_t number = 0;
+    std::uint32_t source_lobe = 0;
+};
+
 struct Recording {
+    const Brain* brain = nullptr;
+    std::unordered_map<const LobeConnection*, ConnectionPlace> places;
     std::FILE* file = nullptr;
     std::uint32_t moniker = 0;
     std::uint32_t part = 0;
@@ -185,6 +195,16 @@ std::map<const void*, Recording>& recordings() {
     return value;
 }
 
+std::map<const Brain*, Recording*>& recordings_by_brain() {
+    static std::map<const Brain*, Recording*> value;
+    return value;
+}
+
+std::map<const Brain*, bool>& dreaming_brains() {
+    static std::map<const Brain*, bool> value;
+    return value;
+}
+
 std::map<std::uint32_t, std::uint32_t>& parts_by_moniker() {
     static std::map<std::uint32_t, std::uint32_t> value;
     return value;
@@ -208,6 +228,51 @@ std::uint16_t target_index(const Brain& brain, const LobeConnectionRule& rule,
         return kNoTarget;
     }
     return static_cast<std::uint16_t>(offset);
+}
+
+std::uint16_t source_index(const Brain& brain, std::uint32_t lobe_index,
+                           const LobeNeuron* source) {
+    if (source == nullptr || lobe_index >= brain.lobe_count()) {
+        return kNoTarget;
+    }
+    const Lobe& lobe = brain.lobe(lobe_index);
+    if (lobe.neuron_count_value() == 0) {
+        return kNoTarget;
+    }
+    const std::ptrdiff_t offset = source - &lobe.neuron(0);
+    if (offset < 0 ||
+        offset >= static_cast<std::ptrdiff_t>(lobe.neuron_count_value()) ||
+        offset >= kNoTarget) {
+        return kNoTarget;
+    }
+    return static_cast<std::uint16_t>(offset);
+}
+
+// Numbers every dendrite in keyframe order, for events.
+void index_connections(const Brain& brain, Recording& recording) {
+    recording.places.clear();
+    std::uint32_t number = 0;
+    for (std::uint32_t lobe_index = 0; lobe_index < brain.lobe_count();
+         ++lobe_index) {
+        const Lobe& lobe = brain.lobe(lobe_index);
+        for (std::uint32_t index = 0; index < lobe.neuron_count_value();
+             ++index) {
+            const LobeNeuron& neuron = lobe.neuron(index);
+            for (std::uint8_t rule = 0; rule < 2; ++rule) {
+                const LobeConnection* connections =
+                    rule == 0 ? neuron.rule0_connections_begin
+                              : neuron.rule1_connections_begin;
+                const std::uint8_t count = rule == 0
+                                               ? neuron.rule0_connection_count
+                                               : neuron.rule1_connection_count;
+                for (std::uint8_t dendrite = 0;
+                     connections != nullptr && dendrite < count; ++dendrite) {
+                    recording.places[&connections[dendrite]] = {
+                        number++, lobe.connection_rule(rule).target_lobe_index};
+                }
+            }
+        }
+    }
 }
 
 Snapshot take_snapshot(const Brain& brain) {
@@ -306,6 +371,7 @@ void write_frame(Recording& recording, Snapshot& snapshot,
     out.u8(context.action);
     out.u8(static_cast<std::uint8_t>(context.attention_slot));
     out.u32(context.attention_classifier);
+    out.u8(context.flags);
 
     const bool keyframe = recording.frames % kKeyframeInterval == 0;
     if (keyframe) {
@@ -396,6 +462,8 @@ void write_frame(Recording& recording, Snapshot& snapshot,
 
 } // namespace
 
+bool g_brain_events_wanted = false;
+
 bool brain_recording_enabled() { return !settings().folder.empty(); }
 
 void record_brain_frame(const void* key, const Brain& brain,
@@ -410,21 +478,71 @@ void record_brain_frame(const void* key, const Brain& brain,
     Recording& recording = recordings()[key];
     Snapshot snapshot = take_snapshot(brain);
     if (recording.file == nullptr || recording.moniker != context.moniker ||
-        snapshot.layout != recording.previous.layout) {
+        snapshot.layout != recording.previous.layout ||
+        recording.brain != &brain) {
         recording.moniker = context.moniker;
+        if (recording.brain != nullptr) {
+            recordings_by_brain().erase(recording.brain);
+        }
         if (!open_part(recording, snapshot)) {
             recordings().erase(key);
             return;
         }
+        recording.brain = &brain;
+        index_connections(brain, recording);
+        recordings_by_brain()[&brain] = &recording;
+        g_brain_events_wanted = true;
     }
     write_frame(recording, snapshot, context);
     recording.previous = std::move(snapshot);
+}
+
+void record_dendrite_event(const Brain* brain, const LobeConnection& connection,
+                           DendriteEvent kind, const LobeConnection& before) {
+    if (brain == nullptr) {
+        return;
+    }
+    const auto found = recordings_by_brain().find(brain);
+    if (found == recordings_by_brain().end() || found->second->file == nullptr) {
+        return;
+    }
+    Recording& recording = *found->second;
+    const auto place = recording.places.find(&connection);
+    if (place == recording.places.end()) {
+        return;
+    }
+    const auto dreaming = dreaming_brains().find(brain);
+    Writer out(recording.pending);
+    out.u8('E');
+    out.u8(static_cast<std::uint8_t>(kind));
+    out.u8(dreaming != dreaming_brains().end() && dreaming->second ? 1 : 0);
+    out.varint(place->second.number);
+    for (const LobeConnection* state : {&before, &connection}) {
+        out.u16(source_index(*brain, place->second.source_lobe,
+                             state->target_neuron));
+        out.u8(state->current_weight);
+        out.u8(state->target_weight);
+        out.u8(state->baseline_weight);
+        out.u8(state->dendrite_state);
+    }
+}
+
+void set_brain_dreaming(const Brain* brain, bool dreaming) {
+    if (dreaming) {
+        dreaming_brains()[brain] = true;
+    } else {
+        dreaming_brains().erase(brain);
+    }
 }
 
 void forget_brain_recording(const void* key) {
     auto found = recordings().find(key);
     if (found == recordings().end()) {
         return;
+    }
+    if (found->second.brain != nullptr) {
+        recordings_by_brain().erase(found->second.brain);
+        dreaming_brains().erase(found->second.brain);
     }
     close_recording(found->second);
     recordings().erase(found);

@@ -170,7 +170,9 @@ public:
     // with one parsed activation value; it does not add to the old value.
     void set_neuron_activation(std::uint32_t index,
                                std::uint8_t activation);
-    void reset_runtime_activity();
+    // `brain` (when given) is the brain this lobe belongs to, for the
+    // brain recorder's events.
+    void reset_runtime_activity(const Brain* brain = nullptr);
 
 private:
     friend class Brain;

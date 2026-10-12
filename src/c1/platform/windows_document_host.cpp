@@ -2864,6 +2864,9 @@ void C1WindowsDocument::update_creature_brain(std::size_t index) {
         context.y = skeleton.down_foot_y;
         context.action =
             static_cast<std::uint8_t>(creature->selected_action_id());
+        context.flags = static_cast<std::uint8_t>(
+            (creature->is_asleep() ? 1 : 0) |
+            (creature->instinct_runtime_state().dream_countdown != 0 ? 2 : 0));
         if (skeleton.motion_link != nullptr) {
             context.attention_classifier =
                 skeleton.motion_link->classifier_base();
