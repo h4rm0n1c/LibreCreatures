@@ -186,6 +186,8 @@ added), or `Fix (bug N)` in the kits (that kit's `ORIGINAL.md`).
 - Two creature scripts in the stock world are corrected when a world loads,
   if they are still the shipped text: Retreat now plays its plain retreat
   animation, and Say Need gives sleepiness the tired pose.  (rows 69, 70)
+- Norns can play the drum: it no longer loads stuck in the active state,
+  and playing it clears that state again.  (row 71)
 
 ### Files and windows
 
