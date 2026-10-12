@@ -286,8 +286,10 @@ def cmd_learning(path, top=12):
             if link is None:
                 continue
             link["causes"][event.kind + (" (dream)" if event.dreaming else "")] += 1
+            # Learning moves LTW by an LTW step, or by the after-dream raise.
+            # Going loose also zeroes LTW, but that is decay, not learning.
             ltw_change = event.after[3] - event.before[3]
-            if ltw_change:
+            if ltw_change and event.kind in ("ltw step", "dream LTW raise"):
                 if event.dreaming or event.kind == "dream LTW raise":
                     link["ltw_dream"] += ltw_change
                 else:
