@@ -183,6 +183,9 @@ added), or `Fix (bug N)` in the kits (that kit's `ORIGINAL.md`).
 - Ocean Dome Sound is hidden from creatures when a world loads, so hungry
   norns no longer go into the dome looking for a vendor (issue #10).  The
   world file is only changed when it is next saved.  (row 26)
+- Two creature scripts in the stock world are corrected when a world loads,
+  if they are still the shipped text: Retreat now plays its plain retreat
+  animation, and Say Need gives sleepiness the tired pose.  (rows 69, 70)
 
 ### Files and windows
 
