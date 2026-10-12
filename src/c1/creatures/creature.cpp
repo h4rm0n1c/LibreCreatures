@@ -9,6 +9,7 @@
 #include "../../../include/C1PoseAnimationData.hpp"
 #include "../world/geometry.hpp"
 #include "../objects/events.hpp"
+#include "../common/lab_trace.hpp"
 
 namespace creatures1::creatures {
 namespace {
@@ -2220,6 +2221,21 @@ void Creature::queue_event_8_after_bounds_update(
                                       objects::ObjectEventId::event_8, 0);
 }
 
+void Creature::trace_ride(const char* what,
+                          const objects::Object& vehicle) const {
+    if (!common::lab_trace_enabled(common::LabTrace::rides)) {
+        return;
+    }
+    const std::uint32_t classifier = vehicle.classifier_base();
+    common::lab_trace(common::LabTrace::rides,
+                      "moniker=%08lx %s %u %u %u at=%d,%d",
+                      static_cast<unsigned long>(
+                          skeleton_.genome_source_filename),
+                      what, classifier >> 24, (classifier >> 16) & 0xffu,
+                      (classifier >> 8) & 0xffu, skeleton_.down_foot_x,
+                      skeleton_.down_foot_y);
+}
+
 void Creature::handle_pickup_event(
     const objects::QueuedObjectEvent& event, CreaturePickupHost& host) {
     // The native event dispatcher only calls this handler with a populated
@@ -2248,6 +2264,7 @@ void Creature::handle_pickup_event(
                                   host.renderables());
         skeleton_.set_bounds_reference_object(&source);
         skeleton_.update_movement_bounds(host.movement_bounds_host());
+        trace_ride("boards", source);
 
         skeleton_.down_foot_y = skeleton_.movement_bounds().max_y;
         skeleton_.down_foot_x = std::clamp(
@@ -2302,6 +2319,7 @@ void Creature::handle_drop_event(
                 skeleton_.body->set_render_plane(skeleton_.normal_render_plane);
             }
         }
+        trace_ride("leaves", source);
         skeleton_.set_bounds_mode(
             static_cast<std::uint32_t>(objects::Object::BoundsMode::default_world),
             host.renderables());

@@ -2028,6 +2028,22 @@ void WindowsMacroHost::queue_immediate_object_event(
     creatures1::objects::ObjectEventId event_id) {
     // The three-argument form the vehicle commands use; the runtime's own
     // four-argument overload carries the extra event argument.
+    if (creatures1::common::lab_trace_enabled(
+            creatures1::common::LabTrace::rides) &&
+        (source.classifier_base() >> 24) == 4) {
+        const auto* skeleton =
+            dynamic_cast<const creatures1::creatures::Skeleton*>(&source);
+        const std::uint32_t classifier = target.classifier_base();
+        creatures1::common::lab_trace(
+            creatures1::common::LabTrace::rides,
+            "moniker=%08lx sends %u to %u %u %u at=%d,%d from=%d,%d",
+            static_cast<unsigned long>(
+                skeleton == nullptr ? 0 : skeleton->genome_source_filename),
+            static_cast<unsigned>(event_id), classifier >> 24,
+            (classifier >> 16) & 0xffu, (classifier >> 8) & 0xffu,
+            target.sound_source_x(), target.sound_source_y(),
+            source.sound_source_x(), source.sound_source_y());
+    }
     document_.queue_immediate_object_event(source, target, event_id, 0);
 }
 
