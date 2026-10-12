@@ -802,13 +802,38 @@ void C1WindowsDocument::repair_world_data() {
     // Say Need (4 0 0 24, and 4 0 0 40 without "aim: 0"): the drive-to-pose
     // table tests "var0 eq 5" twice, so sleepiness (drive 6) never gets the
     // tired pose that tiredness (5) gets.  The second test becomes "eq 6".
+    //
+    // Drum (2 9 2 1): Activate 1 never clears actv, as the Harp's does, and
+    // the stock world saves the drum with actv 1.  A creature's Activate 1 is
+    // refused while the object is already in that state
+    // (SimpleObject::handle_queued_event), so norns cannot play the drum
+    // until something deactivates it.  The script now ends with
+    // "setv actv 0", and a drum whose script is patched has actv cleared.
+    const auto clear_active_state = [this](std::uint8_t family,
+                                           std::uint8_t genus,
+                                           std::uint8_t species) {
+        const std::uint32_t classifier =
+            (static_cast<std::uint32_t>(family) << 24) |
+            (static_cast<std::uint32_t>(genus) << 16) |
+            (static_cast<std::uint32_t>(species) << 8);
+        for (std::size_t index = 0; index < object_count(); ++index) {
+            creatures1::objects::Object* object = object_at(index);
+            if (object != nullptr &&
+                (object->classifier_base() & 0xffffff00u) == classifier) {
+                object->set_current_interaction_event_id_for_script(0);
+            }
+        }
+    };
     struct StockScriptFix {
+        std::uint8_t family;
+        std::uint8_t genus;
+        std::uint8_t species;
         std::uint8_t event;
         const char* stock;
         const char* fixed;
     };
     static constexpr StockScriptFix kStockScriptFixes[] = {
-        {21,
+        {4, 0, 0, 21,
          "doif driv 9 gt 40,impt 4,pose 39,wait 7,anim [53545556R],wait 40,"
          "pose 12,stm# writ targ 17,wait 20,done,stop,endi,doif driv 0 gt 40,"
          "impt 4,pose 39,wait 7,anim [20191817R],wait 30,endi,pose 12,"
@@ -819,7 +844,7 @@ void C1WindowsDocument::repair_world_data() {
          "impt 4,pose 39,wait 7,anim [20191817R],wait 30,pose 12,"
          "stm# writ targ 17,wait 20,done,stop,endi,impt 4,aim: 0,"
          "anim [49505152R],stm# writ targ 17,done,endm"},
-        {24,
+        {4, 0, 0, 24,
          "impt 2,aim: 0,setv var0 drv!,doif driv var0 lt 64,pose 33,else,"
          "pose 34,doif var0 eq 0,pose 35,endi,doif var0 eq 2,pose 36,endi,"
          "doif var0 eq 3,pose 36,endi,doif var0 eq 5,pose 37,endi,"
@@ -834,7 +859,7 @@ void C1WindowsDocument::repair_world_data() {
          "doif var0 eq 12,pose 38,endi,doif var0 eq 9,pose 39,endi,"
          "doif var0 eq 10,anim [40404141R],endi,doif var0 eq 11,"
          "anim [4243R],endi,endi,sayn,stm# writ targ 20,wait 50,done,endm"},
-        {40,
+        {4, 0, 0, 40,
          "impt 2,setv var0 drv!,doif driv var0 lt 64,pose 33,else,"
          "pose 34,doif var0 eq 0,pose 35,endi,doif var0 eq 2,pose 36,endi,"
          "doif var0 eq 3,pose 36,endi,doif var0 eq 5,pose 37,endi,"
@@ -849,6 +874,11 @@ void C1WindowsDocument::repair_world_data() {
          "doif var0 eq 12,pose 38,endi,doif var0 eq 9,pose 39,endi,"
          "doif var0 eq 10,anim [40404141R],endi,doif var0 eq 11,"
          "anim [4243R],endi,endi,sayn,stm# writ targ 20,wait 50,done,endm"},
+        {2, 9, 2, 1,
+         "snde drm1,stim writ from 10 255 0 0 43 5 34 5 22 5 0 0,"
+         "stim shou 10 255 0 4 43 5 34 5 0 0 0 0,endm",
+         "snde drm1,stim writ from 10 255 0 0 43 5 34 5 22 5 0 0,"
+         "stim shou 10 255 0 4 43 5 34 5 0 0 0 0,setv actv 0,endm"},
     };
     const std::size_t script_count = (std::min)(
         creatures1::scripting::g_script_definition_count,
@@ -859,11 +889,15 @@ void C1WindowsDocument::repair_world_data() {
                 creatures1::scripting::g_script_definition_entries[index];
             const creatures1::scripting::ScriptClassifier& classifier =
                 entry.classifier_event;
-            if (classifier.family == 4 && classifier.genus == 0 &&
-                classifier.species == 0 &&
+            if (classifier.family == fix.family &&
+                classifier.genus == fix.genus &&
+                classifier.species == fix.species &&
                 static_cast<std::uint8_t>(classifier.event) == fix.event &&
                 entry.script_text == fix.stock) {
                 entry.script_text = fix.fixed;
+                if (fix.family == 2) {
+                    clear_active_state(fix.family, fix.genus, fix.species);
+                }
             }
         }
     }
