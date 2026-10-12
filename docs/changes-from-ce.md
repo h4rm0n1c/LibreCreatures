@@ -72,6 +72,11 @@ added), or `Fix (bug N)` in the kits (that kit's `ORIGINAL.md`).
   lifts to find it (issue #11).  A killed object is dropped from every
   creature's attention, and a record keeps the last real position.  Worlds
   that already hold such a memory are repaired on load.  (row 9)
+- The perception filter.  A norn riding a vehicle outside every room
+  still sees the whole world, but not an object `new:` has just made,
+  still waiting at the world origin for its script (the egg in the sky),
+  and a creature parked outside the world sees nothing.  See
+  [Perception filter](perception-filter.md).  (row 73)
 - An object whose kind has no attention slot no longer overwrites other
   creature memory, and is not adopted as a fallback target.  (row 10)
 - A creature whose involuntary action has no script goes back to using its
