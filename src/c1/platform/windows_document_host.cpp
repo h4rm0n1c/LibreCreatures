@@ -9,6 +9,7 @@
 
 #include "../brain/lobe.hpp"
 #include "../common/lab_trace.hpp"
+#include "../scripting/tables.hpp"
 #include "../display/bitmap.hpp"
 #include "../world/viewport.hpp"
 #include "../archive/funeral_kit.hpp"
@@ -800,6 +801,85 @@ void C1WindowsDocument::repair_world_data() {
             // As CAOS `setv attr` sets it.
             object->set_bounds_flags_for_script(object->script_bounds_flags() |
                                                 kInvisibleToCreatures);
+        }
+    }
+
+    // LibreCreatures deviation: two creature scripts in the stock world have
+    // CAOS mistakes.  A script is replaced only while its text is exactly the
+    // shipped one, so a world whose scripts were changed keeps its own.
+    //
+    // Retreat (4 0 0 21): the pain branch ends with a stray "endi" after
+    // "wait 30", which closes it early.  The following "pose 12 ... stop" then
+    // runs for every retreat, and the plain retreat at the end ("anim
+    // [49505152R]") can never run.  The fix removes that "endi"; the branch
+    // then matches the fear branch above it.
+    //
+    // Say Need (4 0 0 24, and 4 0 0 40 without "aim: 0"): the drive-to-pose
+    // table tests "var0 eq 5" twice, so sleepiness (drive 6) never gets the
+    // tired pose that tiredness (5) gets.  The second test becomes "eq 6".
+    struct StockScriptFix {
+        std::uint8_t event;
+        const char* stock;
+        const char* fixed;
+    };
+    static constexpr StockScriptFix kStockScriptFixes[] = {
+        {21,
+         "doif driv 9 gt 40,impt 4,pose 39,wait 7,anim [53545556R],wait 40,"
+         "pose 12,stm# writ targ 17,wait 20,done,stop,endi,doif driv 0 gt 40,"
+         "impt 4,pose 39,wait 7,anim [20191817R],wait 30,endi,pose 12,"
+         "stm# writ targ 17,wait 20,done,stop,endi,impt 4,aim: 0,"
+         "anim [49505152R],stm# writ targ 17,done,endm",
+         "doif driv 9 gt 40,impt 4,pose 39,wait 7,anim [53545556R],wait 40,"
+         "pose 12,stm# writ targ 17,wait 20,done,stop,endi,doif driv 0 gt 40,"
+         "impt 4,pose 39,wait 7,anim [20191817R],wait 30,pose 12,"
+         "stm# writ targ 17,wait 20,done,stop,endi,impt 4,aim: 0,"
+         "anim [49505152R],stm# writ targ 17,done,endm"},
+        {24,
+         "impt 2,aim: 0,setv var0 drv!,doif driv var0 lt 64,pose 33,else,"
+         "pose 34,doif var0 eq 0,pose 35,endi,doif var0 eq 2,pose 36,endi,"
+         "doif var0 eq 3,pose 36,endi,doif var0 eq 5,pose 37,endi,"
+         "doif var0 eq 5,pose 37,endi,doif var0 eq 7,pose 38,endi,"
+         "doif var0 eq 12,pose 38,endi,doif var0 eq 9,pose 39,endi,"
+         "doif var0 eq 10,anim [40404141R],endi,doif var0 eq 11,"
+         "anim [4243R],endi,endi,sayn,stm# writ targ 20,wait 50,done,endm",
+         "impt 2,aim: 0,setv var0 drv!,doif driv var0 lt 64,pose 33,else,"
+         "pose 34,doif var0 eq 0,pose 35,endi,doif var0 eq 2,pose 36,endi,"
+         "doif var0 eq 3,pose 36,endi,doif var0 eq 5,pose 37,endi,"
+         "doif var0 eq 6,pose 37,endi,doif var0 eq 7,pose 38,endi,"
+         "doif var0 eq 12,pose 38,endi,doif var0 eq 9,pose 39,endi,"
+         "doif var0 eq 10,anim [40404141R],endi,doif var0 eq 11,"
+         "anim [4243R],endi,endi,sayn,stm# writ targ 20,wait 50,done,endm"},
+        {40,
+         "impt 2,setv var0 drv!,doif driv var0 lt 64,pose 33,else,"
+         "pose 34,doif var0 eq 0,pose 35,endi,doif var0 eq 2,pose 36,endi,"
+         "doif var0 eq 3,pose 36,endi,doif var0 eq 5,pose 37,endi,"
+         "doif var0 eq 5,pose 37,endi,doif var0 eq 7,pose 38,endi,"
+         "doif var0 eq 12,pose 38,endi,doif var0 eq 9,pose 39,endi,"
+         "doif var0 eq 10,anim [40404141R],endi,doif var0 eq 11,"
+         "anim [4243R],endi,endi,sayn,stm# writ targ 20,wait 50,done,endm",
+         "impt 2,setv var0 drv!,doif driv var0 lt 64,pose 33,else,"
+         "pose 34,doif var0 eq 0,pose 35,endi,doif var0 eq 2,pose 36,endi,"
+         "doif var0 eq 3,pose 36,endi,doif var0 eq 5,pose 37,endi,"
+         "doif var0 eq 6,pose 37,endi,doif var0 eq 7,pose 38,endi,"
+         "doif var0 eq 12,pose 38,endi,doif var0 eq 9,pose 39,endi,"
+         "doif var0 eq 10,anim [40404141R],endi,doif var0 eq 11,"
+         "anim [4243R],endi,endi,sayn,stm# writ targ 20,wait 50,done,endm"},
+    };
+    const std::size_t script_count = (std::min)(
+        creatures1::scripting::g_script_definition_count,
+        creatures1::scripting::kScriptDefinitionCapacity);
+    for (const StockScriptFix& fix : kStockScriptFixes) {
+        for (std::size_t index = 0; index < script_count; ++index) {
+            creatures1::scripting::ScriptDefinitionEntry& entry =
+                creatures1::scripting::g_script_definition_entries[index];
+            const creatures1::scripting::ScriptClassifier& classifier =
+                entry.classifier_event;
+            if (classifier.family == 4 && classifier.genus == 0 &&
+                classifier.species == 0 &&
+                static_cast<std::uint8_t>(classifier.event) == fix.event &&
+                entry.script_text == fix.stock) {
+                entry.script_text = fix.fixed;
+            }
         }
     }
 }
