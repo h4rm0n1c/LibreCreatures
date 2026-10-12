@@ -103,6 +103,8 @@ files.
 | 24 | A lift called to its own floor arrives at once, and its `dpas` runs before the queued `gpas` pickups, which then bind the passengers to the lift for ever. | `gpas` / `dpas` | 5e557a3 | lab |
 | 25 | The plane of a carried object is taken from a table indexed by the low byte of a pointer, so in the incubator it depends on heap addresses. | `UpdateEntityForExplicitRectBoundsAndRedraw` @00428d30 | 274c2ba, 53c46ad | code |
 | 26 | Ocean Dome Sound (2 8 15) does not have the "creatures cannot see it" flag, so norns go into the dome to find a vendor (issue #10). | World.sfc, Eden.sfc | 57eeedc | data |
+| 69 | The creature Retreat script (4 0 0 21) closes its pain branch with a stray `endi`, so every retreat ends in that branch's "pose 12 ... stop" and the plain retreat (`anim [49505152R]`) never runs. | World.sfc, Eden.sfc | a2da5b5 | data, lab |
+| 70 | The creature Say Need scripts (4 0 0 24 and 40) test drive 5 twice, so sleepiness (drive 6) does not get the tired pose. | World.sfc, Eden.sfc | a2da5b5 | data, lab |
 | 27 | An object let go of in the upper half of a room jumps up onto the floor of the room above. | hand drop placement | 1a663b2 | code |
 | 41 | A lift arrives only when its cabin and the floor fall in the same band of whole-pixel speed, so a lift moving at a fractional speed (yvec 384) can step over its floor and never stop. Stock lifts (yvec 768) are not affected. | `Lift::Tick` @0042c4f0 | 8463856 | code, lab |
 | 45 | Call buttons queue lift calls in eight slots, but the lift only reads slots 0-3, so with more than four calls waiting the later ones are never answered. Stock lifts have fewer buttons. | `SelectNearestCallButtonAndStartMove` @0042c590, `RequestLiftCall` @00429c10 | 0693c52 | code |
