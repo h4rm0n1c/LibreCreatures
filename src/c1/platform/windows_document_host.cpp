@@ -824,6 +824,16 @@ void C1WindowsDocument::repair_world_data() {
     // (SimpleObject::handle_queued_event), so norns cannot play the drum
     // until something deactivates it.  The script now ends with
     // "setv actv 0", and a drum whose script is patched has actv cleared.
+    //
+    // Island Boat (3 1 7): its timer (event 9) is left from an older boat.  It
+    // stops at x 892 and 2650 with the two directions swapped, poses a part 4
+    // the boat does not have, prints "dbug posl", and nothing starts it.  It
+    // could not work as written anyway: a timer is skipped while its object
+    // runs another script, and the boat's trips looped until they docked.
+    // The boat now works as the rafts and the cart do: a trip starts the boat
+    // moving, sets the timer and ends; the timer docks the boat at x 7170
+    // (paddling right) or x 6395 (paddling left) with the trip's old arrival
+    // steps, then after 300 ticks sends it back, as the trips did.
     const auto clear_active_state = [this](std::uint8_t family,
                                            std::uint8_t genus,
                                            std::uint8_t species) {
@@ -894,6 +904,41 @@ void C1WindowsDocument::repair_world_data() {
          "stim shou 10 255 0 4 43 5 34 5 0 0 0 0,endm",
          "snde drm1,stim writ from 10 255 0 0 43 5 34 5 22 5 0 0,"
          "stim shou 10 255 0 4 43 5 34 5 0 0 0 0,setv actv 0,endm"},
+        {3, 1, 7, 1,
+         "doif posl ge 7170,inst,setv xvec 0,setv yvec 0,setv actv 0,stop,"
+         "endi,gpas,stim writ from 0 -1 0 0 43 30 0 0 0 0 0 0,part 2 pose 1,"
+         "part 1 pose 0,part 3 anim [012345R],sndl padl,setv xvec 900,"
+         "setv yvec 0,loop,wait 1,untl posl ge 7170,fade,snde pade,"
+         "part 3 pose 0,part 2 pose 0,setv xvec 0,setv yvec 0,setv actv 0,"
+         "dpas,wait 300,mesg writ targ 1,endm",
+         "doif posl ge 7170,inst,setv xvec 0,setv yvec 0,setv actv 0,stop,"
+         "endi,gpas,stim writ from 0 -1 0 0 43 30 0 0 0 0 0 0,"
+         "part 2 pose 1,part 1 pose 0,part 3 anim [012345R],sndl padl,"
+         "setv xvec 900,setv yvec 0,setv obv0 2,tick 1,endm"},
+        {3, 1, 7, 2,
+         "doif posl le 6395,inst,setv xvec 0,setv yvec 0,setv actv 0,stop,"
+         "endi,gpas,stim writ from 0 -1 0 0 43 30 0 0 0 0 0 0,part 1 pose 1,"
+         "part 2 pose 0,part 3,anim [543210R],sndl padl,setv xvec -900,"
+         "setv yvec 0,loop,wait 1,untl posl le 6395,fade,snde pade,"
+         "part 3 pose 0,part 1 pose 0,setv xvec 0,setv yvec 0,setv actv 0,"
+         "dpas,wait 300,mesg writ targ 0,endm",
+         "doif posl le 6395,inst,setv xvec 0,setv yvec 0,setv actv 0,stop,"
+         "endi,gpas,stim writ from 0 -1 0 0 43 30 0 0 0 0 0 0,"
+         "part 1 pose 1,part 2 pose 0,part 3,anim [543210R],sndl padl,"
+         "setv xvec -900,setv yvec 0,setv obv0 2,tick 1,endm"},
+        {3, 1, 7, 9,
+         "doif actv gt 0,dbug posl,setv var0 0,doif actv eq 2,"
+         "doif posl ge 2650,setv var0 1,endi,endi,doif actv eq 1,"
+         "doif posl le 892,setv var0 1,endi,endi,doif var0 eq 1,setv xvec 0,"
+         "part 1,pose 0,part 2,pose 0,part 3,pose 0,part 4,pose 0,tick 0,"
+         "setv actv 0,endi,endi,endm",
+         "doif xvec gt 0,doif posl ge 7170,inst,fade,snde pade,"
+         "part 3 pose 0,part 2 pose 0,setv xvec 0,setv yvec 0,setv actv 0,"
+         "dpas,setv obv0 1,tick 300,endi,stop,endi,doif xvec lt 0,"
+         "doif posl le 6395,inst,fade,snde pade,part 3 pose 0,"
+         "part 1 pose 0,setv xvec 0,setv yvec 0,setv actv 0,dpas,"
+         "setv obv0 0,tick 300,endi,stop,endi,tick 0,doif obv0 lt 2,"
+         "mesg writ targ obv0,endi,endm"},
     };
     const std::size_t script_count = (std::min)(
         creatures1::scripting::g_script_definition_count,
