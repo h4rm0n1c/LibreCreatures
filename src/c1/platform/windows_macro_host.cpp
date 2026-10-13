@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <algorithm>
 #include <cstring>
 #include "windows_macro_host.hpp"
 #include <cstdlib>
@@ -203,11 +204,11 @@ bool WindowsMacroHost::dispatch_default(
 void WindowsMacroHost::publish_macro_output(
     creatures1::application::OleScriptVariant* context, const char* output,
     std::size_t output_length) {
-    // CMacroHolder::ExecuteAndPublishMacroOutput @ 0x00419340 frees whatever
-    // BSTR the caller handed in and replaces it with a fresh byte-length one
-    // holding exactly the bytes produced:
-    //     SysFreeString(ctx->output_bstr);
-    //     ctx->output_bstr = SysAllocStringByteLen(buffer, output_length);
+    // CMacroHolder::ExecuteAndPublishMacroOutput as lisdude's Creatures 1
+    // Community Edition 10.4 has it (@004191f0; ported from that release): the reply is always a fresh byte-length BSTR as long as
+    // the larger of the BSTR the caller handed in and the output, zero
+    // filled, holding the output bytes; the caller's BSTR is freed.  10.3
+    // (@00419340) allocated exactly the output and skipped an empty one.
     // A byte-length BSTR is what the caller allocated too -- CKitSheet
     // ::ConnectToCreatures builds its 0x1000-byte command buffer with
     // SysAllocStringByteLen -- so the length prefix stays valid and the
@@ -218,9 +219,19 @@ void WindowsMacroHost::publish_macro_output(
     if (context == nullptr || output == nullptr) {
         return;
     }
-    ::SysFreeString(reinterpret_cast<BSTR>(context->bstr_value));
-    context->bstr_value = reinterpret_cast<char*>(::SysAllocStringByteLen(
-        output, static_cast<UINT>(output_length)));
+    BSTR previous = reinterpret_cast<BSTR>(context->bstr_value);
+    const UINT size = (std::max)(::SysStringByteLen(previous),
+                                 static_cast<UINT>(output_length));
+    BSTR reply = ::SysAllocStringByteLen(nullptr, size);
+    if (reply == nullptr) {
+        return;
+    }
+    std::memset(reply, 0, size);
+    if (output_length != 0) {
+        std::memcpy(reply, output, output_length);
+    }
+    ::SysFreeString(previous);
+    context->bstr_value = reinterpret_cast<char*>(reply);
 }
 
 bool WindowsMacroHost::start_macro_execution(

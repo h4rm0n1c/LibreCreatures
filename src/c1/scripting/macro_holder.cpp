@@ -109,11 +109,20 @@ bool MacroHolder::execute_and_publish_macro_output(void* callback_context) {
     std::array<char, 0x4000> output_buffer{};
     const std::uint32_t output_length =
         host_.execute_macro_to_output_buffer(*macro(), output_buffer.data());
-    if (output_length != 0) {
-        host_.publish_macro_output(
-            static_cast<application::OleScriptVariant*>(callback_context),
-            output_buffer.data(), output_length);
-    }
+    // Fix from Creatures 1 Community Edition 10.4 by lisdude
+    // (https://lisdude.com/Creatures/Community/C1/), ported here.
+    // CMacroHolder::ExecuteAndPublishMacroOutput @00419340
+    // (10.3) published only a non-empty output, so a macro that wrote
+    // nothing -- `getb ovvd` with no creatures selected -- left the caller
+    // holding the script it sent, which the Observation Kit then read as
+    // creature data ("a macro error when the Observation Kit is running with
+    // no creatures in the world").  10.4 (@004191f0) always replaces the
+    // reply; publish_macro_output does it the same way.  Shared by the
+    // SFC.OLE and pipe transports; DDE replies are built elsewhere and always
+    // carried the output, empty or not.
+    host_.publish_macro_output(
+        static_cast<application::OleScriptVariant*>(callback_context),
+        output_buffer.data(), output_length);
     return true;
 }
 
