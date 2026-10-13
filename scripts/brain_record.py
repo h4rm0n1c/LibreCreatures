@@ -4,7 +4,8 @@
     brain_record.py summary FILE...     frames, ticks, size, per-lobe activity
     brain_record.py frames FILE         one line per frame: tick, place, action,
                                         attention, neurons and dendrites changed
-    brain_record.py check FILE...       (format 5+) every change to a dendrite's
+    brain_record.py check [--json] FILE...
+                                        (format 5+) every change to a dendrite's
                                         source, STW, LTW or strength must be the
                                         result of the recorded events; (format
                                         9) every change to a chemical must be
@@ -12,7 +13,7 @@
                                         10) every vote sum must be its recorded
                                         contributions, clamped and scaled by the
                                         lobe's input gain; reports any that are
-                                        not
+                                        not (--json: one JSON list of results)
 
 As a module, read_recording(path) yields Frame objects that carry the full
 brain state at each recorded tick (neurons and dendrites rebuilt from the
@@ -478,10 +479,14 @@ def structural(values):
     return (source, stw, ltw, strength)
 
 
-def check(paths):
+def check(paths, as_json=False):
     """Every structural change in the frames must match the events."""
+    import json
+    import os
     failed = False
+    results = []
     for path in paths:
+        first_tick = last_tick = moniker = version = None
         state = None
         frames = events = continuity = unexplained = 0
         flow_count = unexplained_chemicals = unknown_flows = 0
@@ -491,9 +496,15 @@ def check(paths):
         examples = []
         for layout, frame in read_recording(path):
             if layout.version < 5:
-                print(f"{path}: format {layout.version} has no events; nothing to check")
+                if as_json:
+                    results.append({"file": path, "version": layout.version, "ok": None})
+                else:
+                    print(f"{path}: format {layout.version} has no events; nothing to check")
                 break
             frames += 1
+            moniker, version = layout.moniker, layout.version
+            first_tick = frame.tick if first_tick is None else first_tick
+            last_tick = frame.tick
             if frame.votes and layout.genome:
                 if gains is None:
                     import genome_brain
@@ -565,12 +576,24 @@ def check(paths):
             if vote_count:
                 flows_text += (f"; {vote_count} vote sums, not matching their "
                                f"contributions: {unexplained_votes}")
+            results.append({
+                "file": path, "moniker": f"{moniker:08x}" if moniker is not None else None,
+                "version": version, "bytes": os.path.getsize(path), "frames": frames,
+                "first_tick": first_tick, "last_tick": last_tick, "events": events,
+                "events_off_state": continuity, "unexplained_dendrite_changes": unexplained,
+                "chemical_flows": flow_count, "unexplained_chemical_changes": unexplained_chemicals,
+                "unknown_flows": unknown_flows, "vote_sums": vote_count,
+                "unexplained_vote_sums": unexplained_votes, "ok": ok, "examples": examples})
+            if as_json:
+                continue
             print(f"{path}: {frames} frames, {events} events; "
                   f"events that start from a state the file did not have: {continuity}; "
                   f"frame changes no event explains: {unexplained}{flows_text}"
                   f" -> {'OK' if ok else 'FAILED'}")
             for line in examples:
                 print("   " + line)
+    if as_json:
+        print(json.dumps(results))
     return not failed
 
 
@@ -581,6 +604,7 @@ if __name__ == "__main__":
     if sys.argv[1] == "summary":
         summary(sys.argv[2:])
     elif sys.argv[1] == "check":
-        sys.exit(0 if check(sys.argv[2:]) else 1)
+        paths = [a for a in sys.argv[2:] if a != "--json"]
+        sys.exit(0 if check(paths, "--json" in sys.argv[2:]) else 1)
     else:
         frames(sys.argv[2])
