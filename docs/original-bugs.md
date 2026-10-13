@@ -10,6 +10,9 @@ older than the Community Edition. Where a defect was also checked in the
 1996 or 1997 retail executable, or in the shipped world data, the
 "Checked" column says so.
 
+A fix that the Community Edition made first, and LibreCreatures ported,
+is credited to its author and release in its row and in the source.
+
 Each fix is marked in the source with a comment that starts
 `LibreCreatures deviation` (some older ones say "Deliberate deviation" or
 "not native"), and names the native function and address.
@@ -142,6 +145,7 @@ files.
 | 63 | A brain activity report is written into the caller's buffer, three bytes for each active neuron, with no limit, so a brain of more than about 1,365 active neurons writes past a kit's 4,096-byte buffer. | `CMacroHolder::DispatchFormatBrainActivityReport` @0x00419400 | 43359e8 | code |
 | 64 | Under Wine, a kit that crashes or is killed never tells the game, so its slot stays open: each later message to it fails, and the first click on its Tools item only closes the slot instead of opening the kit. | `CPipeDispatchProxy::Invoke` @00449950, `ExecuteEmbeddedKitTool` @004444e0 | 37cf5e1 | code, lab |
 | 66 | A snapshot (`dde: pict`, the Owner's Kit photograph) is copied from one row below its rectangle: the file loses the top row, and a rectangle at the bottom of the view reads one row past the back buffer. | `WriteDibRectToFile` @0x00445900 | 095195f | code |
+| 74 | A macro that writes no output leaves the kit holding the script it sent instead of an empty reply, so the Observation Kit, polling `getb ovvd` with no creatures in the world, reads its own script as creature data. **Fixed by lisdude in Creatures 1 Community Edition 10.4** ([changelog](https://lisdude.com/Creatures/Community/C1/)); LibreCreatures ports that fix. | `CMacroHolder::ExecuteAndPublishMacroOutput` @00419340 (10.4: @004191f0) | 0ffa948 | code (10.3 and 10.4), lab |
 
 ## Kits
 
