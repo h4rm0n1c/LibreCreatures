@@ -2888,7 +2888,50 @@ void C1WindowsDocument::update_creature_brain(std::size_t index) {
             }
             return std::vector<std::uint8_t>{};
         };
+        if (auto* biochemistry = creature->biochemistry()) {
+            context.biochemistry = biochemistry;
+            const auto& states = biochemistry->chemical_states();
+            for (std::size_t chemical = 0; chemical < states.size(); ++chemical) {
+                context.chemicals[chemical] = states[chemical].concentration;
+            }
+            // The 'B' record: receptors, emitters, reactions as loaded.
+            auto& out = context.chemistry;
+            out.push_back(static_cast<std::uint8_t>(biochemistry->receptor_gene_count()));
+            for (std::uint32_t i = 0; i < biochemistry->receptor_gene_count(); ++i) {
+                const auto& r = biochemistry->receptor_records()[i];
+                out.insert(out.end(), {r.target_domain, r.tissue_index, r.locus_index,
+                                       r.chemical_index, r.threshold, r.nominal, r.gain,
+                                       r.flags});
+            }
+            out.push_back(static_cast<std::uint8_t>(biochemistry->emitter_gene_count()));
+            for (std::uint32_t i = 0; i < biochemistry->emitter_gene_count(); ++i) {
+                const auto& e = biochemistry->emitter_records()[i];
+                out.insert(out.end(), {e.target_domain, e.tissue_index, e.locus_index,
+                                       e.chemical_index, e.threshold, e.emission_period,
+                                       e.emission_amount, e.flags});
+            }
+            out.push_back(static_cast<std::uint8_t>(biochemistry->reaction_gene_count()));
+            for (std::uint32_t i = 0; i < biochemistry->reaction_gene_count(); ++i) {
+                const auto& r = biochemistry->reaction_records()[i];
+                out.insert(out.end(), {r.reactant_1_amount, r.reactant_1_chemical,
+                                       r.reactant_2_amount, r.reactant_2_chemical,
+                                       r.product_1_amount, r.product_1_chemical,
+                                       r.product_2_amount, r.product_2_chemical,
+                                       r.tick_rate_selector});
+            }
+        }
+        creatures1::world::WorldRect bounds{};
+        if (auto* hand = pointer_tool(); hand != nullptr && hand->get_bounds(&bounds)) {
+            context.hand_x = (bounds.min_x + bounds.max_x) / 2;
+            context.hand_y = (bounds.min_y + bounds.max_y) / 2;
+        }
         if (skeleton.motion_link != nullptr) {
+            context.attended_object = static_cast<std::uint32_t>(
+                reinterpret_cast<std::uintptr_t>(skeleton.motion_link));
+            if (skeleton.motion_link->get_bounds(&bounds)) {
+                context.attended_x = (bounds.min_x + bounds.max_x) / 2;
+                context.attended_y = (bounds.min_y + bounds.max_y) / 2;
+            }
             context.attention_classifier =
                 skeleton.motion_link->classifier_base();
             const auto& records = creature->attention_records();

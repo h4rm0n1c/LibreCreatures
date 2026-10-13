@@ -3112,6 +3112,12 @@ void Creature::update_drive_threshold_state(
         skeleton_.sleep_indicator_active ? 0xff : 0;
 }
 
+namespace {
+// Lab only (C1_BRAIN_RECORD): the built-in stimulus being applied, for the
+// 'S' record; 0xff while a scripted stimulus is.
+std::uint8_t g_built_in_stimulus = 0xff;
+} // namespace
+
 void Creature::apply_stimulus(
     objects::Object* source_object,
     Creature* source_creature,
@@ -3145,9 +3151,33 @@ void Creature::apply_stimulus(
         descriptor.target_neuron_index = static_cast<std::uint8_t>(
             descriptor.target_neuron_index + static_cast<std::int8_t>(magnitude));
     }
+    // Lab only (C1_BRAIN_RECORD): what this stimulus did, for the 'S' record.
+    brain::StimulusRecord recorded;
+    const bool recording = brain::g_brain_events_wanted && brain_ != nullptr;
+    if (recording) {
+        recorded.built_in = g_built_in_stimulus;
+        recorded.source_object = static_cast<std::uint32_t>(
+            reinterpret_cast<std::uintptr_t>(source_object));
+        recorded.source_classifier = source_object->classifier_base();
+        recorded.source_x = source_host.sound_source_x(*source_object);
+        recorded.source_y = source_host.sound_source_y(*source_object);
+        recorded.sense_neuron = descriptor.target_neuron_index;
+        recorded.chemicals = {chemical_ids.first, chemical_ids.second,
+                              chemical_ids.third, chemical_ids.fourth};
+        recorded.amounts = {chemical_amounts.first, chemical_amounts.second,
+                            chemical_amounts.third, chemical_amounts.fourth};
+        if (source_host.is_this_creature(*source_object, *this)) {
+            recorded.flags |= 1;
+        }
+    }
+
     // Native gates on the skeleton's sleep indicator itself, not on the
     // asleep signal that UpdateDriveThresholdState copies from it.
     if (skeleton_.sleep_indicator_active && (original_flags & 0x04) == 0) {
+        if (recording) {
+            recorded.flags |= 2;
+            brain::record_stimulus(brain_.get(), recorded);
+        }
         return;
     }
     if (skeleton_.sleep_indicator_active) {
@@ -3210,6 +3240,7 @@ void Creature::apply_stimulus(
             // motion link, and contributes the target lobe activation.
             if (record.target == skeleton_.motion_link &&
                 descriptor.target_neuron_index < 0x20) {
+                recorded.flags |= 8;
                 brain_->add_lobe_neuron_activation(
                     static_cast<std::uint32_t>(brain::StandardLobeIndex::general_sensory),
                     descriptor.target_neuron_index,
@@ -3218,6 +3249,23 @@ void Creature::apply_stimulus(
         }
     }
 
+    std::uint32_t stimulus_number = 0;
+    if (recording) {
+        if (skeleton_.sleep_indicator_active) {
+            recorded.flags |= 4;
+        }
+        if (has_record) {
+            recorded.attention_record = static_cast<std::uint8_t>(attention_index);
+        }
+        recorded.source_activation = descriptor.attention_activation;
+        recorded.sense_activation = descriptor.target_lobe_activation;
+        recorded.sense_neuron = descriptor.target_neuron_index;
+        recorded.amounts = {chemical_amounts.first, chemical_amounts.second,
+                            chemical_amounts.third, chemical_amounts.fourth};
+        stimulus_number = brain::record_stimulus(brain_.get(), recorded);
+    }
+    const brain::ChemicalOriginScope origin(brain::ChemicalOrigin::stimulus,
+                                            stimulus_number);
     if (biochemistry_ != nullptr) {
         biochemistry_->add_chemical_moles(chemical_ids.first,
                                           chemical_amounts.first, log_host);
@@ -3275,10 +3323,12 @@ void Creature::trigger_built_in_stimulus(
             *this, target, stimulus_id, magnitude, context);
     }
 
+    g_built_in_stimulus = static_cast<std::uint8_t>(stimulus_id);
     apply_stimulus(context.target, context.source_creature,
                    context.descriptor, context.chemical_ids,
                    context.chemical_amounts, magnitude, source_host,
                    log_host);
+    g_built_in_stimulus = 0xff;
 }
 
 void Creature::notify_dependents_on_removal(
@@ -3944,6 +3994,8 @@ void Creature::update_bacterium_and_environment(
             // zero-extended.  Bacterial input ids are -8..-1 as signed bytes
             // (chemicals 248-255); widening them signed indexed up to eight
             // entries before chemical_states.
+            const brain::ChemicalOriginScope origin(
+                brain::ChemicalOrigin::bacterium, 0);
             biochemistry.add_chemical_moles(
                 static_cast<int>(
                     static_cast<std::uint8_t>(bacterium.input_chemical_id())),
@@ -3955,8 +4007,15 @@ void Creature::update_bacterium_and_environment(
                         static_cast<std::uint8_t>(output_chemical_id)];
                     const std::uint32_t concentration =
                         static_cast<std::uint32_t>(output.concentration) + 0x1e;
+                    const std::uint8_t before = output.concentration;
                     output.concentration = static_cast<std::uint8_t>(
                         std::min<std::uint32_t>(concentration, 0xffu));
+                    if (brain::g_chemical_flows_wanted) {
+                        brain::record_chemical_flow(
+                            &biochemistry, brain::ChemicalOrigin::bacterium, 0,
+                            static_cast<std::uint8_t>(output_chemical_id),
+                            static_cast<int>(output.concentration) - before);
+                    }
                     if (log_host != nullptr &&
                         log_host->debug_category_enabled(0x10)) {
                         common::debug_log(
@@ -4025,9 +4084,17 @@ void Creature::process_dreaming(bool selected_creature,
     }
 
     if (current_instinct.dream_step_index < 0x28) {
-        biochemistry_->chemical_states()[current_instinct.dream_chemical_index]
-            .concentration = static_cast<std::uint8_t>(
-                current_instinct.dream_chemical_concentration);
+        auto& dream_chemical =
+            biochemistry_->chemical_states()[current_instinct.dream_chemical_index];
+        const std::uint8_t before = dream_chemical.concentration;
+        dream_chemical.concentration = static_cast<std::uint8_t>(
+            current_instinct.dream_chemical_concentration);
+        if (brain::g_chemical_flows_wanted) {
+            brain::record_chemical_flow(
+                biochemistry_.get(), brain::ChemicalOrigin::instinct, 0,
+                static_cast<std::uint8_t>(current_instinct.dream_chemical_index),
+                static_cast<int>(dream_chemical.concentration) - before);
+        }
         current_instinct.run_dream_step(*brain_, *biochemistry_,
                                         biochemistry_tick_);
         ++current_instinct.dream_step_index;

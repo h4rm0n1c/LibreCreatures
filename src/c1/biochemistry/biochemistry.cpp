@@ -1,6 +1,7 @@
 #include "biochemistry.hpp"
 
 #include "../../../include/C1BiochemistrySelectorData.hpp"
+#include "../brain/brain_recorder.hpp"
 
 #include <algorithm>
 
@@ -42,6 +43,19 @@ void log_chemical_change(creatures1::common::DebugLogHost* log_host,
         static_cast<unsigned int>(concentration));
 }
 
+// Lab only (C1_BRAIN_RECORD): what one write did to a chemical.
+void record_flow(const Biochemistry* owner, creatures1::brain::ChemicalOrigin origin,
+                 std::uint32_t number, std::uint32_t chemical, std::uint8_t before,
+                 std::uint8_t after) {
+    if (creatures1::brain::g_chemical_flows_wanted && before != after) {
+        creatures1::brain::record_chemical_flow(
+            owner, origin, number, static_cast<std::uint8_t>(chemical),
+            static_cast<int>(after) - static_cast<int>(before));
+    }
+}
+
+using Origin = creatures1::brain::ChemicalOrigin;
+
 } // namespace
 
 Biochemistry::Biochemistry() {
@@ -59,10 +73,15 @@ void Biochemistry::add_chemical_moles(
     std::uint32_t moles,
     creatures1::common::DebugLogHost* log_host) {
     if (chemical_index != 0) {
+        const std::uint8_t before = chemical_states_[chemical_index].concentration;
         const std::uint32_t sum =
             (moles & 0xffu) + chemical_states_[chemical_index].concentration;
         chemical_states_[chemical_index].concentration =
             static_cast<std::uint8_t>(std::min(sum, 0xffu));
+        record_flow(this, creatures1::brain::ChemicalOriginScope::current_origin(),
+                    creatures1::brain::ChemicalOriginScope::current_number(),
+                    static_cast<std::uint32_t>(chemical_index), before,
+                    chemical_states_[chemical_index].concentration);
     }
 
     if (log_host != nullptr && log_host->debug_category_enabled(0x10u)) {
@@ -102,8 +121,11 @@ void Biochemistry::update(
                 amount = (amount * (source_value - emitter.threshold) >> 8) &
                          0xffu;
             }
+            const std::uint8_t before = chemical_states_[chemical_index].concentration;
             chemical_states_[chemical_index].concentration = saturating_add(
                 chemical_states_[chemical_index].concentration, amount);
+            record_flow(this, Origin::emitter, index, chemical_index, before,
+                        chemical_states_[chemical_index].concentration);
         }
         log_chemical_change(log_host,
                             "Add %d moles of Chemical %d (conc->%d)\n",
@@ -193,10 +215,15 @@ void Biochemistry::update(
             const std::uint32_t amount =
                 (static_cast<std::uint32_t>(reaction.reactant_1_amount) *
                  processed_extent) & 0xffu;
+            const std::uint8_t before =
+                chemical_states_[reaction.reactant_1_chemical].concentration;
             chemical_states_[reaction.reactant_1_chemical].concentration =
                 saturating_subtract(
                     chemical_states_[reaction.reactant_1_chemical].concentration,
                     amount);
+            record_flow(this, Origin::reaction, index, reaction.reactant_1_chemical,
+                        before,
+                        chemical_states_[reaction.reactant_1_chemical].concentration);
         }
         log_chemical_change(log_host,
                             "Remove %d moles of Chemical %d (conc->%d)\n",
@@ -211,10 +238,15 @@ void Biochemistry::update(
             const std::uint32_t amount =
                 (static_cast<std::uint32_t>(reaction.reactant_2_amount) *
                  processed_extent) & 0xffu;
+            const std::uint8_t before =
+                chemical_states_[reaction.reactant_2_chemical].concentration;
             chemical_states_[reaction.reactant_2_chemical].concentration =
                 saturating_subtract(
                     chemical_states_[reaction.reactant_2_chemical].concentration,
                     amount);
+            record_flow(this, Origin::reaction, index, reaction.reactant_2_chemical,
+                        before,
+                        chemical_states_[reaction.reactant_2_chemical].concentration);
         }
         log_chemical_change(log_host,
                             "Remove %d moles of Chemical %d (conc->%d)\n",
@@ -235,10 +267,15 @@ void Biochemistry::update(
             const std::uint32_t amount =
                 static_cast<std::uint32_t>(reaction.product_1_amount) *
                 processed_extent;
+            const std::uint8_t before =
+                chemical_states_[reaction.product_1_chemical].concentration;
             chemical_states_[reaction.product_1_chemical].concentration =
                 saturating_add(
                     chemical_states_[reaction.product_1_chemical].concentration,
                     amount);
+            record_flow(this, Origin::reaction, index, reaction.product_1_chemical,
+                        before,
+                        chemical_states_[reaction.product_1_chemical].concentration);
         }
         log_chemical_change(log_host,
                             "Add %d moles of Chemical %d (conc->%d)\n",
@@ -252,10 +289,15 @@ void Biochemistry::update(
             const std::uint32_t amount =
                 static_cast<std::uint32_t>(reaction.product_2_amount) *
                 processed_extent;
+            const std::uint8_t before =
+                chemical_states_[reaction.product_2_chemical].concentration;
             chemical_states_[reaction.product_2_chemical].concentration =
                 saturating_add(
                     chemical_states_[reaction.product_2_chemical].concentration,
                     amount);
+            record_flow(this, Origin::reaction, index, reaction.product_2_chemical,
+                        before,
+                        chemical_states_[reaction.product_2_chemical].concentration);
         }
         log_chemical_change(log_host,
                             "Add %d moles of Chemical %d (conc->%d)\n",
@@ -268,17 +310,22 @@ void Biochemistry::update(
 
     // Decay is the final phase and examines every chemical, including ones
     // not referenced by a current receptor/emitter/reaction table.
-    for (ChemicalState& chemical : chemical_states_) {
+    for (std::uint32_t chemical_index = 0; chemical_index < chemical_states_.size();
+         ++chemical_index) {
+        ChemicalState& chemical = chemical_states_[chemical_index];
         if (chemical.concentration == 0) {
             continue;
         }
         const std::uint8_t selector = chemical.half_life_selector >> 3;
         if ((g_biochemistry_tick_selector_masks[selector] & tick) ==
             g_biochemistry_tick_selector_masks[selector]) {
+            const std::uint8_t before = chemical.concentration;
             chemical.concentration = static_cast<std::uint8_t>(
                 static_cast<std::uint32_t>(chemical.concentration) *
                 g_biochemistry_tick_selector_q16_multipliers[selector] >>
                 16);
+            record_flow(this, Origin::decay, 0, chemical_index, before,
+                        chemical.concentration);
         }
     }
 }

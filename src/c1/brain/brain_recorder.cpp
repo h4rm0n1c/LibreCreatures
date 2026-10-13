@@ -9,6 +9,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <vector>
 
@@ -28,7 +29,7 @@
 namespace creatures1::brain {
 namespace {
 
-constexpr std::uint32_t kFormatVersion = 8;
+constexpr std::uint32_t kFormatVersion = 9;
 // Frames are buffered and written as one compressed chunk this often, so a
 // game that is killed loses at most this many frames.
 constexpr std::uint32_t kFramesPerChunk = 32;
@@ -112,6 +113,13 @@ struct Recording {
     std::uint32_t frames = 0;
     Snapshot previous;
     std::vector<std::uint8_t> previous_inputs;
+    std::vector<std::uint8_t> previous_chemicals;
+    std::vector<std::uint8_t> previous_chemistry;
+    const void* biochemistry = nullptr;
+    // Chemical changes since the last frame: (origin, number, chemical) ->
+    // summed change.
+    std::map<std::tuple<std::uint8_t, std::uint32_t, std::uint8_t>, int> flows;
+    std::uint32_t stimuli = 0;
     std::vector<std::uint8_t> pending;
 
     Recording() = default;
@@ -198,6 +206,11 @@ std::map<const void*, Recording>& recordings() {
 
 std::map<const Brain*, Recording*>& recordings_by_brain() {
     static std::map<const Brain*, Recording*> value;
+    return value;
+}
+
+std::map<const void*, Recording*>& recordings_by_biochemistry() {
+    static std::map<const void*, Recording*> value;
     return value;
 }
 
@@ -373,10 +386,45 @@ std::vector<std::uint8_t> collect_inputs(const Brain& brain,
     return inputs;
 }
 
+// A run of byte values, whole on a keyframe (u8 0, every value) or as the
+// values changed since `previous` (u8 1, varint count, then per value a
+// varint gap and the u8 value).
+void write_values(Writer& out, const std::vector<std::uint8_t>& values,
+                  std::vector<std::uint8_t>& previous, bool keyframe) {
+    if (keyframe || previous.size() != values.size()) {
+        out.u8(0);
+        for (std::uint8_t value : values) {
+            out.u8(value);
+        }
+    } else {
+        out.u8(1);
+        std::vector<std::uint32_t> changed;
+        for (std::uint32_t i = 0; i < values.size(); ++i) {
+            if (values[i] != previous[i]) {
+                changed.push_back(i);
+            }
+        }
+        out.varint(static_cast<std::uint32_t>(changed.size()));
+        std::uint32_t next = 0;
+        for (std::uint32_t i : changed) {
+            out.varint(i - next);
+            out.u8(values[i]);
+            next = i + 1;
+        }
+    }
+    previous = values;
+}
+
 void write_frame(Recording& recording, Snapshot& snapshot,
                  const BrainRecordContext& context,
                  const std::vector<std::uint8_t>& inputs) {
     Writer out(recording.pending);
+    if (context.chemistry != recording.previous_chemistry) {
+        out.u8('B');
+        out.u32(context.world_tick);
+        out.bytes(context.chemistry);
+        recording.previous_chemistry = context.chemistry;
+    }
     out.u8('C');
     out.u32(context.world_tick);
     out.u32(static_cast<std::uint32_t>(context.x));
@@ -388,28 +436,35 @@ void write_frame(Recording& recording, Snapshot& snapshot,
 
     const bool keyframe = recording.frames % kKeyframeInterval == 0;
     out.u8('I');
-    if (keyframe || recording.previous_inputs.size() != inputs.size()) {
-        out.u8(0);  // every value
-        for (std::uint8_t value : inputs) {
-            out.u8(value);
-        }
-    } else {
-        out.u8(1);  // the changed values
-        std::vector<std::uint32_t> changed;
-        for (std::uint32_t i = 0; i < inputs.size(); ++i) {
-            if (inputs[i] != recording.previous_inputs[i]) {
-                changed.push_back(i);
-            }
-        }
-        out.varint(static_cast<std::uint32_t>(changed.size()));
-        std::uint32_t next = 0;
-        for (std::uint32_t i : changed) {
-            out.varint(i - next);
-            out.u8(inputs[i]);
-            next = i + 1;
-        }
+    write_values(out, inputs, recording.previous_inputs, keyframe);
+    out.u8('X');
+    write_values(out, std::vector<std::uint8_t>(context.chemicals.begin(),
+                                                context.chemicals.end()),
+                 recording.previous_chemicals, keyframe);
+    out.u8('F');
+    std::uint32_t flow_count = 0;
+    for (const auto& flow : recording.flows) {
+        flow_count += flow.second != 0 ? 1u : 0u;
     }
-    recording.previous_inputs = inputs;
+    out.varint(flow_count);
+    for (const auto& [key, change] : recording.flows) {
+        if (change == 0) {
+            continue;
+        }
+        out.u8(std::get<0>(key));
+        out.varint(std::get<1>(key));
+        out.u8(std::get<2>(key));
+        // Zigzag: small changes of either sign stay short.
+        out.varint(change >= 0 ? static_cast<std::uint32_t>(change) * 2u
+                               : static_cast<std::uint32_t>(-change) * 2u - 1u);
+    }
+    recording.flows.clear();
+    out.u8('W');
+    out.u32(static_cast<std::uint32_t>(context.hand_x));
+    out.u32(static_cast<std::uint32_t>(context.hand_y));
+    out.u32(context.attended_object);
+    out.u32(static_cast<std::uint32_t>(context.attended_x));
+    out.u32(static_cast<std::uint32_t>(context.attended_y));
     if (keyframe) {
         out.u8('K');
         out.u32(context.world_tick);
@@ -499,6 +554,30 @@ void write_frame(Recording& recording, Snapshot& snapshot,
 } // namespace
 
 bool g_brain_events_wanted = false;
+bool g_chemical_flows_wanted = false;
+
+namespace {
+ChemicalOrigin g_current_origin = ChemicalOrigin::unknown;
+std::uint32_t g_current_origin_number = 0;
+} // namespace
+
+ChemicalOriginScope::ChemicalOriginScope(ChemicalOrigin origin,
+                                         std::uint32_t number)
+    : saved_origin_(g_current_origin), saved_number_(g_current_origin_number) {
+    g_current_origin = origin;
+    g_current_origin_number = number;
+}
+
+ChemicalOriginScope::~ChemicalOriginScope() {
+    g_current_origin = saved_origin_;
+    g_current_origin_number = saved_number_;
+}
+
+ChemicalOrigin ChemicalOriginScope::current_origin() { return g_current_origin; }
+
+std::uint32_t ChemicalOriginScope::current_number() {
+    return g_current_origin_number;
+}
 
 bool brain_recording_enabled() { return !settings().folder.empty(); }
 
@@ -537,6 +616,20 @@ void record_brain_frame(const void* key, const Brain& brain,
         out.bytes(genome);
         recordings_by_brain()[&brain] = &recording;
         g_brain_events_wanted = true;
+        recording.flows.clear();
+        recording.stimuli = 0;
+        recording.previous_chemicals.clear();
+        recording.previous_chemistry.clear();
+    }
+    if (recording.biochemistry != context.biochemistry) {
+        if (recording.biochemistry != nullptr) {
+            recordings_by_biochemistry().erase(recording.biochemistry);
+        }
+        recording.biochemistry = context.biochemistry;
+        if (recording.biochemistry != nullptr) {
+            recordings_by_biochemistry()[recording.biochemistry] = &recording;
+            g_chemical_flows_wanted = true;
+        }
     }
     write_frame(recording, snapshot, context, collect_inputs(brain, context));
     recording.previous = std::move(snapshot);
@@ -594,6 +687,51 @@ void record_dendrite_event(const Brain* brain, const Dendrite& connection,
     }
 }
 
+void record_chemical_flow(const void* biochemistry, ChemicalOrigin origin,
+                          std::uint32_t number, std::uint8_t chemical,
+                          int change) {
+    if (change == 0 || biochemistry == nullptr) {
+        return;
+    }
+    const auto found = recordings_by_biochemistry().find(biochemistry);
+    if (found == recordings_by_biochemistry().end() ||
+        found->second->file == nullptr) {
+        return;
+    }
+    found->second->flows[{static_cast<std::uint8_t>(origin), number, chemical}] +=
+        change;
+}
+
+std::uint32_t record_stimulus(const Brain* brain, const StimulusRecord& stimulus) {
+    if (brain == nullptr) {
+        return 0;
+    }
+    const auto found = recordings_by_brain().find(brain);
+    if (found == recordings_by_brain().end() || found->second->file == nullptr) {
+        return 0;
+    }
+    Recording& recording = *found->second;
+    const std::uint32_t number = recording.stimuli++;
+    Writer out(recording.pending);
+    out.u8('S');
+    out.varint(number);
+    out.u8(stimulus.built_in);
+    out.u32(stimulus.source_object);
+    out.u32(stimulus.source_classifier);
+    out.u32(static_cast<std::uint32_t>(stimulus.source_x));
+    out.u32(static_cast<std::uint32_t>(stimulus.source_y));
+    out.u8(stimulus.flags);
+    out.u8(stimulus.attention_record);
+    out.u8(stimulus.sense_neuron);
+    out.u8(stimulus.source_activation);
+    out.u8(stimulus.sense_activation);
+    for (std::size_t i = 0; i < 4; ++i) {
+        out.u8(stimulus.chemicals[i]);
+        out.u8(stimulus.amounts[i]);
+    }
+    return number;
+}
+
 void set_brain_dreaming(const Brain* brain, bool dreaming) {
     if (dreaming) {
         dreaming_brains()[brain] = true;
@@ -610,6 +748,9 @@ void forget_brain_recording(const void* key) {
     if (found->second.brain != nullptr) {
         recordings_by_brain().erase(found->second.brain);
         dreaming_brains().erase(found->second.brain);
+    }
+    if (found->second.biochemistry != nullptr) {
+        recordings_by_biochemistry().erase(found->second.biochemistry);
     }
     close_recording(found->second);
     recordings().erase(found);

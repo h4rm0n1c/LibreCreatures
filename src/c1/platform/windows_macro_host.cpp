@@ -8,6 +8,7 @@
 #include "windows_object_event_host.hpp"
 
 #include "windows_creature_hosts.hpp"
+#include "../brain/brain_recorder.hpp"
 
 #include "../application/sfc_ole.hpp"
 #include "../brain/lobe.hpp"
@@ -852,6 +853,8 @@ void WindowsMacroHost::add_creature_chemical_moles(
     if (creature == nullptr || creature->biochemistry() == nullptr) {
         return;
     }
+    const creatures1::brain::ChemicalOriginScope origin(
+        creatures1::brain::ChemicalOrigin::script, 0);
     creature->biochemistry()->add_chemical_moles(
         static_cast<int>(chemical_index), moles, active_debug_console());
 }
