@@ -19,6 +19,6 @@ std::string format_connection_debug_description(
     const LobeNeuron& neuron, const LobeDebugLabelTables& labels);
 
 void migrate_rule_connections(LobeNeuron& neuron, Brain& owner_brain,
-                              Lobe& source_lobe, int connection_rule_index);
+                              Lobe& source_lobe, int dtype);
 
 } // namespace creatures1::brain

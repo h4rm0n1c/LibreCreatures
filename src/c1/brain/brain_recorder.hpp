@@ -112,7 +112,7 @@ enum class DendriteEvent : std::uint8_t {
     reset = 12,          // activity reset: current weight 0, STW back to LTW
 };
 
-struct LobeConnection;
+struct Dendrite;
 
 bool brain_recording_enabled();
 
@@ -123,8 +123,8 @@ extern bool g_brain_events_wanted;
 // Records an event for `connection`, a dendrite of `brain`, whose fields
 // were `before` and are now as `connection` holds them.  Nothing happens
 // unless `brain` is being recorded.
-void record_dendrite_event(const Brain* brain, const LobeConnection& connection,
-                           DendriteEvent kind, const LobeConnection& before);
+void record_dendrite_event(const Brain* brain, const Dendrite& connection,
+                           DendriteEvent kind, const Dendrite& before);
 
 // Marks the events of `brain` as made while it dreams (instinct processing).
 void set_brain_dreaming(const Brain* brain, bool dreaming);

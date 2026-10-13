@@ -3250,8 +3250,8 @@ std::string WindowsMacroHost::render_cell_values(
     //   neuron + 4 + rule * 4       is that rule's dendrite list
     //
     // then it walks the dendrites summing four bytes at connection offsets
-    // 6, 7, 8 and 9 -- current_weight, target_weight, baseline_weight and
-    // dendrite_state -- and prints seven "%d|" fields.  The trailing bar is
+    // 6, 7, 8 and 9 -- susceptibility, stw, ltw and
+    // strength -- and prints seven "%d|" fields.  The trailing bar is
     // the sacrificial byte the reply terminator overwrites, so the caller
     // appends this verbatim.
     const std::uint32_t lobe_index = cell;
@@ -3274,11 +3274,11 @@ std::string WindowsMacroHost::render_cell_values(
     const creatures1::brain::LobeNeuron& neuron = lobe.neuron(neuron_index);
 
     const std::uint8_t dendrite_count =
-        rule_index == 0 ? neuron.rule0_connection_count
-                        : neuron.rule1_connection_count;
-    const creatures1::brain::LobeConnection* dendrites =
-        rule_index == 0 ? neuron.rule0_connections_begin
-                        : neuron.rule1_connections_begin;
+        rule_index == 0 ? neuron.type0_dendrite_count
+                        : neuron.type1_dendrite_count;
+    const creatures1::brain::Dendrite* dendrites =
+        rule_index == 0 ? neuron.type0_dendrites
+                        : neuron.type1_dendrites;
 
     std::uint32_t current_weight_sum = 0;
     std::uint32_t target_weight_sum = 0;
@@ -3286,10 +3286,10 @@ std::string WindowsMacroHost::render_cell_values(
     std::uint32_t dendrite_state_sum = 0;
     for (std::uint8_t index = 0; dendrites != nullptr && index < dendrite_count;
          ++index) {
-        current_weight_sum += dendrites[index].current_weight;
-        target_weight_sum += dendrites[index].target_weight;
-        baseline_weight_sum += dendrites[index].baseline_weight;
-        dendrite_state_sum += dendrites[index].dendrite_state;
+        current_weight_sum += dendrites[index].susceptibility;
+        target_weight_sum += dendrites[index].stw;
+        baseline_weight_sum += dendrites[index].ltw;
+        dendrite_state_sum += dendrites[index].strength;
     }
 
     char formatted[128] = {0};
@@ -3426,7 +3426,7 @@ std::string WindowsMacroHost::render_dendrites(
         return {};
     }
     const std::uint32_t source_lobe_index =
-        lobe.connection_rule(rule_index).target_lobe_index;
+        lobe.dendrite_type(rule_index).source_lobe;
     if (source_lobe_index >= brain->lobe_count()) {
         return {};
     }
@@ -3435,25 +3435,25 @@ std::string WindowsMacroHost::render_dendrites(
     const creatures1::brain::LobeNeuron* first =
         source_count == 0 ? nullptr : &source_lobe.neuron(0);
     const creatures1::brain::LobeNeuron& neuron = lobe.neuron(neuron_index);
-    const std::uint8_t count = rule_index == 0 ? neuron.rule0_connection_count
-                                               : neuron.rule1_connection_count;
-    const creatures1::brain::LobeConnection* dendrites =
-        rule_index == 0 ? neuron.rule0_connections_begin
-                        : neuron.rule1_connections_begin;
+    const std::uint8_t count = rule_index == 0 ? neuron.type0_dendrite_count
+                                               : neuron.type1_dendrite_count;
+    const creatures1::brain::Dendrite* dendrites =
+        rule_index == 0 ? neuron.type0_dendrites
+                        : neuron.type1_dendrites;
     std::string out = std::to_string(dendrites == nullptr ? 0 : count) + "|";
     for (std::uint8_t index = 0; dendrites != nullptr && index < count; ++index) {
-        const creatures1::brain::LobeConnection& d = dendrites[index];
+        const creatures1::brain::Dendrite& d = dendrites[index];
         const std::ptrdiff_t offset =
-            d.target_neuron == nullptr || first == nullptr ? -1
-                                                           : d.target_neuron - first;
+            d.source == nullptr || first == nullptr ? -1
+                                                           : d.source - first;
         const long long source =
             offset >= 0 && offset < static_cast<std::ptrdiff_t>(source_count) ? offset : -1;
         char formatted[80] = {0};
         std::snprintf(formatted, sizeof(formatted), "%lld|%d|%d|%d|%d|", source,
-                      static_cast<int>(d.current_weight),
-                      static_cast<int>(d.target_weight),
-                      static_cast<int>(d.baseline_weight),
-                      static_cast<int>(d.dendrite_state));
+                      static_cast<int>(d.susceptibility),
+                      static_cast<int>(d.stw),
+                      static_cast<int>(d.ltw),
+                      static_cast<int>(d.strength));
         out += formatted;
     }
     return out;

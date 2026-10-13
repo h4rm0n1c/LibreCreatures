@@ -371,18 +371,18 @@ void log_creature_step_probe(const creatures1::creatures::Creature& creature,
             unsigned d = 0, w = 0, t = 0;
             for (std::uint32_t i = 0; i < lobe.neuron_count_value(); ++i) {
                 const auto& neuron = lobe.neuron(i);
-                const std::pair<const creatures1::brain::LobeConnection*,
+                const std::pair<const creatures1::brain::Dendrite*,
                                 unsigned> groups[2] = {
-                    {neuron.rule0_connections_begin,
-                     neuron.rule0_connection_count},
-                    {neuron.rule1_connections_begin,
-                     neuron.rule1_connection_count}};
+                    {neuron.type0_dendrites,
+                     neuron.type0_dendrite_count},
+                    {neuron.type1_dendrites,
+                     neuron.type1_dendrite_count}};
                 for (const auto& group : groups) {
                     for (unsigned c = 0; group.first != nullptr &&
                                          c < group.second; ++c) {
-                        d += group.first[c].target_neuron != nullptr ? 1u : 0u;
-                        w += group.first[c].baseline_weight;
-                        t += group.first[c].target_weight;
+                        d += group.first[c].source != nullptr ? 1u : 0u;
+                        w += group.first[c].ltw;
+                        t += group.first[c].stw;
                     }
                 }
             }
@@ -448,8 +448,8 @@ void log_creature_step_probe(const creatures1::creatures::Creature& creature,
                 for (std::uint32_t l = 0; l < brain->lobe_count(); ++l) {
                     const auto& lobe = brain->lobe(l);
                     for (std::size_t r = 0; r < 2; ++r) {
-                        const auto& rule = lobe.connection_rule(r);
-                        auto tokens = [&](const creatures1::brain::LobeRuleExpression& e) {
+                        const auto& rule = lobe.dendrite_type(r);
+                        auto tokens = [&](const creatures1::brain::SVRule& e) {
                             static char buf[64];
                             std::size_t n = 0;
                             for (auto t : e.tokens) {
@@ -463,21 +463,21 @@ void log_creature_step_probe(const creatures1::creatures::Creature& creature,
                             "count=%u-%u base=%u-%u dstate=%u-%u "
                             "cwdecay=%u twconv=%u bstep=%u grow_int=%u ",
                             motor.genome_source_filename, l, r,
-                            rule.target_lobe_index,
-                            static_cast<unsigned>(rule.connection_mode),
-                            rule.connection_count_min, rule.connection_count_max,
-                            rule.baseline_weight_min, rule.baseline_weight_max,
-                            rule.dendrite_state_min, rule.dendrite_state_max,
-                            rule.current_weight_decay_selector,
-                            rule.target_weight_convergence_selector,
-                            rule.baseline_weight_step_interval,
-                            rule.dendrite_growth_interval);
-                        std::fprintf(rules, "grow=%s ", tokens(rule.dendrite_growth_expression));
+                            rule.source_lobe,
+                            static_cast<unsigned>(rule.migration),
+                            rule.min_dendrites, rule.max_dendrites,
+                            rule.min_ltw, rule.max_ltw,
+                            rule.min_strength, rule.max_strength,
+                            rule.relax_suscept,
+                            rule.relax_stw,
+                            rule.ltw_gain_rate,
+                            rule.gain_rate);
+                        std::fprintf(rules, "grow=%s ", tokens(rule.gain_svrule));
                         std::fprintf(rules, "decay_int=%u decay=%s ",
-                                     rule.dendrite_decay_interval,
-                                     tokens(rule.dendrite_decay_expression));
-                        std::fprintf(rules, "cw=%s ", tokens(rule.current_weight_expression));
-                        std::fprintf(rules, "tw=%s\n", tokens(rule.target_weight_expression));
+                                     rule.lose_rate,
+                                     tokens(rule.lose_svrule));
+                        std::fprintf(rules, "cw=%s ", tokens(rule.suscept_svrule));
+                        std::fprintf(rules, "tw=%s\n", tokens(rule.reinforce_svrule));
                     }
                 }
                 std::fclose(rules);

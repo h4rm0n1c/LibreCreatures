@@ -43,16 +43,16 @@ constexpr std::uint16_t kNoTarget = 0xffff;
 
 struct DendriteState {
     std::uint16_t target = kNoTarget;
-    std::uint8_t current_weight = 0;
-    std::uint8_t target_weight = 0;
-    std::uint8_t baseline_weight = 0;
+    std::uint8_t susceptibility = 0;
+    std::uint8_t stw = 0;
+    std::uint8_t ltw = 0;
     std::uint8_t state = 0;
 
     bool operator==(const DendriteState& other) const {
         return target == other.target &&
-               current_weight == other.current_weight &&
-               target_weight == other.target_weight &&
-               baseline_weight == other.baseline_weight &&
+               susceptibility == other.susceptibility &&
+               stw == other.stw &&
+               ltw == other.ltw &&
                state == other.state;
     }
 };
@@ -105,7 +105,7 @@ struct ConnectionPlace {
 
 struct Recording {
     const Brain* brain = nullptr;
-    std::unordered_map<const LobeConnection*, ConnectionPlace> places;
+    std::unordered_map<const Dendrite*, ConnectionPlace> places;
     std::FILE* file = nullptr;
     std::uint32_t moniker = 0;
     std::uint32_t part = 0;
@@ -211,18 +211,18 @@ std::map<std::uint32_t, std::uint32_t>& parts_by_moniker() {
     return value;
 }
 
-std::uint16_t target_index(const Brain& brain, const LobeConnectionRule& rule,
-                           const LobeConnection& connection) {
-    if (connection.target_neuron == nullptr ||
-        rule.target_lobe_index >= brain.lobe_count()) {
+std::uint16_t target_index(const Brain& brain, const DendriteType& rule,
+                           const Dendrite& connection) {
+    if (connection.source == nullptr ||
+        rule.source_lobe >= brain.lobe_count()) {
         return kNoTarget;
     }
-    const Lobe& target_lobe = brain.lobe(rule.target_lobe_index);
+    const Lobe& target_lobe = brain.lobe(rule.source_lobe);
     if (target_lobe.neuron_count_value() == 0) {
         return kNoTarget;
     }
     const LobeNeuron* first = &target_lobe.neuron(0);
-    const std::ptrdiff_t offset = connection.target_neuron - first;
+    const std::ptrdiff_t offset = connection.source - first;
     if (offset < 0 ||
         offset >= static_cast<std::ptrdiff_t>(target_lobe.neuron_count_value()) ||
         offset >= kNoTarget) {
@@ -260,16 +260,16 @@ void index_connections(const Brain& brain, Recording& recording) {
              ++index) {
             const LobeNeuron& neuron = lobe.neuron(index);
             for (std::uint8_t rule = 0; rule < 2; ++rule) {
-                const LobeConnection* connections =
-                    rule == 0 ? neuron.rule0_connections_begin
-                              : neuron.rule1_connections_begin;
+                const Dendrite* connections =
+                    rule == 0 ? neuron.type0_dendrites
+                              : neuron.type1_dendrites;
                 const std::uint8_t count = rule == 0
-                                               ? neuron.rule0_connection_count
-                                               : neuron.rule1_connection_count;
+                                               ? neuron.type0_dendrite_count
+                                               : neuron.type1_dendrite_count;
                 for (std::uint8_t dendrite = 0;
                      connections != nullptr && dendrite < count; ++dendrite) {
                     recording.places[&connections[dendrite]] = {
-                        number++, lobe.connection_rule(rule).target_lobe_index};
+                        number++, lobe.dendrite_type(rule).source_lobe};
                 }
             }
         }
@@ -293,33 +293,33 @@ Snapshot take_snapshot(const Brain& brain) {
         layout.push_back(static_cast<std::uint8_t>(lobe.grid_height_value()));
         for (std::size_t rule = 0; rule < 2; ++rule) {
             layout.push_back(static_cast<std::uint8_t>(
-                lobe.connection_rule(rule).target_lobe_index));
+                lobe.dendrite_type(rule).source_lobe));
         }
         layout.push_back(
             static_cast<std::uint8_t>(lobe.perception_copy_state()));
         for (std::uint32_t index = 0; index < lobe.neuron_count_value();
              ++index) {
             const LobeNeuron& neuron = lobe.neuron(index);
-            layout.push_back(neuron.rule0_connection_count);
-            layout.push_back(neuron.rule1_connection_count);
+            layout.push_back(neuron.type0_dendrite_count);
+            layout.push_back(neuron.type1_dendrite_count);
             snapshot.neurons.push_back(
                 {neuron.activation, neuron.firing_strength});
             for (std::uint8_t rule = 0; rule < 2; ++rule) {
-                const LobeConnection* connections =
-                    rule == 0 ? neuron.rule0_connections_begin
-                              : neuron.rule1_connections_begin;
+                const Dendrite* connections =
+                    rule == 0 ? neuron.type0_dendrites
+                              : neuron.type1_dendrites;
                 const std::uint8_t count = rule == 0
-                                               ? neuron.rule0_connection_count
-                                               : neuron.rule1_connection_count;
+                                               ? neuron.type0_dendrite_count
+                                               : neuron.type1_dendrite_count;
                 for (std::uint8_t dendrite = 0;
                      connections != nullptr && dendrite < count; ++dendrite) {
-                    const LobeConnection& connection = connections[dendrite];
+                    const Dendrite& connection = connections[dendrite];
                     snapshot.dendrites.push_back(
-                        {target_index(brain, lobe.connection_rule(rule),
+                        {target_index(brain, lobe.dendrite_type(rule),
                                       connection),
-                         connection.current_weight, connection.target_weight,
-                         connection.baseline_weight,
-                         connection.dendrite_state});
+                         connection.susceptibility, connection.stw,
+                         connection.ltw,
+                         connection.strength});
                 }
             }
         }
@@ -419,9 +419,9 @@ void write_frame(Recording& recording, Snapshot& snapshot,
         }
         for (const DendriteState& dendrite : snapshot.dendrites) {
             out.u16(dendrite.target);
-            out.u8(dendrite.current_weight);
-            out.u8(dendrite.target_weight);
-            out.u8(dendrite.baseline_weight);
+            out.u8(dendrite.susceptibility);
+            out.u8(dendrite.stw);
+            out.u8(dendrite.ltw);
             out.u8(dendrite.state);
         }
     } else {
@@ -461,9 +461,9 @@ void write_frame(Recording& recording, Snapshot& snapshot,
                 continue;
             }
             DendriteState decayed_only = before;
-            decayed_only.current_weight = now.current_weight;
+            decayed_only.susceptibility = now.susceptibility;
             if (!decay_frame && decayed_only == now &&
-                now.current_weight < before.current_weight) {
+                now.susceptibility < before.susceptibility) {
                 snapshot.dendrites[i] = before;
                 continue;
             }
@@ -476,16 +476,16 @@ void write_frame(Recording& recording, Snapshot& snapshot,
             const DendriteState& before = recording.previous.dendrites[i];
             const std::uint8_t mask = static_cast<std::uint8_t>(
                 (now.target != before.target ? 1 : 0) |
-                (now.current_weight != before.current_weight ? 2 : 0) |
-                (now.target_weight != before.target_weight ? 4 : 0) |
-                (now.baseline_weight != before.baseline_weight ? 8 : 0) |
+                (now.susceptibility != before.susceptibility ? 2 : 0) |
+                (now.stw != before.stw ? 4 : 0) |
+                (now.ltw != before.ltw ? 8 : 0) |
                 (now.state != before.state ? 16 : 0));
             out.varint(i - next);
             out.u8(mask);
             if (mask & 1) out.u16(now.target);
-            if (mask & 2) out.u8(now.current_weight);
-            if (mask & 4) out.u8(now.target_weight);
-            if (mask & 8) out.u8(now.baseline_weight);
+            if (mask & 2) out.u8(now.susceptibility);
+            if (mask & 4) out.u8(now.stw);
+            if (mask & 8) out.u8(now.ltw);
             if (mask & 16) out.u8(now.state);
             next = i + 1;
         }
@@ -542,8 +542,8 @@ void record_brain_frame(const void* key, const Brain& brain,
     recording.previous = std::move(snapshot);
 }
 
-void record_dendrite_event(const Brain* brain, const LobeConnection& connection,
-                           DendriteEvent kind, const LobeConnection& before) {
+void record_dendrite_event(const Brain* brain, const Dendrite& connection,
+                           DendriteEvent kind, const Dendrite& before) {
     if (brain == nullptr) {
         return;
     }
@@ -568,24 +568,24 @@ void record_dendrite_event(const Brain* brain, const LobeConnection& connection,
     switch (kind) {
     case DendriteEvent::reinforce:
     case DendriteEvent::relax:
-        out.u8(connection.target_weight);
+        out.u8(connection.stw);
         break;
     case DendriteEvent::ltw_step:
-        out.u8(connection.baseline_weight);
+        out.u8(connection.ltw);
         break;
     case DendriteEvent::strengthen:
     case DendriteEvent::weaken:
-        out.u8(connection.dendrite_state);
+        out.u8(connection.strength);
         break;
     case DendriteEvent::attach:
     case DendriteEvent::rescue:
     case DendriteEvent::migrate:
     case DendriteEvent::migrate_failed:
         out.u16(source_index(*brain, place->second.source_lobe,
-                             connection.target_neuron));
-        out.u8(connection.target_weight);
-        out.u8(connection.baseline_weight);
-        out.u8(connection.dendrite_state);
+                             connection.source));
+        out.u8(connection.stw);
+        out.u8(connection.ltw);
+        out.u8(connection.strength);
         break;
     case DendriteEvent::went_loose:
     case DendriteEvent::dream_ltw_raise:

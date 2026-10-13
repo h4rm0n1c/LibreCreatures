@@ -32,14 +32,14 @@ constexpr std::uint32_t kExtendedBrainGridExtent = 208;
 void set_extended_brain_grid(bool enabled);
 bool extended_brain_grid();
 
-struct LobeConnection {
-    LobeNeuron* target_neuron = nullptr;
-    std::uint8_t target_grid_x = 0;
-    std::uint8_t target_grid_y = 0;
-    std::uint8_t current_weight = 0;
-    std::uint8_t target_weight = 0;
-    std::uint8_t baseline_weight = 0;
-    std::uint8_t dendrite_state = 0;
+struct Dendrite {
+    LobeNeuron* source = nullptr;
+    std::uint8_t source_grid_x = 0;
+    std::uint8_t source_grid_y = 0;
+    std::uint8_t susceptibility = 0;
+    std::uint8_t stw = 0;
+    std::uint8_t ltw = 0;
+    std::uint8_t strength = 0;
     std::array<std::uint8_t, 2> unserialized_tail{};
 };
 
@@ -48,15 +48,15 @@ struct LobeNeuron {
     std::uint8_t grid_y = 0;
     std::uint8_t firing_strength = 0;
     std::uint8_t activation = 0;
-    LobeConnection* rule0_connections_begin = nullptr;
-    LobeConnection* rule1_connections_begin = nullptr;
-    std::uint8_t rule0_connection_count = 0;
-    std::uint8_t rule1_connection_count = 0;
+    Dendrite* type0_dendrites = nullptr;
+    Dendrite* type1_dendrites = nullptr;
+    std::uint8_t type0_dendrite_count = 0;
+    std::uint8_t type1_dendrite_count = 0;
     std::uint8_t winner_take_all_excluded = 0;
     std::uint8_t source_lobe_index = 0;
 };
 
-struct LobeRuleExpression {
+struct SVRule {
     std::array<std::uint8_t, 10> tokens{};
     void load_from_genome(creatures1::creatures::Genome& genome);
 };
@@ -76,47 +76,47 @@ enum class StandardLobeIndex : std::uint8_t {
 // These packed values are consumed by the lobe allocation/update paths. The
 // names and values are established by the live count-distribution switch and
 // connection-mode branches, not inferred from the decoder's temporaries.
-enum class ConnectionCountDistribution : std::uint8_t {
+enum class DendriteSpread : std::uint8_t {
     uniform = 0,
     two_sample_average = 1,
     two_sample_absolute_difference = 2,
     two_sample_complement_difference = 3,
 };
 
-enum class ConnectionMode : std::uint8_t {
+enum class MigrationMode : std::uint8_t {
     ordinary = 0,
     attach_loose_dendrites = 1,
     migrate_connections = 2,
 };
 
-struct LobeConnectionRule {
-    std::uint32_t target_lobe_index = 0;
-    std::uint8_t connection_count_min = 0;
-    std::uint8_t connection_count_max = 0;
-    ConnectionCountDistribution count_distribution =
-        ConnectionCountDistribution::uniform;
-    std::uint8_t target_cell_spread_radius = 0;
-    std::uint8_t baseline_weight_min = 0;
-    std::uint8_t baseline_weight_max = 0;
-    std::uint8_t dendrite_state_min = 0;
-    std::uint8_t dendrite_state_max = 0;
-    ConnectionMode connection_mode = ConnectionMode::ordinary;
-    std::uint8_t current_weight_decay_selector = 0;
-    std::uint8_t target_weight_convergence_selector = 0;
-    std::uint8_t baseline_weight_step_interval = 0;
-    std::uint8_t dendrite_growth_interval = 0;
-    LobeRuleExpression dendrite_growth_expression{};
-    std::uint8_t dendrite_decay_interval = 0;
-    LobeRuleExpression dendrite_decay_expression{};
-    LobeRuleExpression current_weight_expression{};
-    LobeRuleExpression target_weight_expression{};
+struct DendriteType {
+    std::uint32_t source_lobe = 0;
+    std::uint8_t min_dendrites = 0;
+    std::uint8_t max_dendrites = 0;
+    DendriteSpread spread =
+        DendriteSpread::uniform;
+    std::uint8_t fanout = 0;
+    std::uint8_t min_ltw = 0;
+    std::uint8_t max_ltw = 0;
+    std::uint8_t min_strength = 0;
+    std::uint8_t max_strength = 0;
+    MigrationMode migration = MigrationMode::ordinary;
+    std::uint8_t relax_suscept = 0;
+    std::uint8_t relax_stw = 0;
+    std::uint8_t ltw_gain_rate = 0;
+    std::uint8_t gain_rate = 0;
+    SVRule gain_svrule{};
+    std::uint8_t lose_rate = 0;
+    SVRule lose_svrule{};
+    SVRule suscept_svrule{};
+    SVRule reinforce_svrule{};
     std::array<std::uint8_t, 2> not_archived{};
 
     void load_from_genome(creatures1::creatures::Genome& genome);
 };
 
 struct LobeLatePhaseRuntimeState {
-    std::array<std::uint8_t, 2> per_rule_loose_dendrite_count{};
+    std::array<std::uint8_t, 2> per_type_loose_dendrite_count{};
     std::array<std::uint8_t, 4> token_evaluation_state{};
     std::uint8_t padding = 0;
 };
@@ -146,8 +146,8 @@ public:
     }
     PerceptionCopyState perception_copy_state() const { return percept_state; }
 
-    const LobeConnectionRule& connection_rule(std::size_t index) const;
-    LobeConnectionRule& connection_rule(std::size_t index);
+    const DendriteType& dendrite_type(std::size_t index) const;
+    DendriteType& dendrite_type(std::size_t index);
     LobeLatePhaseRuntimeState& late_phase_state();
     // The lobe's four chemical inputs (rule registers chem 0..3), which
     // receptor genes set through loci 13..16.
@@ -190,19 +190,19 @@ private:
     std::uint8_t activation_relaxation_selector = 0;
     std::uint8_t activation_baseline = 0;
     std::uint8_t input_gain = 0;
-    LobeRuleExpression lobe_expression{};
+    SVRule state_svrule{};
     std::uint8_t winner_take_all_flags = 0;
     std::uint8_t padding = 0;
-    std::array<LobeConnectionRule, 2> connection_rules{};
+    std::array<DendriteType, 2> dendrite_types{};
     std::unique_ptr<LobeNeuron[]> neurons;
-    std::unique_ptr<LobeConnection[]> connections;
+    std::unique_ptr<Dendrite[]> connections;
     std::uint32_t neuron_count = 0;
     std::uint32_t total_connection_count = 0;
     std::unique_ptr<LobeNeuron*[]> active_neurons;
     std::uint32_t active_neuron_count_ = 0;
     PerceptionCopyState percept_state = PerceptionCopyState::not_copied;
-    std::uint32_t rule0_migration_candidate_neuron_index = 99999;
-    std::uint32_t rule1_migration_candidate_neuron_index = 99999;
+    std::uint32_t type0_migration_candidate = 99999;
+    std::uint32_t type1_migration_candidate = 99999;
     std::uint8_t active_fraction = 0;
     LobeLatePhaseRuntimeState late_phase_runtime_state{};
 };

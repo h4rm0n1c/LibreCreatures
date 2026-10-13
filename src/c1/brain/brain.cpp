@@ -37,25 +37,25 @@ void append_activity_entry(char*& output,
 
 std::uint32_t average_connection_value(const LobeNeuron& neuron,
                                        int rule_index,
-                                       bool dendrite_state) {
+                                       bool strength) {
     if (rule_index < 0 || rule_index > 1) {
         return 0;
     }
 
     const std::uint8_t count =
-        rule_index == 0 ? neuron.rule0_connection_count
-                        : neuron.rule1_connection_count;
-    const LobeConnection* connections =
-        rule_index == 0 ? neuron.rule0_connections_begin
-                        : neuron.rule1_connections_begin;
+        rule_index == 0 ? neuron.type0_dendrite_count
+                        : neuron.type1_dendrite_count;
+    const Dendrite* connections =
+        rule_index == 0 ? neuron.type0_dendrites
+                        : neuron.type1_dendrites;
     if (count == 0 || connections == nullptr) {
         return 0;
     }
 
     std::uint32_t total = 0;
     for (std::uint8_t index = 0; index < count; ++index) {
-        total += dendrite_state ? connections[index].dendrite_state
-                                : connections[index].target_weight;
+        total += strength ? connections[index].strength
+                                : connections[index].stw;
     }
     return total / count;
 }
@@ -67,19 +67,19 @@ std::uint8_t maximum_current_weight(const LobeNeuron& neuron,
     }
 
     const std::uint8_t count =
-        rule_index == 0 ? neuron.rule0_connection_count
-                        : neuron.rule1_connection_count;
-    const LobeConnection* connections =
-        rule_index == 0 ? neuron.rule0_connections_begin
-                        : neuron.rule1_connections_begin;
+        rule_index == 0 ? neuron.type0_dendrite_count
+                        : neuron.type1_dendrite_count;
+    const Dendrite* connections =
+        rule_index == 0 ? neuron.type0_dendrites
+                        : neuron.type1_dendrites;
     if (count == 0 || connections == nullptr) {
         return 0;
     }
 
     std::uint8_t maximum = 0;
     for (std::uint8_t index = 0; index < count; ++index) {
-        if (maximum < connections[index].current_weight) {
-            maximum = connections[index].current_weight;
+        if (maximum < connections[index].susceptibility) {
+            maximum = connections[index].susceptibility;
         }
     }
     return maximum;
@@ -102,7 +102,7 @@ int clamp_coordinate(int coordinate, std::uint32_t extent) {
     return coordinate > maximum ? maximum : coordinate;
 }
 
-void serialize_expression(BrainArchive& archive, LobeRuleExpression& expression) {
+void serialize_expression(BrainArchive& archive, SVRule& expression) {
     if (archive.is_loading()) {
         for (std::uint8_t& token : expression.tokens) {
             token = archive.read_byte();
@@ -115,61 +115,61 @@ void serialize_expression(BrainArchive& archive, LobeRuleExpression& expression)
 }
 
 void serialize_connection_rule(BrainArchive& archive,
-                               LobeConnectionRule& rule) {
+                               DendriteType& rule) {
     if (archive.is_loading()) {
-        rule.target_lobe_index = archive.read_u32();
-        rule.connection_count_min = archive.read_byte();
-        rule.connection_count_max = archive.read_byte();
-        rule.count_distribution = static_cast<ConnectionCountDistribution>(
+        rule.source_lobe = archive.read_u32();
+        rule.min_dendrites = archive.read_byte();
+        rule.max_dendrites = archive.read_byte();
+        rule.spread = static_cast<DendriteSpread>(
             archive.read_byte());
-        rule.target_cell_spread_radius = archive.read_byte();
-        rule.baseline_weight_min = archive.read_byte();
-        rule.baseline_weight_max = archive.read_byte();
-        rule.dendrite_state_min = archive.read_byte();
-        rule.dendrite_state_max = archive.read_byte();
-        rule.connection_mode =
-            static_cast<ConnectionMode>(archive.read_byte());
-        rule.current_weight_decay_selector = archive.read_byte();
-        rule.target_weight_convergence_selector = archive.read_byte();
-        rule.baseline_weight_step_interval = archive.read_byte();
+        rule.fanout = archive.read_byte();
+        rule.min_ltw = archive.read_byte();
+        rule.max_ltw = archive.read_byte();
+        rule.min_strength = archive.read_byte();
+        rule.max_strength = archive.read_byte();
+        rule.migration =
+            static_cast<MigrationMode>(archive.read_byte());
+        rule.relax_suscept = archive.read_byte();
+        rule.relax_stw = archive.read_byte();
+        rule.ltw_gain_rate = archive.read_byte();
         // Native CBrain::Serialize archives both intervals before the
         // expressions: ... growth interval (+16), decay interval (+27), then
         // growth expr (+17..+26), decay expr (+28..+37), current-weight and
         // target-weight exprs.  Reading them interleaved shifted every field
         // after the growth interval by one byte.
-        rule.dendrite_growth_interval = archive.read_byte();
-        rule.dendrite_decay_interval = archive.read_byte();
-        serialize_expression(archive, rule.dendrite_growth_expression);
-        serialize_expression(archive, rule.dendrite_decay_expression);
-        serialize_expression(archive, rule.current_weight_expression);
-        serialize_expression(archive, rule.target_weight_expression);
+        rule.gain_rate = archive.read_byte();
+        rule.lose_rate = archive.read_byte();
+        serialize_expression(archive, rule.gain_svrule);
+        serialize_expression(archive, rule.lose_svrule);
+        serialize_expression(archive, rule.suscept_svrule);
+        serialize_expression(archive, rule.reinforce_svrule);
         return;
     }
 
-    archive.write_u32(rule.target_lobe_index);
-    archive.write_byte(rule.connection_count_min);
-    archive.write_byte(rule.connection_count_max);
-    archive.write_byte(static_cast<std::uint8_t>(rule.count_distribution));
-    archive.write_byte(rule.target_cell_spread_radius);
-    archive.write_byte(rule.baseline_weight_min);
-    archive.write_byte(rule.baseline_weight_max);
-    archive.write_byte(rule.dendrite_state_min);
-    archive.write_byte(rule.dendrite_state_max);
-    archive.write_byte(static_cast<std::uint8_t>(rule.connection_mode));
-    archive.write_byte(rule.current_weight_decay_selector);
-    archive.write_byte(rule.target_weight_convergence_selector);
-    archive.write_byte(rule.baseline_weight_step_interval);
-    archive.write_byte(rule.dendrite_growth_interval);
-    archive.write_byte(rule.dendrite_decay_interval);
-    serialize_expression(archive, rule.dendrite_growth_expression);
-    serialize_expression(archive, rule.dendrite_decay_expression);
-    serialize_expression(archive, rule.current_weight_expression);
-    serialize_expression(archive, rule.target_weight_expression);
+    archive.write_u32(rule.source_lobe);
+    archive.write_byte(rule.min_dendrites);
+    archive.write_byte(rule.max_dendrites);
+    archive.write_byte(static_cast<std::uint8_t>(rule.spread));
+    archive.write_byte(rule.fanout);
+    archive.write_byte(rule.min_ltw);
+    archive.write_byte(rule.max_ltw);
+    archive.write_byte(rule.min_strength);
+    archive.write_byte(rule.max_strength);
+    archive.write_byte(static_cast<std::uint8_t>(rule.migration));
+    archive.write_byte(rule.relax_suscept);
+    archive.write_byte(rule.relax_stw);
+    archive.write_byte(rule.ltw_gain_rate);
+    archive.write_byte(rule.gain_rate);
+    archive.write_byte(rule.lose_rate);
+    serialize_expression(archive, rule.gain_svrule);
+    serialize_expression(archive, rule.lose_svrule);
+    serialize_expression(archive, rule.suscept_svrule);
+    serialize_expression(archive, rule.reinforce_svrule);
 }
 
 struct PendingConnectionTarget {
-    LobeConnection* connection = nullptr;
-    std::uint32_t target_lobe_index = 0;
+    Dendrite* connection = nullptr;
+    std::uint32_t source_lobe = 0;
     std::int32_t target_neuron_index = -1;
 };
 
@@ -197,9 +197,9 @@ void Brain::serialize(BrainArchive& archive) {
             archive.write_byte(lobe.activation_relaxation_selector);
             archive.write_byte(lobe.activation_baseline);
             archive.write_byte(lobe.input_gain);
-            serialize_expression(archive, lobe.lobe_expression);
+            serialize_expression(archive, lobe.state_svrule);
             archive.write_byte(lobe.winner_take_all_flags);
-            for (LobeConnectionRule& rule : lobe.connection_rules) {
+            for (DendriteType& rule : lobe.dendrite_types) {
                 serialize_connection_rule(archive, rule);
             }
             archive.write_u32(lobe.neuron_count);
@@ -218,13 +218,13 @@ void Brain::serialize(BrainArchive& archive) {
                 archive.write_byte(neuron.winner_take_all_excluded);
                 archive.write_byte(neuron.source_lobe_index);
 
-                const LobeConnection* groups[2] = {
-                    neuron.rule0_connections_begin,
-                    neuron.rule1_connections_begin,
+                const Dendrite* groups[2] = {
+                    neuron.type0_dendrites,
+                    neuron.type1_dendrites,
                 };
                 const std::uint8_t counts[2] = {
-                    neuron.rule0_connection_count,
-                    neuron.rule1_connection_count,
+                    neuron.type0_dendrite_count,
+                    neuron.type1_dendrite_count,
                 };
                 for (std::size_t rule_index = 0; rule_index < 2;
                      ++rule_index) {
@@ -237,14 +237,14 @@ void Brain::serialize(BrainArchive& archive) {
                     for (std::uint8_t connection_index = 0;
                          connection_index < counts[rule_index];
                          ++connection_index) {
-                        const LobeConnection& connection =
+                        const Dendrite& connection =
                             groups[rule_index][connection_index];
-                        const LobeConnectionRule& rule =
-                            lobe.connection_rules[rule_index];
-                        const LobeNeuron* target = connection.target_neuron;
+                        const DendriteType& rule =
+                            lobe.dendrite_types[rule_index];
+                        const LobeNeuron* target = connection.source;
                         const Lobe* target_lobe =
-                            rule.target_lobe_index < count
-                                ? &lobes_[rule.target_lobe_index]
+                            rule.source_lobe < count
+                                ? &lobes_[rule.source_lobe]
                                 : nullptr;
                         std::int32_t target_index = 0;
                         if (target_lobe != nullptr && target != nullptr &&
@@ -256,12 +256,12 @@ void Brain::serialize(BrainArchive& archive) {
                         }
                         archive.write_u32(
                             static_cast<std::uint32_t>(target_index));
-                        archive.write_byte(connection.target_grid_x);
-                        archive.write_byte(connection.target_grid_y);
-                        archive.write_byte(connection.current_weight);
-                        archive.write_byte(connection.target_weight);
-                        archive.write_byte(connection.baseline_weight);
-                        archive.write_byte(connection.dendrite_state);
+                        archive.write_byte(connection.source_grid_x);
+                        archive.write_byte(connection.source_grid_y);
+                        archive.write_byte(connection.susceptibility);
+                        archive.write_byte(connection.stw);
+                        archive.write_byte(connection.ltw);
+                        archive.write_byte(connection.strength);
                     }
                 }
             }
@@ -284,16 +284,16 @@ void Brain::serialize(BrainArchive& archive) {
         lobe.activation_relaxation_selector = 0;
         lobe.activation_baseline = 0;
         lobe.input_gain = 0;
-        lobe.lobe_expression = {};
+        lobe.state_svrule = {};
         lobe.winner_take_all_flags = 0;
         lobe.padding = 0;
-        lobe.connection_rules = {};
+        lobe.dendrite_types = {};
         lobe.neuron_count = 0;
         lobe.total_connection_count = 0;
         lobe.active_neuron_count_ = 0;
         lobe.percept_state = PerceptionCopyState::not_copied;
-        lobe.rule0_migration_candidate_neuron_index = 99999;
-        lobe.rule1_migration_candidate_neuron_index = 99999;
+        lobe.type0_migration_candidate = 99999;
+        lobe.type1_migration_candidate = 99999;
         lobe.active_fraction = 0;
         lobe.late_phase_runtime_state = {};
     }
@@ -315,9 +315,9 @@ void Brain::serialize(BrainArchive& archive) {
         lobe.activation_relaxation_selector = archive.read_byte();
         lobe.activation_baseline = archive.read_byte();
         lobe.input_gain = archive.read_byte();
-        serialize_expression(archive, lobe.lobe_expression);
+        serialize_expression(archive, lobe.state_svrule);
         lobe.winner_take_all_flags = archive.read_byte();
-        for (LobeConnectionRule& rule : lobe.connection_rules) {
+        for (DendriteType& rule : lobe.dendrite_types) {
             serialize_connection_rule(archive, rule);
         }
         lobe.neuron_count = archive.read_u32();
@@ -326,7 +326,7 @@ void Brain::serialize(BrainArchive& archive) {
         lobe.active_neurons =
             std::make_unique<LobeNeuron*[]>(lobe.neuron_count);
         if (lobe.total_connection_count != 0) {
-            lobe.connections = std::make_unique<LobeConnection[]>(
+            lobe.connections = std::make_unique<Dendrite[]>(
                 lobe.total_connection_count);
         }
     }
@@ -344,13 +344,13 @@ void Brain::serialize(BrainArchive& archive) {
             neuron.winner_take_all_excluded = archive.read_byte();
             neuron.source_lobe_index = archive.read_byte();
 
-            LobeConnection** groups[2] = {
-                &neuron.rule0_connections_begin,
-                &neuron.rule1_connections_begin,
+            Dendrite** groups[2] = {
+                &neuron.type0_dendrites,
+                &neuron.type1_dendrites,
             };
             std::uint8_t* counts[2] = {
-                &neuron.rule0_connection_count,
-                &neuron.rule1_connection_count,
+                &neuron.type0_dendrite_count,
+                &neuron.type1_dendrite_count,
             };
             for (std::size_t rule_index = 0; rule_index < 2;
                  ++rule_index) {
@@ -364,44 +364,44 @@ void Brain::serialize(BrainArchive& archive) {
                 *groups[rule_index] = valid_range
                     ? lobe.connections.get() + begin
                     : nullptr;
-                const std::uint32_t target_lobe_index =
-                    lobe.connection_rules[rule_index].target_lobe_index;
+                const std::uint32_t source_lobe =
+                    lobe.dendrite_types[rule_index].source_lobe;
                 for (std::uint8_t connection_index = 0;
                      connection_index < *counts[rule_index];
                      ++connection_index) {
                     const std::int32_t target_neuron_index =
                         static_cast<std::int32_t>(archive.read_u32());
-                    LobeConnection decoded{};
-                    decoded.target_grid_x = archive.read_byte();
-                    decoded.target_grid_y = archive.read_byte();
-                    decoded.current_weight = archive.read_byte();
-                    decoded.target_weight = archive.read_byte();
-                    decoded.baseline_weight = archive.read_byte();
-                    decoded.dendrite_state = archive.read_byte();
+                    Dendrite decoded{};
+                    decoded.source_grid_x = archive.read_byte();
+                    decoded.source_grid_y = archive.read_byte();
+                    decoded.susceptibility = archive.read_byte();
+                    decoded.stw = archive.read_byte();
+                    decoded.ltw = archive.read_byte();
+                    decoded.strength = archive.read_byte();
                     if (!valid_range) {
                         continue;
                     }
-                    LobeConnection& connection =
+                    Dendrite& connection =
                         (*groups[rule_index])[connection_index];
                     connection = decoded;
                     pending_targets.push_back(
-                        {&connection, target_lobe_index, target_neuron_index});
+                        {&connection, source_lobe, target_neuron_index});
                 }
             }
         }
     }
 
     for (const PendingConnectionTarget& pending : pending_targets) {
-        if (pending.target_lobe_index >= lobe_count_ ||
+        if (pending.source_lobe >= lobe_count_ ||
             pending.target_neuron_index < 0) {
             continue;
         }
-        Lobe& target_lobe = lobes_[pending.target_lobe_index];
+        Lobe& target_lobe = lobes_[pending.source_lobe];
         if (static_cast<std::uint32_t>(pending.target_neuron_index) >=
             target_lobe.neuron_count) {
             continue;
         }
-        pending.connection->target_neuron =
+        pending.connection->source =
             &target_lobe.neurons[pending.target_neuron_index];
     }
 }
@@ -447,7 +447,7 @@ void Brain::load_genome(creatures1::creatures::Genome& genome) {
     // allocating runtime connections.
     for (std::size_t lobe_index = 0; lobe_index < count; ++lobe_index) {
         for (std::size_t rule_index = 0; rule_index < 2; ++rule_index) {
-            lobes_[lobe_index].connection_rule(rule_index).target_lobe_index
+            lobes_[lobe_index].dendrite_type(rule_index).source_lobe
                 %= static_cast<std::uint32_t>(count);
         }
     }
@@ -611,9 +611,9 @@ void Brain::initialize_connections() {
         }
 
         for (std::size_t rule_index = 0; rule_index < 2; ++rule_index) {
-            const LobeConnectionRule& rule =
-                source_lobe.connection_rule(rule_index);
-            Lobe& target_lobe = lobes_[rule.target_lobe_index];
+            const DendriteType& rule =
+                source_lobe.dendrite_type(rule_index);
+            Lobe& target_lobe = lobes_[rule.source_lobe];
             const std::uint32_t target_width = target_lobe.grid_width_value();
             const std::uint32_t target_height =
                 target_lobe.grid_height_value();
@@ -623,7 +623,7 @@ void Brain::initialize_connections() {
             }
 
             const int spread_radius =
-                static_cast<int>(rule.target_cell_spread_radius);
+                static_cast<int>(rule.fanout);
             const int spread_range = spread_radius * 2 + 1;
             for (std::uint32_t source_neuron_index = 0;
                  source_neuron_index < source_neuron_count;
@@ -631,11 +631,11 @@ void Brain::initialize_connections() {
                 LobeNeuron& source_neuron =
                     source_lobe.neuron(source_neuron_index);
                 const std::uint8_t connection_count =
-                    rule_index == 0 ? source_neuron.rule0_connection_count
-                                    : source_neuron.rule1_connection_count;
-                LobeConnection* connections =
-                    rule_index == 0 ? source_neuron.rule0_connections_begin
-                                    : source_neuron.rule1_connections_begin;
+                    rule_index == 0 ? source_neuron.type0_dendrite_count
+                                    : source_neuron.type1_dendrite_count;
+                Dendrite* connections =
+                    rule_index == 0 ? source_neuron.type0_dendrites
+                                    : source_neuron.type1_dendrites;
                 if (connection_count == 0 || connections == nullptr) {
                     continue;
                 }
@@ -666,19 +666,19 @@ void Brain::initialize_connections() {
 
                     target_x = clamp_coordinate(target_x, target_width);
                     target_y = clamp_coordinate(target_y, target_height);
-                    LobeConnection& connection = connections[connection_index];
-                    connection.target_grid_x =
+                    Dendrite& connection = connections[connection_index];
+                    connection.source_grid_x =
                         static_cast<std::uint8_t>(target_x);
-                    connection.target_grid_y =
+                    connection.source_grid_y =
                         static_cast<std::uint8_t>(target_y);
-                    connection.target_neuron = &target_lobe.neuron(
+                    connection.source = &target_lobe.neuron(
                         static_cast<std::uint32_t>(target_y) * target_width +
                         static_cast<std::uint32_t>(target_x));
-                    connection.baseline_weight = random_byte_inclusive(
-                        rule.baseline_weight_min, rule.baseline_weight_max);
-                    connection.target_weight = connection.baseline_weight;
-                    connection.dendrite_state = random_byte_inclusive(
-                        rule.dendrite_state_min, rule.dendrite_state_max);
+                    connection.ltw = random_byte_inclusive(
+                        rule.min_ltw, rule.max_ltw);
+                    connection.stw = connection.ltw;
+                    connection.strength = random_byte_inclusive(
+                        rule.min_strength, rule.max_strength);
                 }
             }
         }
@@ -704,18 +704,18 @@ void Brain::normalize_dream_connection_weights() {
              ++neuron_index) {
             LobeNeuron& neuron = current_lobe.neuron(neuron_index);
             for (std::size_t rule_index = 0; rule_index < 2; ++rule_index) {
-                LobeConnection* connections =
-                    rule_index == 0 ? neuron.rule0_connections_begin
-                                    : neuron.rule1_connections_begin;
+                Dendrite* connections =
+                    rule_index == 0 ? neuron.type0_dendrites
+                                    : neuron.type1_dendrites;
                 const std::uint8_t count =
-                    rule_index == 0 ? neuron.rule0_connection_count
-                                    : neuron.rule1_connection_count;
+                    rule_index == 0 ? neuron.type0_dendrite_count
+                                    : neuron.type1_dendrite_count;
                 for (std::uint8_t connection_index = 0;
                      connection_index < count; ++connection_index) {
-                    LobeConnection& connection = connections[connection_index];
-                    if (connection.baseline_weight < connection.target_weight) {
-                        const LobeConnection before = connection;
-                        connection.baseline_weight = connection.target_weight;
+                    Dendrite& connection = connections[connection_index];
+                    if (connection.ltw < connection.stw) {
+                        const Dendrite before = connection;
+                        connection.ltw = connection.stw;
                         if (g_brain_events_wanted) {
                             record_dendrite_event(this, connection,
                                                   DendriteEvent::dream_ltw_raise,

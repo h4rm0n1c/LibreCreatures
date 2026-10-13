@@ -119,13 +119,16 @@ def configure(source, stage=0, sex=None, layout=None):
     if len(lobes) > DECISION:
         decision = lobes[DECISION]
         for t, rule in enumerate(decision["types"]):
-            sign = ("+" if f"+ type {t}" in decision["state rule"] or
-                    decision["state rule"].startswith(f"type {t}") else
-                    "-" if f"- type {t}" in decision["state rule"] else "?")
+            state_rule = decision["state rule"].split()
+            sign = "?"
+            for i, word in enumerate(state_rule):
+                if word == f"type{t}":
+                    before = state_rule[i - 1] if i else None
+                    sign = "-" if before == "MINUS" else "+" if before in (None, "PLUS") else "?"
             role = {"+": "excites", "-": "inhibits"}.get(sign, "type")
             chem = rule["reinforcement rule"]
-            if chem.startswith("chem ") and (DECISION, int(chem[5])) in inputs:
-                chem = inputs[(DECISION, int(chem[5]))]
+            if chem.startswith("chem") and chem[4:].isdigit() and (DECISION, int(chem[4:])) in inputs:
+                chem = inputs[(DECISION, int(chem[4:]))]
             DECISION_TYPES[t] = f"{role} (type {t}, grown by {chem})"
     GENOME_NOTES.clear()
     GENOME_NOTES.append(f"genome: {'recording' if isinstance(source, bytes) else source}, "
