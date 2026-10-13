@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """Decode what a recorded C1 brain has learned (recordings from C1_BRAIN_RECORD).
 
+  Any command takes --genome GEN (e.g. the parents' mum1.gen): general
+  senses are then named from its stimulus genes, and the decision lobe's
+  dendrite types from its rules (stock: type 0 excites, grown by Reward;
+  type 1 inhibits, grown by Punishment).
+
     brain_concepts.py perception FILE       what each perception neuron stands for
     brain_concepts.py concepts FILE [N]     the N busiest concept neurons: their
                                             inputs, and what was attended and
@@ -60,6 +65,44 @@ def category_name(index):
     return compound.get(index) or creature.get(index) or f"category {index}"
 
 
+# General sense neurons the engine sets itself (creature.cpp): near the
+# wall being faced, riding a vehicle, and facts about an attended creature.
+# The rest are named by the genome's stimulus genes (set_genome).
+ENGINE_SENSES = {3: "near a wall", 4: "in a vehicle", 15: "it is a creature",
+                 16: "it shares a parent with me", 17: "it is my parent",
+                 18: "it is my child", 19: "it is the opposite sex"}
+GENERAL_SENSES = dict(ENGINE_SENSES)
+# Dendrite type roles in the decision lobe, from the genome (set_genome).
+DECISION_TYPES = {0: "type 0", 1: "type 1"}
+
+
+def set_genome(path):
+    """Name general senses from a genome's stimulus genes, and the decision
+    lobe's dendrite types from its state and reinforcement rules."""
+    import os
+    import genome_brain
+    GENERAL_SENSES.clear()
+    GENERAL_SENSES.update(ENGINE_SENSES)
+    for neuron, label in genome_brain.general_sense_names(path).items():
+        if neuron < 32:
+            GENERAL_SENSES[neuron] = label
+    lobes = genome_brain.lobe_rules(path)
+    if len(lobes) > DECISION:
+        decision = lobes[DECISION]
+        chemicals = genome_brain.read_chemical_names(os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(path))), "allchemicals.str"))
+        inputs = genome_brain.chemical_inputs(path, chemicals)
+        for t, rule in enumerate(decision["types"]):
+            sign = ("+" if f"+ type {t}" in decision["state rule"] or
+                    decision["state rule"].startswith(f"type {t}") else
+                    "-" if f"- type {t}" in decision["state rule"] else "?")
+            role = {"+": "excites", "-": "inhibits"}.get(sign, "type")
+            chem = rule["reinforcement rule"]
+            if chem.startswith("chem ") and (DECISION, int(chem[5])) in inputs:
+                chem = inputs[(DECISION, int(chem[5]))]
+            DECISION_TYPES[t] = f"{role} (type {t}, grown by {chem})"
+
+
 def item_name(lobe, index):
     if lobe == DRIVE:
         return DRIVES[index] if index < len(DRIVES) else f"drive {index}"
@@ -68,7 +111,7 @@ def item_name(lobe, index):
     if lobe in (SOURCE, NOUN, ATTENTION):
         return category_name(index)
     if lobe == GENERAL:
-        return f"sense {index}"
+        return GENERAL_SENSES.get(index, f"sense {index}")
     return f"neuron {index}"
 
 
@@ -315,7 +358,7 @@ def cmd_learning(path, top=12):
         span = f"{link['start']}-{link['end'] or 'end'}"
         ended = f", {link['ended']}" if link["ended"] else ""
         causes = ", ".join(f"{k} {v}" for k, v in link["causes"].most_common(4))
-        return (f"{action_name(neuron):11s} type {rule}  LTW {link['ltw0']:3d} -> {link['ltw']:3d} "
+        return (f"{action_name(neuron):11s} {DECISION_TYPES[rule]}  LTW {link['ltw0']:3d} -> {link['ltw']:3d} "
                 f"(awake {link['ltw_awake']:+d}, dreaming {link['ltw_dream']:+d})  "
                 f"ticks {span} ({link['began']}{ended})  concept {link['target']} "
                 f"[{'; '.join(link['meaning'])}]  events: {causes}")
@@ -343,5 +386,9 @@ if __name__ == "__main__":
     if len(sys.argv) < 3 or sys.argv[1] not in commands:
         print(__doc__)
         sys.exit(2)
-    extra = [int(a) for a in sys.argv[3:]]
-    commands[sys.argv[1]](sys.argv[2], *extra)
+    args = sys.argv[3:]
+    if "--genome" in args:
+        at = args.index("--genome")
+        set_genome(args[at + 1])
+        del args[at:at + 2]
+    commands[sys.argv[1]](sys.argv[2], *[int(a) for a in args])
