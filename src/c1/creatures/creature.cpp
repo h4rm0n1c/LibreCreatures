@@ -4069,6 +4069,22 @@ void Creature::process_dreaming(bool selected_creature,
 
     brain::Instinct& current_instinct = instinct_runtime_state_.instincts[0];
     if (current_instinct.dream_step_index == 0) {
+        if (dream_mark.brain != nullptr) {
+            brain::InstinctRecord recorded;
+            for (std::size_t i = 0; i < 3; ++i) {
+                recorded.lobes[i] =
+                    static_cast<std::uint8_t>(current_instinct.replay_lobe_indices[i]);
+                recorded.neurons[i] =
+                    static_cast<std::uint8_t>(current_instinct.replay_neuron_indices[i]);
+            }
+            recorded.decision_neuron =
+                static_cast<std::uint8_t>(current_instinct.decision_lobe_neuron_index);
+            recorded.chemical =
+                static_cast<std::uint8_t>(current_instinct.dream_chemical_index);
+            recorded.concentration =
+                static_cast<std::uint8_t>(current_instinct.dream_chemical_concentration);
+            brain::record_instinct(dream_mark.brain, recorded);
+        }
         brain_->reset_runtime_activity();
         ++current_instinct.dream_step_index;
         ++biochemistry_tick_;
@@ -4091,7 +4107,8 @@ void Creature::process_dreaming(bool selected_creature,
             current_instinct.dream_chemical_concentration);
         if (brain::g_chemical_flows_wanted) {
             brain::record_chemical_flow(
-                biochemistry_.get(), brain::ChemicalOrigin::instinct, 0,
+                biochemistry_.get(), brain::ChemicalOrigin::instinct,
+                brain::current_instinct(brain_.get()),
                 static_cast<std::uint8_t>(current_instinct.dream_chemical_index),
                 static_cast<int>(dream_chemical.concentration) - before);
         }

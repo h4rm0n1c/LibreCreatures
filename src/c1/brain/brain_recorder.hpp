@@ -3,6 +3,7 @@
 #include <array>
 #include <cstdint>
 #include <functional>
+#include <string>
 #include <vector>
 
 namespace creatures1::brain {
@@ -17,7 +18,7 @@ class Brain;
 //
 // One file per creature brain, <moniker>-<part>.c1brain, little-endian:
 //
-//   header   "C1BR", u32 version (9), u32 moniker, u32 lobe count, then per
+//   header   "C1BR", u32 version (10), u32 moniker, u32 lobe count, then per
 //            lobe: u32 neuron count, u8 grid width, u8 grid height,
 //            u8 rule 0 target lobe, u8 rule 1 target lobe, u8 perception
 //            copy (0 none, 1 copied, 2 copied mutually exclusive), and per
@@ -111,6 +112,29 @@ class Brain;
 //          reaction's reactants show as falls and its products as rises.
 //     'W'  world (format 9), after 'F': i32 x, i32 y of the hand, u32 the
 //          attended object's handle (0 none), i32 x, i32 y of its centre.
+//     'V'  votes (format 10), after 'W': how the winner-take-all lobes
+//          (decision, attention) summed their inputs in the last update
+//          before this frame.  u8 lobe count, then per lobe: u8 lobe index,
+//          per neuron u8 type 0 sum and u8 type 1 sum (after clamping and
+//          the lobe's input gain: the SVRule's type0 and type1), then a
+//          varint count of contributing dendrites and per dendrite a varint
+//          gap in keyframe order (as the 'D' record) and u8 contribution,
+//          (STW x source firing) >> 8, before clamping and gain.
+//     'M'  goal-direction matrix (format 10), after 'V': for each of the 40
+//          attention records, 16 drive weights (how much that kind of
+//          object has relieved each drive; the creature's second learner,
+//          outside the brain).  u8 0 then 640 zigzag varints, or u8 1, a
+//          varint count of changed weights, then per weight a varint gap
+//          and the zigzag varint value.
+//     'L'  learned words (format 10), after 'M', only when one changed: u8
+//          count, then per changed record u8 index, u8 length and the heard
+//          word, u8 length and the word it says back, u32 reinforcement.
+//     'N'  instinct (format 10), between frames, when the creature starts
+//          dreaming one: varint instinct number (counts from 0 in each
+//          part), 3 x (u8 lobe, u8 neuron) it replays, u8 decision neuron,
+//          u8 chemical, u8 concentration.  The instinct's chemical flows
+//          have origin instinct and this number, and its dendrite events
+//          (dreaming) come after this record and before the next.
 //
 // A frame is a context record followed by a keyframe or a delta.  A
 // keyframe comes first and then every 256 frames.  A brain whose layout
@@ -133,6 +157,19 @@ struct BrainRecordContext {
     std::array<std::uint8_t, 256> chemicals{};
     // The chemistry tables, laid out as the 'B' record's body.
     std::vector<std::uint8_t> chemistry;
+    // The goal-direction matrix, 40 x 16 in attention record order.
+    std::vector<std::int32_t> goal_matrix;
+    // Learned words: per record its heard word, said word, reinforcement.
+    struct Word {
+        std::string heard;
+        std::string said;
+        std::uint32_t reinforcement = 0;
+        bool operator==(const Word& other) const {
+            return heard == other.heard && said == other.said &&
+                   reinforcement == other.reinforcement;
+        }
+    };
+    std::vector<Word> words;
     std::int32_t hand_x = 0;
     std::int32_t hand_y = 0;
     std::uint32_t attended_object = 0;
@@ -227,6 +264,41 @@ private:
     ChemicalOrigin saved_origin_;
     std::uint32_t saved_number_;
 };
+
+// True once any brain is being recorded; lobes test this before reporting
+// their votes.
+extern bool g_brain_votes_wanted;
+
+class Lobe;
+
+// A winner-take-all lobe of `brain` is summing its inputs: forget the votes
+// of its last update.
+void begin_lobe_votes(const Brain* brain, const Lobe& lobe);
+
+// One dendrite's contribution to its neuron's input sum.
+void record_vote(const Brain* brain, const Dendrite& connection,
+                 std::uint8_t contribution);
+
+// A neuron's two input sums (the SVRule's type0 and type1).
+void record_neuron_sums(const Brain* brain, const Lobe& lobe,
+                        std::uint32_t neuron, std::uint8_t type0,
+                        std::uint8_t type1);
+
+// What an instinct replays (the 'N' record).
+struct InstinctRecord {
+    std::array<std::uint8_t, 3> lobes{};
+    std::array<std::uint8_t, 3> neurons{};
+    std::uint8_t decision_neuron = 0;
+    std::uint8_t chemical = 0;
+    std::uint8_t concentration = 0;
+};
+
+// Records that `brain`'s creature started dreaming an instinct.
+void record_instinct(const Brain* brain, const InstinctRecord& instinct);
+
+// The number of the instinct `brain` is dreaming (the last 'N'), for its
+// chemical flows.
+std::uint32_t current_instinct(const Brain* brain);
 
 // Records a stimulus reaching `brain`'s creature and returns its number for
 // the chemicals' flows (0 when the creature is not recorded).
