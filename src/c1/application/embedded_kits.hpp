@@ -49,6 +49,9 @@ constexpr std::uint32_t embedded_kit_message_header(
 // decide what to do with it.
 constexpr std::uint8_t kEmbeddedKitIdentityCode = 3;
 constexpr std::uint8_t kEmbeddedKitDataCode = 4;
+// Sent by CE 10.4 (lisdude) just before it raises a kit's window; kits that
+// do not know it ignore it.
+constexpr std::uint8_t kEmbeddedKitRaiseCode = 2;
 
 // Constructing the VARIANT pair and invoking the dispatch is the platform's
 // job; choosing the message is the application's.
@@ -160,6 +163,8 @@ public:
     virtual bool running_under_wine() const = 0;
     virtual bool launch_via_native_com(std::size_t tool_index) = 0;
     virtual bool launch_via_wine_proxy(std::size_t tool_index) = 0;
+    // Bring the kit's window above the game (from CE 10.4, by lisdude).
+    virtual void bring_kit_window_to_front(std::size_t tool_index) = 0;
 };
 
 bool execute_embedded_kit_tool(EmbeddedKitExecutionApi& api,

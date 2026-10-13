@@ -34,6 +34,7 @@ public:
     bool running_under_wine() const override;
     bool launch_via_native_com(std::size_t tool_index) override;
     bool launch_via_wine_proxy(std::size_t tool_index) override;
+    void bring_kit_window_to_front(std::size_t tool_index) override;
 
     bool send_kit_message(
         std::size_t tool_index,
