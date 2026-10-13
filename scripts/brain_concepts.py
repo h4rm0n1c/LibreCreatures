@@ -30,7 +30,11 @@
                                             Reward/Punishment and what it learns, at
                                             each change (or every EVERY ticks)
     brain_concepts.py causes FILE [N]       (format 7) why it was rewarded or
-                                            punished and which links that taught
+                                            punished and which links that taught;
+                                            (format 9) traced, not guessed: each
+                                            reinforcement is credited to the root
+                                            origins of the Reward or Punishment
+                                            that drove it (chemical_provenance.py)
     brain_concepts.py beliefs FILE [N]      what the brain holds at the end: each
                                             action's live links summed by the
                                             current meaning of the concept they read
@@ -711,8 +715,11 @@ def cmd_causes(path, top=12, window=8):
             taught[cause][f"{sign}{action_name(neuron)} when [{describe_meaning(meaning)}]"] += 1
 
     replay = BrainReplay(path)
-    if replay_version(path) < 7:
+    version = replay_version(path)
+    if version < 7:
         raise SystemExit("causes needs format 7 or later (drives and lobe chemical inputs)")
+    if version >= 9:
+        return traced_causes(path, top)
     replay.run(on_decision=on_decision, on_frame=on_frame)
     print(f"ticks {replay.first_tick}-{replay.last_tick}: {sum(episodes.values())} reward and "
           f"punishment onsets")
@@ -720,6 +727,68 @@ def cmd_causes(path, top=12, window=8):
         print(f"\n{count:5d} x {cause}")
         for link, n in taught[cause].most_common(4):
             print(f"         strengthened {link} ({n} reinforcements)")
+
+
+def traced_causes(path, top):
+    """Format 9: credit each decision reinforcement to the root origins of
+    the chemical behind it (type 0's chem 0, type 1's chem 1), as the
+    recorded chemical flows trace them."""
+    import chemical_provenance
+    from chemical_provenance import Provenance, brain_inputs, describe_mix
+    if CHEMICALS_FILE and not chemical_provenance.CHEMICAL_NAMES:
+        chemical_provenance.load_chemical_names(CHEMICALS_FILE)
+    provenance = Provenance()
+    state = {"tick": None, "inputs": {}}
+    credit = collections.defaultdict(collections.Counter)  # origin -> link -> share
+    weight = collections.Counter()                          # origin -> reinforcements
+    onsets = collections.defaultdict(collections.Counter)   # which -> origin -> share
+    current = {"reward": False, "punishment": False}
+
+    def advance(frame):
+        if state["tick"] != frame.tick:
+            provenance.update(frame)
+            if frame.chemistry:
+                state["inputs"] = brain_inputs(frame.chemistry)
+            state["tick"] = frame.tick
+
+    def on_decision(replay, frame, event, meaning):
+        advance(frame)
+        if event.kind != "reinforce" or event.dreaming:
+            return
+        _, neuron, rule, _ = event.key
+        chemical = state["inputs"].get((DECISION, rule))
+        if chemical is None:
+            return
+        sign = "+" if rule == 0 else "-"
+        link = f"{sign}{action_name(neuron)} when [{describe_meaning(meaning)}]"
+        for origin, share in provenance.mix(chemical).items():
+            credit[origin][link] += share
+            weight[origin] += share
+
+    def on_frame(replay, frame):
+        advance(frame)
+        for which, slot in (("reward", 0), ("punishment", 1)):
+            level = frame.lobe_chemicals.get((DECISION, slot), 0)
+            chemical = state["inputs"].get((DECISION, slot))
+            if level and not current[which] and chemical is not None:
+                for origin, share in provenance.mix(chemical).items():
+                    onsets[which][origin] += share
+            current[which] = bool(level)
+
+    replay = BrainReplay(path)
+    replay.run(on_decision=on_decision, on_frame=on_frame)
+    print(f"ticks {replay.first_tick}-{replay.last_tick}")
+    for which in ("reward", "punishment"):
+        total = sum(onsets[which].values())
+        if total:
+            print(f"\n{which} onsets: {total:.0f}; made from: "
+                  + describe_mix({o: v / total for o, v in onsets[which].most_common()}, 5))
+    total = sum(weight.values())
+    print(f"\n{total:.0f} decision reinforcements, credited to where their chemical came from:")
+    for origin, value in weight.most_common(top):
+        print(f"\n{value * 100 / total:5.1f}%  {origin}")
+        for link, share in credit[origin].most_common(4):
+            print(f"         taught {link} ({share:.1f})")
 
 
 def replay_version(path):

@@ -61,6 +61,15 @@ recording: what each perception neuron stands for (`perception`), the busiest
 concept neurons with their inputs and what was attended and done while each
 fired (`concepts`), the strongest learned concept-to-action links (`rules`),
 and one line per change of action with place and top drives (`timeline`).
+Since format 9 a recording also holds every stimulus the creature receives
+(what gave it, where, what it fed), all 256 chemical levels, every change to
+a chemical with its origin (emitter, reaction, decay, stimulus, CAOS `chem`,
+bacterium, instinct), the creature's chemistry tables, and the hand's and
+the attended object's positions. `brain_record.py check` proves the flows
+explain every chemical change. `scripts/chemical_provenance.py` traces each
+chemical back to its root origins (`roots`, or the largest rises of one
+chemical), and `brain_concepts.py causes` credits each decision
+reinforcement to where its Reward or Punishment came from.
 
 **Lab trace.** `C1_LAB_TRACE=<file>` appends one line per event:
 `<world tick> TAB <ms> TAB <category> TAB <text>`, where `<ms>` is Windows'

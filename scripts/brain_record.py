@@ -6,7 +6,9 @@
                                         attention, neurons and dendrites changed
     brain_record.py check FILE...       (format 5+) every change to a dendrite's
                                         source, STW, LTW or strength must be the
-                                        result of the recorded events; reports
+                                        result of the recorded events; (format
+                                        9) every change to a chemical must be
+                                        the sum of its recorded flows; reports
                                         any that are not
 
 As a module, read_recording(path) yields Frame objects that carry the full
@@ -75,6 +77,13 @@ class Frame:
     # life stage (format 8) is flags >> 2 & 7: see Frame.life_stage
     lobe_chemicals: dict = field(default_factory=dict)  # format 7: (lobe, 0..3) -> value
     events: list = field(default_factory=list)  # format 5: Event since the last frame
+    # Format 9:
+    chemicals: tuple = ()   # the 256 chemical concentrations
+    flows: list = field(default_factory=list)    # Flow since the last frame
+    stimuli: list = field(default_factory=list)  # Stimulus since the last frame
+    chemistry: dict = field(default_factory=dict)  # receptors, emitters, reactions
+    hand: tuple = ()        # (x, y) of the hand
+    attended: tuple = ()    # (handle, x, y) of the attended object; handle 0 none
 
 
 EVENT_KINDS = {1: "reinforce", 2: "relax", 3: "ltw step", 4: "strengthen",
@@ -95,6 +104,66 @@ class Event:
     key: tuple       # (lobe, neuron, rule, dendrite)
     before: tuple    # (source, current, STW, LTW, strength)
     after: tuple
+
+
+FLOW_ORIGINS = {0: "unknown", 1: "emitter", 2: "reaction", 3: "decay",
+                4: "stimulus", 5: "script", 6: "bacterium", 7: "instinct"}
+
+
+@dataclass
+class Flow:
+    origin: str      # FLOW_ORIGINS
+    number: int      # emitter or reaction (its place in chemistry), stimulus number
+    chemical: int
+    change: int
+
+
+@dataclass
+class Stimulus:
+    number: int
+    built_in: int            # 0..35, or 255 for a scripted stim
+    source: int              # the source object's CAOS handle
+    source_classifier: int   # packed: family << 24 | genus << 16 | species << 8
+    source_x: int
+    source_y: int
+    flags: int               # 1 self, 2 ignored asleep, 4 halved, 8 fed the sense
+    attention_record: int    # 255 none
+    sense_neuron: int
+    source_activation: int
+    sense_activation: int
+    chemicals: tuple         # ((chemical, amount) x 4)
+
+
+def read_chemistry(r):
+    """The 'B' record body: receptors, emitters, reactions as loaded."""
+    tables = {}
+    for name, width, fields in (
+            ("receptors", 8, ("domain", "tissue", "locus", "chemical", "threshold",
+                              "nominal", "gain", "flags")),
+            ("emitters", 8, ("domain", "tissue", "locus", "chemical", "threshold",
+                             "period", "amount", "flags"))):
+        tables[name] = [dict(zip(fields, r.take(f"{width}B"))) for _ in range(r.take("B"))]
+    reactions = []
+    for _ in range(r.take("B")):
+        values = r.take("9B")
+        reactions.append({"reactants": [(values[0], values[1]), (values[2], values[3])],
+                          "products": [(values[4], values[5]), (values[6], values[7])],
+                          "rate": values[8]})
+    tables["reactions"] = reactions
+    return tables
+
+
+def read_values(r, values, total):
+    """An 'I'/'X' style run: whole (u8 0) or changed values (u8 1)."""
+    if r.take("B") == 0:
+        return list(r.take(f"{total}B")) if total > 1 else [r.take("B")]
+    values = list(values)
+    number = 0
+    for _ in range(r.varint()):
+        number += r.varint()
+        values[number] = r.take("B")
+        number += 1
+    return values
 
 
 class Reader:
@@ -127,7 +196,7 @@ def read_layout(r):
         raise ValueError("not a C1 brain recording")
     r.pos = 4
     version = r.take("I")
-    if version not in (3, 4, 5, 6, 7, 8):
+    if version not in (3, 4, 5, 6, 7, 8, 9):
         raise ValueError(f"unknown recording version {version}")
     moniker = r.take("I")
     lobes = []
@@ -174,6 +243,11 @@ def read_recording(path):
     context = None
     flags = 0
     events = []
+    chemicals, flows, stimuli, chemistry, world = [], [], [], {}, {}
+
+    def extras():
+        return {"chemicals": tuple(chemicals), "flows": flows, "stimuli": stimuli,
+                "chemistry": chemistry, **world}
     for r in read_chunks(file_reader):
         while not r.done():
             kind = r.take("c")
@@ -185,15 +259,30 @@ def read_recording(path):
                 context = r.take("IiiBbI")
                 flags = r.take("B") if layout.version >= 5 else 0
             elif kind == b"I":
-                total = 16 + 4 * len(layout.lobes)
-                if r.take("B") == 0:
-                    inputs = list(r.take(f"{total}B")) if total > 1 else [r.take("B")]
-                else:
-                    number = 0
-                    for _ in range(r.varint()):
-                        number += r.varint()
-                        inputs[number] = r.take("B")
-                        number += 1
+                inputs = read_values(r, inputs, 16 + 4 * len(layout.lobes))
+            elif kind == b"B":
+                r.take("I")
+                chemistry = read_chemistry(r)
+            elif kind == b"X":
+                chemicals = read_values(r, chemicals, 256)
+            elif kind == b"F":
+                flows = []
+                for _ in range(r.varint()):
+                    origin, number, chemical = r.take("B"), r.varint(), r.take("B")
+                    zigzag = r.varint()
+                    change = zigzag >> 1 if not zigzag & 1 else -((zigzag + 1) >> 1)
+                    flows.append(Flow(FLOW_ORIGINS.get(origin, str(origin)), number,
+                                      chemical, change))
+            elif kind == b"W":
+                hand_x, hand_y, handle, at_x, at_y = r.take("iiIii")
+                world = {"hand": (hand_x, hand_y), "attended": (handle, at_x, at_y)}
+            elif kind == b"S":
+                number, built_in, source, classifier, sx, sy = r.varint(), *r.take("BIIii")
+                flags_s, record, sense, act_s, act_g = r.take("5B")
+                pairs = r.take("8B")
+                stimuli.append(Stimulus(number, built_in, source, classifier, sx, sy, flags_s,
+                                        record, sense, act_s, act_g,
+                                        tuple(zip(pairs[0::2], pairs[1::2]))))
             elif kind == b"E" and layout.version == 5:
                 event_kind, event_flags = r.take("2B")
                 number = r.varint()
@@ -236,8 +325,9 @@ def read_recording(path):
                 running = dict(dendrites)
                 yield layout, Frame(*context, True, neurons, dendrites,
                                     len(layout.neuron_keys), len(layout.dendrite_keys),
-                                    None, flags, *frame_inputs(inputs, layout), events)
-                events = []
+                                    None, flags, *frame_inputs(inputs, layout), events,
+                                    **extras())
+                events, flows, stimuli = [], [], []
             elif kind == b"D":
                 r.take("I")
                 changed_n = r.varint()
@@ -269,8 +359,9 @@ def read_recording(path):
                     changed_keys.append(key)
                     number += 1
                 yield layout, Frame(*context, False, neurons, dendrites, changed_n, changed_d,
-                                    changed_keys, flags, *frame_inputs(inputs, layout), events)
-                events = []
+                                    changed_keys, flags, *frame_inputs(inputs, layout), events,
+                                    **extras())
+                events, flows, stimuli = [], [], []
             else:
                 raise ValueError(f"bad record type {kind!r}")
 
@@ -323,12 +414,30 @@ def check(paths):
     for path in paths:
         state = None
         frames = events = continuity = unexplained = 0
+        flow_count = unexplained_chemicals = unknown_flows = 0
+        chemicals = None
         examples = []
         for layout, frame in read_recording(path):
             if layout.version < 5:
                 print(f"{path}: format {layout.version} has no events; nothing to check")
                 break
             frames += 1
+            if frame.chemicals:
+                if chemicals is not None:
+                    totals = [0] * 256
+                    for flow in frame.flows:
+                        totals[flow.chemical] += flow.change
+                        flow_count += 1
+                    for chemical in range(256):
+                        if frame.chemicals[chemical] - chemicals[chemical] != totals[chemical]:
+                            unexplained_chemicals += 1
+                            if len(examples) < 5:
+                                examples.append(
+                                    f"tick {frame.tick}: chemical {chemical} went "
+                                    f"{chemicals[chemical]} -> {frame.chemicals[chemical]}, "
+                                    f"flows say {totals[chemical]:+d}")
+                    unknown_flows += sum(1 for f in frame.flows if f.origin == "unknown")
+                chemicals = frame.chemicals
             if state is None:
                 # Events start after the first keyframe.
                 state = {k: structural(v) for k, v in frame.dendrites.items()}
@@ -354,11 +463,17 @@ def check(paths):
                                         f"events say {state[key]}")
                     state[key] = now
         else:
-            ok = continuity == 0 and unexplained == 0
+            ok = continuity == 0 and unexplained == 0 and unexplained_chemicals == 0
             failed |= not ok
+            flows_text = ""
+            if chemicals is not None:
+                flows_text = (f"; {flow_count} chemical flows, chemical changes the "
+                              f"flows do not explain: {unexplained_chemicals}, flows "
+                              f"of unknown origin: {unknown_flows}")
             print(f"{path}: {frames} frames, {events} events; "
                   f"events that start from a state the file did not have: {continuity}; "
-                  f"frame changes no event explains: {unexplained} -> {'OK' if ok else 'FAILED'}")
+                  f"frame changes no event explains: {unexplained}{flows_text}"
+                  f" -> {'OK' if ok else 'FAILED'}")
             for line in examples:
                 print("   " + line)
     return not failed
