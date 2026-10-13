@@ -65,10 +65,14 @@ def category_name(index):
     return compound.get(index) or creature.get(index) or f"category {index}"
 
 
-# General sense neurons the engine sets itself (creature.cpp): near the
-# wall being faced, riding a vehicle, and facts about an attended creature.
-# The rest are named by the genome's stimulus genes (set_genome).
-ENGINE_SENSES = {3: "near a wall", 4: "in a vehicle", 15: "it is a creature",
+# General sense neurons the engine sets itself: near the wall being faced,
+# riding a vehicle, and facts about an attended creature (creature.cpp,
+# UpdatePerception @0040bf10); how near the attended object is (255 - 2 x
+# horizontal distance, within 128 px) and whether it is active (its actv
+# is not 0) (update.cpp, UpdateAllCreatureBrainInputs @00432ee0).  The rest
+# are named by the genome's stimulus genes (set_genome).
+ENGINE_SENSES = {3: "near a wall", 4: "in a vehicle", 12: "it is near me",
+                 13: "it is active", 15: "it is a creature",
                  16: "it shares a parent with me", 17: "it is my parent",
                  18: "it is my child", 19: "it is the opposite sex"}
 GENERAL_SENSES = dict(ENGINE_SENSES)
