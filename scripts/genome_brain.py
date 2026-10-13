@@ -48,21 +48,31 @@ STIMULI = ["disappointment", "pointer pats me", "creature pats me",
            f"involuntary action {i}" for i in range(8)]
 
 
-def genes(path):
-    """Yield (family, subtype, stage, payload) for every gene."""
-    data = open(path, "rb").read()
+def genes(source):
+    """Yield (family, subtype, stage, payload, load_pass, flags) for every
+    gene.  `source` is a .gen path or the file's bytes.  Family is taken
+    modulo 3, as the game does."""
+    data = source if isinstance(source, (bytes, bytearray)) else open(source, "rb").read()
     starts = []
     position = data.find(b"gene")
-    while position != -1:
+    end = data.find(b"gend")
+    while position != -1 and (end == -1 or position < end):
         starts.append(position)
         position = data.find(b"gene", position + 4)
-    end = data.find(b"gend")
     for index, start in enumerate(starts):
         stop = starts[index + 1] if index + 1 < len(starts) else (end if end != -1 else len(data))
         header = data[start:start + 10]
         if len(header) < 10:
             break
-        yield header[4] % 3, header[5], header[8], data[start + 10:stop]
+        yield header[4] % 3, header[5], header[8], data[start + 10:stop], header[7], header[9]
+
+
+def applies(flags, sex):
+    """Whether a gene applies to a creature of `sex` (1 male, 2 female;
+    None: either).  Genome flags 0x08 male, 0x10 female, neither: both."""
+    if sex is None or not flags & 0x18:
+        return True
+    return bool((flags & 0x08 and sex == 1) or (flags & 0x10 and sex == 2))
 
 
 def read_chemical_names(path):
@@ -117,12 +127,15 @@ def parse_rule(payload, offset):
     return rule, offset
 
 
-def lobe_rules(path):
-    """Each stage-0 lobe gene, in order, as a dict."""
+def lobe_rules(source, sex=None):
+    """The lobes as the game builds them at birth (Brain::load_genome): every
+    stage-0 brain-family gene that applies to the sex, any subtype, those
+    with load pass 0 first and then the rest, numbered in that order."""
+    found = [(load_pass, payload) for family, subtype, stage, payload, load_pass, flags
+             in genes(source) if family == 0 and stage == 0 and applies(flags, sex)]
+    ordered = [p for lp, p in found if lp == 0] + [p for lp, p in found if lp != 0]
     lobes = []
-    for family, subtype, stage, payload in genes(path):
-        if family != 0 or subtype != 0 or stage != 0:
-            continue
+    for payload in ordered:
         lobe = {"grid": tuple(payload[0:4]), "perception copy": payload[4] % 3,
                 "threshold": payload[5], "relax": payload[6], "baseline": payload[7],
                 "input gain": payload[8], "state rule": expression(payload[9:17]),
@@ -135,11 +148,13 @@ def lobe_rules(path):
     return lobes
 
 
-def brain_receptors(path):
-    """(lobe, locus, chemical) for each stage-0 receptor on a brain lobe."""
+def brain_receptors(path, max_stage=0, sex=None):
+    """(lobe, locus, chemical) for each receptor on a brain lobe switched on
+    by life stage `max_stage`."""
     found = []
-    for family, subtype, stage, payload in genes(path):
-        if family != 1 or subtype != 0 or stage != 0 or len(payload) < 4:
+    for family, subtype, stage, payload, _, flags in genes(path):
+        if (family != 1 or subtype % 5 != 0 or stage > max_stage or len(payload) < 4
+                or not applies(flags, sex)):
             continue
         domain = payload[0] if payload[0] < 2 else payload[0] & 1
         if domain == 0:
@@ -147,34 +162,37 @@ def brain_receptors(path):
     return found
 
 
-def stimulus_genes(path):
-    """Each stage-0 stimulus gene: number, sense neuron, chemicals."""
-    found = []
-    for family, subtype, stage, payload in genes(path):
-        if family != 2 or subtype != 0 or stage != 0 or len(payload) < 13:
+def stimulus_genes(path, max_stage=0, sex=None):
+    """Each stimulus gene switched on by life stage `max_stage`: number,
+    sense neuron, chemicals.  A later gene for the same stimulus replaces
+    an earlier one, as the game reloads them."""
+    found = {}
+    for family, subtype, stage, payload, _, flags in genes(path):
+        if (family != 2 or subtype % 7 != 0 or stage > max_stage or len(payload) < 13
+                or not applies(flags, sex)):
             continue
         number = payload[0] % 36
         chemicals = [(payload[5 + 2 * i], payload[6 + 2 * i]) for i in range(4)]
-        found.append({"stimulus": number, "significance": payload[1],
-                      "sense neuron": payload[2], "intensity": payload[3],
-                      "flags": payload[4], "chemicals": chemicals})
-    return found
+        found[number] = {"stimulus": number, "significance": payload[1],
+                          "sense neuron": payload[2], "intensity": payload[3],
+                          "flags": payload[4], "chemicals": chemicals}
+    return list(found.values())
 
 
-def general_sense_names(path):
+def general_sense_names(path, max_stage=0, sex=None):
     """General sense neuron -> the stimuli that fire it, by name."""
     names = {}
-    for gene in stimulus_genes(path):
+    for gene in stimulus_genes(path, max_stage, sex):
         label = STIMULI[gene["stimulus"]] if gene["stimulus"] < len(STIMULI) else f"stimulus {gene['stimulus']}"
         names.setdefault(gene["sense neuron"], []).append(label)
     return {neuron: " / ".join(labels) for neuron, labels in names.items()}
 
 
-def chemical_inputs(path, chemicals=None):
+def chemical_inputs(path, chemicals=None, max_stage=0, sex=None):
     """(lobe, chem slot 0..3) -> chemical name, from receptors on loci 13..16."""
     chemicals = chemicals or {}
     found = {}
-    for lobe, locus, chemical in brain_receptors(path):
+    for lobe, locus, chemical in brain_receptors(path, max_stage, sex):
         if 13 <= locus <= 16:
             found[(lobe, locus - 13)] = chemicals.get(chemical, f"chemical {chemical}")
     return found
