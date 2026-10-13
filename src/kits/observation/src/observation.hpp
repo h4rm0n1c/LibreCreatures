@@ -14,6 +14,7 @@
 
 #include <memory>
 #include <string>
+#include <map>
 #include <vector>
 
 namespace observation {
@@ -37,6 +38,10 @@ public:
 
 protected:
     BOOL OnInitDialog() override;
+    // Brings the list up to date when the page is shown (show() skips a
+    // page nobody can see).
+    BOOL OnSetActive() override;
+    afx_msg LRESULT OnRefresh(WPARAM, LPARAM);
     afx_msg void OnSize(UINT type, int cx, int cy);
     afx_msg void OnColumnClick(NMHDR* header, LRESULT* result);
     afx_msg void OnDoubleClick(NMHDR* header, LRESULT* result);
@@ -48,9 +53,19 @@ private:
     void sort_rows();
     void show_sort_arrow();
     static int CALLBACK compare_rows(LPARAM first, LPARAM second, LPARAM page);
-    int find_row(const CString& moniker) const;
-    void set_row(int item, const c1kit::OverviewRecord& record, int icon);
     void fit_last_column();
+
+    // What each row shows, by the row's id (its item data), so a poll finds
+    // a creature's row in one lookup, writes only the cells that changed and
+    // sorts without reading the control back.
+    static constexpr int kColumnCount = 7;
+    struct Row {
+        CString cells[kColumnCount];
+        int icon = 0;
+    };
+    std::map<LPARAM, Row> rows_;
+    std::map<CString, LPARAM> row_ids_;  // moniker -> row id
+    LPARAM next_row_id_ = 1;
 
     ObservationSheet& sheet_;
     CListCtrl list_;
