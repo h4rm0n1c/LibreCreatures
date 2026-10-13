@@ -2903,6 +2903,11 @@ void C1WindowsDocument::update_creature_brain(std::size_t index) {
         context.y = skeleton.down_foot_y;
         context.action =
             static_cast<std::uint8_t>(creature->selected_action_id());
+        const auto& drive_levels =
+            creature->control_state().goal_direction_drive_levels;
+        for (std::size_t drive = 0; drive < context.drives.size(); ++drive) {
+            context.drives[drive] = drive_levels[drive];
+        }
         context.flags = static_cast<std::uint8_t>(
             (creature->is_asleep() ? 1 : 0) |
             (creature->instinct_runtime_state().dream_countdown != 0 ? 2 : 0));

@@ -28,7 +28,7 @@
 namespace creatures1::brain {
 namespace {
 
-constexpr std::uint32_t kFormatVersion = 6;
+constexpr std::uint32_t kFormatVersion = 7;
 // Frames are buffered and written as one compressed chunk this often, so a
 // game that is killed loses at most this many frames.
 constexpr std::uint32_t kFramesPerChunk = 32;
@@ -111,6 +111,7 @@ struct Recording {
     std::uint32_t part = 0;
     std::uint32_t frames = 0;
     Snapshot previous;
+    std::vector<std::uint8_t> previous_inputs;
     std::vector<std::uint8_t> pending;
 
     Recording() = default;
@@ -361,8 +362,20 @@ bool open_part(Recording& recording, const Snapshot& snapshot) {
 
 // Writes one frame.  A decay held back from a delta is put back in
 // `snapshot`, which then says what the file says.
+// Drives, then every lobe's chemical inputs ('I' record).
+std::vector<std::uint8_t> collect_inputs(const Brain& brain,
+                                         const BrainRecordContext& context) {
+    std::vector<std::uint8_t> inputs(context.drives.begin(), context.drives.end());
+    for (std::uint32_t index = 0; index < brain.lobe_count(); ++index) {
+        const auto& chemicals = brain.lobe(index).chemical_inputs();
+        inputs.insert(inputs.end(), chemicals.begin(), chemicals.end());
+    }
+    return inputs;
+}
+
 void write_frame(Recording& recording, Snapshot& snapshot,
-                 const BrainRecordContext& context) {
+                 const BrainRecordContext& context,
+                 const std::vector<std::uint8_t>& inputs) {
     Writer out(recording.pending);
     out.u8('C');
     out.u32(context.world_tick);
@@ -374,6 +387,29 @@ void write_frame(Recording& recording, Snapshot& snapshot,
     out.u8(context.flags);
 
     const bool keyframe = recording.frames % kKeyframeInterval == 0;
+    out.u8('I');
+    if (keyframe || recording.previous_inputs.size() != inputs.size()) {
+        out.u8(0);  // every value
+        for (std::uint8_t value : inputs) {
+            out.u8(value);
+        }
+    } else {
+        out.u8(1);  // the changed values
+        std::vector<std::uint32_t> changed;
+        for (std::uint32_t i = 0; i < inputs.size(); ++i) {
+            if (inputs[i] != recording.previous_inputs[i]) {
+                changed.push_back(i);
+            }
+        }
+        out.varint(static_cast<std::uint32_t>(changed.size()));
+        std::uint32_t next = 0;
+        for (std::uint32_t i : changed) {
+            out.varint(i - next);
+            out.u8(inputs[i]);
+            next = i + 1;
+        }
+    }
+    recording.previous_inputs = inputs;
     if (keyframe) {
         out.u8('K');
         out.u32(context.world_tick);
@@ -493,7 +529,7 @@ void record_brain_frame(const void* key, const Brain& brain,
         recordings_by_brain()[&brain] = &recording;
         g_brain_events_wanted = true;
     }
-    write_frame(recording, snapshot, context);
+    write_frame(recording, snapshot, context, collect_inputs(brain, context));
     recording.previous = std::move(snapshot);
 }
 
