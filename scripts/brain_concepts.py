@@ -23,6 +23,14 @@
     brain_concepts.py teaching FILE [N]     (format 7) the decision lobe's Reward
                                             and Punishment inputs against hunger,
                                             strongest drive, action and attention
+    brain_concepts.py stream FILE [FROM TO EVERY]
+                                            the norn's stream of thought: drives,
+                                            perception, concepts firing with their
+                                            current meanings, action scores, choice,
+                                            Reward/Punishment and what it learns, at
+                                            each change (or every EVERY ticks)
+    brain_concepts.py causes FILE [N]       (format 7) why it was rewarded or
+                                            punished and which links that taught
     brain_concepts.py beliefs FILE [N]      what the brain holds at the end: each
                                             action's live links summed by the
                                             current meaning of the concept they read
@@ -588,12 +596,145 @@ def cmd_teaching(path, top=8):
     show("by what was attended", by_attended)
 
 
+def frame_drives(frame):
+    """The 16 drive levels: recorded (format 7) or the drive lobe's outputs."""
+    if frame.drives:
+        return frame.drives
+    return tuple(frame.neurons.get((DRIVE, i), (0, 0))[1] for i in range(16))
+
+
+def top_drives(drives, count=3):
+    ranked = sorted(((drives[i], DRIVES[i]) for i in range(len(DRIVES))), reverse=True)
+    return [f"{name} {value}" for value, name in ranked[:count] if value]
+
+
+def cmd_stream(path, start=0, end=None, every=0):
+    """A norn's stream of thought: one line block whenever its action or
+    attention changes, Reward or Punishment arrives, or a decision link is
+    strengthened -- or every `every` ticks.  Each block: place and strongest
+    drives; what it perceives; the concepts firing, with what they mean now;
+    how the actions score; what it chose; Reward and Punishment; the
+    links strengthened since the last block, by meaning."""
+    end = end if end else None
+    learned = collections.Counter()
+    state = {"key": None, "last_tick": None}
+
+    def on_decision(replay, frame, event, meaning):
+        if event.kind in ("reinforce", "ltw step") and not event.dreaming:
+            _, neuron, rule, _ = event.key
+            sign = "+" if rule == 0 else "-"
+            learned[f"{sign}{action_name(neuron)} when [{describe_meaning(meaning)}]"] += 1
+
+    def on_frame(replay, frame):
+        if frame.tick < start or (end is not None and frame.tick > end):
+            learned.clear()
+            return
+        layout = replay.layout
+        chems = frame.lobe_chemicals
+        reward = chems.get((DECISION, 0), 0)
+        punishment = chems.get((DECISION, 1), 0)
+        key = (frame.action, frame.attention_slot)
+        due = every and (state["last_tick"] is None or frame.tick - state["last_tick"] >= every)
+        if not (key != state["key"] or reward or punishment or learned or due):
+            return
+        state["key"], state["last_tick"] = key, frame.tick
+        perceived = [replay.perception[n] for n in range(layout.lobes[PERCEPTION].neuron_count)
+                     if frame.neurons[(PERCEPTION, n)][1] and not replay.perception[n].startswith("drive")]
+        concepts = sorted(((frame.neurons[(CONCEPT, n)][1], n)
+                           for n in range(layout.lobes[CONCEPT].neuron_count)
+                           if frame.neurons[(CONCEPT, n)][1]), reverse=True)
+        thoughts = []
+        for strength, n in concepts:
+            meaning = describe_meaning(replay.meaning.get(n, ("?",)))
+            if meaning not in thoughts:
+                thoughts.append(meaning)
+            if len(thoughts) == 5:
+                break
+        scores = sorted(((frame.neurons[(DECISION, a)][0], a) for a in range(len(ACTIONS))),
+                        reverse=True)[:3]
+        flags = " asleep" if frame.flags & 1 else ""
+        flags += " dreaming" if frame.flags & 2 else ""
+        print(f"tick {frame.tick} at {frame.x},{frame.y}{flags}  feels: "
+              f"{', '.join(top_drives(frame_drives(frame))) or 'nothing'}")
+        print(f"   perceives: {'; '.join(perceived) or 'nothing'}  |  attends: {attended(frame)}")
+        print(f"   thinks: {' | '.join(thoughts) or 'nothing'}")
+        print(f"   weighs: {', '.join(f'{action_name(a)} {v}' for v, a in scores)}  ->  "
+              f"does {action_name(frame.action)}"
+              + (f"  REWARD {reward}" if reward else "") + (f"  PUNISHMENT {punishment}" if punishment else ""))
+        if learned:
+            print("   learns: " + "; ".join(f"{k} x{v}" for k, v in learned.most_common(4)))
+            learned.clear()
+
+    BrainReplay(path).run(on_decision=on_decision, on_frame=on_frame)
+
+
+def cmd_causes(path, top=12, window=8):
+    """Why the norn was rewarded or punished, and what it learned from it
+    (format 7).  For each onset of Reward or Punishment at the decision lobe:
+    what it was doing and attending, and which drive changed most over the
+    previous `window` frames; then which meaning -> action links that
+    Reward or Punishment strengthened (reinforce events) until it ended."""
+    history = collections.deque(maxlen=window + 1)
+    episodes = collections.Counter()
+    taught = collections.defaultdict(collections.Counter)
+    current = {"reward": None, "punishment": None}
+
+    def cause_of(frame, which):
+        drives = frame_drives(frame)
+        before = frame_drives(history[0]) if history else drives
+        deltas = sorted(((drives[i] - before[i], DRIVES[i]) for i in range(len(DRIVES))),
+                        key=lambda d: abs(d[0]), reverse=True)
+        change = (f"{deltas[0][1]} {'fell' if deltas[0][0] < 0 else 'rose'} {abs(deltas[0][0])}"
+                  if deltas and deltas[0][0] else "no drive change")
+        return f"{which} while {action_name(frame.action)} -> {attended(frame)}; {change}"
+
+    def on_frame(replay, frame):
+        if not frame.lobe_chemicals:
+            return
+        for which, slot in (("reward", 0), ("punishment", 1)):
+            level = frame.lobe_chemicals.get((DECISION, slot), 0)
+            if level and current[which] is None:
+                current[which] = cause_of(frame, which)
+                episodes[current[which]] += 1
+            elif not level:
+                current[which] = None
+        history.append(frame)
+
+    def on_decision(replay, frame, event, meaning):
+        if event.kind != "reinforce" or event.dreaming:
+            return
+        _, neuron, rule, _ = event.key
+        which = "reward" if rule == 0 else "punishment"
+        cause = current[which]
+        if cause is not None:
+            sign = "+" if rule == 0 else "-"
+            taught[cause][f"{sign}{action_name(neuron)} when [{describe_meaning(meaning)}]"] += 1
+
+    replay = BrainReplay(path)
+    if replay_version(path) < 7:
+        raise SystemExit("causes needs format 7 or later (drives and lobe chemical inputs)")
+    replay.run(on_decision=on_decision, on_frame=on_frame)
+    print(f"ticks {replay.first_tick}-{replay.last_tick}: {sum(episodes.values())} reward and "
+          f"punishment onsets")
+    for cause, count in episodes.most_common(top):
+        print(f"\n{count:5d} x {cause}")
+        for link, n in taught[cause].most_common(4):
+            print(f"         strengthened {link} ({n} reinforcements)")
+
+
+def replay_version(path):
+    for layout, _ in read_recording(path):
+        return layout.version
+    return 0
+
+
 if __name__ == "__main__":
     signal.signal(signal.SIGPIPE, signal.SIG_DFL)
     commands = {"perception": cmd_perception, "concepts": cmd_concepts,
                 "rules": cmd_rules, "timeline": cmd_timeline,
                 "learning": cmd_learning, "meanings": cmd_meanings,
-                "beliefs": cmd_beliefs, "teaching": cmd_teaching}
+                "beliefs": cmd_beliefs, "teaching": cmd_teaching,
+                "stream": cmd_stream, "causes": cmd_causes}
     if len(sys.argv) < 3 or sys.argv[1] not in commands:
         print(__doc__)
         sys.exit(2)
