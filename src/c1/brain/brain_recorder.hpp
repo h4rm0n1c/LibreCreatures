@@ -14,7 +14,7 @@ class Brain;
 //
 // One file per creature brain, <moniker>-<part>.c1brain, little-endian:
 //
-//   header   "C1BR", u32 version (5), u32 moniker, u32 lobe count, then per
+//   header   "C1BR", u32 version (6), u32 moniker, u32 lobe count, then per
 //            lobe: u32 neuron count, u8 grid width, u8 grid height,
 //            u8 rule 0 target lobe, u8 rule 1 target lobe, u8 perception
 //            copy (0 none, 1 copied, 2 copied mutually exclusive), and per
@@ -45,10 +45,24 @@ class Brain;
 //
 //     'E'  event: something the brain code did to one dendrite, written when
 //          it happens, so events come between frames in the order they
-//          happened.  u8 kind (DendriteEvent), u8 flags (1: while dreaming),
-//          varint dendrite number (keyframe order), then the dendrite before
-//          and after: u16 source (0xffff none), u8 current weight, STW, LTW,
-//          strength, each.  Events start after the part's first keyframe.
+//          happened.  u8 kind (DendriteEvent, low 7 bits; 0x80 set while
+//          dreaming), varint dendrite number (keyframe order), then only
+//          what that kind changed:
+//            reinforce, relax         u8 STW
+//            ltw step                 u8 LTW
+//            strengthen, weaken       u8 strength
+//            attach, rescue, migrate,
+//            migrate failed           u16 source (0xffff none), u8 STW,
+//                                     u8 LTW, u8 strength
+//            went loose               nothing: current weight, STW, LTW and
+//                                     strength become 0
+//            dream LTW raise          nothing: LTW becomes STW
+//            reset                    nothing: current weight becomes 0 and
+//                                     STW becomes LTW
+//          A reader knows each dendrite's state before the event from the
+//          last keyframe, the deltas and the events since.  Events start
+//          after the part's first keyframe.  (Format 5 wrote u8 kind, u8
+//          flags, the number, then the whole dendrite before and after.)
 //
 // A frame is a context record followed by a keyframe or a delta.  A
 // keyframe comes first and then every 256 frames.  A brain whose layout

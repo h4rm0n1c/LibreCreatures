@@ -4,7 +4,7 @@
     brain_record.py summary FILE...     frames, ticks, size, per-lobe activity
     brain_record.py frames FILE         one line per frame: tick, place, action,
                                         attention, neurons and dendrites changed
-    brain_record.py check FILE...       (format 5) every change to a dendrite's
+    brain_record.py check FILE...       (format 5+) every change to a dendrite's
                                         source, STW, LTW or strength must be the
                                         result of the recorded events; reports
                                         any that are not
@@ -118,7 +118,7 @@ def read_layout(r):
         raise ValueError("not a C1 brain recording")
     r.pos = 4
     version = r.take("I")
-    if version not in (3, 4, 5):
+    if version not in (3, 4, 5, 6):
         raise ValueError(f"unknown recording version {version}")
     moniker = r.take("I")
     lobes = []
@@ -151,6 +151,7 @@ def read_recording(path):
         file_reader = Reader(f.read())
     layout = read_layout(file_reader)
     neurons, dendrites = {}, {}
+    running = {}  # format 6: each dendrite's state as events last left it
     context = None
     flags = 0
     events = []
@@ -160,7 +161,7 @@ def read_recording(path):
             if kind == b"C":
                 context = r.take("IiiBbI")
                 flags = r.take("B") if layout.version >= 5 else 0
-            elif kind == b"E":
+            elif kind == b"E" and layout.version == 5:
                 event_kind, event_flags = r.take("2B")
                 number = r.varint()
                 before = r.take("H4B")
@@ -168,12 +169,38 @@ def read_recording(path):
                 events.append(Event(EVENT_KINDS.get(event_kind, str(event_kind)),
                                     bool(event_flags & 1),
                                     layout.dendrite_keys[number], before, after))
+            elif kind == b"E":
+                # Format 6: only what the event changed; the state before it
+                # is the running state (keyframe, deltas, events so far).
+                code = r.take("B")
+                key = layout.dendrite_keys[r.varint()]
+                event_kind = EVENT_KINDS.get(code & 0x7f, str(code & 0x7f))
+                before = running[key]
+                source, current, stw, ltw, strength = before
+                if event_kind in ("reinforce", "relax"):
+                    stw = r.take("B")
+                elif event_kind == "ltw step":
+                    ltw = r.take("B")
+                elif event_kind in ("strengthen", "weaken"):
+                    strength = r.take("B")
+                elif event_kind in ("attach", "rescue", "migrate", "migrate failed"):
+                    source, stw, ltw, strength = r.take("H3B")
+                elif event_kind == "went loose":
+                    current = stw = ltw = strength = 0
+                elif event_kind == "dream LTW raise":
+                    ltw = stw
+                elif event_kind == "reset":
+                    current, stw = 0, ltw
+                after = (source, current, stw, ltw, strength)
+                running[key] = after
+                events.append(Event(event_kind, bool(code & 0x80), key, before, after))
             elif kind == b"K":
                 r.take("I")
                 for key in layout.neuron_keys:
                     neurons[key] = r.take("2B")
                 for key in layout.dendrite_keys:
                     dendrites[key] = r.take("H4B")
+                running = dict(dendrites)
                 yield layout, Frame(*context, True, neurons, dendrites,
                                     len(layout.neuron_keys), len(layout.dendrite_keys),
                                     None, flags, events)
@@ -205,6 +232,7 @@ def read_recording(path):
                     if mask & 8: base = r.take("B")
                     if mask & 16: state = r.take("B")
                     dendrites[key] = (target, cur, tgt, base, state)
+                    running[key] = dendrites[key]
                     changed_keys.append(key)
                     number += 1
                 yield layout, Frame(*context, False, neurons, dendrites, changed_n, changed_d,

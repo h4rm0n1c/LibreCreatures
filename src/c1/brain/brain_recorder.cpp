@@ -28,7 +28,7 @@
 namespace creatures1::brain {
 namespace {
 
-constexpr std::uint32_t kFormatVersion = 5;
+constexpr std::uint32_t kFormatVersion = 6;
 // Frames are buffered and written as one compressed chunk this often, so a
 // game that is killed loses at most this many frames.
 constexpr std::uint32_t kFramesPerChunk = 32;
@@ -511,19 +511,41 @@ void record_dendrite_event(const Brain* brain, const LobeConnection& connection,
     if (place == recording.places.end()) {
         return;
     }
+    static_cast<void>(before);  // the reader knows it: its own state
     const auto dreaming = dreaming_brains().find(brain);
+    const bool is_dreaming = dreaming != dreaming_brains().end() && dreaming->second;
     Writer out(recording.pending);
     out.u8('E');
-    out.u8(static_cast<std::uint8_t>(kind));
-    out.u8(dreaming != dreaming_brains().end() && dreaming->second ? 1 : 0);
+    out.u8(static_cast<std::uint8_t>(static_cast<std::uint8_t>(kind) |
+                                     (is_dreaming ? 0x80 : 0)));
     out.varint(place->second.number);
-    for (const LobeConnection* state : {&before, &connection}) {
+    // Only what this kind of event changed (see the header).
+    switch (kind) {
+    case DendriteEvent::reinforce:
+    case DendriteEvent::relax:
+        out.u8(connection.target_weight);
+        break;
+    case DendriteEvent::ltw_step:
+        out.u8(connection.baseline_weight);
+        break;
+    case DendriteEvent::strengthen:
+    case DendriteEvent::weaken:
+        out.u8(connection.dendrite_state);
+        break;
+    case DendriteEvent::attach:
+    case DendriteEvent::rescue:
+    case DendriteEvent::migrate:
+    case DendriteEvent::migrate_failed:
         out.u16(source_index(*brain, place->second.source_lobe,
-                             state->target_neuron));
-        out.u8(state->current_weight);
-        out.u8(state->target_weight);
-        out.u8(state->baseline_weight);
-        out.u8(state->dendrite_state);
+                             connection.target_neuron));
+        out.u8(connection.target_weight);
+        out.u8(connection.baseline_weight);
+        out.u8(connection.dendrite_state);
+        break;
+    case DendriteEvent::went_loose:
+    case DendriteEvent::dream_ltw_raise:
+    case DendriteEvent::reset:
+        break;
     }
 }
 
