@@ -193,4 +193,10 @@ Cover page (dialog 129): bitmap 0x88 blitted at (7,7) with its palette.
     (Seen with the faithful rebuild, which saves at the same point; it
     follows for the original from its SavePreferences call site.) This
     build saves before sending the quit.
-
+18. Every 3-second poll rewrites the whole list: each creature's row is found
+    by reading every row's moniker back, all six cells are written whether
+    they changed or not, the list is re-sorted, and this happens with the
+    Options tab showing too. The cost grows with the population. Found by
+    NeoDement (The Virtual Things Discord), who measured the list update at
+    13-30 ms a poll, against 0.1 ms for the game query, in his fork, where
+    the kits run inside the game and the cost shows as a hitch.

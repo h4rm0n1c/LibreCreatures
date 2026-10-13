@@ -75,8 +75,15 @@ CString sex_text(const std::string& field) {
 // Overview page
 // ===========================================================================
 
+namespace {
+// Posted by OnSetActive: the sheet shows a page only after OnSetActive
+// returns, so the refresh waits until the page is visible.
+constexpr UINT kRefreshOverviewMessage = WM_APP + 0x40;
+}  // namespace
+
 BEGIN_MESSAGE_MAP(OverviewPage, CPropertyPage)
     ON_WM_SIZE()
+    ON_MESSAGE(kRefreshOverviewMessage, &OverviewPage::OnRefresh)
     ON_NOTIFY(LVN_COLUMNCLICK, kControlOverviewList, &OverviewPage::OnColumnClick)
     ON_NOTIFY(NM_DBLCLK, kControlOverviewList, &OverviewPage::OnDoubleClick)
 END_MESSAGE_MAP()
@@ -158,64 +165,100 @@ void OverviewPage::OnDoubleClick(NMHDR* header, LRESULT* result) {
     }
 }
 
-int OverviewPage::find_row(const CString& moniker) const {
-    for (int item = 0; item < list_.GetItemCount(); ++item) {
-        if (list_.GetItemText(item, 1) == moniker) {
-            return item;
-        }
-    }
-    return -1;
+BOOL OverviewPage::OnSetActive() {
+    const BOOL active = CPropertyPage::OnSetActive();
+    PostMessage(kRefreshOverviewMessage);
+    return active;
 }
 
-void OverviewPage::set_row(int item, const c1kit::OverviewRecord& record,
-                           int icon) {
-    list_.SetItem(item, 0, LVIF_TEXT | LVIF_IMAGE,
-                  CString(record[c1kit::kOverviewName].c_str()), icon, 0, 0,
-                  0);
-    list_.SetItemText(item, 2, sex_text(record[c1kit::kOverviewSex]));
-    list_.SetItemText(item, 3, CString(record[c1kit::kOverviewAge].c_str()));
-    list_.SetItemText(item, 4,
-                      CString(record[c1kit::kOverviewPregnancy].c_str()));
-    list_.SetItemText(item, 5,
-                      CString(record[c1kit::kOverviewLifeForce].c_str()));
-    list_.SetItemText(item, 6, CString(record[c1kit::kOverviewMedical].c_str()));
+LRESULT OverviewPage::OnRefresh(WPARAM, LPARAM) {
+    show(sheet_.records(), sheet_.settings());
+    return 0;
 }
 
 // UpdateOverviewList @ 0x00405b00: update rows found by moniker, insert new
-// ones, delete rows no longer reported.
+// ones, delete rows no longer reported.  Fix (bug 18), found and measured by
+// NeoDement (The Virtual Things Discord).  Not as the 1996 kit did it, which
+// rewrote every cell of every row on each poll, found rows by reading every
+// row's moniker back, and did so while the page was hidden: a page that is
+// not showing is left alone until it is shown (OnSetActive), rows are found
+// by id, only changed cells are written, and the list re-sorts only when a
+// row is added or a sorted cell changes.  The poll itself, and the alerts,
+// go on regardless (ObservationSheet::poll).
 void OverviewPage::show(const std::vector<c1kit::OverviewRecord>& records,
                         const AlertSettings& settings) {
-    if (list_.GetSafeHwnd() == nullptr) {
+    if (list_.GetSafeHwnd() == nullptr || !IsWindowVisible()) {
         return;
     }
-    std::vector<CString> present;
-    present.reserve(records.size());
+    list_.SetRedraw(FALSE);
+    bool resort = false;
+    std::map<CString, LPARAM> present;
     for (const c1kit::OverviewRecord& record : records) {
-        const CString moniker(record[c1kit::kOverviewMoniker].c_str());
-        present.push_back(moniker);
-        const int icon = row_icon(record, settings);
-        int item = find_row(moniker);
-        if (item < 0) {
-            item = list_.InsertItem(list_.GetItemCount(),
-                                    CString(record[c1kit::kOverviewName].c_str()),
-                                    icon);
-            list_.SetItemText(item, 1, moniker);
+        Row now;
+        now.cells[0] = CString(record[c1kit::kOverviewName].c_str());
+        now.cells[1] = CString(record[c1kit::kOverviewMoniker].c_str());
+        now.cells[2] = sex_text(record[c1kit::kOverviewSex]);
+        now.cells[3] = CString(record[c1kit::kOverviewAge].c_str());
+        now.cells[4] = CString(record[c1kit::kOverviewPregnancy].c_str());
+        now.cells[5] = CString(record[c1kit::kOverviewLifeForce].c_str());
+        now.cells[6] = CString(record[c1kit::kOverviewMedical].c_str());
+        now.icon = row_icon(record, settings);
+
+        const auto known = row_ids_.find(now.cells[1]);
+        if (known == row_ids_.end()) {
+            const LPARAM id = next_row_id_++;
+            const int item = list_.InsertItem(LVIF_TEXT | LVIF_IMAGE | LVIF_PARAM,
+                                              list_.GetItemCount(), now.cells[0], 0,
+                                              0, now.icon, id);
+            for (int column = 1; column < kColumnCount; ++column) {
+                list_.SetItemText(item, column, now.cells[column]);
+            }
+            row_ids_[now.cells[1]] = id;
+            rows_[id] = now;
+            present[now.cells[1]] = id;
+            resort = true;
+            continue;
         }
-        set_row(item, record, icon);
+        const LPARAM id = known->second;
+        present[now.cells[1]] = id;
+        Row& shown = rows_[id];
+        LVFINDINFO find = {};
+        find.flags = LVFI_PARAM;
+        find.lParam = id;
+        const int item = list_.FindItem(&find);
+        if (item < 0) {
+            continue;
+        }
+        if (now.cells[0] != shown.cells[0] || now.icon != shown.icon) {
+            list_.SetItem(item, 0, LVIF_TEXT | LVIF_IMAGE, now.cells[0], now.icon, 0, 0, 0);
+        }
+        for (int column = 2; column < kColumnCount; ++column) {
+            if (now.cells[column] != shown.cells[column]) {
+                list_.SetItemText(item, column, now.cells[column]);
+                resort = resort || column == sort_column_;
+            }
+        }
+        resort = resort || (sort_column_ == 0 && now.cells[0] != shown.cells[0]);
+        shown = now;
     }
     // Fix (bug 14): walk backwards, so deleting a row cannot skip the one
     // that slides into its place.
     for (int item = list_.GetItemCount() - 1; item >= 0; --item) {
-        const CString moniker = list_.GetItemText(item, 1);
-        bool reported = false;
-        for (const CString& key : present) {
-            reported = reported || key == moniker;
-        }
-        if (!reported) {
+        const LPARAM id = static_cast<LPARAM>(list_.GetItemData(item));
+        const auto row = rows_.find(id);
+        if (row == rows_.end() || present.count(row->second.cells[1]) == 0) {
+            if (row != rows_.end()) {
+                row_ids_.erase(row->second.cells[1]);
+                rows_.erase(row);
+            }
             list_.DeleteItem(item);
         }
     }
-    sort_rows();
+    if (resort) {
+        sort_rows();
+    }
+    list_.SetRedraw(TRUE);
+    list_.Invalidate(FALSE);
 }
 
 void OverviewPage::OnColumnClick(NMHDR* header, LRESULT* result) {
@@ -236,14 +279,17 @@ void OverviewPage::OnColumnClick(NMHDR* header, LRESULT* result) {
 // rows are updated in place and new ones added at the end.
 void OverviewPage::sort_rows() {
     if (sort_column_ >= 0 && list_.GetSafeHwnd() != nullptr) {
-        list_.SortItemsEx(&OverviewPage::compare_rows, reinterpret_cast<DWORD_PTR>(this));
+        list_.SortItems(&OverviewPage::compare_rows, reinterpret_cast<DWORD_PTR>(this));
     }
 }
 
+// Rows are compared by their cached cells (item data is the row id).
 int CALLBACK OverviewPage::compare_rows(LPARAM first, LPARAM second, LPARAM page) {
     const OverviewPage& self = *reinterpret_cast<const OverviewPage*>(page);
-    const auto cell = [&self](LPARAM row, int column) {
-        return std::string(CStringA(self.list_.GetItemText(static_cast<int>(row), column)));
+    const auto cell = [&self](LPARAM id, int column) {
+        const auto row = self.rows_.find(id);
+        return row == self.rows_.end() ? std::string()
+                                       : std::string(CStringA(row->second.cells[column]));
     };
     int order = c1kit::compare_overview_cells(cell(first, self.sort_column_),
                                               cell(second, self.sort_column_));
