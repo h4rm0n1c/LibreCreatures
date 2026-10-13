@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Decode what a recorded C1 brain has learned (recordings from C1_BRAIN_RECORD).
 
-  Any command takes --genome GEN (e.g. the parents' mum1.gen): general
+  Any command takes --genome GEN (e.g. the parents' mum1.gen) and
+  --chemicals ALLCHEMICALS.STR (default: two folders above GEN): general
   senses are then named from its stimulus genes, and the decision lobe's
   dendrite types from its rules (stock: type 0 excites, grown by Reward;
   type 1 inhibits, grown by Punishment).
@@ -14,12 +15,14 @@
                                             concept -> decision links
     brain_concepts.py timeline FILE         one line per change of action: tick,
                                             place, drives, what was attended
-    brain_concepts.py learning FILE [N]     each concept -> decision link through
-                                            its life: when it attached (migration
-                                            or re-attachment) and to what, when it
-                                            went loose, how its LTW and STW moved
-                                            while it stayed attached, and whether
-                                            the concept it reads was rewired meanwhile
+    brain_concepts.py meanings FILE [N]     how often concept neurons change what
+                                            they mean, and the meanings held longest
+    brain_concepts.py learning FILE [N]     learning by what it was about: action,
+                                            dendrite role, and the meaning the
+                                            concept had at that moment
+    brain_concepts.py beliefs FILE [N]      what the brain holds at the end: each
+                                            action's live links summed by the
+                                            current meaning of the concept they read
 
 `rules` shows the brain's last state only.  A dendrite that migrates gets a
 new source and fresh weights from the genome's range, and concept neurons
@@ -78,6 +81,9 @@ ENGINE_SENSES = {3: "near a wall", 4: "in a vehicle", 12: "it is near me",
 GENERAL_SENSES = dict(ENGINE_SENSES)
 # Dendrite type roles in the decision lobe, from the genome (set_genome).
 DECISION_TYPES = {0: "type 0", 1: "type 1"}
+# The game's allchemicals.str, for chemical names (--chemicals, else the one
+# two folders above the genome, as in a game install's Genetics folder).
+CHEMICALS_FILE = None
 
 
 def set_genome(path):
@@ -93,8 +99,13 @@ def set_genome(path):
     lobes = genome_brain.lobe_rules(path)
     if len(lobes) > DECISION:
         decision = lobes[DECISION]
-        chemicals = genome_brain.read_chemical_names(os.path.join(
-            os.path.dirname(os.path.dirname(os.path.abspath(path))), "allchemicals.str"))
+        chemicals = {}
+        for candidate in [CHEMICALS_FILE,
+                          os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(path))),
+                                       "allchemicals.str")]:
+            if candidate and os.path.exists(candidate):
+                chemicals = genome_brain.read_chemical_names(candidate)
+                break
         inputs = genome_brain.chemical_inputs(path, chemicals)
         for t, rule in enumerate(decision["types"]):
             sign = ("+" if f"+ type {t}" in decision["state rule"] or
@@ -280,117 +291,208 @@ OPENING = {"migrate", "attach", "rescue"}
 CLOSING = {"went loose", "migrate failed"}
 
 
+class BrainReplay:
+    """Replays a format 5+ recording's events and tracks, for every concept
+    neuron, what it means over time: the set of its inputs attached at
+    full strength (strength > 0).  A meaning is a sorted tuple of input
+    labels, or ("loose",).  Decision events are handed to `on_decision`
+    with the meaning their target concept had at that moment."""
+
+    def __init__(self, path):
+        self.path = path
+        self.layout = None
+        self.perception = None
+        self.concept_state = {}   # concept dendrite key -> (source, current, STW, LTW, strength)
+        self.decision_state = {}  # decision dendrite key -> same
+        self.meaning = {}         # concept neuron -> current meaning
+        self.epochs = collections.defaultdict(list)  # neuron -> [start, end, meaning]
+        self.first_tick = self.last_tick = None
+
+    def _meaning_of(self, neuron):
+        lobe = self.layout.lobes[CONCEPT]
+        count0, count1 = lobe.dendrite_counts[neuron]
+        inputs = []
+        for rule, count in ((0, count0), (1, count1)):
+            for d in range(count):
+                source, _, _, _, strength = self.concept_state[(CONCEPT, neuron, rule, d)]
+                if strength and source != 0xffff:
+                    inputs.append(target_label(self.layout, self.perception, CONCEPT, rule, source))
+        return tuple(sorted(inputs)) or ("loose",)
+
+    def _refresh(self, neuron, tick):
+        meaning = self._meaning_of(neuron)
+        if meaning != self.meaning.get(neuron):
+            history = self.epochs[neuron]
+            if history:
+                history[-1][1] = tick
+            history.append([tick, None, meaning])
+            self.meaning[neuron] = meaning
+
+    def meaning_of_target(self, decision_key):
+        source = self.decision_state[decision_key][0]
+        if source == 0xffff:
+            return ("none",)
+        return self.meaning.get(source, ("?",))
+
+    def run(self, on_decision=None, on_frame=None):
+        for layout, frame in read_recording(self.path):
+            if self.layout is None:
+                self.layout = layout
+                if layout.version < 5:
+                    raise SystemExit(f"format {layout.version} recording: it has no events; "
+                                     "meanings over time need format 5 or later")
+                self.perception = perception_labels(layout)
+                self.first_tick = frame.tick
+                for key, values in frame.dendrites.items():
+                    if key[0] == CONCEPT:
+                        self.concept_state[key] = values
+                    elif key[0] == DECISION:
+                        self.decision_state[key] = values
+                for neuron in range(layout.lobes[CONCEPT].neuron_count):
+                    self._refresh(neuron, frame.tick)
+                if on_frame:
+                    on_frame(self, frame)
+                continue
+            for event in frame.events:
+                if event.key[0] == CONCEPT:
+                    self.concept_state[event.key] = event.after
+                    self._refresh(event.key[1], frame.tick)
+                elif event.key[0] == DECISION:
+                    meaning = (self.meaning_of_target(event.key)
+                               if event.kind not in OPENING else None)
+                    self.decision_state[event.key] = event.after
+                    if event.kind in OPENING:
+                        meaning = self.meaning_of_target(event.key)
+                    if on_decision:
+                        on_decision(self, frame, event, meaning)
+            self.last_tick = frame.tick
+            if on_frame:
+                on_frame(self, frame)
+        for history in self.epochs.values():
+            if history and history[-1][1] is None:
+                history[-1][1] = self.last_tick
+
+
+def describe_meaning(meaning):
+    return "; ".join(meaning)
+
+
+def cmd_meanings(path, top=15):
+    """How often concept neurons change meaning, and which meanings last."""
+    replay = BrainReplay(path)
+    replay.run()
+    span = max(replay.last_tick - replay.first_tick, 1)
+    epochs = [e for history in replay.epochs.values() for e in history]
+    real = [e for e in epochs if e[2] != ("loose",)]
+    changes = sum(len(h) - 1 for h in replay.epochs.values())
+    # A meaning replaced within the same tick (an attach and a weaken in one
+    # update) was never in force; it is counted but has no length.
+    lasting = sorted(e[1] - e[0] for e in real if e[1] > e[0])
+    print(f"ticks {replay.first_tick}-{replay.last_tick}; {len(replay.epochs)} concept neurons, "
+          f"{changes} meaning changes; {len(lasting)} attached meanings held for a tick or more "
+          f"({len(real) - len(lasting)} replaced within their tick), median "
+          f"{lasting[len(lasting) // 2] if lasting else 0} ticks")
+    held = collections.Counter()
+    holders = collections.defaultdict(set)
+    for neuron, history in replay.epochs.items():
+        for start, end, meaning in history:
+            if meaning != ("loose",):
+                held[meaning] += end - start
+                holders[meaning].add(neuron)
+    loose_now = sum(1 for m in replay.meaning.values() if m == ("loose",))
+    print(f"concept neurons loose at the end: {loose_now}")
+    print(f"meanings held longest (neuron-ticks, % of the run summed over neurons):")
+    for meaning, ticks in held.most_common(top):
+        print(f"   {ticks * 100 / span:6.0f}%  on {len(holders[meaning]):3d} neurons  "
+              f"[{describe_meaning(meaning)}]")
+
+
 def cmd_learning(path, top=12):
-    """Each concept -> decision link through its life, from the recorded
-    events (format 5): how it attached, every weight change with its cause,
-    and how it ended.  Nothing is inferred from field values."""
-    links = []
-    open_links = {}
-    concept_changes = collections.Counter()
-    meanings = {}
-    layout = perception = None
-    start_tick = last_tick = None
-    totals = collections.Counter()
+    """Learning grouped by what it was about: (action, dendrite role,
+    meaning of the concept at the moment), from the recorded events."""
+    totals = collections.defaultdict(lambda: collections.Counter())
 
-    def open_link(key, values, tick, how, dendrites):
-        target = values[0]
-        link = {"key": key, "target": target, "start": tick, "began": how,
-                "ltw0": values[3], "stw0": values[2], "ltw": values[3], "stw": values[2],
-                "end": None, "ended": None, "causes": collections.Counter(),
-                "ltw_awake": 0, "ltw_dream": 0,
-                "meaning": concept_meaning(layout, perception, dendrites, target)
-                if target != 0xffff else ("none",)}
-        links.append(link)
-        open_links[key] = link
+    def on_decision(replay, frame, event, meaning):
+        _, neuron, rule, _ = event.key
+        bucket = totals[(neuron, rule, meaning)]
+        if event.kind == "ltw step":
+            bucket["dream LTW" if event.dreaming else "awake LTW"] += event.after[3] - event.before[3]
+        elif event.kind == "dream LTW raise":
+            bucket["dream LTW"] += event.after[3] - event.before[3]
+        elif event.kind == "reinforce":
+            bucket["dream reinforce" if event.dreaming else "reinforce"] += 1
+        elif event.kind in OPENING:
+            bucket["links made"] += 1
+        elif event.kind in CLOSING:
+            bucket["links lost"] += 1
+            bucket["LTW lost"] += event.before[3]
 
-    for layout_now, frame in read_recording(path):
-        if layout is None:
-            layout = layout_now
-            if layout.version < 5:
-                print(f"format {layout.version} recording: it has no events, and "
-                      "learning cannot be told apart from rewiring without them")
-                return
-            perception = perception_labels(layout)
-            start_tick = frame.tick
-            for key, values in frame.dendrites.items():
-                if key[0] == DECISION and values[4] and values[0] != 0xffff:
-                    open_link(key, values, frame.tick, "present at start", frame.dendrites)
-        for event in frame.events:
-            totals[(event.key[0], event.kind)] += 1
-            if event.key[0] == CONCEPT:
-                if event.kind in OPENING or event.kind in CLOSING:
-                    concept_changes[event.key[1]] += 1
-                continue
-            if event.key[0] != DECISION:
-                continue
-            link = open_links.get(event.key)
-            if event.kind in OPENING:
-                if link:
-                    link["end"], link["ended"] = frame.tick, "replaced by " + event.kind
-                    del open_links[event.key]
-                open_link(event.key, event.after, frame.tick, event.kind, frame.dendrites)
-                continue
-            if link is None:
-                continue
-            link["causes"][event.kind + (" (dream)" if event.dreaming else "")] += 1
-            # Learning moves LTW by an LTW step, or by the after-dream raise.
-            # Going loose also zeroes LTW, but that is decay, not learning.
-            ltw_change = event.after[3] - event.before[3]
-            if ltw_change and event.kind in ("ltw step", "dream LTW raise"):
-                if event.dreaming or event.kind == "dream LTW raise":
-                    link["ltw_dream"] += ltw_change
-                else:
-                    link["ltw_awake"] += ltw_change
-            link["ltw"], link["stw"] = event.after[3], event.after[2]
-            if event.kind in CLOSING:
-                link["end"], link["ended"] = frame.tick, event.kind
-                del open_links[event.key]
-        last_tick = frame.tick
-    if layout is None:
-        return
+    replay = BrainReplay(path)
+    replay.run(on_decision=on_decision)
+    print(f"ticks {replay.first_tick}-{replay.last_tick}")
 
-    print(f"ticks {start_tick}-{last_tick}")
-    print("decision lobe events: " + ", ".join(
-        f"{kind} {count}" for (lobe, kind), count in totals.most_common() if lobe == DECISION))
-    print("concept lobe events:  " + ", ".join(
-        f"{kind} {count}" for (lobe, kind), count in totals.most_common() if lobe == CONCEPT))
-    print(f"concept neurons rewired (attach/migrate/went loose) during the run: "
-          f"{len(concept_changes)} of {layout.lobes[CONCEPT].neuron_count}")
+    def line(key, c):
+        neuron, rule, meaning = key
+        return (f"{action_name(neuron):11s} {DECISION_TYPES[rule]:38s} awake LTW {c['awake LTW']:+5d}  "
+                f"dream LTW {c['dream LTW']:+5d}  reinforced {c['reinforce']:5d}  links made "
+                f"{c['links made']:4d} lost {c['links lost']:4d} (LTW lost {c['LTW lost']})  "
+                f"[{describe_meaning(meaning)}]")
 
-    def describe(link):
-        _, neuron, rule, _ = link["key"]
-        span = f"{link['start']}-{link['end'] or 'end'}"
-        ended = f", {link['ended']}" if link["ended"] else ""
-        causes = ", ".join(f"{k} {v}" for k, v in link["causes"].most_common(4))
-        return (f"{action_name(neuron):11s} {DECISION_TYPES[rule]}  LTW {link['ltw0']:3d} -> {link['ltw']:3d} "
-                f"(awake {link['ltw_awake']:+d}, dreaming {link['ltw_dream']:+d})  "
-                f"ticks {span} ({link['began']}{ended})  concept {link['target']} "
-                f"[{'; '.join(link['meaning'])}]  events: {causes}")
+    awake = sorted(totals.items(), key=lambda kv: kv[1]["awake LTW"], reverse=True)
+    print(f"\nlearned while awake, by what it was about:")
+    for key, c in awake[:top]:
+        if c["awake LTW"] > 0:
+            print("   " + line(key, c))
+    dream = sorted(totals.items(), key=lambda kv: kv[1]["dream LTW"], reverse=True)
+    print(f"\nlearned while dreaming (instincts):")
+    for key, c in dream[:top]:
+        if c["dream LTW"] > 0:
+            print("   " + line(key, c))
+    lost = sum(c["LTW lost"] for c in totals.values())
+    gained = sum(c["awake LTW"] + c["dream LTW"] for c in totals.values())
+    print(f"\nLTW gained {gained}, LTW lost when links went loose or failed to migrate {lost}")
 
-    awake = sorted((l for l in links if l["ltw_awake"]),
-                   key=lambda l: abs(l["ltw_awake"]), reverse=True)
-    print(f"\nlinks whose LTW changed while awake (learning from experience): {len(awake)}")
-    for link in awake[:top]:
-        print("   " + describe(link))
-    dream = sorted((l for l in links if l["ltw_dream"]),
-                   key=lambda l: abs(l["ltw_dream"]), reverse=True)
-    print(f"\nlinks whose LTW changed while dreaming (instincts): {len(dream)}")
-    for link in dream[:top]:
-        print("   " + describe(link))
-    print("\nlinks opened during the run, by how: " + ", ".join(
-        f"{k} {v}" for k, v in collections.Counter(
-            l["began"] for l in links if l["began"] != "present at start").most_common()))
+
+def cmd_beliefs(path, top=20):
+    """What the brain holds at the end: for each action, the LTW of its live
+    links summed by the current meaning of the concept each reads, with
+    inhibiting links counted against."""
+    replay = BrainReplay(path)
+    replay.run()
+    held = collections.defaultdict(lambda: [0, 0, 0])  # (action, meaning) -> [excite, inhibit, links]
+    for key, (source, _, _, ltw, strength) in replay.decision_state.items():
+        if not strength or source == 0xffff or not ltw:
+            continue
+        _, neuron, rule, _ = key
+        meaning = replay.meaning.get(source, ("?",))
+        if meaning == ("loose",):
+            continue
+        entry = held[(neuron, meaning)]
+        entry[rule] += ltw
+        entry[2] += 1
+    print(f"at tick {replay.last_tick}: {len(held)} meaning -> action beliefs "
+          f"(type 0 = {DECISION_TYPES[0]}, type 1 = {DECISION_TYPES[1]})")
+    ranked = sorted(held.items(), key=lambda kv: abs(kv[1][0] - kv[1][1]), reverse=True)
+    for (neuron, meaning), (excite, inhibit, links) in ranked[:top]:
+        net = excite - inhibit
+        print(f"   {'DO  ' if net > 0 else 'DONT'} {action_name(neuron):11s} net {net:+5d} "
+              f"(+{excite} -{inhibit}, {links} links)  when [{describe_meaning(meaning)}]")
 
 
 if __name__ == "__main__":
     signal.signal(signal.SIGPIPE, signal.SIG_DFL)
     commands = {"perception": cmd_perception, "concepts": cmd_concepts,
                 "rules": cmd_rules, "timeline": cmd_timeline,
-                "learning": cmd_learning}
+                "learning": cmd_learning, "meanings": cmd_meanings,
+                "beliefs": cmd_beliefs}
     if len(sys.argv) < 3 or sys.argv[1] not in commands:
         print(__doc__)
         sys.exit(2)
     args = sys.argv[3:]
+    if "--chemicals" in args:
+        at = args.index("--chemicals")
+        CHEMICALS_FILE = args[at + 1]
+        del args[at:at + 2]
     if "--genome" in args:
         at = args.index("--genome")
         set_genome(args[at + 1])
