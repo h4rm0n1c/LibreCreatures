@@ -70,6 +70,8 @@ class Frame:
     changed_dendrites: int
     changed_dendrite_keys: list | None = None  # None on a keyframe (all may differ)
     flags: int = 0          # format 5: 1 asleep, 2 dreaming
+    drives: tuple = ()      # format 7: the creature's 16 drive levels
+    lobe_chemicals: dict = field(default_factory=dict)  # format 7: (lobe, 0..3) -> value
     events: list = field(default_factory=list)  # format 5: Event since the last frame
 
 
@@ -118,7 +120,7 @@ def read_layout(r):
         raise ValueError("not a C1 brain recording")
     r.pos = 4
     version = r.take("I")
-    if version not in (3, 4, 5, 6):
+    if version not in (3, 4, 5, 6, 7):
         raise ValueError(f"unknown recording version {version}")
     moniker = r.take("I")
     lobes = []
@@ -145,6 +147,15 @@ def read_chunks(r):
         yield Reader(raw)
 
 
+def frame_inputs(inputs, layout):
+    """(drives, lobe chemicals) from a format 7 'I' state; empty before."""
+    if not inputs:
+        return (), {}
+    chemicals = {(lobe, slot): inputs[16 + 4 * lobe + slot]
+                 for lobe in range(len(layout.lobes)) for slot in range(4)}
+    return tuple(inputs[:16]), chemicals
+
+
 def read_recording(path):
     """Yield (layout, Frame) for every frame, with the full state rebuilt."""
     with open(path, "rb") as f:
@@ -152,6 +163,7 @@ def read_recording(path):
     layout = read_layout(file_reader)
     neurons, dendrites = {}, {}
     running = {}  # format 6: each dendrite's state as events last left it
+    inputs = []   # format 7: drives then each lobe's chem 0..3
     context = None
     flags = 0
     events = []
@@ -161,6 +173,16 @@ def read_recording(path):
             if kind == b"C":
                 context = r.take("IiiBbI")
                 flags = r.take("B") if layout.version >= 5 else 0
+            elif kind == b"I":
+                total = 16 + 4 * len(layout.lobes)
+                if r.take("B") == 0:
+                    inputs = list(r.take(f"{total}B")) if total > 1 else [r.take("B")]
+                else:
+                    number = 0
+                    for _ in range(r.varint()):
+                        number += r.varint()
+                        inputs[number] = r.take("B")
+                        number += 1
             elif kind == b"E" and layout.version == 5:
                 event_kind, event_flags = r.take("2B")
                 number = r.varint()
@@ -203,7 +225,7 @@ def read_recording(path):
                 running = dict(dendrites)
                 yield layout, Frame(*context, True, neurons, dendrites,
                                     len(layout.neuron_keys), len(layout.dendrite_keys),
-                                    None, flags, events)
+                                    None, flags, events, *frame_inputs(inputs, layout))
                 events = []
             elif kind == b"D":
                 r.take("I")
@@ -236,7 +258,7 @@ def read_recording(path):
                     changed_keys.append(key)
                     number += 1
                 yield layout, Frame(*context, False, neurons, dendrites, changed_n, changed_d,
-                                    changed_keys, flags, events)
+                                    changed_keys, flags, events, *frame_inputs(inputs, layout))
                 events = []
             else:
                 raise ValueError(f"bad record type {kind!r}")

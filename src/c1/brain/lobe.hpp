@@ -149,6 +149,11 @@ public:
     const LobeConnectionRule& connection_rule(std::size_t index) const;
     LobeConnectionRule& connection_rule(std::size_t index);
     LobeLatePhaseRuntimeState& late_phase_state();
+    // The lobe's four chemical inputs (rule registers chem 0..3), which
+    // receptor genes set through loci 13..16.
+    const std::array<std::uint8_t, 4>& chemical_inputs() const {
+        return late_phase_runtime_state.token_evaluation_state;
+    }
     std::uint32_t active_neuron_count() const;
     LobeNeuron* active_neuron(std::uint32_t index) const;
     void swap_active_neurons(std::uint32_t first, std::uint32_t second);

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 
 namespace creatures1::brain {
@@ -14,7 +15,7 @@ class Brain;
 //
 // One file per creature brain, <moniker>-<part>.c1brain, little-endian:
 //
-//   header   "C1BR", u32 version (6), u32 moniker, u32 lobe count, then per
+//   header   "C1BR", u32 version (7), u32 moniker, u32 lobe count, then per
 //            lobe: u32 neuron count, u8 grid width, u8 grid height,
 //            u8 rule 0 target lobe, u8 rule 1 target lobe, u8 perception
 //            copy (0 none, 1 copied, 2 copied mutually exclusive), and per
@@ -28,6 +29,12 @@ class Brain;
 //          i8 attention slot (-1 none), u32 attended object's classifier,
 //          u8 flags (1 asleep, 2 dreaming: instincts waiting to be
 //          processed).
+//     'I'  inputs, right after each 'C' (format 7): the creature's 16 drive
+//          levels, then each lobe's four chemical inputs (chem 0..3) in
+//          lobe order -- 16 + 4 x lobe count values in all.  u8 0 then
+//          every value as u8 (on a keyframe), or u8 1, a varint count of
+//          changed values, then per value a varint gap from the previous
+//          one's number + 1 and the u8 value.
 //     'K'  keyframe: every neuron (u8 activation, u8 firing strength) in lobe
 //          order, then every dendrite (u16 target neuron index, 0xffff when
 //          none; u8 current weight, target weight, baseline weight, state)
@@ -78,6 +85,7 @@ struct BrainRecordContext {
     std::int8_t attention_slot = -1;
     std::uint32_t attention_classifier = 0;
     std::uint8_t flags = 0;  // 1 asleep, 2 dreaming
+    std::array<std::uint8_t, 16> drives{};  // the creature's drive levels
 };
 
 // What the brain code did to a dendrite (the 'E' record's kind).

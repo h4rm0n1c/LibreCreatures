@@ -20,6 +20,9 @@
     brain_concepts.py learning FILE [N]     learning by what it was about: action,
                                             dendrite role, and the meaning the
                                             concept had at that moment
+    brain_concepts.py teaching FILE [N]     (format 7) the decision lobe's Reward
+                                            and Punishment inputs against hunger,
+                                            strongest drive, action and attention
     brain_concepts.py beliefs FILE [N]      what the brain holds at the end: each
                                             action's live links summed by the
                                             current meaning of the concept they read
@@ -479,12 +482,67 @@ def cmd_beliefs(path, top=20):
               f"(+{excite} -{inhibit}, {links} links)  when [{describe_meaning(meaning)}]")
 
 
+def cmd_teaching(path, top=8):
+    """What taught the decision lobe (format 7): its Reward (chem 0) and
+    Punishment (chem 1) inputs each frame, against the hunger drive, the
+    chosen action, what was attended and the strongest drive."""
+    frames = 0
+    totals = collections.Counter()
+    by_hunger = collections.defaultdict(lambda: [0, 0, 0])   # bucket -> [frames, reward, punishment]
+    by_action = collections.defaultdict(lambda: [0, 0, 0])
+    by_attended = collections.defaultdict(lambda: [0, 0, 0])
+    by_drive = collections.defaultdict(lambda: [0, 0, 0])
+    layout = None
+    for layout, frame in read_recording(path):
+        if layout.version < 7:
+            raise SystemExit(f"format {layout.version} recording: it has no lobe inputs; "
+                             "teaching needs format 7")
+        if not frame.drives:
+            continue
+        frames += 1
+        reward = frame.lobe_chemicals[(DECISION, 0)]
+        punishment = frame.lobe_chemicals[(DECISION, 1)]
+        totals["reward"] += reward
+        totals["punishment"] += punishment
+        totals["reward frames"] += reward > 0
+        totals["punishment frames"] += punishment > 0
+        hunger = frame.drives[2]
+        top_drive = max(range(13), key=lambda i: frame.drives[i])
+        for table, key in ((by_hunger, min(hunger // 50, 4)), (by_action, action_name(frame.action)),
+                           (by_attended, attended(frame)),
+                           (by_drive, DRIVES[top_drive] if frame.drives[top_drive] else "none")):
+            row = table[key]
+            row[0] += 1
+            row[1] += reward
+            row[2] += punishment
+    if not frames:
+        return
+    print(f"{frames} frames; Reward present in {totals['reward frames'] * 100 // frames}% "
+          f"(mean {totals['reward'] / frames:.1f}), Punishment present in "
+          f"{totals['punishment frames'] * 100 // frames}% (mean {totals['punishment'] / frames:.1f})")
+
+    def show(title, table, keys=None):
+        print(f"\n{title}: frames, mean Reward, mean Punishment")
+        items = sorted(table.items(), key=lambda kv: -kv[1][0]) if keys is None else \
+            [(k, table[k]) for k in keys if k in table]
+        for key, (count, reward, punishment) in items[:top if keys is None else len(items)]:
+            print(f"   {str(key):22s} {count * 100 / frames:5.1f}%  reward {reward / count:6.1f}  "
+                  f"punishment {punishment / count:6.1f}")
+    labels = {0: "hunger 0-49", 1: "hunger 50-99", 2: "hunger 100-149", 3: "hunger 150-199",
+              4: "hunger 200+"}
+    show("by hunger", {labels[k]: v for k, v in by_hunger.items()},
+         [labels[k] for k in range(5)])
+    show("by strongest drive", by_drive)
+    show("by action", by_action)
+    show("by what was attended", by_attended)
+
+
 if __name__ == "__main__":
     signal.signal(signal.SIGPIPE, signal.SIG_DFL)
     commands = {"perception": cmd_perception, "concepts": cmd_concepts,
                 "rules": cmd_rules, "timeline": cmd_timeline,
                 "learning": cmd_learning, "meanings": cmd_meanings,
-                "beliefs": cmd_beliefs}
+                "beliefs": cmd_beliefs, "teaching": cmd_teaching}
     if len(sys.argv) < 3 or sys.argv[1] not in commands:
         print(__doc__)
         sys.exit(2)
