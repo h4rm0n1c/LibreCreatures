@@ -150,6 +150,15 @@ bool execute_embedded_kit_tool(EmbeddedKitExecutionApi& api,
                               : api.launch_via_native_com(tool_index);
     lab_trace(LabTrace::kits, "launch slot=%u -> %s",
               static_cast<unsigned>(tool_index), launched ? "ok" : "failed");
+    if (launched) {
+        // Fix from Creatures 1 Community Edition 10.4 by lisdude
+        // (https://lisdude.com/Creatures/Community/C1/), ported here: "Kits
+        // now properly appear above the game window instead of behind it in
+        // modern versions of Windows."  10.4's ExecuteEmbeddedKitTool
+        // (@00444af0) ends by raising the kit's window (@004449b0); 10.3
+        // (@004444e0) left it to Windows, which often opens it behind the game.
+        api.bring_kit_window_to_front(tool_index);
+    }
     return launched;
 }
 

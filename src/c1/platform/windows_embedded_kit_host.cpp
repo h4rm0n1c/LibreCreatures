@@ -217,6 +217,110 @@ bool WindowsEmbeddedKitHost::launch_via_wine_proxy(std::size_t tool_index) {
     return true;
 }
 
+namespace {
+
+// What the window search looks for: the kit's process id, or, when the game
+// did not start the process itself (COM did), the kit's executable path.
+struct KitWindowSearch {
+    DWORD process_id = 0;
+    const char* executable_path = nullptr;
+    HWND found = nullptr;
+};
+
+using GetModuleFileNameExAFn = DWORD(WINAPI*)(HANDLE, HMODULE, LPSTR, DWORD);
+
+GetModuleFileNameExAFn module_file_name_function() {
+    // 10.4 loads psapi.dll on first use, as here.
+    static const GetModuleFileNameExAFn function = [] {
+        const HMODULE psapi = LoadLibraryA("psapi.dll");
+        return psapi == nullptr
+                   ? nullptr
+                   : reinterpret_cast<GetModuleFileNameExAFn>(
+                         GetProcAddress(psapi, "GetModuleFileNameExA"));
+    }();
+    return function;
+}
+
+// The EnumWindows callback of CE 10.4 (@004447f0): the first visible
+// top-level window whose process is the kit's.
+BOOL CALLBACK find_kit_window(HWND window, LPARAM parameter) {
+    auto& search = *reinterpret_cast<KitWindowSearch*>(parameter);
+    if (!IsWindowVisible(window)) {
+        return TRUE;
+    }
+    DWORD window_process = 0;
+    GetWindowThreadProcessId(window, &window_process);
+    bool matches = false;
+    if (search.process_id != 0) {
+        matches = window_process == search.process_id;
+    } else if (const GetModuleFileNameExAFn module_file_name =
+                   module_file_name_function()) {
+        if (HANDLE process = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
+                                         FALSE, window_process)) {
+            std::array<char, MAX_PATH> path{};
+            const DWORD length = module_file_name(process, nullptr, path.data(),
+                                                  static_cast<DWORD>(path.size()));
+            CloseHandle(process);
+            // Not native: the registry and the module name may differ in
+            // case, so the paths compare without it.
+            matches = length - 1u < MAX_PATH - 1u &&
+                      _stricmp(path.data(), search.executable_path) == 0;
+        }
+    }
+    if (!matches) {
+        return TRUE;
+    }
+    search.found = window;
+    return FALSE;
+}
+
+} // namespace
+
+void WindowsEmbeddedKitHost::bring_kit_window_to_front(std::size_t tool_index) {
+    // Ported from Creatures 1 Community Edition 10.4 by lisdude (@004449b0,
+    // called at the end of ExecuteEmbeddedKitTool): tell the kit (identity
+    // code 2), find its top-level window -- by the process the game launched
+    // (Wine), else by the executable its ProgID names (COM on Windows) --
+    // and put it on top and in the foreground.
+    if (!has_dispatch(tool_index)) {
+        return;
+    }
+    send_kit_message(
+        tool_index,
+        {creatures1::application::embedded_kit_message_header(
+             creatures1::application::EmbeddedKitMessageKind::data,
+             creatures1::application::kEmbeddedKitRaiseCode),
+         0});
+    KitWindowSearch search;
+    std::string kit_executable_path;
+    const auto process =
+        reinterpret_cast<HANDLE>(frame_.embedded_kit_process_handle(tool_index));
+    if (process != nullptr) {
+        search.process_id = GetProcessId(process);
+        if (search.process_id == 0) {
+            return;
+        }
+    } else {
+        WindowsComLocalServer com_resolver;
+        if (!creatures1::platform::resolve_com_progid_local_server_path(
+                com_resolver, frame_.embedded_kit_definitions()[tool_index].prog_id,
+                kit_executable_path)) {
+            return;
+        }
+        search.executable_path = kit_executable_path.c_str();
+    }
+    EnumWindows(find_kit_window, reinterpret_cast<LPARAM>(&search));
+    creatures1::common::lab_trace(creatures1::common::LabTrace::kits,
+                                  "raise slot=%u window=%s",
+                                  static_cast<unsigned>(tool_index),
+                                  search.found != nullptr ? "found" : "not found");
+    if (search.found != nullptr) {
+        SetWindowPos(search.found, HWND_TOP, 0, 0, 0, 0,
+                     SWP_NOSIZE | SWP_NOMOVE | SWP_ASYNCWINDOWPOS);
+        SetForegroundWindow(search.found);
+    }
+}
+
 bool WindowsEmbeddedKitHost::send_kit_message(
     std::size_t tool_index,
     const creatures1::application::EmbeddedKitMessage& message) {
