@@ -8,8 +8,11 @@
                                         source, STW, LTW or strength must be the
                                         result of the recorded events; (format
                                         9) every change to a chemical must be
-                                        the sum of its recorded flows; reports
-                                        any that are not
+                                        the sum of its recorded flows; (format
+                                        10) every vote sum must be its recorded
+                                        contributions, clamped and scaled by the
+                                        lobe's input gain; reports any that are
+                                        not
 
 As a module, read_recording(path) yields Frame objects that carry the full
 brain state at each recorded tick (neurons and dendrites rebuilt from the
@@ -84,6 +87,11 @@ class Frame:
     chemistry: dict = field(default_factory=dict)  # receptors, emitters, reactions
     hand: tuple = ()        # (x, y) of the hand
     attended: tuple = ()    # (handle, x, y) of the attended object; handle 0 none
+    # Format 10:
+    votes: dict = field(default_factory=dict)  # lobe -> Votes (the last update's sums)
+    goal_matrix: tuple = ()  # 40 attention records x 16 drive weights, flat
+    words: dict = field(default_factory=dict)  # record -> (heard, said, reinforcement)
+    instincts: list = field(default_factory=list)  # Instinct started since the last frame
 
 
 EVENT_KINDS = {1: "reinforce", 2: "relax", 3: "ltw step", 4: "strengthen",
@@ -104,6 +112,7 @@ class Event:
     key: tuple       # (lobe, neuron, rule, dendrite)
     before: tuple    # (source, current, STW, LTW, strength)
     after: tuple
+    instinct: int | None = None  # format 10: the instinct being dreamed, if dreaming
 
 
 FLOW_ORIGINS = {0: "unknown", 1: "emitter", 2: "reaction", 3: "decay",
@@ -132,6 +141,25 @@ class Stimulus:
     source_activation: int
     sense_activation: int
     chemicals: tuple         # ((chemical, amount) x 4)
+
+
+@dataclass
+class Votes:
+    sums: list           # per neuron (type0, type1): the SVRule's inputs
+    contributions: dict  # dendrite key -> (STW x source firing) >> 8
+
+
+@dataclass
+class Instinct:
+    number: int
+    inputs: tuple        # ((lobe, neuron) x 3) it replays
+    decision_neuron: int
+    chemical: int
+    concentration: int
+
+
+def zigzag(value):
+    return value >> 1 if not value & 1 else -((value + 1) >> 1)
 
 
 def read_chemistry(r):
@@ -196,7 +224,7 @@ def read_layout(r):
         raise ValueError("not a C1 brain recording")
     r.pos = 4
     version = r.take("I")
-    if version not in (3, 4, 5, 6, 7, 8, 9):
+    if version not in (3, 4, 5, 6, 7, 8, 9, 10):
         raise ValueError(f"unknown recording version {version}")
     moniker = r.take("I")
     lobes = []
@@ -244,10 +272,13 @@ def read_recording(path):
     flags = 0
     events = []
     chemicals, flows, stimuli, chemistry, world = [], [], [], {}, {}
+    goal_matrix, words, instincts = [], {}, []
+    current_instinct = None
 
     def extras():
         return {"chemicals": tuple(chemicals), "flows": flows, "stimuli": stimuli,
-                "chemistry": chemistry, **world}
+                "chemistry": chemistry, "words": dict(words), "instincts": instincts,
+                **world}
     for r in read_chunks(file_reader):
         while not r.done():
             kind = r.take("c")
@@ -269,13 +300,51 @@ def read_recording(path):
                 flows = []
                 for _ in range(r.varint()):
                     origin, number, chemical = r.take("B"), r.varint(), r.take("B")
-                    zigzag = r.varint()
-                    change = zigzag >> 1 if not zigzag & 1 else -((zigzag + 1) >> 1)
+                    change = zigzag(r.varint())
                     flows.append(Flow(FLOW_ORIGINS.get(origin, str(origin)), number,
                                       chemical, change))
             elif kind == b"W":
                 hand_x, hand_y, handle, at_x, at_y = r.take("iiIii")
                 world = {"hand": (hand_x, hand_y), "attended": (handle, at_x, at_y)}
+            elif kind == b"V":
+                votes = {}
+                for _ in range(r.take("B")):
+                    lobe = r.take("B")
+                    count = len(layout.lobes[lobe].dendrite_counts)
+                    raw = r.take(f"{2 * count}B") if count else ()
+                    if count == 1 and not isinstance(raw, tuple):
+                        raw = (raw,)
+                    sums = [(raw[2 * i], raw[2 * i + 1]) for i in range(count)]
+                    contributions, number = {}, 0
+                    for _ in range(r.varint()):
+                        number += r.varint()
+                        contributions[layout.dendrite_keys[number]] = r.take("B")
+                        number += 1
+                    votes[lobe] = Votes(sums, contributions)
+                world["votes"] = votes
+            elif kind == b"M":
+                if r.take("B") == 0:
+                    goal_matrix = [zigzag(r.varint()) for _ in range(r.varint())]
+                else:
+                    number = 0
+                    for _ in range(r.varint()):
+                        number += r.varint()
+                        goal_matrix[number] = zigzag(r.varint())
+                        number += 1
+                world["goal_matrix"] = tuple(goal_matrix)
+            elif kind == b"L":
+                for _ in range(r.take("B")):
+                    index = r.take("B")
+                    heard = bytes(r.take(f"{r.take('B')}s")).decode("latin-1")
+                    said = bytes(r.take(f"{r.take('B')}s")).decode("latin-1")
+                    words[index] = (heard, said, r.take("I"))
+            elif kind == b"N":
+                number = r.varint()
+                pairs = r.take("6B")
+                decision_neuron, chemical, concentration = r.take("3B")
+                instincts.append(Instinct(number, tuple(zip(pairs[0::2], pairs[1::2])),
+                                          decision_neuron, chemical, concentration))
+                current_instinct = number
             elif kind == b"S":
                 number, built_in, source, classifier, sx, sy = r.varint(), *r.take("BIIii")
                 flags_s, record, sense, act_s, act_g = r.take("5B")
@@ -315,7 +384,8 @@ def read_recording(path):
                     current, stw = 0, ltw
                 after = (source, current, stw, ltw, strength)
                 running[key] = after
-                events.append(Event(event_kind, bool(code & 0x80), key, before, after))
+                events.append(Event(event_kind, bool(code & 0x80), key, before, after,
+                                    current_instinct if code & 0x80 else None))
             elif kind == b"K":
                 r.take("I")
                 for key in layout.neuron_keys:
@@ -327,7 +397,7 @@ def read_recording(path):
                                     len(layout.neuron_keys), len(layout.dendrite_keys),
                                     None, flags, *frame_inputs(inputs, layout), events,
                                     **extras())
-                events, flows, stimuli = [], [], []
+                events, flows, stimuli, instincts = [], [], [], []
             elif kind == b"D":
                 r.take("I")
                 changed_n = r.varint()
@@ -361,7 +431,7 @@ def read_recording(path):
                 yield layout, Frame(*context, False, neurons, dendrites, changed_n, changed_d,
                                     changed_keys, flags, *frame_inputs(inputs, layout), events,
                                     **extras())
-                events, flows, stimuli = [], [], []
+                events, flows, stimuli, instincts = [], [], [], []
             else:
                 raise ValueError(f"bad record type {kind!r}")
 
@@ -415,6 +485,8 @@ def check(paths):
         state = None
         frames = events = continuity = unexplained = 0
         flow_count = unexplained_chemicals = unknown_flows = 0
+        vote_count = unexplained_votes = 0
+        gains = None
         chemicals = None
         examples = []
         for layout, frame in read_recording(path):
@@ -422,6 +494,25 @@ def check(paths):
                 print(f"{path}: format {layout.version} has no events; nothing to check")
                 break
             frames += 1
+            if frame.votes and layout.genome:
+                if gains is None:
+                    import genome_brain
+                    gains = [lobe["input gain"] for lobe in
+                             genome_brain.lobe_rules(layout.genome, ((frame.flags >> 5) & 3) or None)]
+                for lobe, votes in frame.votes.items():
+                    totals = {}
+                    for (_, neuron, rule, _), value in votes.contributions.items():
+                        totals[(neuron, rule)] = totals.get((neuron, rule), 0) + value
+                    for neuron, pair in enumerate(votes.sums):
+                        for rule in (0, 1):
+                            expected = (gains[lobe] * min(255, totals.get((neuron, rule), 0))) >> 8
+                            vote_count += 1
+                            if expected != pair[rule]:
+                                unexplained_votes += 1
+                                if len(examples) < 5:
+                                    examples.append(
+                                        f"tick {frame.tick}: lobe {lobe} neuron {neuron} type {rule} "
+                                        f"sum {pair[rule]}, contributions give {expected}")
             if frame.chemicals:
                 if chemicals is not None:
                     totals = [0] * 256
@@ -463,13 +554,17 @@ def check(paths):
                                         f"events say {state[key]}")
                     state[key] = now
         else:
-            ok = continuity == 0 and unexplained == 0 and unexplained_chemicals == 0
+            ok = (continuity == 0 and unexplained == 0 and unexplained_chemicals == 0
+                  and unexplained_votes == 0)
             failed |= not ok
             flows_text = ""
             if chemicals is not None:
                 flows_text = (f"; {flow_count} chemical flows, chemical changes the "
                               f"flows do not explain: {unexplained_chemicals}, flows "
                               f"of unknown origin: {unknown_flows}")
+            if vote_count:
+                flows_text += (f"; {vote_count} vote sums, not matching their "
+                               f"contributions: {unexplained_votes}")
             print(f"{path}: {frames} frames, {events} events; "
                   f"events that start from a state the file did not have: {continuity}; "
                   f"frame changes no event explains: {unexplained}{flows_text}"

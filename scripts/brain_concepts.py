@@ -35,6 +35,18 @@
                                             reinforcement is credited to the root
                                             origins of the Reward or Punishment
                                             that drove it (chemical_provenance.py)
+    brain_concepts.py why FILE [FROM TO]    (format 10) why it did what it did: at
+                                            each change of action or attention, the
+                                            action scores with the concept links
+                                            that pushed for and against them, and
+                                            what drew its attention
+    brain_concepts.py goals FILE            (format 10) its second learner: which
+                                            kinds of object it has learned relieve
+                                            which drives, and when it learned it
+    brain_concepts.py words FILE            (format 10) the words it has learned,
+                                            with when and how strongly
+    brain_concepts.py instincts FILE        (format 10) each instinct it dreamed:
+                                            what it replays, and the links it set
     brain_concepts.py beliefs FILE [N]      what the brain holds at the end: each
                                             action's live links summed by the
                                             current meaning of the concept they read
@@ -665,6 +677,9 @@ def cmd_stream(path, start=0, end=None, every=0):
         print(f"   weighs: {', '.join(f'{action_name(a)} {v}' for v, a in scores)}  ->  "
               f"does {action_name(frame.action)}"
               + (f"  REWARD {reward}" if reward else "") + (f"  PUNISHMENT {punishment}" if punishment else ""))
+        if frame.votes:
+            for line in explain_choice(replay, frame):
+                print("   because: " + line)
         if learned:
             print("   learns: " + "; ".join(f"{k} x{v}" for k, v in learned.most_common(4)))
             learned.clear()
@@ -727,6 +742,162 @@ def cmd_causes(path, top=12, window=8):
         print(f"\n{count:5d} x {cause}")
         for link, n in taught[cause].most_common(4):
             print(f"         strengthened {link} ({n} reinforcements)")
+
+
+def explain_choice(replay, frame, top=3):
+    """Why the decision lobe chose this action and the attention lobe this
+    object (format 10 votes): lines of text."""
+    lines = []
+    votes = frame.votes.get(DECISION)
+    if votes:
+        scores = []
+        for action, (excite, inhibit) in enumerate(votes.sums[:len(ACTIONS)]):
+            scores.append((frame.neurons[(DECISION, action)][0], action, excite, inhibit))
+        scores.sort(reverse=True)
+        pushes = collections.defaultdict(collections.Counter)  # action -> label -> amount
+        raw = collections.Counter()                             # (action, rule) -> raw total
+        for (lobe, neuron, rule, dendrite), value in votes.contributions.items():
+            raw[(neuron, rule)] += value
+        for (lobe, neuron, rule, dendrite), value in votes.contributions.items():
+            source = frame.dendrites[(lobe, neuron, rule, dendrite)][0]
+            meaning = describe_meaning(replay.meaning.get(source, ("?",))) \
+                if source != 0xffff else "none"
+            # Each link's share of the sum the lobe used (after clamping and
+            # its input gain), so the shares add up to "for" and "against".
+            used = votes.sums[neuron][rule] if neuron < len(votes.sums) else 0
+            pushes[neuron][("+" if rule == 0 else "-", meaning)] += \
+                value * used / raw[(neuron, rule)]
+        chosen = frame.action
+        for state, action, excite, inhibit in [s for s in scores if s[1] == chosen] + \
+                [s for s in scores if s[1] != chosen][:1]:
+            reasons = sorted(pushes[action].items(), key=lambda kv: -kv[1])[:top]
+            text = ", ".join(f"{sign}{amount:.0f} [{meaning}]" for (sign, meaning), amount in reasons
+                             if amount >= 0.5)
+            head = "chose" if action == chosen else "next best"
+            # The state rule adds this update's for and against to what the
+            # neuron already held (and the engine boosts the action under
+            # way), so a score also carries the past.
+            carried = state - excite + inhibit
+            lines.append(f"{head} {action_name(action)} (score {state} = carried {carried}"
+                         f" + for {excite} - against {inhibit}): {text or 'no links firing'}")
+    votes = frame.votes.get(ATTENTION)
+    if votes and frame.attention_slot >= 0:
+        slot = frame.attention_slot
+        found = collections.Counter()
+        raw = collections.Counter()
+        for (lobe, neuron, rule, dendrite), value in votes.contributions.items():
+            if neuron == slot:
+                raw[rule] += value
+        for (lobe, neuron, rule, dendrite), value in votes.contributions.items():
+            if neuron != slot:
+                continue
+            source = frame.dendrites[(lobe, neuron, rule, dendrite)][0]
+            label = target_label(replay.layout, replay.perception, ATTENTION, rule, source)
+            used = votes.sums[neuron][rule] if neuron < len(votes.sums) else 0
+            found[("+" if rule == 0 else "-", label)] += value * used / raw[rule]
+        reasons = ", ".join(f"{sign}{amount:.0f} {label}" for (sign, label), amount
+                            in found.most_common(top) if amount >= 0.5)
+        lines.append(f"attends {attended(frame)}: {reasons or 'no inputs firing'}")
+    return lines
+
+
+def cmd_why(path, start=0, end=None):
+    """At each change of action or attention: why (explain_choice)."""
+    if replay_version(path) < 10:
+        raise SystemExit("why needs format 10 or later (votes)")
+    end = end if end else None
+    state = {"key": None}
+
+    def on_frame(replay, frame):
+        if frame.tick < start or (end is not None and frame.tick > end) or not frame.votes:
+            return
+        key = (frame.action, frame.attention_slot)
+        if key == state["key"]:
+            return
+        state["key"] = key
+        print(f"tick {frame.tick} feels: {', '.join(top_drives(frame_drives(frame))) or 'nothing'}")
+        for line in explain_choice(replay, frame):
+            print("   " + line)
+
+    BrainReplay(path).run(on_frame=on_frame)
+
+
+def cmd_goals(path):
+    """The goal-direction matrix: per attention category, the drives it has
+    relieved (weight > 0), when each first appeared, and its final weight."""
+    if replay_version(path) < 10:
+        raise SystemExit("goals needs format 10 or later")
+    first, final = {}, ()
+    for _, frame in recording(path):
+        if not frame.goal_matrix:
+            continue
+        final = frame.goal_matrix
+        for index, value in enumerate(final):
+            if value > 0 and index not in first:
+                first[index] = frame.tick
+    rows = collections.defaultdict(list)
+    for index, value in enumerate(final):
+        if value > 0:
+            rows[index // 16].append((value, DRIVES[index % 16] if index % 16 < len(DRIVES)
+                                      else f"drive {index % 16}", first.get(index)))
+    for row in sorted(rows, key=lambda r: -max(v for v, _, _ in rows[r])):
+        items = sorted(rows[row], reverse=True)
+        print(f"{category_name(row):16s} relieves " + ", ".join(
+            f"{drive} {value} (from tick {tick})" for value, drive, tick in items))
+
+
+def cmd_words(path):
+    if replay_version(path) < 10:
+        raise SystemExit("words needs format 10 or later")
+    last = {}
+    for _, frame in recording(path):
+        for index, word in frame.words.items():
+            if last.get(index) != word:
+                if index in last:
+                    heard, said, strength = word
+                    print(f"tick {frame.tick}: word {index} '{heard}' -> says '{said}' "
+                          f"(reinforcement {strength})")
+                last[index] = word
+    print("at the end: " + "; ".join(f"'{h}' -> '{s}' {r}" for h, s, r in
+                                    sorted(last.values(), key=lambda w: -w[2])[:20] if h))
+
+
+def cmd_instincts(path):
+    """Each instinct dreamed: the three inputs it replays, the action it
+    links them to and the chemical it rewards or punishes with; then the
+    decision links its dream events changed, by meaning."""
+    if replay_version(path) < 10:
+        raise SystemExit("instincts needs format 10 or later")
+    import chemical_provenance
+    if CHEMICALS_FILE and not chemical_provenance.CHEMICAL_NAMES:
+        chemical_provenance.load_chemical_names(CHEMICALS_FILE)
+    described = {}
+    changed = collections.defaultdict(collections.Counter)
+
+    def on_frame(replay, frame):
+        for instinct in frame.instincts:
+            # Lobe 0 marks an unused input (Instinct::run_dream_step).
+            inputs = [f"{replay.layout.lobes[lobe].name} {item_name(lobe, neuron)}"
+                      for lobe, neuron in instinct.inputs
+                      if 0 < lobe < len(replay.layout.lobes)]
+            described[instinct.number] = (
+                f"{' & '.join(inputs)} -> {action_name(instinct.decision_neuron)} with "
+                f"{chemical_provenance.chemical_name(instinct.chemical)} {instinct.concentration}")
+
+    def on_decision(replay, frame, event, meaning):
+        if event.instinct is not None and event.kind not in ("reset",):
+            _, neuron, rule, _ = event.key
+            sign = "+" if rule == 0 else "-"
+            changed[event.instinct][
+                f"{event.kind} {sign}{action_name(neuron)} when [{describe_meaning(meaning)}]"] += 1
+
+    BrainReplay(path).run(on_decision=on_decision, on_frame=on_frame)
+    for number in sorted(described):
+        print(f"instinct {number}: {described[number]}")
+        for link, count in changed[number].most_common(4):
+            print(f"      {link} x{count}")
+        if not changed[number]:
+            print("      changed no decision link")
 
 
 def traced_causes(path, top):
@@ -803,7 +974,8 @@ if __name__ == "__main__":
                 "rules": cmd_rules, "timeline": cmd_timeline,
                 "learning": cmd_learning, "meanings": cmd_meanings,
                 "beliefs": cmd_beliefs, "teaching": cmd_teaching,
-                "stream": cmd_stream, "causes": cmd_causes}
+                "stream": cmd_stream, "causes": cmd_causes, "why": cmd_why,
+                "goals": cmd_goals, "words": cmd_words, "instincts": cmd_instincts}
     if len(sys.argv) < 3 or sys.argv[1] not in commands:
         print(__doc__)
         sys.exit(2)

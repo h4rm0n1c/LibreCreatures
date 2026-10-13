@@ -802,6 +802,12 @@ public:
         return learned_word_records_[index];
     }
 
+    // How much each kind of attended object has relieved each drive (the
+    // goal-direction weights apply_stimulus learns).
+    const GoalDirectionWeightMatrix& goal_direction_weight_matrix() const {
+        return goal_direction_weight_matrix_;
+    }
+
     // Rebuilds the infant response for one learned word.  The multibyte
     // traversal and secure string operations are Microsoft CRT boundaries.
     void regenerate_learned_word_response(std::size_t record_index,

@@ -2,6 +2,7 @@
 
 #include "brain.hpp"
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -29,7 +30,7 @@
 namespace creatures1::brain {
 namespace {
 
-constexpr std::uint32_t kFormatVersion = 9;
+constexpr std::uint32_t kFormatVersion = 10;
 // Frames are buffered and written as one compressed chunk this often, so a
 // game that is killed loses at most this many frames.
 constexpr std::uint32_t kFramesPerChunk = 32;
@@ -93,6 +94,12 @@ public:
         u8(static_cast<std::uint8_t>(value));
     }
 
+    // Zigzag: small values of either sign stay short.
+    void zigzag(std::int32_t value) {
+        varint(value >= 0 ? static_cast<std::uint32_t>(value) * 2u
+                          : static_cast<std::uint32_t>(-(value + 1)) * 2u + 1u);
+    }
+
 private:
     std::vector<std::uint8_t>& out_;
 };
@@ -120,6 +127,18 @@ struct Recording {
     // summed change.
     std::map<std::tuple<std::uint8_t, std::uint32_t, std::uint8_t>, int> flows;
     std::uint32_t stimuli = 0;
+    // Votes of the winner-take-all lobes' last update, by lobe index:
+    // per neuron the two sums, and per contributing dendrite its share.
+    struct LobeVotes {
+        std::vector<std::uint8_t> sums;
+        std::map<std::uint32_t, std::uint8_t> contributions;
+    };
+    std::map<std::uint32_t, LobeVotes> votes;
+    LobeVotes* votes_target = nullptr;  // the lobe being summed now
+    std::vector<std::int32_t> previous_goal_matrix;
+    std::vector<BrainRecordContext::Word> previous_words;
+    std::uint32_t instincts = 0;
+    std::uint32_t current_instinct = 0;
     std::vector<std::uint8_t> pending;
 
     Recording() = default;
@@ -454,9 +473,7 @@ void write_frame(Recording& recording, Snapshot& snapshot,
         out.u8(std::get<0>(key));
         out.varint(std::get<1>(key));
         out.u8(std::get<2>(key));
-        // Zigzag: small changes of either sign stay short.
-        out.varint(change >= 0 ? static_cast<std::uint32_t>(change) * 2u
-                               : static_cast<std::uint32_t>(-change) * 2u - 1u);
+        out.zigzag(change);
     }
     recording.flows.clear();
     out.u8('W');
@@ -465,6 +482,70 @@ void write_frame(Recording& recording, Snapshot& snapshot,
     out.u32(context.attended_object);
     out.u32(static_cast<std::uint32_t>(context.attended_x));
     out.u32(static_cast<std::uint32_t>(context.attended_y));
+
+    out.u8('V');
+    out.u8(static_cast<std::uint8_t>(recording.votes.size()));
+    for (const auto& [lobe, votes] : recording.votes) {
+        out.u8(static_cast<std::uint8_t>(lobe));
+        out.bytes(votes.sums);
+        out.varint(static_cast<std::uint32_t>(votes.contributions.size()));
+        std::uint32_t next = 0;
+        for (const auto& [number, contribution] : votes.contributions) {
+            out.varint(number - next);
+            out.u8(contribution);
+            next = number + 1;
+        }
+    }
+    recording.votes.clear();
+    recording.votes_target = nullptr;
+
+    out.u8('M');
+    if (keyframe || recording.previous_goal_matrix.size() != context.goal_matrix.size()) {
+        out.u8(0);
+        out.varint(static_cast<std::uint32_t>(context.goal_matrix.size()));
+        for (std::int32_t value : context.goal_matrix) {
+            out.zigzag(value);
+        }
+    } else {
+        out.u8(1);
+        std::vector<std::uint32_t> changed;
+        for (std::uint32_t i = 0; i < context.goal_matrix.size(); ++i) {
+            if (context.goal_matrix[i] != recording.previous_goal_matrix[i]) {
+                changed.push_back(i);
+            }
+        }
+        out.varint(static_cast<std::uint32_t>(changed.size()));
+        std::uint32_t next = 0;
+        for (std::uint32_t i : changed) {
+            out.varint(i - next);
+            out.zigzag(context.goal_matrix[i]);
+            next = i + 1;
+        }
+    }
+    recording.previous_goal_matrix = context.goal_matrix;
+
+    std::vector<std::uint32_t> changed_words;
+    for (std::uint32_t i = 0; i < context.words.size() && i < 256; ++i) {
+        if (keyframe || i >= recording.previous_words.size() ||
+            !(context.words[i] == recording.previous_words[i])) {
+            changed_words.push_back(i);
+        }
+    }
+    if (!changed_words.empty()) {
+        out.u8('L');
+        out.u8(static_cast<std::uint8_t>(changed_words.size()));
+        for (std::uint32_t i : changed_words) {
+            const auto& word = context.words[i];
+            out.u8(static_cast<std::uint8_t>(i));
+            for (const std::string* text : {&word.heard, &word.said}) {
+                const std::size_t length = std::min<std::size_t>(text->size(), 255);
+                out.u8(static_cast<std::uint8_t>(length));
+                out.bytes(std::vector<std::uint8_t>(text->begin(), text->begin() + length));
+            }
+            out.u32(word.reinforcement);
+        }
+    }
+    recording.previous_words = context.words;
     if (keyframe) {
         out.u8('K');
         out.u32(context.world_tick);
@@ -555,6 +636,7 @@ void write_frame(Recording& recording, Snapshot& snapshot,
 
 bool g_brain_events_wanted = false;
 bool g_chemical_flows_wanted = false;
+bool g_brain_votes_wanted = false;
 
 namespace {
 ChemicalOrigin g_current_origin = ChemicalOrigin::unknown;
@@ -620,6 +702,12 @@ void record_brain_frame(const void* key, const Brain& brain,
         recording.stimuli = 0;
         recording.previous_chemicals.clear();
         recording.previous_chemistry.clear();
+        recording.votes.clear();
+        recording.votes_target = nullptr;
+        recording.previous_goal_matrix.clear();
+        recording.previous_words.clear();
+        recording.instincts = 0;
+        g_brain_votes_wanted = true;
     }
     if (recording.biochemistry != context.biochemistry) {
         if (recording.biochemistry != nullptr) {
@@ -730,6 +818,99 @@ std::uint32_t record_stimulus(const Brain* brain, const StimulusRecord& stimulus
         out.u8(stimulus.amounts[i]);
     }
     return number;
+}
+
+namespace {
+
+Recording* recording_of(const Brain* brain) {
+    if (brain == nullptr) {
+        return nullptr;
+    }
+    const auto found = recordings_by_brain().find(brain);
+    if (found == recordings_by_brain().end() || found->second->file == nullptr) {
+        return nullptr;
+    }
+    return found->second;
+}
+
+std::uint32_t lobe_index_of(const Brain& brain, const Lobe& lobe) {
+    for (std::uint32_t index = 0; index < brain.lobe_count(); ++index) {
+        if (&brain.lobe(index) == &lobe) {
+            return index;
+        }
+    }
+    return 0xff;
+}
+
+} // namespace
+
+void begin_lobe_votes(const Brain* brain, const Lobe& lobe) {
+    Recording* recording = recording_of(brain);
+    if (recording == nullptr) {
+        return;
+    }
+    const std::uint32_t index = lobe_index_of(*brain, lobe);
+    if (index == 0xff) {
+        return;
+    }
+    auto& votes = recording->votes[index];
+    votes.sums.assign(static_cast<std::size_t>(lobe.neuron_count_value()) * 2, 0);
+    votes.contributions.clear();
+    recording->votes_target = &votes;
+}
+
+void record_vote(const Brain* brain, const Dendrite& connection,
+                 std::uint8_t contribution) {
+    Recording* recording = recording_of(brain);
+    if (recording == nullptr || contribution == 0) {
+        return;
+    }
+    const auto place = recording->places.find(&connection);
+    if (place == recording->places.end()) {
+        return;
+    }
+    if (recording->votes_target == nullptr) {
+        return;
+    }
+    recording->votes_target->contributions[place->second.number] = contribution;
+}
+
+void record_neuron_sums(const Brain* brain, const Lobe& lobe,
+                        std::uint32_t neuron, std::uint8_t type0,
+                        std::uint8_t type1) {
+    Recording* recording = recording_of(brain);
+    if (recording == nullptr) {
+        return;
+    }
+    const auto found = recording->votes.find(lobe_index_of(*brain, lobe));
+    if (found == recording->votes.end() || neuron * 2 + 1 >= found->second.sums.size()) {
+        return;
+    }
+    found->second.sums[neuron * 2] = type0;
+    found->second.sums[neuron * 2 + 1] = type1;
+}
+
+void record_instinct(const Brain* brain, const InstinctRecord& instinct) {
+    Recording* recording = recording_of(brain);
+    if (recording == nullptr) {
+        return;
+    }
+    recording->current_instinct = recording->instincts++;
+    Writer out(recording->pending);
+    out.u8('N');
+    out.varint(recording->current_instinct);
+    for (std::size_t i = 0; i < 3; ++i) {
+        out.u8(instinct.lobes[i]);
+        out.u8(instinct.neurons[i]);
+    }
+    out.u8(instinct.decision_neuron);
+    out.u8(instinct.chemical);
+    out.u8(instinct.concentration);
+}
+
+std::uint32_t current_instinct(const Brain* brain) {
+    Recording* recording = recording_of(brain);
+    return recording == nullptr ? 0 : recording->current_instinct;
 }
 
 void set_brain_dreaming(const Brain* brain, bool dreaming) {

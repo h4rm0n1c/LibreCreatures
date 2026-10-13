@@ -413,6 +413,16 @@ void Lobe::update_late_phase(Brain* brain, std::uint32_t tick) {
                 : 0;
     }
 
+    // Lab only (C1_BRAIN_RECORD): a winner-take-all lobe (decision,
+    // attention) reports how it summed its inputs, for the 'V' record.
+    const bool record_votes =
+        g_brain_votes_wanted &&
+        (winner_take_all_flags &
+         static_cast<std::uint8_t>(WinnerTakeAllFlag::enabled)) != 0;
+    if (record_votes) {
+        begin_lobe_votes(brain, *this);
+    }
+
     for (std::uint32_t neuron_index = 0; neuron_index < neuron_count;
          ++neuron_index) {
         LobeNeuron& neuron = neurons[neuron_index];
@@ -458,8 +468,12 @@ void Lobe::update_late_phase(Brain* brain, std::uint32_t tick) {
                 if (target_strength == 0) {
                     all_targets_firing = 0;
                 } else {
-                    weighted_sum +=
-                        (input.stw * target_strength) >> 8;
+                    const int contribution = (input.stw * target_strength) >> 8;
+                    weighted_sum += contribution;
+                    if (record_votes) {
+                        record_vote(brain, input,
+                                    static_cast<std::uint8_t>(contribution));
+                    }
                 }
             }
             weighted_sum = std::clamp(weighted_sum, 0, 0xff);
@@ -470,6 +484,10 @@ void Lobe::update_late_phase(Brain* brain, std::uint32_t tick) {
                 static_cast<std::uint8_t>(all_targets_firing & scaled_sum);
         }
 
+        if (record_votes) {
+            record_neuron_sums(brain, *this, neuron_index, registers[12],
+                               registers[13]);
+        }
         registers[9] = evaluate_rule_expression(state_svrule, registers);
         neuron.activation = registers[9];
         const int strength = static_cast<int>(registers[9]) -

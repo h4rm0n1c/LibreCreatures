@@ -70,6 +70,15 @@ explain every chemical change. `scripts/chemical_provenance.py` traces each
 chemical back to its root origins (`roots`, or the largest rises of one
 chemical), and `brain_concepts.py causes` credits each decision
 reinforcement to where its Reward or Punishment came from.
+Format 10 adds the votes of the winner-take-all lobes (decision and
+attention): every link's contribution to each neuron's input sums, which
+`check` proves add up to the sums the lobe used. It also adds the
+goal-direction matrix (which kinds of object relieve which drives, a
+learner outside the brain), the learned words, and each instinct as it is
+dreamed. `brain_concepts.py why` explains each choice of action and
+attention by the concept links that pushed for and against it (`stream`
+shows the same), `goals` and `words` show what the creature learned outside
+its brain, and `instincts` shows what each dreamed instinct changed.
 
 **Lab trace.** `C1_LAB_TRACE=<file>` appends one line per event:
 `<world tick> TAB <ms> TAB <category> TAB <text>`, where `<ms>` is Windows'

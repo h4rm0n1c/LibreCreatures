@@ -2959,6 +2959,19 @@ void C1WindowsDocument::update_creature_brain(std::size_t index) {
                                        r.tick_rate_selector});
             }
         }
+        for (const auto& row : creature->goal_direction_weight_matrix()) {
+            context.goal_matrix.insert(context.goal_matrix.end(), row.begin(), row.end());
+        }
+        for (std::size_t i = 0;
+             i < creatures1::creatures::Creature::kLearnedWordRecordCount; ++i) {
+            const auto& record = creature->learned_word_record(i);
+            context.words.push_back(
+                {std::string(record.recognized_word,
+                             strnlen(record.recognized_word, sizeof(record.recognized_word))),
+                 std::string(record.response_word,
+                             strnlen(record.response_word, sizeof(record.response_word))),
+                 record.reinforcement});
+        }
         creatures1::world::WorldRect bounds{};
         if (auto* hand = pointer_tool(); hand != nullptr && hand->get_bounds(&bounds)) {
             context.hand_x = (bounds.min_x + bounds.max_x) / 2;
