@@ -207,7 +207,7 @@ inline bool decode_lobe_gene(const Gene& gene, LobeGene& out) {
 }
 
 // How the brain's lobes are wired, as the game builds it from the genome
-// (Brain::load_genome, Lobe::load_genome, LobeConnectionRule::load_from_genome):
+// (Brain::load_genome, Lobe::load_genome, DendriteType::load_from_genome):
 // each lobe's two dendrite rules name the lobe its dendrites reach into, and a
 // lobe may also copy its firing into the Perception lobe (lobe 0).  Which lobe
 // is which is positional: the brain genes (family % 3 == 0, any subtype)

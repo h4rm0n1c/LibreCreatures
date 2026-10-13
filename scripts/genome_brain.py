@@ -13,7 +13,7 @@
 As a module: general_sense_names(path) and lobe_rules(path) for decoders.
 
 Layouts follow LibreCreatures' loaders: Lobe::load_genome and
-LobeConnectionRule::load_from_genome (src/c1/brain), the stimulus genes in
+DendriteType::load_from_genome (src/c1/brain), the stimulus genes in
 Creature's genome load (creature.cpp), receptor genes in Biochemistry.  A
 gene is "gene", family, subtype, sequence, load pass, switch-on stage,
 flags (10 bytes), then its payload up to the next "gene" or "gend".  Only
@@ -26,14 +26,15 @@ import sys
 STANDARD_LOBES = ["perception", "drive", "stimulus source", "verb", "noun",
                   "general sense", "decision", "attention", "concept"]
 
-# Rule registers, as C1's Genetics Kit names the SVRule operands, and the
-# operators (LibreCreatures lobe.cpp: registers 9..21, RuleToken 22..27).
-REGISTERS = {1: "0", 2: "1", 3: "64", 4: "255", 5: "chem 0", 6: "chem 1",
-             7: "chem 2", 8: "chem 3", 9: "state", 10: "output", 11: "threshold",
-             12: "type 0", 13: "type 1", 14: "anded 0", 15: "anded 1",
-             16: "input", 17: "conduct", 18: "susceptibility", 19: "STW",
+# SVRule tokens by their official names, as the C1 Genetics Kit shows them
+# (LibreCreatures SVRuleToken, src/c1/brain/rules.hpp): 1..21 operands,
+# 22..27 operators.
+REGISTERS = {1: "0", 2: "1", 3: "64", 4: "255", 5: "chem0", 6: "chem1",
+             7: "chem2", 8: "chem3", 9: "state", 10: "output", 11: "thres",
+             12: "type0", 13: "type1", 14: "anded0", 15: "anded1",
+             16: "input", 17: "conduct", 18: "suscept", 19: "STW",
              20: "LTW", 21: "strength"}
-OPERATORS = {22: "stop if zero", 23: "+", 24: "-", 25: "*", 26: "++", 27: "--"}
+OPERATORS = {22: "TRUE", 23: "PLUS", 24: "MINUS", 25: "TIMES", 26: "INCR", 27: "DECR"}
 
 # The CAOS manual's Stimulus table: the built-in stimulus numbers.
 STIMULI = ["disappointment", "pointer pats me", "creature pats me",
@@ -218,11 +219,12 @@ def cmd_lobes(path, chemicals_path=None):
             src_name = STANDARD_LOBES[src] if src < len(STANDARD_LOBES) else f"lobe {src}"
             print(f"   type {t}: from {src_name}, {rule['dendrites'][0]}-{rule['dendrites'][1]} "
                   f"dendrites, LTW {rule['LTW range']}, strength {rule['strength range']}")
-            print(f"      susceptibility rule: {rule['susceptibility rule']}")
-            print(f"      reinforcement rule:  {rule['reinforcement rule']}")
-            print(f"      growth rule: {rule['growth rule']} (every {rule['growth every']}); "
-                  f"decay rule: {rule['decay rule']} (every {rule['decay every']}); "
-                  f"LTW step every {rule['LTW step every']}")
+            print(f"      suscept svrule:   {rule['susceptibility rule']}  (relax suscept "
+                  f"{rule['susceptibility decay']}, relax STW {rule['STW relax']})")
+            print(f"      reinforce svrule: {rule['reinforcement rule']}")
+            print(f"      gain svrule: {rule['growth rule']} (gain rate {rule['growth every']}); "
+                  f"lose svrule: {rule['decay rule']} (lose rate {rule['decay every']}); "
+                  f"LTW gain rate {rule['LTW step every']}; migration {rule['mode']}")
 
 
 def cmd_senses(path, chemicals_path=None):

@@ -12,17 +12,29 @@ native pseudocode was read from the disassembly, and the addresses are given
 so it can be checked. Offsets are the evidence; the names below are C1's
 own terms.
 
-| C1 term | Offset | LibreCreatures name |
+| C1 term | Offset | LibreCreatures source |
 |---|---|---|
-| dendrite type (`dtype`, 0 or 1) | | `rule` / `connection_rule_index` |
-| the neuron a dendrite reads (`d.source`) | `+0` | `target_neuron` |
-| the lobe a dendrite type reads (`src`) | | the rule's `target_lobe` |
+| dendrite type (`dtype`, 0 or 1) | | `DendriteType`, `dtype` |
+| the neuron a dendrite reads (`d.source`) | `+0` | `Dendrite::source` |
+| the lobe a dendrite type reads (`src`) | | `DendriteType::source_lobe` |
 | the lobe that owns the dendrites (`owner`) | | `source_lobe` (migration) or `this` |
-| susceptibility | `+6` | `current_weight` |
-| STW, the weight the activation sums | `+7` | `target_weight` |
-| LTW | `+8` | `baseline_weight` |
-| strength (0 = loose) | `+9` | `dendrite_state` |
-| min/max LTW, min/max strength | | `baseline_weight_min/max`, `dendrite_state_min/max` |
+| susceptibility | `+6` | `Dendrite::susceptibility` |
+| STW, the weight the activation sums | `+7` | `Dendrite::stw` |
+| LTW | `+8` | `Dendrite::ltw` |
+| strength (0 = loose) | `+9` | `Dendrite::strength` |
+| min/max LTW, min/max strength | | `min_ltw`, `max_ltw`, `min_strength`, `max_strength` |
+
+The source uses these terms too (`src/c1/brain/lobe.hpp`), and the other
+dendrite type fields follow openc2e's C1 names: `relax_suscept`,
+`relax_stw`, `ltw_gain_rate`, `gain_rate` and `gain_svrule`, `lose_rate` and
+`lose_svrule`, `suscept_svrule`, `reinforce_svrule`, `spread`, `fanout`,
+`migration`.  SVRule tokens use the Genetics Kit names (`SVRuleToken`,
+`src/c1/brain/rules.hpp`).
+
+In each diff below, lines without a sign are native C1, lines marked `-`
+are native lines LibreCreatures changes, and lines marked `+` are what
+LibreCreatures has instead.  A `+` line on its own is something native C1
+does not have at all.
 
 Layout facts the argument depends on:
 
@@ -99,6 +111,9 @@ LibreCreatures: `migrate_rule_connections` in `src/c1/brain/neuron.cpp`.
 +            if (other == this) continue;
              if (other->dendrite_count[dtype] != n) continue;
 ```
+
+Native C1 has no `other == this` test anywhere: LibreCreatures adds it; it
+does not remove one.
 
 **Why.** The candidate is written into `this->dendrites[dtype]` before the
 scan. If `this` fired this tick, it is in `owner->active`, so at
@@ -225,8 +240,8 @@ Each change is an isolated condition, so each can be reverted alone:
 
 | Change | Commit | To restore native |
 |---|---|---|
-| 1 | `6d52950` | remove the `existing == &neuron` skip (`neuron.cpp` ~208) |
+| 1 | `6d52950` | remove the `existing == &neuron` skip, which LibreCreatures added (`neuron.cpp` ~208) |
 | 2 | `e058524` | remove the `same_target_set` term (`neuron.cpp` ~222) |
 | 2 | `68c25ae` | compare `(sum << 16) \| (product & 0xffff)` instead |
 | 3 | `75b9911` | remove `&connection_array[index] != loose` (`lobe.cpp` ~767) |
-| 4 | `a0c2773` | remove `dendrite_state != 0` (`lobe.cpp` ~768) |
+| 4 | `a0c2773` | remove `strength != 0` (`lobe.cpp` ~768) |
