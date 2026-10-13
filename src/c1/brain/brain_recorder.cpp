@@ -28,7 +28,7 @@
 namespace creatures1::brain {
 namespace {
 
-constexpr std::uint32_t kFormatVersion = 7;
+constexpr std::uint32_t kFormatVersion = 8;
 // Frames are buffered and written as one compressed chunk this often, so a
 // game that is killed loses at most this many frames.
 constexpr std::uint32_t kFramesPerChunk = 32;
@@ -526,6 +526,15 @@ void record_brain_frame(const void* key, const Brain& brain,
         }
         recording.brain = &brain;
         index_connections(brain, recording);
+        // The creature's own genome, so the file decodes on its own.
+        std::vector<std::uint8_t> genome;
+        if (context.load_genome) {
+            genome = context.load_genome();
+        }
+        Writer out(recording.pending);
+        out.u8('G');
+        out.u32(static_cast<std::uint32_t>(genome.size()));
+        out.bytes(genome);
         recordings_by_brain()[&brain] = &recording;
         g_brain_events_wanted = true;
     }

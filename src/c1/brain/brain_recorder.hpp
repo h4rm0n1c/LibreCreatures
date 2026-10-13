@@ -2,6 +2,8 @@
 
 #include <array>
 #include <cstdint>
+#include <functional>
+#include <vector>
 
 namespace creatures1::brain {
 
@@ -15,7 +17,7 @@ class Brain;
 //
 // One file per creature brain, <moniker>-<part>.c1brain, little-endian:
 //
-//   header   "C1BR", u32 version (7), u32 moniker, u32 lobe count, then per
+//   header   "C1BR", u32 version (8), u32 moniker, u32 lobe count, then per
 //            lobe: u32 neuron count, u8 grid width, u8 grid height,
 //            u8 rule 0 target lobe, u8 rule 1 target lobe, u8 perception
 //            copy (0 none, 1 copied, 2 copied mutually exclusive), and per
@@ -24,11 +26,15 @@ class Brain;
 //            one after another, in lobe order.
 //   chunks   the rest of the file: u32 raw size, u32 compressed size, then
 //            a zlib stream holding whole records; one chunk per 32 frames.
-//   records  each starts with a u8 type and a u32 world tick:
+//   records  'G' (format 8) comes first in each part: u32 length, then the
+//            creature's genome file (.gen) as it was when the part opened,
+//            or length 0 if it could not be read.  The other records each
+//            start with a u8 type and a u32 world tick:
 //     'C'  context: i32 x, i32 y (the creature's foot), u8 chosen action,
 //          i8 attention slot (-1 none), u32 attended object's classifier,
 //          u8 flags (1 asleep, 2 dreaming: instincts waiting to be
-//          processed).
+//          processed; bits 2..4 the life stage and bits 5..6 the sex,
+//          1 male 2 female, format 8).
 //     'I'  inputs, right after each 'C' (format 7): the creature's 16 drive
 //          levels, then each lobe's four chemical inputs (chem 0..3) in
 //          lobe order -- 16 + 4 x lobe count values in all.  u8 0 then
@@ -84,8 +90,10 @@ struct BrainRecordContext {
     std::uint8_t action = 0;
     std::int8_t attention_slot = -1;
     std::uint32_t attention_classifier = 0;
-    std::uint8_t flags = 0;  // 1 asleep, 2 dreaming
+    std::uint8_t flags = 0;  // 1 asleep, 2 dreaming, life stage << 2, sex << 5
     std::array<std::uint8_t, 16> drives{};  // the creature's drive levels
+    // Reads the creature's genome file; called once when a part opens.
+    std::function<std::vector<std::uint8_t>()> load_genome;
 };
 
 // What the brain code did to a dendrite (the 'E' record's kind).

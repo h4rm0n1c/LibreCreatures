@@ -2871,7 +2871,23 @@ void C1WindowsDocument::update_creature_brain(std::size_t index) {
         }
         context.flags = static_cast<std::uint8_t>(
             (creature->is_asleep() ? 1 : 0) |
-            (creature->instinct_runtime_state().dream_countdown != 0 ? 2 : 0));
+            (creature->instinct_runtime_state().dream_countdown != 0 ? 2 : 0) |
+            ((static_cast<unsigned>(creature->genome_life_stage()) & 7u) << 2) |
+            ((static_cast<unsigned>(creature->genome_sex()) & 3u) << 5));
+        const auto moniker = skeleton.genome_source_filename;
+        context.load_genome = [this, moniker]() {
+            auto& files = genome_files();
+            for (const std::string& path : {files.secondary_genetics_path(moniker),
+                                            files.primary_genetics_path(moniker)}) {
+                if (files.regular_file_exists(path)) {
+                    try {
+                        return files.read_file(path);
+                    } catch (const std::exception&) {
+                    }
+                }
+            }
+            return std::vector<std::uint8_t>{};
+        };
         if (skeleton.motion_link != nullptr) {
             context.attention_classifier =
                 skeleton.motion_link->classifier_base();

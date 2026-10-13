@@ -42,6 +42,7 @@ class Layout:
     moniker: int
     lobes: list
     version: int = 4
+    genome: bytes = b""     # format 8: the creature's own .gen file
     neuron_keys: list = field(default_factory=list)    # (lobe, neuron)
     dendrite_keys: list = field(default_factory=list)  # (lobe, neuron, rule, dendrite)
 
@@ -71,6 +72,7 @@ class Frame:
     changed_dendrite_keys: list | None = None  # None on a keyframe (all may differ)
     flags: int = 0          # format 5: 1 asleep, 2 dreaming
     drives: tuple = ()      # format 7: the creature's 16 drive levels
+    # life stage (format 8) is flags >> 2 & 7: see Frame.life_stage
     lobe_chemicals: dict = field(default_factory=dict)  # format 7: (lobe, 0..3) -> value
     events: list = field(default_factory=list)  # format 5: Event since the last frame
 
@@ -79,6 +81,11 @@ EVENT_KINDS = {1: "reinforce", 2: "relax", 3: "ltw step", 4: "strengthen",
                5: "weaken", 6: "went loose", 7: "attach", 8: "rescue",
                9: "migrate", 10: "migrate failed", 11: "dream LTW raise",
                12: "reset"}
+
+
+def life_stage(frame):
+    """The creature's life stage at a frame (format 8; 0 before)."""
+    return (frame.flags >> 2) & 7
 
 
 @dataclass
@@ -120,7 +127,7 @@ def read_layout(r):
         raise ValueError("not a C1 brain recording")
     r.pos = 4
     version = r.take("I")
-    if version not in (3, 4, 5, 6, 7):
+    if version not in (3, 4, 5, 6, 7, 8):
         raise ValueError(f"unknown recording version {version}")
     moniker = r.take("I")
     lobes = []
@@ -170,7 +177,11 @@ def read_recording(path):
     for r in read_chunks(file_reader):
         while not r.done():
             kind = r.take("c")
-            if kind == b"C":
+            if kind == b"G":
+                length = r.take("I")
+                layout.genome = bytes(r.data[r.pos:r.pos + length])
+                r.pos += length
+            elif kind == b"C":
                 context = r.take("IiiBbI")
                 flags = r.take("B") if layout.version >= 5 else 0
             elif kind == b"I":

@@ -89,27 +89,35 @@ DECISION_TYPES = {0: "type 0", 1: "type 1"}
 CHEMICALS_FILE = None
 
 
-def set_genome(path):
-    """Name general senses from a genome's stimulus genes, and the decision
-    lobe's dendrite types from its state and reinforcement rules."""
+GENOME_OVERRIDE = False   # --genome given: do not use the recording's own genome
+GENOME_NOTES = []          # what configure() found, for the report header
+
+
+def configure(source, stage=0, sex=None, layout=None):
+    """Name general senses, the decision lobe's dendrite roles and the lobes'
+    chemical inputs from a genome (a .gen path or its bytes), as it stands
+    at life stage `stage` for a creature of `sex`.  With the recorded
+    `layout`, check the genome's lobes against it."""
     import os
     import genome_brain
     GENERAL_SENSES.clear()
     GENERAL_SENSES.update(ENGINE_SENSES)
-    for neuron, label in genome_brain.general_sense_names(path).items():
+    for neuron, label in genome_brain.general_sense_names(source, stage, sex).items():
         if neuron < 32:
             GENERAL_SENSES[neuron] = label
-    lobes = genome_brain.lobe_rules(path)
+    lobes = genome_brain.lobe_rules(source, sex)
+    chemicals = {}
+    candidates = [CHEMICALS_FILE]
+    if isinstance(source, str):
+        candidates.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(source))),
+                                       "allchemicals.str"))
+    for candidate in candidates:
+        if candidate and os.path.exists(candidate):
+            chemicals = genome_brain.read_chemical_names(candidate)
+            break
+    inputs = genome_brain.chemical_inputs(source, chemicals, stage, sex)
     if len(lobes) > DECISION:
         decision = lobes[DECISION]
-        chemicals = {}
-        for candidate in [CHEMICALS_FILE,
-                          os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(path))),
-                                       "allchemicals.str")]:
-            if candidate and os.path.exists(candidate):
-                chemicals = genome_brain.read_chemical_names(candidate)
-                break
-        inputs = genome_brain.chemical_inputs(path, chemicals)
         for t, rule in enumerate(decision["types"]):
             sign = ("+" if f"+ type {t}" in decision["state rule"] or
                     decision["state rule"].startswith(f"type {t}") else
@@ -119,6 +127,46 @@ def set_genome(path):
             if chem.startswith("chem ") and (DECISION, int(chem[5])) in inputs:
                 chem = inputs[(DECISION, int(chem[5]))]
             DECISION_TYPES[t] = f"{role} (type {t}, grown by {chem})"
+    GENOME_NOTES.clear()
+    GENOME_NOTES.append(f"genome: {'recording' if isinstance(source, bytes) else source}, "
+                        f"life stage {stage}, sex {({1: 'male', 2: 'female'}).get(sex, '?')}")
+    if layout is not None:
+        if len(lobes) != len(layout.lobes):
+            GENOME_NOTES.append(f"WARNING: genome builds {len(lobes)} lobes, recording has "
+                                f"{len(layout.lobes)}")
+        for index, (gene, recorded) in enumerate(zip(lobes, layout.lobes)):
+            if gene["perception copy"] != recorded.perception_copy and recorded.perception_copy is not None:
+                GENOME_NOTES.append(f"WARNING: lobe {index} perception copy {gene['perception copy']} "
+                                    f"in the genome, {recorded.perception_copy} recorded")
+            for t in range(2):
+                if gene["types"][t]["source lobe"] % max(len(layout.lobes), 1) != recorded.rule_targets[t]:
+                    GENOME_NOTES.append(f"WARNING: lobe {index} type {t} reads lobe "
+                                        f"{gene['types'][t]['source lobe']} in the genome, "
+                                        f"{recorded.rule_targets[t]} recorded")
+
+
+def set_genome(path):
+    """--genome: decode with this genome instead of the recording's own."""
+    global GENOME_OVERRIDE
+    GENOME_OVERRIDE = True
+    configure(path)
+
+
+def recording(path):
+    """read_recording, configured from the creature's own genome (format 8)
+    at its life stage and sex, again whenever the life stage changes."""
+    from brain_record import life_stage
+    configured = None
+    for layout, frame in read_recording(path):
+        if not GENOME_OVERRIDE and layout.genome:
+            key = (life_stage(frame), (frame.flags >> 5) & 3)
+            if key != configured:
+                configure(layout.genome, key[0], key[1] or None, layout)
+                if configured is None:
+                    for note in GENOME_NOTES:
+                        print(note)
+                configured = key
+        yield layout, frame
 
 
 def item_name(lobe, index):
@@ -193,7 +241,7 @@ def concept_inputs(layout, perception, dendrites, neuron):
 
 
 def cmd_perception(path):
-    for layout, _ in read_recording(path):
+    for layout, _ in recording(path):
         if layout.version < 4:
             print("format 3 recording: the copied lobes are not recorded, so "
                   "perception neurons cannot be named")
@@ -208,7 +256,7 @@ def cmd_concepts(path, top=30):
     done_with = collections.defaultdict(collections.Counter)
     layout = last = None
     frames = 0
-    for layout, frame in read_recording(path):
+    for layout, frame in recording(path):
         frames += 1
         last = frame
         what = attended(frame)
@@ -234,7 +282,7 @@ def cmd_concepts(path, top=30):
 
 def cmd_rules(path, top=8):
     layout = last = None
-    for layout, frame in read_recording(path):
+    for layout, frame in recording(path):
         last = frame
     if layout is None:
         return
@@ -261,7 +309,7 @@ def cmd_rules(path, top=8):
 
 def cmd_timeline(path):
     previous = None
-    for layout, frame in read_recording(path):
+    for layout, frame in recording(path):
         # A drive's level is its firing strength (the early phase leaves its
         # activation at the lobe's baseline).
         key = (frame.action, frame.attention_slot)
@@ -338,7 +386,7 @@ class BrainReplay:
         return self.meaning.get(source, ("?",))
 
     def run(self, on_decision=None, on_frame=None):
-        for layout, frame in read_recording(self.path):
+        for layout, frame in recording(self.path):
             if self.layout is None:
                 self.layout = layout
                 if layout.version < 5:
@@ -493,7 +541,7 @@ def cmd_teaching(path, top=8):
     by_attended = collections.defaultdict(lambda: [0, 0, 0])
     by_drive = collections.defaultdict(lambda: [0, 0, 0])
     layout = None
-    for layout, frame in read_recording(path):
+    for layout, frame in recording(path):
         if layout.version < 7:
             raise SystemExit(f"format {layout.version} recording: it has no lobe inputs; "
                              "teaching needs format 7")
