@@ -225,7 +225,7 @@ def read_recording(path):
                 running = dict(dendrites)
                 yield layout, Frame(*context, True, neurons, dendrites,
                                     len(layout.neuron_keys), len(layout.dendrite_keys),
-                                    None, flags, events, *frame_inputs(inputs, layout))
+                                    None, flags, *frame_inputs(inputs, layout), events)
                 events = []
             elif kind == b"D":
                 r.take("I")
@@ -258,7 +258,7 @@ def read_recording(path):
                     changed_keys.append(key)
                     number += 1
                 yield layout, Frame(*context, False, neurons, dendrites, changed_n, changed_d,
-                                    changed_keys, flags, events, *frame_inputs(inputs, layout))
+                                    changed_keys, flags, *frame_inputs(inputs, layout), events)
                 events = []
             else:
                 raise ValueError(f"bad record type {kind!r}")
