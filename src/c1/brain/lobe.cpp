@@ -422,6 +422,19 @@ void Lobe::update_late_phase(Brain* brain, std::uint32_t tick) {
     if (record_votes) {
         begin_lobe_votes(brain, *this);
     }
+    // Lab only: the dendrite updates go into one 'U' record, with what each
+    // type's susceptibility decays by this tick.
+    if (g_brain_events_wanted) {
+        std::array<std::uint32_t, 2> suscept_decay{};
+        for (std::size_t rule_index = 0; rule_index < 2; ++rule_index) {
+            const std::uint8_t selector = dendrite_types[rule_index].relax_suscept;
+            if (selector_matches_tick(selector, tick)) {
+                suscept_decay[rule_index] =
+                    g_biochemistry_tick_selector_q16_multipliers[selector >> 3];
+            }
+        }
+        begin_lobe_update(brain, *this, tick, suscept_decay);
+    }
 
     for (std::uint32_t neuron_index = 0; neuron_index < neuron_count;
          ++neuron_index) {
@@ -565,6 +578,9 @@ void Lobe::update_late_phase(Brain* brain, std::uint32_t tick) {
                 std::uint8_t signal = evaluate_rule_expression(
                     rule.suscept_svrule, registers);
                 if (connection.susceptibility < signal) {
+                    if (g_brain_events_wanted) {
+                        record_eligibility(brain, connection, signal);
+                    }
                     const std::uint8_t gap = static_cast<std::uint8_t>(
                         signal - connection.susceptibility);
                     connection.susceptibility = static_cast<std::uint8_t>(
@@ -602,7 +618,8 @@ void Lobe::update_late_phase(Brain* brain, std::uint32_t tick) {
                             std::min(raised, static_cast<std::uint32_t>(0xff)));
                         if (g_brain_events_wanted) {
                             record_dendrite_event(brain, connection,
-                                                  DendriteEvent::reinforce, before);
+                                                  DendriteEvent::reinforce, before,
+                                                  target_signal);
                         }
                     }
                 }
@@ -719,6 +736,10 @@ void Lobe::update_late_phase(Brain* brain, std::uint32_t tick) {
                 }
             }
         }
+    }
+
+    if (g_brain_events_wanted) {
+        end_lobe_update(brain);
     }
 
     active_fraction = neuron_count == 0

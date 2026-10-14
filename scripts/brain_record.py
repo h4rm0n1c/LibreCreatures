@@ -12,8 +12,14 @@
                                         the sum of its recorded flows; (format
                                         10) every vote sum must be its recorded
                                         contributions, clamped and scaled by the
-                                        lobe's input gain; reports any that are
-                                        not (--json: one JSON list of results)
+                                        lobe's input gain; (format 10) every
+                                        goal-matrix change must be what the
+                                        stimuli taught; (format 11) the events
+                                        and lobe updates must rebuild every
+                                        dendrite field, susceptibility
+                                        included, exactly as each keyframe has
+                                        it; reports any that are not (--json:
+                                        one JSON list of results)
 
 As a module, read_recording(path) yields Frame objects that carry the full
 brain state at each recorded tick (neurons and dendrites rebuilt from the
@@ -93,6 +99,9 @@ class Frame:
     goal_matrix: tuple = ()  # 40 attention records x 16 drive weights, flat
     words: dict = field(default_factory=dict)  # record -> (heard, said, reinforcement)
     instincts: list = field(default_factory=list)  # Instinct started since the last frame
+    # Format 11: on a keyframe, the dendrites whose rebuilt state differs
+    # from it ((key, rebuilt, keyframe)); None when there was nothing to check.
+    keyframe_mismatches: list | None = None
 
 
 EVENT_KINDS = {1: "reinforce", 2: "relax", 3: "ltw step", 4: "strengthen",
@@ -114,6 +123,8 @@ class Event:
     before: tuple    # (source, current, STW, LTW, strength)
     after: tuple
     instinct: int | None = None  # format 10: the instinct being dreamed, if dreaming
+    signal: int | None = None    # format 11: eligible, reinforce: the rule's result
+    tick: int | None = None      # format 11: the biochemistry tick of its lobe update
 
 
 FLOW_ORIGINS = {0: "unknown", 1: "emitter", 2: "reaction", 3: "decay",
@@ -225,7 +236,7 @@ def read_layout(r):
         raise ValueError("not a C1 brain recording")
     r.pos = 4
     version = r.take("I")
-    if version not in (3, 4, 5, 6, 7, 8, 9, 10):
+    if version not in (3, 4, 5, 6, 7, 8, 9, 10, 11):
         raise ValueError(f"unknown recording version {version}")
     moniker = r.take("I")
     lobes = []
@@ -252,6 +263,101 @@ def read_chunks(r):
         yield Reader(raw)
 
 
+# Format 11 'U' record sets, in the order a lobe update works on a dendrite.
+UPDATE_SETS = ("eligible", "reinforce", "relax", "ltw step", "strengthen", "weaken",
+               "went loose")
+UPDATE_PAYLOADS = ("eligible", "reinforce", "relax", "strengthen")
+
+
+def read_set(r, first):
+    """A 'U' dendrite set: the dendrite numbers, runs expanded."""
+    numbers, following = [], first
+    count = r.varint()
+    while len(numbers) < count:
+        code = r.varint()
+        start = following + (code >> 1)
+        length = r.varint() + 2 if code & 1 else 1
+        numbers.extend(range(start, start + length))
+        following = start + length
+    return numbers
+
+
+def lobe_first_numbers(layout):
+    """Each lobe's first dendrite number, then the dendrite count."""
+    firsts, number = [], 0
+    for lobe in layout.lobes:
+        firsts.append(number)
+        number += sum(a + b for a, b in lobe.dendrite_counts)
+    return firsts + [number]
+
+
+def apply_update(r, layout, firsts, running, nonzero, instinct, touched):
+    """Replays one 'U' record on `running` (key -> dendrite state) and
+    returns its events.  `nonzero` holds the numbers whose current weight
+    (susceptibility) is not 0."""
+    lobe, flags, tick = r.take("B"), r.take("B"), r.varint()
+    decay = (r.varint(), r.varint())
+    first = firsts[lobe]
+    sets = []
+    for name in UPDATE_SETS:
+        numbers = read_set(r, first)
+        payload = ()
+        if name in UPDATE_PAYLOADS:
+            payload = r.data[r.pos:r.pos + len(numbers)]
+            r.pos += len(numbers)
+        sets.append((name, numbers, payload))
+    dreaming = bool(flags & 1)
+    keys = layout.dendrite_keys
+    events = []
+    eligible = dict(zip(sets[0][1], sets[0][2]))
+    # Susceptibility: eligible dendrites rise, the others decay.
+    for number in [n for n in nonzero if firsts[lobe] <= n < firsts[lobe + 1]
+                   and n not in eligible]:
+        rate = decay[keys[number][2]]
+        if rate:
+            source, current, stw, ltw, strength = running[keys[number]]
+            current = (current * rate) >> 16
+            running[keys[number]] = (source, current, stw, ltw, strength)
+            touched.add(keys[number])
+            if not current:
+                nonzero.discard(number)
+    for number, signal in eligible.items():
+        before = running[keys[number]]
+        source, current, stw, ltw, strength = before
+        current += (signal - current) >> 3
+        running[keys[number]] = (source, current, stw, ltw, strength)
+        if current:
+            nonzero.add(number)
+        touched.add(keys[number])
+        events.append(Event("eligible", dreaming, keys[number], before, running[keys[number]],
+                            instinct if dreaming else None, signal, tick))
+    for name, numbers, payload in sets[1:]:
+        for i, number in enumerate(numbers):
+            before = running[keys[number]]
+            source, current, stw, ltw, strength = before
+            signal = None
+            if name == "reinforce":
+                signal = payload[i]
+                weighted = (current * signal) >> 8
+                stw = min(255, stw + ((weighted - (stw - ltw)) & 0xff))
+            elif name == "relax":
+                stw = payload[i]
+            elif name == "ltw step":
+                ltw += 1 if ltw < stw else -1
+            elif name == "strengthen":
+                strength = payload[i]
+            elif name == "weaken":
+                strength -= 1
+            elif name == "went loose":
+                current = stw = ltw = strength = 0
+                nonzero.discard(number)
+            running[keys[number]] = (source, current, stw, ltw, strength)
+            touched.add(keys[number])
+            events.append(Event(name, dreaming, keys[number], before, running[keys[number]],
+                                instinct if dreaming else None, signal, tick))
+    return events
+
+
 def frame_inputs(inputs, layout):
     """(drives, lobe chemicals) from a format 7 'I' state; empty before."""
     if not inputs:
@@ -275,6 +381,9 @@ def read_recording(path):
     chemicals, flows, stimuli, chemistry, world = [], [], [], {}, {}
     goal_matrix, words, instincts = [], {}, []
     current_instinct = None
+    firsts = lobe_first_numbers(layout)
+    nonzero = set()   # format 11: dendrite numbers with a non-zero current weight
+    touched = set()   # format 11: dendrites changed since the last frame
 
     def extras():
         return {"chemicals": tuple(chemicals), "flows": flows, "stimuli": stimuli,
@@ -361,11 +470,15 @@ def read_recording(path):
                 events.append(Event(EVENT_KINDS.get(event_kind, str(event_kind)),
                                     bool(event_flags & 1),
                                     layout.dendrite_keys[number], before, after))
+            elif kind == b"U":
+                events.extend(apply_update(r, layout, firsts, running, nonzero,
+                                           current_instinct, touched))
             elif kind == b"E":
                 # Format 6: only what the event changed; the state before it
                 # is the running state (keyframe, deltas, events so far).
                 code = r.take("B")
-                key = layout.dendrite_keys[r.varint()]
+                number = r.varint()
+                key = layout.dendrite_keys[number]
                 event_kind = EVENT_KINDS.get(code & 0x7f, str(code & 0x7f))
                 before = running[key]
                 source, current, stw, ltw, strength = before
@@ -385,19 +498,29 @@ def read_recording(path):
                     current, stw = 0, ltw
                 after = (source, current, stw, ltw, strength)
                 running[key] = after
+                touched.add(key)
+                if not current:
+                    nonzero.discard(number)
                 events.append(Event(event_kind, bool(code & 0x80), key, before, after,
                                     current_instinct if code & 0x80 else None))
             elif kind == b"K":
                 r.take("I")
                 for key in layout.neuron_keys:
                     neurons[key] = r.take("2B")
-                for key in layout.dendrite_keys:
-                    dendrites[key] = r.take("H4B")
+                dendrites = {key: r.take("H4B") for key in layout.dendrite_keys}
+                mismatches = None
+                if layout.version >= 11 and running:
+                    mismatches = [(key, running[key], value)
+                                  for key, value in dendrites.items() if running[key] != value]
                 running = dict(dendrites)
+                nonzero = {n for n, key in enumerate(layout.dendrite_keys) if running[key][1]}
+                touched = set()
                 yield layout, Frame(*context, True, neurons, dendrites,
                                     len(layout.neuron_keys), len(layout.dendrite_keys),
                                     None, flags, *frame_inputs(inputs, layout), events,
-                                    **extras())
+                                    **extras(), keyframe_mismatches=mismatches)
+                if layout.version >= 11:
+                    dendrites = running  # the events keep it from here
                 events, flows, stimuli, instincts = [], [], [], []
             elif kind == b"D":
                 r.take("I")
@@ -412,6 +535,14 @@ def read_recording(path):
                     if mask & 2: fire = r.take("B")
                     neurons[key] = (act, fire)
                     number += 1
+                if layout.version >= 11:
+                    changed_keys = sorted(touched)
+                    touched = set()
+                    yield layout, Frame(*context, False, neurons, dendrites, changed_n,
+                                        len(changed_keys), changed_keys, flags,
+                                        *frame_inputs(inputs, layout), events, **extras())
+                    events, flows, stimuli, instincts = [], [], [], []
+                    continue
                 changed_d = r.varint()
                 changed_keys = []
                 number = 0
@@ -479,6 +610,27 @@ def structural(values):
     return (source, stw, ltw, strength)
 
 
+# Drive reducers (chemicals 33..48) teach the goal-direction matrix.
+FIRST_DRIVE_REDUCER = 33
+
+
+def teach_goal_matrix(matrix, stimulus):
+    """Creature::ApplyStimulus's goal learning: each drive reducer the
+    stimulus gives moves its column of the source's attention record a fifth
+    of the way to the amount.  Returns the (index, before, after) changes."""
+    changes = []
+    if stimulus.flags & 3 or stimulus.attention_record >= 40:
+        return changes  # from the creature itself, or ignored asleep, or no record
+    for chemical, amount in stimulus.chemicals:
+        if FIRST_DRIVE_REDUCER <= chemical < FIRST_DRIVE_REDUCER + 16:
+            index = stimulus.attention_record * 16 + chemical - FIRST_DRIVE_REDUCER
+            total = amount + matrix[index] * 4
+            after = abs(total) // 5 * (1 if total >= 0 else -1)  # C division
+            changes.append((index, matrix[index], after))
+            matrix[index] = after
+    return changes
+
+
 def check(paths, as_json=False):
     """Every structural change in the frames must match the events."""
     import json
@@ -491,6 +643,9 @@ def check(paths, as_json=False):
         frames = events = continuity = unexplained = 0
         flow_count = unexplained_chemicals = unknown_flows = 0
         vote_count = unexplained_votes = 0
+        keyframes_checked = keyframe_mismatches = 0
+        goal_changes = unexplained_goals = 0
+        goal_matrix = None
         gains = None
         chemicals = None
         examples = []
@@ -540,6 +695,22 @@ def check(paths, as_json=False):
                                     f"flows say {totals[chemical]:+d}")
                     unknown_flows += sum(1 for f in frame.flows if f.origin == "unknown")
                 chemicals = frame.chemicals
+            if frame.keyframe_mismatches is not None:
+                keyframes_checked += 1
+                keyframe_mismatches += len(frame.keyframe_mismatches)
+                for key, rebuilt, value in frame.keyframe_mismatches[:5 - len(examples)]:
+                    examples.append(f"tick {frame.tick}: keyframe has {key} as {value}, "
+                                    f"the events rebuilt {rebuilt}")
+            if frame.goal_matrix:
+                if goal_matrix is not None:
+                    for stimulus in frame.stimuli:
+                        goal_changes += len(teach_goal_matrix(goal_matrix, stimulus))
+                    wrong = [i for i, v in enumerate(frame.goal_matrix) if v != goal_matrix[i]]
+                    unexplained_goals += len(wrong)
+                    for i in wrong[:5 - len(examples)]:
+                        examples.append(f"tick {frame.tick}: goal weight {i // 16},{i % 16} is "
+                                        f"{frame.goal_matrix[i]}, the stimuli taught {goal_matrix[i]}")
+                goal_matrix = list(frame.goal_matrix)
             if state is None:
                 # Events start after the first keyframe.
                 state = {k: structural(v) for k, v in frame.dendrites.items()}
@@ -566,7 +737,8 @@ def check(paths, as_json=False):
                     state[key] = now
         else:
             ok = (continuity == 0 and unexplained == 0 and unexplained_chemicals == 0
-                  and unexplained_votes == 0)
+                  and unexplained_votes == 0 and keyframe_mismatches == 0
+                  and unexplained_goals == 0)
             failed |= not ok
             flows_text = ""
             if chemicals is not None:
@@ -576,6 +748,12 @@ def check(paths, as_json=False):
             if vote_count:
                 flows_text += (f"; {vote_count} vote sums, not matching their "
                                f"contributions: {unexplained_votes}")
+            if goal_matrix is not None:
+                flows_text += (f"; {goal_changes} goal-matrix lessons, weights the stimuli "
+                               f"do not explain: {unexplained_goals}")
+            if keyframes_checked:
+                flows_text += (f"; {keyframes_checked} keyframes rebuilt from the events, "
+                               f"dendrites that differ: {keyframe_mismatches}")
             results.append({
                 "file": path, "moniker": f"{moniker:08x}" if moniker is not None else None,
                 "version": version, "bytes": os.path.getsize(path), "frames": frames,
@@ -583,7 +761,10 @@ def check(paths, as_json=False):
                 "events_off_state": continuity, "unexplained_dendrite_changes": unexplained,
                 "chemical_flows": flow_count, "unexplained_chemical_changes": unexplained_chemicals,
                 "unknown_flows": unknown_flows, "vote_sums": vote_count,
-                "unexplained_vote_sums": unexplained_votes, "ok": ok, "examples": examples})
+                "unexplained_vote_sums": unexplained_votes,
+                "goal_lessons": goal_changes, "unexplained_goal_weights": unexplained_goals,
+                "keyframes_rebuilt": keyframes_checked,
+                "keyframe_mismatches": keyframe_mismatches, "ok": ok, "examples": examples})
             if as_json:
                 continue
             print(f"{path}: {frames} frames, {events} events; "

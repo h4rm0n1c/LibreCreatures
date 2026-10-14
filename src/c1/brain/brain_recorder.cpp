@@ -30,16 +30,11 @@
 namespace creatures1::brain {
 namespace {
 
-constexpr std::uint32_t kFormatVersion = 10;
+constexpr std::uint32_t kFormatVersion = 11;
 // Frames are buffered and written as one compressed chunk this often, so a
 // game that is killed loses at most this many frames.
 constexpr std::uint32_t kFramesPerChunk = 32;
 constexpr int kCompressionQuality = 9;
-// Most dendrite changes are the decision lobe's current weights relaxing a
-// little each tick.  A change that is only a fall in current weight is
-// written every this many frames (accumulated); every other change is
-// written in the frame it happens.
-constexpr std::uint32_t kDecayFrameInterval = 8;
 constexpr std::uint32_t kKeyframeInterval = 256;
 constexpr std::uint16_t kNoTarget = 0xffff;
 
@@ -114,6 +109,9 @@ struct ConnectionPlace {
 struct Recording {
     const Brain* brain = nullptr;
     std::unordered_map<const Dendrite*, ConnectionPlace> places;
+    // Per lobe, the number of its first dendrite; one more entry holds the
+    // dendrite count.
+    std::vector<std::uint32_t> lobe_first_numbers;
     std::FILE* file = nullptr;
     std::uint32_t moniker = 0;
     std::uint32_t part = 0;
@@ -139,6 +137,19 @@ struct Recording {
     std::vector<BrainRecordContext::Word> previous_words;
     std::uint32_t instincts = 0;
     std::uint32_t current_instinct = 0;
+    // The lobe whose dendrites are updating now: its 'U' record's sets, in
+    // the order the update works on each dendrite.
+    struct LobeUpdate {
+        bool open = false;
+        std::uint8_t lobe = 0;
+        std::uint8_t flags = 0;
+        std::uint32_t tick = 0;
+        std::uint32_t first_number = 0;  // the lobe's first dendrite
+        std::array<std::uint32_t, 2> suscept_decay{};
+        std::array<std::vector<std::uint32_t>, 7> sets;
+        std::array<std::vector<std::uint8_t>, 7> payloads;
+    };
+    LobeUpdate update;
     std::vector<std::uint8_t> pending;
 
     Recording() = default;
@@ -284,9 +295,11 @@ std::uint16_t source_index(const Brain& brain, std::uint32_t lobe_index,
 // Numbers every dendrite in keyframe order, for events.
 void index_connections(const Brain& brain, Recording& recording) {
     recording.places.clear();
+    recording.lobe_first_numbers.clear();
     std::uint32_t number = 0;
     for (std::uint32_t lobe_index = 0; lobe_index < brain.lobe_count();
          ++lobe_index) {
+        recording.lobe_first_numbers.push_back(number);
         const Lobe& lobe = brain.lobe(lobe_index);
         for (std::uint32_t index = 0; index < lobe.neuron_count_value();
              ++index) {
@@ -306,6 +319,7 @@ void index_connections(const Brain& brain, Recording& recording) {
             }
         }
     }
+    recording.lobe_first_numbers.push_back(number);
 }
 
 Snapshot take_snapshot(const Brain& brain) {
@@ -392,8 +406,6 @@ bool open_part(Recording& recording, const Snapshot& snapshot) {
     return true;
 }
 
-// Writes one frame.  A decay held back from a delta is put back in
-// `snapshot`, which then says what the file says.
 // Drives, then every lobe's chemical inputs ('I' record).
 std::vector<std::uint8_t> collect_inputs(const Brain& brain,
                                          const BrainRecordContext& context) {
@@ -561,8 +573,9 @@ void write_frame(Recording& recording, Snapshot& snapshot,
             out.u8(dendrite.state);
         }
     } else {
-        // Changed entries in index order, each as its gap from the previous
-        // one and a mask of the fields that changed, then those fields.
+        // Changed neurons in index order, each as its gap from the previous
+        // one and a mask of the fields that changed, then those fields.  The
+        // 'U' and 'E' records carry every dendrite change.
         out.u8('D');
         out.u32(context.world_tick);
         std::vector<std::uint32_t> changed;
@@ -586,43 +599,6 @@ void write_frame(Recording& recording, Snapshot& snapshot,
             out.u8(mask);
             if (mask & 1) out.u8(now.activation);
             if (mask & 2) out.u8(now.firing);
-            next = i + 1;
-        }
-        changed.clear();
-        const bool decay_frame = recording.frames % kDecayFrameInterval == 0;
-        for (std::uint32_t i = 0; i < snapshot.dendrites.size(); ++i) {
-            const DendriteState& now = snapshot.dendrites[i];
-            const DendriteState& before = recording.previous.dendrites[i];
-            if (now == before) {
-                continue;
-            }
-            DendriteState decayed_only = before;
-            decayed_only.susceptibility = now.susceptibility;
-            if (!decay_frame && decayed_only == now &&
-                now.susceptibility < before.susceptibility) {
-                snapshot.dendrites[i] = before;
-                continue;
-            }
-            changed.push_back(i);
-        }
-        out.varint(static_cast<std::uint32_t>(changed.size()));
-        next = 0;
-        for (std::uint32_t i : changed) {
-            const DendriteState& now = snapshot.dendrites[i];
-            const DendriteState& before = recording.previous.dendrites[i];
-            const std::uint8_t mask = static_cast<std::uint8_t>(
-                (now.target != before.target ? 1 : 0) |
-                (now.susceptibility != before.susceptibility ? 2 : 0) |
-                (now.stw != before.stw ? 4 : 0) |
-                (now.ltw != before.ltw ? 8 : 0) |
-                (now.state != before.state ? 16 : 0));
-            out.varint(i - next);
-            out.u8(mask);
-            if (mask & 1) out.u16(now.target);
-            if (mask & 2) out.u8(now.susceptibility);
-            if (mask & 4) out.u8(now.stw);
-            if (mask & 8) out.u8(now.ltw);
-            if (mask & 16) out.u8(now.state);
             next = i + 1;
         }
     }
@@ -707,6 +683,7 @@ void record_brain_frame(const void* key, const Brain& brain,
         recording.previous_goal_matrix.clear();
         recording.previous_words.clear();
         recording.instincts = 0;
+        recording.update = {};
         g_brain_votes_wanted = true;
     }
     if (recording.biochemistry != context.biochemistry) {
@@ -723,8 +700,48 @@ void record_brain_frame(const void* key, const Brain& brain,
     recording.previous = std::move(snapshot);
 }
 
+namespace {
+
+// A 'U' record's set for an event kind, or -1 for kinds written as 'E'.
+int update_set(DendriteEvent kind) {
+    switch (kind) {
+    case DendriteEvent::reinforce: return 1;
+    case DendriteEvent::relax: return 2;
+    case DendriteEvent::ltw_step: return 3;
+    case DendriteEvent::strengthen: return 4;
+    case DendriteEvent::weaken: return 5;
+    case DendriteEvent::went_loose: return 6;
+    default: return -1;
+    }
+}
+
+// A dendrite set (see the 'U' record): count, runs, then the payloads.
+void write_set(Writer& out, const std::vector<std::uint32_t>& numbers,
+               const std::vector<std::uint8_t>& payload, std::uint32_t first) {
+    out.varint(static_cast<std::uint32_t>(numbers.size()));
+    std::uint32_t next = first;
+    for (std::size_t i = 0; i < numbers.size();) {
+        std::size_t end = i + 1;
+        while (end < numbers.size() && numbers[end] == numbers[end - 1] + 1) {
+            ++end;
+        }
+        const std::uint32_t gap = numbers[i] - next;
+        const std::size_t length = end - i;
+        out.varint((gap << 1) | (length > 1 ? 1u : 0u));
+        if (length > 1) {
+            out.varint(static_cast<std::uint32_t>(length - 2));
+        }
+        next = numbers[end - 1] + 1;
+        i = end;
+    }
+    out.bytes(payload);
+}
+
+} // namespace
+
 void record_dendrite_event(const Brain* brain, const Dendrite& connection,
-                           DendriteEvent kind, const Dendrite& before) {
+                           DendriteEvent kind, const Dendrite& before,
+                           std::uint8_t signal) {
     if (brain == nullptr) {
         return;
     }
@@ -738,6 +755,18 @@ void record_dendrite_event(const Brain* brain, const Dendrite& connection,
         return;
     }
     static_cast<void>(before);  // the reader knows it: its own state
+    const int set = update_set(kind);
+    if (set >= 0 && recording.update.open) {
+        recording.update.sets[set].push_back(place->second.number);
+        auto& payload = recording.update.payloads[set];
+        switch (kind) {
+        case DendriteEvent::reinforce: payload.push_back(signal); break;
+        case DendriteEvent::relax: payload.push_back(connection.stw); break;
+        case DendriteEvent::strengthen: payload.push_back(connection.strength); break;
+        default: break;
+        }
+        return;
+    }
     const auto dreaming = dreaming_brains().find(brain);
     const bool is_dreaming = dreaming != dreaming_brains().end() && dreaming->second;
     Writer out(recording.pending);
@@ -888,6 +917,68 @@ void record_neuron_sums(const Brain* brain, const Lobe& lobe,
     }
     found->second.sums[neuron * 2] = type0;
     found->second.sums[neuron * 2 + 1] = type1;
+}
+
+void begin_lobe_update(const Brain* brain, const Lobe& lobe, std::uint32_t tick,
+                       const std::array<std::uint32_t, 2>& suscept_decay) {
+    Recording* recording = recording_of(brain);
+    if (recording == nullptr) {
+        return;
+    }
+    const std::uint32_t index = lobe_index_of(*brain, lobe);
+    if (index + 1 >= recording->lobe_first_numbers.size()) {
+        return;
+    }
+    auto& update = recording->update;
+    update.open = true;
+    update.lobe = static_cast<std::uint8_t>(index);
+    const auto dreaming = dreaming_brains().find(brain);
+    update.flags = dreaming != dreaming_brains().end() && dreaming->second ? 1 : 0;
+    update.tick = tick;
+    update.first_number = recording->lobe_first_numbers[index];
+    update.suscept_decay = suscept_decay;
+    for (std::size_t set = 0; set < update.sets.size(); ++set) {
+        update.sets[set].clear();
+        update.payloads[set].clear();
+    }
+}
+
+void record_eligibility(const Brain* brain, const Dendrite& connection,
+                        std::uint8_t signal) {
+    Recording* recording = recording_of(brain);
+    if (recording == nullptr || !recording->update.open) {
+        return;
+    }
+    const auto place = recording->places.find(&connection);
+    if (place == recording->places.end()) {
+        return;
+    }
+    recording->update.sets[0].push_back(place->second.number);
+    recording->update.payloads[0].push_back(signal);
+}
+
+void end_lobe_update(const Brain* brain) {
+    Recording* recording = recording_of(brain);
+    if (recording == nullptr || !recording->update.open) {
+        return;
+    }
+    auto& update = recording->update;
+    update.open = false;
+    // A lobe with no dendrites has nothing to record.
+    if (recording->lobe_first_numbers[update.lobe + 1u] == update.first_number) {
+        return;
+    }
+    Writer out(recording->pending);
+    out.u8('U');
+    out.u8(update.lobe);
+    out.u8(update.flags);
+    out.varint(update.tick);
+    for (std::uint32_t decay : update.suscept_decay) {
+        out.varint(decay);
+    }
+    for (std::size_t set = 0; set < update.sets.size(); ++set) {
+        write_set(out, update.sets[set], update.payloads[set], update.first_number);
+    }
 }
 
 void record_instinct(const Brain* brain, const InstinctRecord& instinct) {

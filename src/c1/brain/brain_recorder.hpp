@@ -18,7 +18,7 @@ class Brain;
 //
 // One file per creature brain, <moniker>-<part>.c1brain, little-endian:
 //
-//   header   "C1BR", u32 version (10), u32 moniker, u32 lobe count, then per
+//   header   "C1BR", u32 version (11), u32 moniker, u32 lobe count, then per
 //            lobe: u32 neuron count, u8 grid width, u8 grid height,
 //            u8 rule 0 target lobe, u8 rule 1 target lobe, u8 perception
 //            copy (0 none, 1 copied, 2 copied mutually exclusive), and per
@@ -56,7 +56,37 @@ class Brain;
 //          weight, 4 target weight, 8 baseline weight, 16 state.  Varints
 //          are unsigned LEB128.  A dendrite change that is only a fall in
 //          current weight is written every 8th frame (the fall so far), not
-//          in each frame: those are most of a brain's changes.
+//          in each frame: those are most of a brain's changes.  From format
+//          11 'D' has no dendrite part (the varint count of changed
+//          dendrites is not written): 'U' and 'E' records explain every
+//          dendrite field, and each keyframe checks them.
+//     'U'  lobe update (format 11), written when a lobe's dendrites have been
+//          updated, before the lobe's attach and migrate events: u8 lobe
+//          index, u8 flags (1 dreaming), varint tick (the creature's
+//          biochemistry tick, which picks the rules' relax rates), per
+//          dendrite type a varint decay multiplier (Q16: the type's
+//          susceptibility decay this tick, 0 when its rate did not come
+//          round), then seven dendrite sets in the order the update worked
+//          on each dendrite:
+//            eligible     u8 signal: the susceptibility rule's result, for
+//                         every dendrite whose susceptibility was below it
+//            reinforce    u8 signal: the reinforcement rule's result
+//            relax        u8 STW after
+//            ltw step     nothing: LTW steps one towards STW
+//            strengthen   u8 strength after
+//            weaken       nothing: strength falls by one
+//            went loose   nothing: current weight, STW, LTW, strength 0
+//          A set is a varint count of dendrites, then runs: varint (gap << 1
+//          | 1 if a run), the gap counting from the previous run's end (the
+//          first from the lobe's first dendrite, keyframe order), then for a
+//          run a varint length - 2; then each dendrite's payload in order.
+//          Every dendrite of the lobe moves its current weight
+//          (susceptibility) by the rule native C1 uses: an eligible one
+//          rises by (signal - weight) >> 3; any other non-zero one is
+//          multiplied by its type's decay multiplier >> 16, when that is
+//          not 0.  A reinforced dendrite's weighted signal is
+//          (weight x signal) >> 8; if that is more than STW - LTW, STW rises
+//          by the excess, taken as a byte, to at most 255.
 //
 //     'E'  event: something the brain code did to one dendrite, written when
 //          it happens, so events come between frames in the order they
@@ -78,6 +108,8 @@ class Brain;
 //          last keyframe, the deltas and the events since.  Events start
 //          after the part's first keyframe.  (Format 5 wrote u8 kind, u8
 //          flags, the number, then the whole dendrite before and after.)
+//          From format 11 the kinds a lobe update makes (reinforce to went
+//          loose) are in its 'U' record instead.
 //     'S'  stimulus (format 9): written when a stimulus reaches the creature,
 //          between frames like 'E'.  varint stimulus number (counts from 0
 //          in each part), u8 built-in stimulus (0..35; 255 a scripted
@@ -140,7 +172,12 @@ class Brain;
 // keyframe comes first and then every 256 frames.  A brain whose layout
 // changes (a new genome loaded) starts a new part.  Every change to a
 // dendrite's source, STW, LTW or strength in a delta is the result of the
-// events since the last frame; brain_record.py checks that.
+// events since the last frame; brain_record.py checks that.  From format 11
+// the events and lobe updates rebuild every dendrite field, susceptibility
+// included, and brain_record.py checks the result against each keyframe.
+// The 'M' goal matrix changes only by the 'S' stimuli (a drive reducer's
+// amount into its attention record's column); brain_record.py checks that
+// too.
 struct BrainRecordContext {
     std::uint32_t world_tick = 0;
     std::uint32_t moniker = 0;
@@ -232,10 +269,28 @@ bool brain_recording_enabled();
 extern bool g_brain_events_wanted;
 
 // Records an event for `connection`, a dendrite of `brain`, whose fields
-// were `before` and are now as `connection` holds them.  Nothing happens
+// were `before` and are now as `connection` holds them.  `signal` is the
+// reinforcement rule's result for a reinforce event.  Nothing happens
 // unless `brain` is being recorded.
 void record_dendrite_event(const Brain* brain, const Dendrite& connection,
-                           DendriteEvent kind, const Dendrite& before);
+                           DendriteEvent kind, const Dendrite& before,
+                           std::uint8_t signal = 0);
+
+class Lobe;
+
+// A lobe of `brain` starts updating its dendrites at `tick`.
+// `suscept_decay` is each dendrite type's susceptibility decay multiplier
+// (Q16) this tick, 0 when its rate does not come round.  The lobe's events
+// are held until end_lobe_update and written as one 'U' record.
+void begin_lobe_update(const Brain* brain, const Lobe& lobe, std::uint32_t tick,
+                       const std::array<std::uint32_t, 2>& suscept_decay);
+
+// `connection`'s susceptibility rule gave `signal`, above its susceptibility.
+void record_eligibility(const Brain* brain, const Dendrite& connection,
+                        std::uint8_t signal);
+
+// The lobe's dendrite updates are done: write its 'U' record.
+void end_lobe_update(const Brain* brain);
 
 // True once any creature's chemicals are being recorded; biochemistry tests
 // this before working out a change for record_chemical_flow.
@@ -268,8 +323,6 @@ private:
 // True once any brain is being recorded; lobes test this before reporting
 // their votes.
 extern bool g_brain_votes_wanted;
-
-class Lobe;
 
 // A winner-take-all lobe of `brain` is summing its inputs: forget the votes
 // of its last update.
