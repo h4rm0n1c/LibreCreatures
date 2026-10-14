@@ -626,7 +626,7 @@ public:
 
     int add_toolbar_bitmap(std::string_view /*prog_id*/) override;
 
-    void set_toolbar_button(std::size_t tool_index, std::uint32_t command_id, int image_index) override;
+    void set_toolbar_button(std::size_t position, std::uint32_t command_id, int image_index) override;
 
     void append_tool_menu_item(std::uint32_t command_id, std::string_view display_name) override;
 
