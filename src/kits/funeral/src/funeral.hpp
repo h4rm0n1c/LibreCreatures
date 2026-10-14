@@ -11,6 +11,7 @@
 
 #include "c1kitshell/kit_art.hpp"
 #include "c1kitshell/kit_shell.hpp"
+#include "c1kitshell/kit_widgets.hpp"
 #include "c1kit/funeral_files.hpp"
 #include "c1kit/owner_files.hpp"
 
@@ -135,6 +136,38 @@ private:
     bool initialized_ = false;
 };
 
+// The modern look's Deaths page (not in the 1996 kit, which added a tab for
+// every death and so ran out of room when many creatures had died): every
+// dead creature in one list, newest first, and beside it the selected one's
+// memorial page (or its "No Record" page), the same pages the classic look
+// shows as tabs.
+class DeathsPage : public c1kitshell::LayoutPage {
+public:
+    explicit DeathsPage(FuneralSheet& sheet);
+    // Fills the list again (the graves changed) and keeps the selection, or
+    // selects `moniker` when one is given.
+    void refresh(const std::string& moniker = std::string());
+    // Stores the shown memorial's epitaph.
+    void commit_epitaph();
+
+protected:
+    void create_controls() override;
+    void layout(int width, int height) override;
+    afx_msg void OnSelectionChanged(NMHDR* header, LRESULT* result);
+    DECLARE_MESSAGE_MAP()
+
+private:
+    void show_detail(const std::string& moniker);
+
+    FuneralSheet& sheet_;
+    CListCtrl list_;
+    std::vector<std::string> rows_;  // moniker per row
+    std::string shown_;
+    std::unique_ptr<MemorialPage> memorial_;
+    std::unique_ptr<UnmarkedPage> unmarked_;
+    CRect detail_rect_;
+};
+
 // ---------------------------------------------------------------------------
 // The sheet
 // ---------------------------------------------------------------------------
@@ -156,6 +189,7 @@ public:
 
     // Writes the graves file now.
     bool save_graves();
+    bool classic() const { return classic_ != nullptr; }
     // Make Headstone: mark the grave and show it in the graveyard.
     void make_headstone(const std::string& moniker);
 
@@ -188,6 +222,7 @@ private:
     std::unique_ptr<c1kitshell::ClassicArt> classic_;
     std::unique_ptr<c1kitshell::CoverPage> cover_;  // classic only
     GraveyardPage graveyard_page_;
+    DeathsPage deaths_page_;  // modern look only
     std::vector<std::unique_ptr<MemorialPage>> memorial_pages_;
     std::vector<std::unique_ptr<UnmarkedPage>> unmarked_pages_;
     c1kit::KitSettings* registry_ = nullptr;

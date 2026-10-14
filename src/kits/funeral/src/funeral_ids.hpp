@@ -10,6 +10,7 @@ constexpr unsigned kDialogMemorial = 137;   // CFuneralSheet: one dead creature
 constexpr unsigned kDialogGraveyard = 182;  // CGravePage: "GraveYard"
 constexpr unsigned kDialogUnmarked = 183;   // CUnMarkedPage: "UnMarked Grave"
 constexpr unsigned kDialogCover = 140;      // classic only
+constexpr unsigned kDialogBlankPage = 300;  // LibreCreatures: the Deaths page
 constexpr unsigned kIconKit = 128;
 
 // Strings
@@ -18,6 +19,10 @@ constexpr unsigned kStringTitle = 101;      // "Creature Graveyard"
 constexpr unsigned kStringNoRecord = 104;   // the unmarked grave's tab
 constexpr unsigned kStringToolName = 105;   // "Creature Graveyard"
 constexpr unsigned kStringToolHelp = 107;   // "Pay your respects"
+constexpr unsigned kStringDeathsTab = 200;  // LibreCreatures: "Deaths"
+
+// The Deaths page (modern look)
+constexpr unsigned kControlDeathsList = 3000;
 
 // Memorial page (dialog 137)
 constexpr unsigned kControlPicture = 1071;
@@ -57,6 +62,9 @@ constexpr unsigned kCommandBufferBytes = 0x1000;
 // Default page area; the original's 215x225 dialog units are the minimum.
 constexpr int kDefaultPageWidthDlu = 215;
 constexpr int kDefaultPageHeightDlu = 225;
+// The modern look: the Deaths page (lc_resources.rcinc's dialog 300).
+constexpr int kDeathsPageWidthDlu = 380;
+constexpr int kDeathsPageHeightDlu = 245;
 
 
 } // namespace funeral
