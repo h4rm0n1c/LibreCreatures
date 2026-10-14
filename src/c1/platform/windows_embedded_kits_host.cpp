@@ -91,8 +91,8 @@ int C1NativeEmbeddedKitMenuPlatform::add_toolbar_bitmap(std::string_view prog_id
     return frame_.add_kit_toolbar_bitmap(prog_id);
 }
 
-void C1NativeEmbeddedKitMenuPlatform::set_toolbar_button(std::size_t tool_index, std::uint32_t command_id, int image_index) {
-    frame_.set_embedded_kit_toolbar_button(tool_index, command_id,
+void C1NativeEmbeddedKitMenuPlatform::set_toolbar_button(std::size_t position, std::uint32_t command_id, int image_index) {
+    frame_.set_embedded_kit_toolbar_button(position, command_id,
                                             image_index);
 }
 

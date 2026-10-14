@@ -1,7 +1,11 @@
 #include "embedded_kits.hpp"
 
+#include <algorithm>
 #include <array>
+#include <cctype>
 #include <string>
+#include <string_view>
+#include <vector>
 
 #include "../common/lab_trace.hpp"
 
@@ -86,12 +90,46 @@ bool decode_tool_definition(std::string_view encoded,
 
 } // namespace
 
+namespace {
+
+// LibreCreatures deviation: the kits are shown in the order of the 1996
+// game's kits, with the Community Edition's Biochemistry Kit after the
+// Observation Kit, not in slot order (which put it second).  Only the
+// position on the toolbar and in the Tools menu changes; each kit keeps
+// its slot, command and registration, which the game and the kits rely on
+// (YOUR_ID_IS, the Funeral Kit's slot 9, the event bar's slot 2).  Kits not
+// named here follow, in slot order.
+constexpr std::array<std::string_view, 10> kKitDisplayOrder = {
+    "Hatchery.OLE", "Owner.OLE",     "Health.OLE",         "Science.OLE",
+    "Sex.OLE",      "Overview.OLE",  "BiochemKit.OLE",     "ObjectInjector.OLE",
+    "Score.OLE",    "Funeral.OLE"};
+
+std::size_t display_rank(std::string_view prog_id) {
+    for (std::size_t rank = 0; rank < kKitDisplayOrder.size(); ++rank) {
+        if (prog_id.size() == kKitDisplayOrder[rank].size() &&
+            std::equal(prog_id.begin(), prog_id.end(), kKitDisplayOrder[rank].begin(),
+                       [](char a, char b) {
+                           return std::tolower(static_cast<unsigned char>(a)) ==
+                                  std::tolower(static_cast<unsigned char>(b));
+                       })) {
+            return rank;
+        }
+    }
+    return kKitDisplayOrder.size();
+}
+
+} // namespace
+
 void populate_embedded_kit_menu_and_toolbar(EmbeddedKitMenuApi& api) {
     if (!api.tools_menu_exists()) {
         return;
     }
 
-    constexpr std::uint32_t kFirstToolCommand = 0x8086;
+    struct Loaded {
+        std::size_t tool_index;
+        EmbeddedKitToolDefinition definition;
+    };
+    std::vector<Loaded> loaded;
     for (std::size_t tool_index = 0;
          tool_index < kEmbeddedKitSlotCount;
          ++tool_index) {
@@ -107,14 +145,25 @@ void populate_embedded_kit_menu_and_toolbar(EmbeddedKitMenuApi& api) {
 
         api.publish_tool_definition(tool_index, definition,
                                     definition.adjusted_type_code);
-        int image_index = api.add_toolbar_bitmap(definition.prog_id);
+        loaded.push_back({tool_index, definition});
+    }
+    std::stable_sort(loaded.begin(), loaded.end(),
+                     [](const Loaded& a, const Loaded& b) {
+                         return display_rank(a.definition.prog_id) <
+                                display_rank(b.definition.prog_id);
+                     });
+
+    constexpr std::uint32_t kFirstToolCommand = 0x8086;
+    std::size_t position = 0;
+    for (const Loaded& kit : loaded) {
+        int image_index = api.add_toolbar_bitmap(kit.definition.prog_id);
         if (image_index < 0) {
-            image_index = static_cast<int>(definition.adjusted_type_code) - 0x30;
+            image_index = static_cast<int>(kit.definition.adjusted_type_code) - 0x30;
         }
         const std::uint32_t command_id =
-            kFirstToolCommand + static_cast<std::uint32_t>(tool_index);
-        api.set_toolbar_button(tool_index, command_id, image_index);
-        api.append_tool_menu_item(command_id, definition.display_name);
+            kFirstToolCommand + static_cast<std::uint32_t>(kit.tool_index);
+        api.set_toolbar_button(position++, command_id, image_index);
+        api.append_tool_menu_item(command_id, kit.definition.display_name);
     }
     api.invalidate_toolbar_and_menu();
 }

@@ -122,7 +122,9 @@ public:
         const EmbeddedKitToolDefinition& definition,
         std::uint8_t adjusted_type_code) = 0;
     virtual int add_toolbar_bitmap(std::string_view prog_id) = 0;
-    virtual void set_toolbar_button(std::size_t tool_index,
+    // `position` is the kit's place among the kit buttons (display order),
+    // not its slot; the command carries the slot.
+    virtual void set_toolbar_button(std::size_t position,
                                     std::uint32_t command_id,
                                     int image_index) = 0;
     virtual void append_tool_menu_item(std::uint32_t command_id,
