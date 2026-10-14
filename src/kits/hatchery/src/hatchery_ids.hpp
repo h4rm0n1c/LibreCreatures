@@ -12,6 +12,7 @@ constexpr unsigned kStringNoMoreEggs = 61205;  // "You have no more eggs!"
 constexpr unsigned kStringToolName = 200;      // "The Hatchery"
 constexpr unsigned kStringToolHelp = 201;      // "Hatch a new norn"
 constexpr unsigned kStringNestTab = 202;
+constexpr unsigned kStringDesignerTab = 203;
 
 constexpr unsigned kTimerStartup = 1;
 constexpr unsigned kStartupDelayMs = 30;
@@ -38,6 +39,23 @@ enum : unsigned {
     kControlHatch,
     kControlRefill,
     kControlStatus,
+};
+
+// The Designer page's controls.
+enum : unsigned {
+    kControlDesignMother = 3100,
+    kControlDesignFather,
+    kControlDesignSex,
+    kControlDesignColour,
+    kControlDesignTint,  // + 0..4: red, green, blue tint, hue rotation, colour swap
+    kControlDesignRandomise = kControlDesignTint + 5,
+    kControlDesignSwatch,
+    kControlDesignEatBetter,
+    kControlDesignNoOldAge,
+    kControlDesignLockLearning,
+    kControlDesignHardier,
+    kControlDesignMakeEgg,
+    kControlDesignStatus,
 };
 
 } // namespace hatchery

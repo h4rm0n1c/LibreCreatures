@@ -6,6 +6,7 @@ BEGIN
     200 "The Hatchery"
     201 "Hatch a new norn"
     202 "Nest"
+    203 "Designer"
 END
 
 // The page is laid out in code; this blank template's size is the smallest
