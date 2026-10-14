@@ -79,6 +79,18 @@ dreamed. `brain_concepts.py why` explains each choice of action and
 attention by the concept links that pushed for and against it (`stream`
 shows the same), `goals` and `words` show what the creature learned outside
 its brain, and `instincts` shows what each dreamed instinct changed.
+Format 11 records why a link could learn. Each lobe update writes one
+record with the susceptibility rule's result for every dendrite it made
+eligible and the reinforcement rule's result for every dendrite it
+reinforced, so a reader rebuilds every dendrite field, susceptibility
+included, from the events alone; `check` proves the rebuilt brain equals
+each keyframe. That makes the per-frame dendrite deltas redundant, and they
+are gone. The update's events are grouped by kind as sets of dendrite
+numbers, with runs of consecutive dendrites written as one entry. `check`
+also replays the goal-direction matrix from the stimuli and proves they
+explain every weight; `goals` then names the stimuli that taught each one,
+and `causes` shows how long before a reinforcement each link became
+eligible, and what the norn was doing then.
 
 **Lab trace.** `C1_LAB_TRACE=<file>` appends one line per event:
 `<world tick> TAB <ms> TAB <category> TAB <text>`, where `<ms>` is Windows'

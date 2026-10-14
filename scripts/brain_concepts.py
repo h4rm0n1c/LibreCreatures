@@ -34,7 +34,10 @@
                                             (format 9) traced, not guessed: each
                                             reinforcement is credited to the root
                                             origins of the Reward or Punishment
-                                            that drove it (chemical_provenance.py)
+                                            that drove it (chemical_provenance.py);
+                                            (format 11) and why each link could
+                                            learn: when its susceptibility was
+                                            raised, and what the norn was doing
     brain_concepts.py why FILE [FROM TO]    (format 10) why it did what it did: at
                                             each change of action or attention, the
                                             action scores with the concept links
@@ -42,7 +45,8 @@
                                             what drew its attention
     brain_concepts.py goals FILE            (format 10) its second learner: which
                                             kinds of object it has learned relieve
-                                            which drives, and when it learned it
+                                            which drives, when it learned it, and
+                                            the stimuli that taught each weight
     brain_concepts.py words FILE            (format 10) the words it has learned,
                                             with when and how strongly
     brain_concepts.py instincts FILE        (format 10) each instinct it dreamed:
@@ -434,7 +438,11 @@ class BrainReplay:
             for event in frame.events:
                 if event.key[0] == CONCEPT:
                     self.concept_state[event.key] = event.after
-                    self._refresh(event.key[1], frame.tick)
+                    # Only a new source or a link opening or closing can
+                    # change what the concept means.
+                    if (event.before[0] != event.after[0]
+                            or bool(event.before[4]) != bool(event.after[4])):
+                        self._refresh(event.key[1], frame.tick)
                 elif event.key[0] == DECISION:
                     meaning = (self.meaning_of_target(event.key)
                                if event.kind not in OPENING else None)
@@ -824,13 +832,28 @@ def cmd_why(path, start=0, end=None):
 
 def cmd_goals(path):
     """The goal-direction matrix: per attention category, the drives it has
-    relieved (weight > 0), when each first appeared, and its final weight."""
+    relieved (weight > 0), when each first appeared, and its final weight;
+    then the stimuli that taught each weight (brain_record.teach_goal_matrix
+    replays them; check proves they explain every change)."""
+    import chemical_provenance
+    from brain_record import teach_goal_matrix
     if replay_version(path) < 10:
         raise SystemExit("goals needs format 10 or later")
+    if CHEMICALS_FILE and not chemical_provenance.CHEMICAL_NAMES:
+        chemical_provenance.load_chemical_names(CHEMICALS_FILE)
+    names = chemical_provenance.load_classifier_names()
     first, final = {}, ()
+    matrix = None
+    lessons = collections.defaultdict(collections.Counter)  # index -> teacher -> count
     for _, frame in recording(path):
         if not frame.goal_matrix:
             continue
+        if matrix is not None:
+            for stimulus in frame.stimuli:
+                for index, _, _ in teach_goal_matrix(matrix, stimulus):
+                    lessons[index][chemical_provenance.stimulus_name(
+                        stimulus, names, frame.action)] += 1
+        matrix = list(frame.goal_matrix)
         final = frame.goal_matrix
         for index, value in enumerate(final):
             if value > 0 and index not in first:
@@ -844,6 +867,11 @@ def cmd_goals(path):
         items = sorted(rows[row], reverse=True)
         print(f"{category_name(row):16s} relieves " + ", ".join(
             f"{drive} {value} (from tick {tick})" for value, drive, tick in items))
+        taught = collections.Counter()
+        for column in range(16):
+            taught.update(lessons.get(row * 16 + column, {}))
+        for teacher, count in taught.most_common(3):
+            print(f"{'':16s}   taught {count} x by {teacher}")
 
 
 def cmd_words(path):
@@ -914,6 +942,11 @@ def traced_causes(path, top):
     weight = collections.Counter()                          # origin -> reinforcements
     onsets = collections.defaultdict(collections.Counter)   # which -> origin -> share
     current = {"reward": False, "punishment": False}
+    # Format 11: why a link could learn.  Per decision dendrite, the last
+    # update that raised its susceptibility (tick, what the norn did then).
+    raised = {}
+    lags = collections.Counter()                            # bucket -> reinforcements
+    eligible_while = collections.Counter()                  # action then -> reinforcements
 
     def advance(frame):
         if state["tick"] != frame.tick:
@@ -924,9 +957,19 @@ def traced_causes(path, top):
 
     def on_decision(replay, frame, event, meaning):
         advance(frame)
+        if event.kind == "eligible" and not event.dreaming:
+            raised[event.key] = (event.tick, frame.action)
+            return
         if event.kind != "reinforce" or event.dreaming:
             return
         _, neuron, rule, _ = event.key
+        if event.tick is not None and event.key in raised:
+            tick, action = raised[event.key]
+            lag = event.tick - tick
+            lags["same update" if lag == 0 else "1-4 ticks" if lag < 5 else
+                 "5-19 ticks" if lag < 20 else "20+ ticks"] += 1
+            eligible_while[f"{'same' if action == neuron else 'other'} action "
+                           f"({action_name(action)})"] += 1
         chemical = state["inputs"].get((DECISION, rule))
         if chemical is None:
             return
@@ -960,6 +1003,15 @@ def traced_causes(path, top):
         print(f"\n{value * 100 / total:5.1f}%  {origin}")
         for link, share in credit[origin].most_common(4):
             print(f"         taught {link} ({share:.1f})")
+    if lags:
+        count = sum(lags.values())
+        print(f"\nwhy those links could learn (format 11): the last rise in susceptibility "
+              f"came, before the reinforcement,")
+        for bucket in ("same update", "1-4 ticks", "5-19 ticks", "20+ ticks"):
+            print(f"   {bucket:12s} {lags[bucket] * 100 / count:5.1f}%")
+        print("   while the norn was doing (the link's own action, or another):")
+        for what, n in eligible_while.most_common(6):
+            print(f"   {n * 100 / count:5.1f}%  {what}")
 
 
 def replay_version(path):
