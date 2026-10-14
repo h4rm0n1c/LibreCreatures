@@ -9,20 +9,26 @@ review of the changes and supplied the C1 dendrite terms used here.
 
 "Native" means the Creatures 1 Community Edition 10.3 `Creatures.exe`. The
 native pseudocode was read from the disassembly, and the addresses are given
-so it can be checked. Offsets are the evidence; the names below are C1's
-own terms.
+so it can be checked. Offsets are the evidence; the names are C1's own
+terms, spelled as openc2e's C1 brain spells them (`oldBrain.h`:
+`oldNeuron`, `oldDendrite`, `oldLobe`), so the pseudocode here reads
+alongside openc2e's code.
 
-| C1 term | Offset | LibreCreatures source |
-|---|---|---|
-| dendrite type (`dtype`, 0 or 1) | | `DendriteType`, `dtype` |
-| the neuron a dendrite reads (`d.source`) | `+0` | `Dendrite::source` |
-| the lobe a dendrite type reads (`src`) | | `DendriteType::source_lobe` |
-| the lobe that owns the dendrites (`owner`) | | `source_lobe` (migration) or `this` |
-| susceptibility | `+6` | `Dendrite::susceptibility` |
-| STW, the weight the activation sums | `+7` | `Dendrite::stw` |
-| LTW | `+8` | `Dendrite::ltw` |
-| strength (0 = loose) | `+9` | `Dendrite::strength` |
-| min/max LTW, min/max strength | | `min_ltw`, `max_ltw`, `min_strength`, `max_strength` |
+| C1 term (openc2e) | Offset | Meaning | LibreCreatures source |
+|---|---|---|---|
+| `type` (0 or 1) | | a dendrite type; a neuron has `dendrites[0]` and `dendrites[1]` | `DendriteType`, `type0_dendrites`, `type1_dendrites` |
+| `src` | `+0` | the neuron a dendrite reads | `Dendrite::source` |
+| `suscept` | `+6` | susceptibility | `Dendrite::susceptibility` |
+| `stw` | `+7` | short-term weight, the weight the state sums | `Dendrite::stw` |
+| `ltw` | `+8` | long-term weight | `Dendrite::ltw` |
+| `strength` | `+9` | 0 = loose | `Dendrite::strength` |
+| `state` | | a neuron's activation | `LobeNeuron::activation` |
+| `output` | `+2` | a neuron's firing strength | `LobeNeuron::firing_strength` |
+| `percept_src` | `+0xf` | the input lobe a perception-lobe neuron copies; 0 = none | `LobeNeuron::source_lobe_index` |
+| `active_neurons` | | the lobe's neurons firing this tick | `active_neurons` |
+| `loose_dendrites[type]` | | the lobe's count of loose dendrites | `per_type_loose_dendrite_count` |
+| source lobe | | the lobe a dendrite type reads | `DendriteType::source_lobe` |
+| min/max LTW, min/max strength | | the dendrite type's ranges | `min_ltw`, `max_ltw`, `min_strength`, `max_strength` |
 
 The source uses these terms too (`src/c1/brain/lobe.hpp`), and the other
 dendrite type fields follow openc2e's C1 names: `relax_suscept`,
@@ -38,64 +44,68 @@ does not have at all.
 
 Layout facts the argument depends on:
 
-- A neuron is 16 bytes. The neurons of a lobe sit in one array
-  (`UpdateLatePhase` steps `+0x10` per neuron).
+- A neuron is 16 bytes. The neurons of a lobe sit in one array (the late
+  phase steps `+0x10` per neuron).
 - A dendrite is 12 bytes, with fields at the offsets above.
-- Strength decaying to 0 zeroes susceptibility, STW and LTW, but it does
-  **not** clear `d.source`.
+- `strength` decaying to 0 zeroes `suscept`, `stw` and `ltw`, but it does
+  **not** clear `src`.
 
-## 1. `MigrateRuleConnections` (@00405da0), native
+## 1. Migrating a neuron's dendrites (@00405da0), native
 
-`this` is the migrating neuron. `owner` is the lobe that owns it.
+When every dendrite of a type is loose, the neuron moves all of them to a
+new set of sources at once. openc2e: `oldLobe::neuronTryAllLooseMigration`,
+with `migrationTryCandidateSlice`.
+
+`neu` is the migrating neuron; `lobe` is the lobe it belongs to.
 
 ```c
-void CLobeNeuron::MigrateRuleConnections(CBrain* brain, CLobe* owner, int dtype)
+void migrate(brain, lobe, neu, type)                         // @00405da0
 {
-    n    = this->dendrite_count[dtype];
-    src  = &brain->lobes[owner->dtypes[dtype].source_lobe];
-    m    = src->active_neuron_count;
+    n    = neu.dendrites[type].count;
+    src  = brain.lobes[lobe.dendrite_type[type].source_lobe];
+    m    = src.active_neurons.count;
     if (m < n) return;
-    dens = this->dendrites[dtype];
-    for (i = 0; i < n; i++) saved[i] = dens[i].source;
+    dens = neu.dendrites[type];
+    for (i = 0; i < n; i++) saved[i] = dens[i].src;
 
-    for (i = 0; i < m; i++) swap(src->active[i], src->active[rand() % m]);
+    for (i = 0; i < m; i++) swap(src.active_neurons[i], src.active_neurons[rand() % m]);
 
     for (start = 0; start <= m - n; start++) {
-        if (two of src->active[start .. start+n) share a nonzero byte +0xf)
+        if (two of src.active_neurons[start .. start+n) share a nonzero percept_src)
             continue;
 
         // The candidate is written into this neuron's own dendrites.
         for (i = 0; i < n; i++) {
-            dens[i].source   = src->active[start + i];
-            dens[i].LTW      = dens[i].STW = rand_in(dtype.min_LTW, dtype.max_LTW);
-            dens[i].strength = rand_in(dtype.min_strength, dtype.max_strength);
+            dens[i].src      = src.active_neurons[start + i];
+            dens[i].ltw      = dens[i].stw = rand_in(type.min_ltw, type.max_ltw);
+            dens[i].strength = rand_in(type.min_strength, type.max_strength);
         }
 
-        sig = pack(dens, n);                                   // 00405f83..00406004
-        for (j = 0; j < owner->active_neuron_count; j++) {     // 00406024..004060cc
-            other = owner->active[j];
-            if (other->dendrite_count[dtype] != n) continue;
-            if (pack(other->dendrites[dtype], n) == sig)       // 004060b0 CMP / JZ
+        hash = magicalHash(dens, n);                           // 00405f83..00406004
+        for (j = 0; j < lobe.active_neurons.count; j++) {      // 00406024..004060cc
+            other = lobe.active_neurons[j];
+            if (other.dendrites[type].count != n) continue;
+            if (magicalHash(other.dendrites[type], n) == hash) // 004060b0 CMP / JZ
                 goto next_start;                               // duplicate
         }
-        if (owner->loose_count[dtype]) owner->loose_count[dtype]--;
+        if (lobe.loose_dendrites[type]) lobe.loose_dendrites[type]--;
         return;                                                // migrated
     next_start: ;
     }
 
     // Fallback: no start was accepted.                        // 00406116..0040613f
     for (i = 0; i < n; i++) {
-        dens[i].source = saved[i];
-        dens[i].STW = dens[i].LTW = dens[i].strength = 0;
+        dens[i].src = saved[i];
+        dens[i].stw = dens[i].ltw = dens[i].strength = 0;
     }
 }
 
-uint32 pack(dens, n)
+uint32 magicalHash(dens, n)        // openc2e's name for it: oldNeuron::magicalHash
 {
     sum = 0; product = 1;
     for (i = 0; i < n; i++) {
-        sum     += (uint32)dens[i].source;
-        product *= (uint32)dens[i].source;
+        sum     += (uint32)dens[i].src;
+        product *= (uint32)dens[i].src;
     }
     return (sum << 16) | (product & 0xffff);   // SHL ECX,0x10 / MOVZX EAX,DI / OR ECX,EAX
 }
@@ -106,42 +116,42 @@ LibreCreatures: `migrate_rule_connections` in `src/c1/brain/neuron.cpp`.
 ### Change 1 (row 4, `6d52950`): the migrating neuron does not match itself
 
 ```diff
-         for (j = 0; j < owner->active_neuron_count; j++) {
-             other = owner->active[j];
-+            if (other == this) continue;
-             if (other->dendrite_count[dtype] != n) continue;
+         for (j = 0; j < lobe.active_neurons.count; j++) {
+             other = lobe.active_neurons[j];
++            if (other == neu) continue;
+             if (other.dendrites[type].count != n) continue;
 ```
 
-Native C1 has no `other == this` test anywhere: LibreCreatures adds it; it
+Native C1 has no `other == neu` test anywhere: LibreCreatures adds it; it
 does not remove one.
 
-**Why.** The candidate is written into `this->dendrites[dtype]` before the
-scan. If `this` fired this tick, it is in `owner->active`, so at
-`other == this` the signatures are equal by construction. Every start is
-rejected, and the fallback zeroes STW, LTW and strength. So for an active
-neuron, native `MigrateRuleConnections` never migrates: it always just
-breaks that dendrite type's dendrites. The loop does not test
-`other == this` anywhere (00406024..004060cc).
+**Why.** The candidate is written into `neu.dendrites[type]` before the
+scan. If `neu` fired this tick, it is in `lobe.active_neurons`, so at
+`other == neu` the hashes are equal by construction. Every start is
+rejected, and the fallback zeroes `stw`, `ltw` and `strength`. So for an
+active neuron, native migration never migrates: it always just breaks that
+type's dendrites. The loop does not test `other == neu` anywhere
+(00406024..004060cc).
 
 **Measured.** 10 minutes per arm: before the fix, 11 migrations (of about
 60,000) failed only because the neuron matched itself; after it, 0. About
-92% of migrations fail in both builds, because a start repeats the
-`+0xf` byte or really duplicates another neuron. That is normal native
+92% of migrations fail in both builds, because a start repeats a
+`percept_src` or really duplicates another neuron. That is normal native
 retrying. This change is rare in practice.
 
-### Change 2 (row 5, `68c25ae` + `e058524`): a signature match is confirmed against the actual source neurons
+### Change 2 (row 5, `68c25ae` + `e058524`): a hash match is confirmed against the actual source neurons
 
 ```diff
--            if (pack(other->dendrites[dtype], n) == sig)
+-            if (magicalHash(other.dendrites[type], n) == hash)
 +            if (sum(other) == sum(cand)                              // 68c25ae: full 32-bit sum
 +                && (uint16)product(other) == (uint16)product(cand)
-+                && sorted(other sources) == sorted(cand sources))    // e058524
++                && sorted(other srcs) == sorted(cand srcs))          // e058524
                  goto next_start;
 ```
 
-**Why.** `pack` keeps only the low 16 bits of the sum and the low 16 bits of
-the product. For one dendrite type, every source neuron is in the same
-lobe's array, so `source = base + 16*k`:
+**Why.** `magicalHash` keeps only the low 16 bits of the sum and the low 16
+bits of the product. For one dendrite type, every `src` is in the same
+lobe's array, so `src = base + 16*k`:
 
 - **Sum:** `low16(sum)` is equal for two sets when `Σk` is equal mod 4096.
   For real lobe sizes, that means the same sum of neuron indices.
@@ -152,40 +162,45 @@ lobe's array, so `source = base + 16*k`:
 So with 4 or more dendrites, native's test is in practice "same count and
 the same sum of source neuron indices". Example: sources {0,1,2,3,9} and
 {0,1,2,4,8} both sum to 15, so they are a "duplicate". With fewer
-dendrites, the result also depends on heap addresses.
+dendrites, the result also depends on heap addresses. (openc2e's own
+`magicalHash` carries a "TODO: make this less stupid".)
 
 A false match does not break anything directly. It only skips that start;
 the fallback runs only when every start is rejected.
 
 After the change, a candidate is a duplicate only if another active neuron
-has exactly the same source neurons for that dendrite type (order ignored,
+has exactly the same `src` neurons for that dendrite type (order ignored,
 repeats counted). The decision no longer depends on addresses.
 `68c25ae` (the whole sum) is now redundant: the set comparison decides, and
-the signature is only a fast pre-filter. It could go back to native packing
-with no change in behaviour.
+the hash is only a fast pre-filter. It could go back to native packing with
+no change in behaviour.
 
 **Measured** (10 min): migration success went from 8.0% to 8.7%. The packed
 test matched falsely 2,014 times, and it would have blocked 486 of the
 5,969 successful migrations.
 
-## 2. Loose dendrite re-attachment in `CLobe::UpdateLatePhase` (@00405170, attach block at 00405990), native
+## 2. Re-attaching one loose dendrite, in the lobe's late phase (@00405170, block at 00405990), native
+
+When a type's `migration` mode is "attach loose dendrites", a firing neuron
+re-attaches its first loose dendrite to a firing neuron of the source lobe.
+openc2e: `oldLobe::neuronTryMigration`, then `connectDendrite`.
 
 ```c
-for (dtype = 0; dtype < 2; dtype++) {
-    if (dtypes[dtype].mode != ATTACH_LOOSE_DENDRITES) continue;
-    src = &brain->lobes[dtypes[dtype].source_lobe];
-    for (each neuron nr of this lobe) {
-        if (nr.firing_strength == 0 || src->active_neuron_count == 0) continue;  // byte nr+2
-        dens = nr.dendrites[dtype]; n = nr.dendrite_count[dtype];
+for (type = 0; type < 2; type++) {
+    if (lobe.dendrite_type[type].migration != ATTACH_LOOSE_DENDRITES) continue;
+    src = brain.lobes[lobe.dendrite_type[type].source_lobe];
+    for (each neuron neu of this lobe) {
+        if (neu.output == 0 || src.active_neurons.count == 0) continue;   // byte neu+2
+        dens = neu.dendrites[type]; n = dens.count;
         loose = first dens[i] with strength == 0;
         if (!loose) { DebugLog("Migrate failed - no loose dens"); continue; }
-        selected = src->active[rand() % src->active_neuron_count];
+        selected = src.active_neurons[rand() % src.active_neurons.count];
         for (i = 0; i < n; i++)
-            if (dens[i].source == selected) goto next_neuron;    // duplicate
-        loose->source   = selected;
-        loose->LTW      = loose->STW = rand_in(dtype.min_LTW, dtype.max_LTW);
-        loose->strength = rand_in(dtype.min_strength, dtype.max_strength);
-        if (loose_count[dtype]) loose_count[dtype]--;
+            if (dens[i].src == selected) goto next_neuron;    // duplicate
+        loose.src      = selected;
+        loose.ltw      = loose.stw = rand_in(type.min_ltw, type.max_ltw);
+        loose.strength = rand_in(type.min_strength, type.max_strength);
+        if (lobe.loose_dendrites[type]) lobe.loose_dendrites[type]--;
     next_neuron: ;
     }
 }
@@ -197,36 +212,36 @@ LibreCreatures: `Lobe::update_late_phase` in `src/c1/brain/lobe.cpp`.
 
 ```diff
          for (i = 0; i < n; i++)
--            if (dens[i].source == selected) goto next_neuron;
+-            if (dens[i].src == selected) goto next_neuron;
 +            if (&dens[i] != loose                  // 75b9911
 +                && dens[i].strength != 0           // a0c2773
-+                && dens[i].source == selected)
++                && dens[i].src == selected)
 +                goto next_neuron;
 ```
 
-**Why.** A loose dendrite keeps its old source pointer, so the native scan
-also rejects neurons that no dendrite is attached to:
+**Why.** A loose dendrite keeps its old `src`, so the native scan also
+rejects neurons that no dendrite is attached to:
 
-- **`75b9911`.** The loose dendrite rejects its own old source. Native
+- **`75b9911`.** The loose dendrite rejects its own old `src`. Native
   draws a new `rand()` next tick, so this blocks every time only when the
   source lobe offers the same neuron every time, for example when only one
   neuron is active. Then the dendrite cannot re-attach while that input is
   the only one firing.
-- **`a0c2773`.** A later loose dendrite's stale source blocks the first
+- **`a0c2773`.** A later loose dendrite's stale `src` blocks the first
   loose one. The repair always takes the *first* loose dendrite, so the
-  later one is never re-attached itself and never moves off that source.
+  later one is never re-attached itself and never moves off that `src`.
 
 What native clearly intends still holds after the change: no two
-**attached** dendrites of a neuron share a source.
+**attached** dendrites of a neuron share a `src`.
 
 Caveat for a skeptic: a loose dendrite is not completely inert in native.
-The "all inputs firing" register (`svrule_registers[14 + dtype]`) looks at
-every dendrite's source firing, loose ones included.
+The "all inputs firing" input (the SVRule's `anded0` / `anded1`) looks at
+every dendrite's `src` output, loose ones included.
 
 **Measured.**
 
 - `75b9911`: 237 of 17,409 re-attachments (1.4%) went back to the dendrite's
-  own old source, all with 4 or more source neurons firing. The
+  own old `src`, all with 4 or more source neurons firing. The
   single-source stuck case never happened. In native, those re-attachments
   would have waited a tick and picked another source.
 - `a0c2773`: in an A/B, about 20% more re-attachments (1,135,457 against
@@ -236,12 +251,13 @@ every dendrite's source firing, loose ones included.
 
 ## Restoring native behaviour
 
-Each change is an isolated condition, so each can be reverted alone:
+Each change is an isolated condition, so each can be reverted alone. The
+names in this table are LibreCreatures' own source identifiers.
 
 | Change | Commit | To restore native |
 |---|---|---|
-| 1 | `6d52950` | remove the `existing == &neuron` skip, which LibreCreatures added (`neuron.cpp` ~208) |
-| 2 | `e058524` | remove the `same_target_set` term (`neuron.cpp` ~222) |
+| 1 | `6d52950` | remove the `existing == &neuron` skip, which LibreCreatures added (`neuron.cpp` ~232) |
+| 2 | `e058524` | remove the `same_target_set` term (`neuron.cpp` ~246) |
 | 2 | `68c25ae` | compare `(sum << 16) \| (product & 0xffff)` instead |
-| 3 | `75b9911` | remove `&connection_array[index] != loose` (`lobe.cpp` ~767) |
-| 4 | `a0c2773` | remove `strength != 0` (`lobe.cpp` ~768) |
+| 3 | `75b9911` | remove `&connection_array[index] != loose` (`lobe.cpp` ~817) |
+| 4 | `a0c2773` | remove `strength != 0` (`lobe.cpp` ~818) |
