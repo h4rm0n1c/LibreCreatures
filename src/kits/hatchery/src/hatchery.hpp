@@ -19,6 +19,7 @@
 #include "c1kitshell/kit_widgets.hpp"
 #include "c1kit/conversation.hpp"
 #include "c1kit/game_sprite.hpp"
+#include "c1kit/genome_edits.hpp"
 #include "c1kit/hatchery.hpp"
 
 #include <cstdint>
@@ -134,6 +135,49 @@ private:
     int tone_channel_ = -1;
 };
 
+// The Designer: a made-to-order egg.  Its parents and sex, its colour (the
+// pigment genes Make My Creatures Colourful adds, set by hand) and four
+// whole-genome changes from the Libre Set (c1kit/genome_edits.hpp).  The
+// egg goes into the incubator in the nest's next free place.  Not in the
+// 1996 kit; the modern look only.
+class DesignerPage : public c1kitshell::LayoutPage {
+public:
+    explicit DesignerPage(HatcherySheet& sheet);
+
+protected:
+    void create_controls() override;
+    void layout(int width, int height) override;
+    afx_msg void OnColourChanged();
+    afx_msg void OnRandomise();
+    afx_msg void OnMakeEgg();
+    afx_msg void OnHScroll(UINT code, UINT position, CScrollBar* bar);
+    afx_msg void OnChoiceChanged();
+    afx_msg HBRUSH OnCtlColor(CDC* dc, CWnd* control, UINT type);
+    DECLARE_MESSAGE_MAP()
+
+private:
+    static constexpr int kSliders = 5;
+    void load_settings();
+    void save_settings();
+    void update_swatch();
+    c1kit::EggColours colours() const;
+    c1kit::DesignerChoices choices() const;
+
+    HatcherySheet& sheet_;
+    CStatic labels_[3 + kSliders];
+    CComboBox mother_;
+    CComboBox father_;
+    CComboBox sex_;
+    CButton colour_;
+    CSliderCtrl sliders_[kSliders];
+    CButton randomise_;
+    CStatic swatch_;
+    CBrush swatch_brush_;
+    CButton genetics_[4];
+    CButton make_egg_;
+    CStatic status_;
+};
+
 class HatcherySheet : public c1kitshell::KitSheet {
 public:
     explicit HatcherySheet(CFont& default_font);
@@ -143,6 +187,12 @@ public:
     const c1kit::Nest& nest() const { return nest_; }
     // Hatches egg `slot`; false (with the reason) if it could not.
     bool hatch(int slot, CString& why);
+    // The Designer's egg: mum<mum> x dad<dad>, coloured when `colours` is
+    // given, with `choices` applied, in the nest's next free place.  False
+    // (with the reason) if it could not; `done` says what was changed.
+    bool hatch_designed(int mum, int dad, int sex, const c1kit::EggColours* colours,
+                        const c1kit::DesignerChoices& choices, CString& why, CString& done);
+    c1kit::KitSettings* registry() const { return registry_; }
     void refill();
     std::string game_file(const std::string& name) const;
     // With Scramble Eggs on: "mum4 x dad1" for egg `slot`, else empty.
@@ -189,9 +239,16 @@ private:
     // (the egg is then made the plain way).
     bool colourful_genome(c1kit::MacroTransport& game, int mum, int dad,
                           std::int32_t& genome);
+    // Crosses mum<mum> x dad<dad> and rewrites the new genome's file with
+    // `colours` (if any) and `choices`; false if the cross fails.
+    bool designed_genome(c1kit::MacroTransport& game, int mum, int dad,
+                         const c1kit::EggColours* colours,
+                         const c1kit::DesignerChoices& choices, std::int32_t& genome,
+                         std::string& summary);
 
     CFont& default_font_;
     NestPage nest_page_;
+    DesignerPage designer_page_;
     MachinePage machine_page_;
     std::unique_ptr<c1kitshell::ClassicArt> classic_;
     CSize classic_correction_{0, 0};  // see fit_classic_window

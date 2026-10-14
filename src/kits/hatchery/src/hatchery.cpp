@@ -525,6 +525,252 @@ void NestPage::OnRefill() {
     refresh();
 }
 
+// ===========================================================================
+// The Designer
+// ===========================================================================
+
+namespace {
+
+constexpr const TCHAR* kSliderNames[] = {_T("Red tint"), _T("Green tint"), _T("Blue tint"),
+                                         _T("Hue rotation"), _T("Colour swap")};
+constexpr const char* kSliderSettings[] = {"Designer Red", "Designer Green", "Designer Blue",
+                                           "Designer Hue", "Designer Swap"};
+constexpr const TCHAR* kGeneticsNames[] = {
+    _T("Eat better: rising drives do not punish (hunger, tiredness, sleepiness, boredom, pleasure, sex drive)"),
+    _T("No death from old age"),
+    _T("Lock learning genes against mutation"),
+    _T("Hardier babies: more birth reserves and immunity to every antigen"),
+};
+constexpr const char* kGeneticsSettings[] = {"Designer Eat Better", "Designer No Old Age",
+                                             "Designer Lock Learning", "Designer Hardier"};
+
+} // namespace
+
+BEGIN_MESSAGE_MAP(DesignerPage, c1kitshell::LayoutPage)
+    ON_BN_CLICKED(kControlDesignColour, &DesignerPage::OnColourChanged)
+    ON_BN_CLICKED(kControlDesignRandomise, &DesignerPage::OnRandomise)
+    ON_BN_CLICKED(kControlDesignMakeEgg, &DesignerPage::OnMakeEgg)
+    ON_BN_CLICKED(kControlDesignEatBetter, &DesignerPage::OnChoiceChanged)
+    ON_BN_CLICKED(kControlDesignNoOldAge, &DesignerPage::OnChoiceChanged)
+    ON_BN_CLICKED(kControlDesignLockLearning, &DesignerPage::OnChoiceChanged)
+    ON_BN_CLICKED(kControlDesignHardier, &DesignerPage::OnChoiceChanged)
+    ON_CBN_SELCHANGE(kControlDesignMother, &DesignerPage::OnChoiceChanged)
+    ON_CBN_SELCHANGE(kControlDesignFather, &DesignerPage::OnChoiceChanged)
+    ON_CBN_SELCHANGE(kControlDesignSex, &DesignerPage::OnChoiceChanged)
+    ON_WM_HSCROLL()
+    ON_WM_CTLCOLOR()
+END_MESSAGE_MAP()
+
+DesignerPage::DesignerPage(HatcherySheet& sheet)
+    : LayoutPage(sheet, kDialogPage, kStringDesignerTab), sheet_(sheet) {}
+
+void DesignerPage::create_controls() {
+    const TCHAR* label_text[] = {_T("Mother"), _T("Father"), _T("Sex")};
+    for (int i = 0; i < 3; ++i) {
+        make(labels_[i], _T("STATIC"), label_text[i], SS_LEFT, 0);
+    }
+    const DWORD combo = CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP;
+    make(mother_, _T("COMBOBOX"), _T(""), combo, kControlDesignMother);
+    make(father_, _T("COMBOBOX"), _T(""), combo, kControlDesignFather);
+    make(sex_, _T("COMBOBOX"), _T(""), combo, kControlDesignSex);
+    for (int n = 1; n <= c1kit::kEggCount; ++n) {
+        CString name;
+        name.Format(_T("mum%d"), n);
+        mother_.AddString(name);
+        name.Format(_T("dad%d"), n);
+        father_.AddString(name);
+    }
+    sex_.AddString(_T("Either"));
+    sex_.AddString(_T("Male"));
+    sex_.AddString(_T("Female"));
+    make(colour_, _T("BUTTON"), _T("Colour this creature"), BS_AUTOCHECKBOX | WS_TABSTOP,
+         kControlDesignColour);
+    for (int i = 0; i < kSliders; ++i) {
+        make(labels_[3 + i], _T("STATIC"), kSliderNames[i], SS_LEFT, 0);
+        make(sliders_[i], TRACKBAR_CLASS, _T(""), TBS_HORZ | TBS_NOTICKS | WS_TABSTOP,
+             kControlDesignTint + i);
+        sliders_[i].SetRange(0, 255);
+        sliders_[i].SetPos(0x80);
+    }
+    make(randomise_, _T("BUTTON"), _T("Randomise"), BS_PUSHBUTTON | WS_TABSTOP,
+         kControlDesignRandomise);
+    make(swatch_, _T("STATIC"), _T(""), SS_LEFT | WS_BORDER, kControlDesignSwatch);
+    for (int i = 0; i < 4; ++i) {
+        make(genetics_[i], _T("BUTTON"), kGeneticsNames[i], BS_AUTOCHECKBOX | WS_TABSTOP,
+             kControlDesignEatBetter + i);
+    }
+    make(make_egg_, _T("BUTTON"), _T("Make this egg"), BS_DEFPUSHBUTTON | WS_TABSTOP,
+         kControlDesignMakeEgg);
+    make(status_, _T("STATIC"), _T(""), SS_LEFT | SS_NOPREFIX | SS_EDITCONTROL,
+         kControlDesignStatus);
+    load_settings();
+    OnColourChanged();
+}
+
+// Parents and sex on the top line; the colour switch, its sliders beside
+// the swatch, then the genetics switches; status, Make this egg and Close
+// at the bottom.
+void DesignerPage::layout(int width, int height) {
+    const int line = button_height();
+    int y = kMargin;
+    int x = kMargin;
+    for (int i = 0; i < 3; ++i) {
+        CComboBox& box = i == 0 ? mother_ : i == 1 ? father_ : sex_;
+        place(labels_[i], x, y + 4, 50, text_height());
+        place(box, x + 52, y, 90, line * 8);
+        x += 160;
+    }
+    y += line + kMargin;
+    place(colour_, kMargin, y, 200, line);
+    place(randomise_, kMargin + 210, y, 90, line);
+    y += line + 2;
+    const int slider_left = kMargin + 90;
+    const int swatch_size = 5 * (line - 2);
+    const int slider_width = (std::max)(120, width - slider_left - swatch_size - 3 * kMargin);
+    for (int i = 0; i < kSliders; ++i) {
+        place(labels_[3 + i], kMargin, y + i * (line - 2) + 3, 88, text_height());
+        place(sliders_[i], slider_left, y + i * (line - 2), slider_width, line - 2);
+    }
+    place(swatch_, slider_left + slider_width + kMargin, y, swatch_size, swatch_size);
+    y += kSliders * (line - 2) + kMargin;
+    for (int i = 0; i < 4; ++i) {
+        place(genetics_[i], kMargin, y, width - 2 * kMargin, line - 4);
+        y += line - 4;
+    }
+    const int buttons = height - kMargin - button_height();
+    // Two lines: what was made, and what was changed in its genome.
+    place(status_, kMargin, buttons - 2 * text_height() - 8, width - 2 * kMargin,
+          2 * text_height() + 4);
+    place(make_egg_, width - kMargin - 84 - kMargin - 120, buttons, 120, button_height());
+    place_close(width, height);
+}
+
+void DesignerPage::load_settings() {
+    c1kit::KitSettings* registry = sheet_.registry();
+    std::uint32_t value = 0;
+    const auto read = [registry](const char* name, std::uint32_t fallback) {
+        std::uint32_t found = fallback;
+        if (registry != nullptr) {
+            registry->read_dword(c1kit::SettingsScope::user, name, found);
+        }
+        return found;
+    };
+    mother_.SetCurSel(static_cast<int>((std::min)(read("Designer Mother", 0), 5u)));
+    father_.SetCurSel(static_cast<int>((std::min)(read("Designer Father", 0), 5u)));
+    sex_.SetCurSel(static_cast<int>((std::min)(read("Designer Sex", 0), 2u)));
+    colour_.SetCheck(read("Designer Colour", 0) != 0 ? BST_CHECKED : BST_UNCHECKED);
+    for (int i = 0; i < kSliders; ++i) {
+        sliders_[i].SetPos(static_cast<int>((std::min)(read(kSliderSettings[i], 0x80), 255u)));
+    }
+    for (int i = 0; i < 4; ++i) {
+        genetics_[i].SetCheck(read(kGeneticsSettings[i], 0) != 0 ? BST_CHECKED : BST_UNCHECKED);
+    }
+    static_cast<void>(value);
+}
+
+void DesignerPage::save_settings() {
+    c1kit::KitSettings* registry = sheet_.registry();
+    if (registry == nullptr) {
+        return;
+    }
+    registry->write_dword("Designer Mother", static_cast<std::uint32_t>(mother_.GetCurSel()));
+    registry->write_dword("Designer Father", static_cast<std::uint32_t>(father_.GetCurSel()));
+    registry->write_dword("Designer Sex", static_cast<std::uint32_t>(sex_.GetCurSel()));
+    registry->write_dword("Designer Colour", colour_.GetCheck() == BST_CHECKED ? 1 : 0);
+    for (int i = 0; i < kSliders; ++i) {
+        registry->write_dword(kSliderSettings[i], static_cast<std::uint32_t>(sliders_[i].GetPos()));
+    }
+    for (int i = 0; i < 4; ++i) {
+        registry->write_dword(kGeneticsSettings[i], genetics_[i].GetCheck() == BST_CHECKED ? 1 : 0);
+    }
+}
+
+c1kit::EggColours DesignerPage::colours() const {
+    c1kit::EggColours colours;
+    for (int i = 0; i < 3; ++i) {
+        colours.tint[i] = static_cast<std::uint8_t>(sliders_[i].GetPos());
+    }
+    colours.hue_rotation = static_cast<std::uint8_t>(sliders_[3].GetPos());
+    colours.colour_swap = static_cast<std::uint8_t>(sliders_[4].GetPos());
+    return colours;
+}
+
+c1kit::DesignerChoices DesignerPage::choices() const {
+    c1kit::DesignerChoices choices;
+    choices.eat_better = genetics_[0].GetCheck() == BST_CHECKED;
+    choices.no_old_age_death = genetics_[1].GetCheck() == BST_CHECKED;
+    choices.lock_learning = genetics_[2].GetCheck() == BST_CHECKED;
+    choices.hardier_babies = genetics_[3].GetCheck() == BST_CHECKED;
+    return choices;
+}
+
+// The swatch shows the three tints as one colour (0x80 each is no tint, a
+// mid grey); hue rotation and colour swap act on the creature's own art.
+void DesignerPage::update_swatch() {
+    const c1kit::EggColours tint = colours();
+    swatch_brush_.DeleteObject();
+    swatch_brush_.CreateSolidBrush(RGB(tint.tint[0], tint.tint[1], tint.tint[2]));
+    swatch_.Invalidate();
+}
+
+HBRUSH DesignerPage::OnCtlColor(CDC* dc, CWnd* control, UINT type) {
+    if (control != nullptr && control->GetDlgCtrlID() == static_cast<int>(kControlDesignSwatch) &&
+        swatch_brush_.GetSafeHandle() != nullptr) {
+        return static_cast<HBRUSH>(swatch_brush_.GetSafeHandle());
+    }
+    return c1kitshell::LayoutPage::OnCtlColor(dc, control, type);
+}
+
+void DesignerPage::OnColourChanged() {
+    const BOOL on = colour_.GetCheck() == BST_CHECKED;
+    for (int i = 0; i < kSliders; ++i) {
+        sliders_[i].EnableWindow(on);
+        labels_[3 + i].EnableWindow(on);
+    }
+    randomise_.EnableWindow(on);
+    swatch_.ShowWindow(on ? SW_SHOW : SW_HIDE);
+    update_swatch();
+    save_settings();
+}
+
+void DesignerPage::OnRandomise() {
+    const c1kit::EggColours random = c1kit::random_egg_colours([] { return std::rand(); });
+    for (int i = 0; i < 3; ++i) {
+        sliders_[i].SetPos(random.tint[i]);
+    }
+    sliders_[3].SetPos(random.hue_rotation);
+    sliders_[4].SetPos(random.colour_swap);
+    update_swatch();
+    save_settings();
+}
+
+void DesignerPage::OnHScroll(UINT code, UINT position, CScrollBar* bar) {
+    c1kitshell::LayoutPage::OnHScroll(code, position, bar);
+    update_swatch();
+    if (code == TB_ENDTRACK || code == TB_THUMBPOSITION) {
+        save_settings();
+    }
+}
+
+void DesignerPage::OnChoiceChanged() {
+    save_settings();
+}
+
+void DesignerPage::OnMakeEgg() {
+    save_settings();
+    const c1kit::EggColours tint = colours();
+    CString why;
+    CString done;
+    if (sheet_.hatch_designed(mother_.GetCurSel() + 1, father_.GetCurSel() + 1, sex_.GetCurSel(),
+                              colour_.GetCheck() == BST_CHECKED ? &tint : nullptr, choices(), why,
+                              done)) {
+        sheet_.sound().play("hslt", false);
+        status_.SetWindowText(done);
+    } else {
+        status_.SetWindowText(why);
+    }
+}
+
 // The 1996 kit's sounds for a chosen egg: a click, then the egg's male or
 // female tone until another is chosen (the 1996 machine played them as the
 // pointer passed over an egg).
@@ -563,7 +809,7 @@ END_MESSAGE_MAP()
 
 HatcherySheet::HatcherySheet(CFont& default_font)
     : KitSheet(kStringToolName, 0), default_font_(default_font), nest_page_(*this),
-      machine_page_(*this) {
+      designer_page_(*this), machine_page_(*this) {
     m_psh.dwFlags |= PSH_USEHICON;
     m_psh.hIcon = AfxGetApp()->LoadIcon(kIconKit);
     // The classic look, when the player's original Hatchery is beside this
@@ -575,6 +821,9 @@ HatcherySheet::HatcherySheet(CFont& default_font)
         classic_.reset();
     }
     AddPage(classic_ ? static_cast<CPropertyPage*>(&machine_page_) : &nest_page_);
+    if (!classic_) {
+        AddPage(&designer_page_);
+    }
 }
 
 HatcherySheet::~HatcherySheet() {
@@ -788,6 +1037,82 @@ bool HatcherySheet::hatch(int slot, CString& why) {
     }
     nest_.eggs[slot] = c1kit::EggState::taken;
     save_nest();
+    return true;
+}
+
+bool HatcherySheet::designed_genome(c1kit::MacroTransport& game, int mum, int dad,
+                                    const c1kit::EggColours* colours,
+                                    const c1kit::DesignerChoices& choices,
+                                    std::int32_t& genome, std::string& summary) {
+    c1kit::MacroConversation conversation(game);
+    std::string reply;
+    const bool crossed = conversation.query_reusing_holder(
+        c1kit::kMacroModeQuery, c1kit::cross_script(mum, dad).c_str(), reply);
+    conversation.close();
+    char* end = nullptr;
+    const long value = crossed ? std::strtol(reply.c_str(), &end, 10) : 0;
+    if (!crossed || end == reply.c_str() || value == 0) {
+        return false;
+    }
+    genome = static_cast<std::int32_t>(value);
+    const std::string path =
+        std::string(CStringA(c1kitshell::game_directory_setting(
+            "Genetics Directory", c1kit::GameDirectory::world))) +
+        c1kit::genome_file_for(genome);
+    std::vector<std::uint8_t> bytes = read_file(path);
+    bool changed = false;
+    if (colours != nullptr && c1kit::append_colour_genes(bytes, *colours)) {
+        changed = true;
+        summary = "coloured";
+    }
+    std::string edits;
+    if (c1kit::apply_designer_choices(bytes, choices, &edits) && !edits.empty()) {
+        changed = true;
+        summary += (summary.empty() ? "" : "; ") + edits;
+    }
+    if (changed) {
+        if (FILE* file = std::fopen(path.c_str(), "wb")) {
+            std::fwrite(bytes.data(), 1, bytes.size(), file);
+            std::fclose(file);
+        }
+    }
+    return true;
+}
+
+bool HatcherySheet::hatch_designed(int mum, int dad, int sex, const c1kit::EggColours* colours,
+                                   const c1kit::DesignerChoices& choices, CString& why,
+                                   CString& done) {
+    c1kit::MacroTransport* game = transport();
+    if (!connected_ || game == nullptr) {
+        why = _T("The Hatchery is not connected to the game.");
+        return false;
+    }
+    int slot = -1;
+    for (int i = 0; i < c1kit::kEggCount && slot < 0; ++i) {
+        slot = nest_.eggs[i] != c1kit::EggState::taken ? i : -1;
+    }
+    if (slot < 0) {
+        why = _T("The nest is empty: refill it on the Nest page first.");
+        return false;
+    }
+    const bool female = sex == 0 ? (std::rand() & 1) != 0 : sex == 2;
+    std::int32_t genome = 0;
+    std::string summary;
+    if (!designed_genome(*game, mum, dad, colours, choices, genome, summary)) {
+        why = _T("The game did not cross the parents' genomes.");
+        return false;
+    }
+    if (!c1kit::execute_scheduled(
+            *game, c1kit::hatch_script_for_genome(slot, female, genome).c_str(), false)) {
+        why = _T("The game did not take the egg.");
+        return false;
+    }
+    nest_.eggs[slot] = c1kit::EggState::taken;
+    save_nest();
+    nest_page_.refresh();
+    done.Format(_T("A %s egg (mum%d x dad%d) is in the incubator%s%s."),
+                female ? _T("female") : _T("male"), mum, dad,
+                summary.empty() ? _T("") : _T(": "), CString(summary.c_str()).GetString());
     return true;
 }
 
