@@ -1,0 +1,13 @@
+// LibreCreatures resources: the modern look's Deaths page (laid out in
+// code on this blank template) and its tab title.
+STRINGTABLE
+BEGIN
+    200 "Deaths"
+END
+
+300 DIALOG 0, 0, 380, 245
+STYLE 0x48c00044
+CAPTION "Page"
+FONT 8, "MS Sans Serif"
+BEGIN
+END

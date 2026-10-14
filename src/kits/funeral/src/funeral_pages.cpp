@@ -5,6 +5,7 @@
 #include "funeral.hpp"
 #include "funeral_ids.hpp"
 
+#include <algorithm>
 #include <fstream>
 #include <iterator>
 
@@ -468,6 +469,169 @@ void GraveyardPage::OnNextGrave() {
 
 void GraveyardPage::OnCloseKit() {
     sheet_.request_game_quit();
+}
+
+// ===========================================================================
+// Deaths (the modern look; LibreCreatures)
+// ===========================================================================
+
+BEGIN_MESSAGE_MAP(DeathsPage, c1kitshell::LayoutPage)
+    ON_NOTIFY(LVN_ITEMCHANGED, kControlDeathsList, &DeathsPage::OnSelectionChanged)
+END_MESSAGE_MAP()
+
+DeathsPage::DeathsPage(FuneralSheet& sheet)
+    : LayoutPage(sheet, kDialogBlankPage, kStringDeathsTab), sheet_(sheet) {}
+
+void DeathsPage::create_controls() {
+    make(list_, WC_LISTVIEW, _T(""),
+         LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | WS_BORDER | WS_TABSTOP,
+         kControlDeathsList);
+    list_.SetExtendedStyle(list_.GetExtendedStyle() | LVS_EX_FULLROWSELECT);
+    list_.InsertColumn(0, _T("Name"), LVCFMT_LEFT, 110);
+    list_.InsertColumn(1, _T("Died"), LVCFMT_LEFT, 110);
+    list_.InsertColumn(2, _T("Stone"), LVCFMT_LEFT, 60);
+    refresh();
+}
+
+// The list on the left; the memorial page, at its own (1996) size, on the
+// right; Close under it.
+void DeathsPage::layout(int width, int height) {
+    CRect detail(0, 0, 0, 0);
+    if (memorial_ && memorial_->GetSafeHwnd() != nullptr) {
+        memorial_->GetWindowRect(&detail);
+    } else if (unmarked_ && unmarked_->GetSafeHwnd() != nullptr) {
+        unmarked_->GetWindowRect(&detail);
+    }
+    const int detail_width = detail.Width() > 0 ? detail.Width() : 330;
+    const int bottom = height - kMargin - button_height() - kMargin;
+    const int list_width = (std::max)(160, width - detail_width - 3 * kMargin);
+    place(list_, kMargin, kMargin, list_width, bottom - kMargin);
+    // The columns share the list's width: name, date, headstone.
+    const int inner = list_width - GetSystemMetrics(SM_CXVSCROLL) - 4;
+    list_.SetColumnWidth(0, inner * 35 / 100);
+    list_.SetColumnWidth(1, inner * 42 / 100);
+    list_.SetColumnWidth(2, inner - inner * 35 / 100 - inner * 42 / 100);
+    detail_rect_ = CRect(CPoint(2 * kMargin + list_width, kMargin),
+                         CSize(detail_width, (std::max)(detail.Height(), 1)));
+    for (CWnd* child : {static_cast<CWnd*>(memorial_.get()), static_cast<CWnd*>(unmarked_.get())}) {
+        if (child != nullptr && child->GetSafeHwnd() != nullptr) {
+            child->SetWindowPos(nullptr, detail_rect_.left, detail_rect_.top, 0, 0,
+                                SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+        }
+    }
+    place_close(width, height);
+}
+
+void DeathsPage::refresh(const std::string& moniker) {
+    if (list_.GetSafeHwnd() == nullptr) {
+        if (!moniker.empty()) {
+            shown_ = moniker;
+        }
+        return;
+    }
+    const std::string wanted = moniker.empty() ? shown_ : moniker;
+    list_.SetRedraw(FALSE);
+    list_.DeleteAllItems();
+    rows_.clear();
+    // Newest first: the graves file keeps them in the order they died.
+    const std::vector<c1kit::Grave>& graves = sheet_.graves();
+    int select = -1;
+    for (auto grave = graves.rbegin(); grave != graves.rend(); ++grave) {
+        const std::string& id = (*grave)[c1kit::kGraveMoniker];
+        const int row = list_.InsertItem(list_.GetItemCount(), sheet_.name_for_moniker(id));
+        list_.SetItemText(row, 1, CString((*grave)[c1kit::kGraveDeathTime].c_str()));
+        list_.SetItemText(row, 2, c1kit::is_unmarked(*grave) ? _T("No record")
+                                  : grave->has_headstone()   ? _T("Made")
+                                                             : _T(""));
+        rows_.push_back(id);
+        if (id == wanted) {
+            select = row;
+        }
+    }
+    list_.SetRedraw(TRUE);
+    if (select < 0 && !rows_.empty()) {
+        select = 0;
+    }
+    if (select >= 0) {
+        list_.SetItemState(select, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
+        list_.EnsureVisible(select, FALSE);
+        if (IsWindowVisible()) {
+            list_.SetFocus();  // so the selection shows in the highlight colour
+        }
+        show_detail(rows_[static_cast<std::size_t>(select)]);
+    } else {
+        show_detail(std::string());
+    }
+}
+
+void DeathsPage::OnSelectionChanged(NMHDR* header, LRESULT* result) {
+    *result = 0;
+    const auto* change = reinterpret_cast<NMLISTVIEW*>(header);
+    if ((change->uNewState & LVIS_SELECTED) != 0 && change->iItem >= 0 &&
+        change->iItem < static_cast<int>(rows_.size())) {
+        show_detail(rows_[static_cast<std::size_t>(change->iItem)]);
+    }
+}
+
+void DeathsPage::commit_epitaph() {
+    if (memorial_ && memorial_->GetSafeHwnd() != nullptr) {
+        memorial_->commit_epitaph();
+    }
+}
+
+// The memorial (or "No Record") page for `moniker`, made as a child of this
+// page; its own Close button hides, since this page has one.
+void DeathsPage::show_detail(const std::string& moniker) {
+    if (moniker == shown_ && (memorial_ || unmarked_)) {
+        if (memorial_) {
+            memorial_->show();
+        }
+        return;
+    }
+    commit_epitaph();
+    if (memorial_ && memorial_->GetSafeHwnd() != nullptr) {
+        memorial_->DestroyWindow();
+    }
+    if (unmarked_ && unmarked_->GetSafeHwnd() != nullptr) {
+        unmarked_->DestroyWindow();
+    }
+    memorial_.reset();
+    unmarked_.reset();
+    shown_ = moniker;
+    const c1kit::Grave* grave = moniker.empty() ? nullptr : sheet_.grave(moniker);
+    if (grave == nullptr) {
+        return;
+    }
+    CWnd* child = nullptr;
+    if (c1kit::is_unmarked(*grave)) {
+        unmarked_ = std::make_unique<UnmarkedPage>(sheet_, moniker,
+                                                   (*grave)[c1kit::kGraveDeathTime]);
+        if (unmarked_->Create(kDialogUnmarked, this)) {
+            child = unmarked_.get();
+        }
+    } else {
+        memorial_ = std::make_unique<MemorialPage>(sheet_, moniker, sheet_.name_for_moniker(moniker));
+        if (memorial_->Create(kDialogMemorial, this)) {
+            child = memorial_.get();
+        }
+    }
+    if (child == nullptr) {
+        return;
+    }
+    // The 1996 templates are pop-ups (property pages the sheet parented);
+    // made here they would float, so they become this page's child.
+    child->ModifyStyle(WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | DS_MODALFRAME,
+                       WS_CHILD);
+    child->ModifyStyleEx(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE | WS_EX_APPWINDOW, 0);
+    child->SetParent(this);
+    if (CWnd* close = child->GetDlgItem(kControlClose)) {
+        close->ShowWindow(SW_HIDE);
+    }
+    child->SetWindowPos(nullptr, detail_rect_.left, detail_rect_.top, 0, 0,
+                        SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_SHOWWINDOW);
+    CRect client;
+    GetClientRect(&client);
+    layout(client.Width(), client.Height());
 }
 
 } // namespace funeral

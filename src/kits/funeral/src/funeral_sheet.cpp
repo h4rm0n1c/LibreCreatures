@@ -79,7 +79,8 @@ END_MESSAGE_MAP()
 FuneralSheet::FuneralSheet(CFont& default_font)
     : KitSheet(kStringTitle, 0),
       default_font_(default_font),
-      graveyard_page_(*this) {
+      graveyard_page_(*this),
+      deaths_page_(*this) {
     m_psh.dwFlags |= PSH_USEHICON;
     m_psh.hIcon = AfxGetApp()->LoadIcon(kIconKit);
     classic_ = c1kitshell::ClassicArt::find({}, {}, {kIconKit});
@@ -92,6 +93,10 @@ FuneralSheet::FuneralSheet(CFont& default_font)
         AddPage(cover_.get());
     }
     AddPage(&graveyard_page_);
+    if (!classic_) {
+        // Not the 1996 tab per death: one list of the dead (DeathsPage).
+        AddPage(&deaths_page_);
+    }
 }
 
 FuneralSheet::~FuneralSheet() {
@@ -106,7 +111,7 @@ FuneralSheet::~FuneralSheet() {
 bool FuneralSheet::create_window() {
     load_register();
     load_graves();
-    for (const c1kit::Grave& grave : graves_) {
+    for (const c1kit::Grave& grave : classic_ ? graves_ : std::vector<c1kit::Grave>()) {
         if (c1kit::is_unmarked(grave)) {
             add_unmarked_page(grave[c1kit::kGraveMoniker], grave[c1kit::kGraveDeathTime]);
         } else if (!grave.has_headstone()) {
@@ -143,7 +148,8 @@ int FuneralSheet::OnCreate(LPCREATESTRUCT create) {
 BOOL FuneralSheet::OnInitDialog() {
     const BOOL result = c1kitshell::KitSheet::OnInitDialog();
     if (!classic_) {
-        enable_resizing(CSize(kDefaultPageWidthDlu, kDefaultPageHeightDlu));
+        // The Deaths page puts the list beside a memorial page.
+        enable_resizing(CSize(kDeathsPageWidthDlu, kDeathsPageHeightDlu));
     }    install_options(registry_, classic_ != nullptr);
     enable_ambience(kAmbience, kAmbienceVolume);
     load_preferences();
@@ -302,6 +308,16 @@ void FuneralSheet::creature_died(const std::string& moniker) {
             }
             save_graves();
         }
+        if (!classic_) {
+            // The modern look lists the dead on one page.
+            deaths_page_.refresh(moniker);
+            SetActivePage(&deaths_page_);
+            layout_pages();
+            if (IsIconic()) {
+                ShowWindow(SW_RESTORE);
+            }
+            return;
+        }
         const c1kit::Grave& dead = *grave(moniker);
         page = c1kit::is_unmarked(dead)
                    ? add_unmarked_page(moniker, dead[c1kit::kGraveDeathTime])
@@ -365,6 +381,7 @@ void FuneralSheet::commit_epitaphs() {
     for (const auto& page : memorial_pages_) {
         page->commit_epitaph();
     }
+    deaths_page_.commit_epitaph();
 }
 
 // Fix (bug 3): Make Headstone puts the creature's headstone in the graveyard
@@ -378,6 +395,9 @@ void FuneralSheet::make_headstone(const std::string& moniker) {
     if (!made->has_headstone()) {
         (*made)[c1kit::kGraveHeadstone] = "1";
         save_graves();
+    }
+    if (!classic_) {
+        deaths_page_.refresh();  // its Headstone column
     }
     graveyard_page_.show_grave(moniker);
     SetActivePage(&graveyard_page_);
