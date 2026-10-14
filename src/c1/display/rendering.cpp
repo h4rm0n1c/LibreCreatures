@@ -813,9 +813,15 @@ void WorldRenderer::follow_selected_creature_viewport() {
     }
     followed_creature_ = selected;
 
+    // Not native (frame camera only): the safe area is a dead zone with
+    // smooth scrolling on as well, and a follow glide, once started, runs
+    // until the creature is centred again.  Chasing the creature's every
+    // step made the view jerky and kept it moving all the time.
+    const bool follow_gliding =
+        frame_camera_ && camera_target_set_ && !camera_target_is_request_;
     if (host_.selected_creature_is_edit_object() ||
         !host_.selected_creature_is_bounded() ||
-        (!smooth_scrolling_enabled_ &&
+        ((!smooth_scrolling_enabled_ || frame_camera_) && !follow_gliding &&
          is_selected_creature_within_safe_area())) {
         return;
     }
@@ -1024,6 +1030,11 @@ void WorldRenderer::set_camera_target(int delta_x, int delta_y,
     camera_target_top_ = viewport_top_ + delta_y;
     camera_target_set_ = true;
     camera_target_is_request_ = is_request;
+    // A follow glide eases in over about half a second, so the creature's
+    // footsteps do not show in the camera.
+    constexpr double kRequestTimeConstantMs = 150.0;
+    constexpr double kFollowTimeConstantMs = 450.0;
+    camera_time_constant_ms_ = is_request ? kRequestTimeConstantMs : kFollowTimeConstantMs;
 }
 
 void WorldRenderer::clear_camera_target() {
@@ -1054,10 +1065,9 @@ bool WorldRenderer::advance_frame_camera(double elapsed_ms) {
         return step_x != 0 || step_y != 0;
     }
     // Exponential ease: the fraction of the remaining distance covered in
-    // `elapsed_ms`, for a 150 ms time constant.  Sub-pixel progress carries
-    // over to the next frame.
-    constexpr double kTimeConstantMs = 150.0;
-    const double fraction = 1.0 - std::exp(-elapsed_ms / kTimeConstantMs);
+    // `elapsed_ms`, for the target's time constant (set_camera_target).
+    // Sub-pixel progress carries over to the next frame.
+    const double fraction = 1.0 - std::exp(-elapsed_ms / camera_time_constant_ms_);
     camera_carry_x_ += delta_x * fraction;
     camera_carry_y_ += delta_y * fraction;
     int step_x = static_cast<int>(camera_carry_x_);

@@ -317,6 +317,9 @@ private:
     // A smooth-scroll request (not a follow) is easing: the world tick does
     // not follow meanwhile, as native's advance_smooth_scroll returning true.
     bool camera_target_is_request_ = false;
+    // How quickly the frame camera closes on its target: requests (event
+    // bar, Track) briskly, a follow glide gently.
+    double camera_time_constant_ms_ = 150.0;
     int camera_target_left_ = 0;
     int camera_target_top_ = 0;
     double camera_carry_x_ = 0.0;
