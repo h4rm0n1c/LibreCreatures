@@ -1,0 +1,7 @@
+# CAOS conformance: a snapshot of the world's objects, for COB replay.  Run
+# with the experiment's "cobs": after the COBs are injected, every object's
+# classifier and attributes, and the count of each family.  Positions,
+# poses and running state change with time and are left out.  Run without
+# COBs it compares the fresh Eden world itself.
+snapshot.objects: inst,enum 0 0 0,dde: putv clas,dde: putv attr,dde: puts [;],next
+snapshot.families: inst,dde: putv totl 1 0 0,dde: putv totl 2 0 0,dde: putv totl 3 0 0,dde: putv totl 4 0 0

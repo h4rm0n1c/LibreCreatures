@@ -52,3 +52,17 @@ is wired at random when it is made, so the suite reads what the genome
 fixes, in the turn the creature is made: classifier, life stage, flags,
 all 256 chemicals and 16 drives, the winning drive, position and limits.
 `enum 4 0 0` does not find a creature made in the same turn in either.
+
+## COB replay
+
+`world_snapshot.caos` lists every object's classifier and attributes and
+the count of each family. With the experiment's `"cobs"` (and
+`"cobs_replace_scripts": true`: a COB that replaces an existing script
+makes the game ask in a modal box, so the lab removes the old script first,
+which is what answering Yes does) it compares the world after injection.
+
+First run (2026-10-16), the 24 COBs in the CE install folder (the Albian
+Carrot Beetle, Bees and Hive, the Christmas objects and the rest), CE 10.3
+against 856e4ae: 229 objects. LC native matches on both snapshots; LC as
+shipped differs only in the Ocean Dome Sound's attributes (64 -> 80),
+original-bugs.md row 26.
