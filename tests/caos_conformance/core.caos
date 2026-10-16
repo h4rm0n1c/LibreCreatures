@@ -79,6 +79,9 @@ mvby: inst,new: simp eggs 8 0 2000 0,setv clas 35112704,mvto 3000 700,mvby -40 2
 mvto.wrap: inst,new: simp eggs 8 0 2000 0,setv clas 35112704,mvto 8340 700,dde: putv posl,dde: putv posr,kill targ
 limits: inst,new: simp eggs 8 0 2000 0,setv clas 35112704,mvto 3000 700,dde: putv liml,dde: putv limt,dde: putv limr,dde: putv limb,kill targ
 world.room_table: inst,dde: putv room 0 0,dde: putv room 0 1,dde: putv room 0 2,dde: putv room 0 3,dde: putv room 7 0,dde: putv room 7 3
+# An index past the 40 room records changes nothing but still reads all six
+# operands (COB "Creatures + Update 2" sets room 40).
+world.room_out_of_range: inst,room 40 3816 854 3954 884 0,dde: puts [after],dde: putv rms#,dde: putv room 0 0
 touc: inst,new: simp eggs 8 0 2000 0,setv clas 35112704,mvto 3000 700,setv var0 targ,new: simp eggs 8 0 2000 0,setv clas 35112448,mvto 3010 705,dde: putv touc var0 targ,mvto 4000 700,dde: putv touc var0 targ,kill targ,targ var0,kill targ
 tick: inst,new: simp eggs 8 0 2000 0,setv clas 35112704,tick 25,dde: putv totl 2 23 199,kill targ
 kill.count: inst,new: simp eggs 8 0 2000 0,setv clas 35112704,new: simp eggs 8 0 2000 0,setv clas 35112704,new: simp eggs 8 0 2000 0,setv clas 35112704,dde: putv totl 2 23 199,enum 2 23 199,kill targ,next,dde: putv totl 2 23 199
