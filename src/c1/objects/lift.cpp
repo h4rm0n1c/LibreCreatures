@@ -1,4 +1,5 @@
 #include "lift.hpp"
+#include "../common/compat.hpp"
 
 #include "call_button.hpp"
 #include "../common/lab_trace.hpp"
@@ -159,9 +160,9 @@ void Lift::tick(LiftRuntimeHost& host) {
         // that has reached or passed its floor, moving towards it, also
         // arrives.  Stock lifts move 3 px a tick and always meet the band
         // first, so they arrive as before.
-        const bool reached_floor =
-            (velocity_y_8_8 > 0 && cabin_y >= floor_y) ||
-            (velocity_y_8_8 < 0 && cabin_y <= floor_y);
+        const bool reached_floor = LC_FIX(41) &&  // row 41
+            ((velocity_y_8_8 > 0 && cabin_y >= floor_y) ||
+            (velocity_y_8_8 < 0 && cabin_y <= floor_y));
         if (cabin_y / arrival_divisor == floor_y / arrival_divisor ||
             reached_floor) {
             complete_floor_arrival(host, host);
@@ -227,7 +228,9 @@ void Lift::select_nearest_call_button_and_start_move(LiftRuntimeHost& host) {
     // floor still wins and the first of equals is kept.
     selected_call_button_index = -1;
     int nearest_floor_distance = 999;
-    for (std::size_t index = 0; index < kCallButtonCapacity; ++index) {
+    // Native reads slots 0-3 only (original-bugs.md row 45).
+    const std::size_t read_slots = LC_FIX(45) ? kCallButtonCapacity : 4;
+    for (std::size_t index = 0; index < read_slots; ++index) {
         CallButton* button = call_button_refs[index];
         if (button == nullptr) {
             continue;

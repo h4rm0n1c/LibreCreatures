@@ -1,4 +1,5 @@
 #include "biochemistry.hpp"
+#include "../common/compat.hpp"
 
 #include "../../../include/C1BiochemistrySelectorData.hpp"
 #include "../brain/brain_recorder.hpp"
@@ -189,7 +190,7 @@ void Biochemistry::update(
         // shortfall.  The same chemical in both slots is shared between them.
         std::uint32_t reaction_extent =
             std::min(reactant_1_available, reactant_2_available);
-        if (reaction.reactant_1_chemical != 0 &&
+        if (LC_FIX(51) && reaction.reactant_1_chemical != 0 &&
             reaction.reactant_1_chemical == reaction.reactant_2_chemical) {
             reaction_extent =
                 chemical_states_[reaction.reactant_1_chemical].concentration /
@@ -262,11 +263,12 @@ void Biochemistry::update(
         // so 1 A -> 2 B with 128 A made no B at all (256 wrapped to 0).  The
         // full yield is added and the concentration saturates at 255.  A
         // reactant's removal, amount * (concentration / amount), cannot pass
-        // 255 and keeps the native byte.
+        // 255 and keeps the native byte.  (original-bugs.md row 50)
+        const std::uint32_t yield_mask = LC_FIX(50) ? 0xffffffffu : 0xffu;
         if (reaction.product_1_chemical != 0) {
             const std::uint32_t amount =
-                static_cast<std::uint32_t>(reaction.product_1_amount) *
-                processed_extent;
+                (static_cast<std::uint32_t>(reaction.product_1_amount) *
+                 processed_extent) & yield_mask;
             const std::uint8_t before =
                 chemical_states_[reaction.product_1_chemical].concentration;
             chemical_states_[reaction.product_1_chemical].concentration =
@@ -279,16 +281,17 @@ void Biochemistry::update(
         }
         log_chemical_change(log_host,
                             "Add %d moles of Chemical %d (conc->%d)\n",
-                            static_cast<std::uint32_t>(
-                                reaction.product_1_amount) * processed_extent,
+                            (static_cast<std::uint32_t>(
+                                 reaction.product_1_amount) * processed_extent) &
+                                yield_mask,
                             reaction.product_1_chemical,
                             chemical_states_[reaction.product_1_chemical]
                                 .concentration);
 
         if (reaction.product_2_chemical != 0) {
             const std::uint32_t amount =
-                static_cast<std::uint32_t>(reaction.product_2_amount) *
-                processed_extent;
+                (static_cast<std::uint32_t>(reaction.product_2_amount) *
+                 processed_extent) & yield_mask;
             const std::uint8_t before =
                 chemical_states_[reaction.product_2_chemical].concentration;
             chemical_states_[reaction.product_2_chemical].concentration =
@@ -301,8 +304,9 @@ void Biochemistry::update(
         }
         log_chemical_change(log_host,
                             "Add %d moles of Chemical %d (conc->%d)\n",
-                            static_cast<std::uint32_t>(
-                                reaction.product_2_amount) * processed_extent,
+                            (static_cast<std::uint32_t>(
+                                 reaction.product_2_amount) * processed_extent) &
+                                yield_mask,
                             reaction.product_2_chemical,
                             chemical_states_[reaction.product_2_chemical]
                                 .concentration);

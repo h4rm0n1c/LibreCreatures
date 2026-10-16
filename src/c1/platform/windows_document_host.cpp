@@ -9,6 +9,7 @@
 
 #include "../brain/lobe.hpp"
 #include "../brain/brain_recorder.hpp"
+#include "../common/compat.hpp"
 #include "../common/lab_trace.hpp"
 #include "../scripting/tables.hpp"
 #include "../display/bitmap.hpp"
@@ -606,9 +607,10 @@ BOOL C1WindowsDocument::OnOpenDocument(LPCTSTR path) {
     }
     creatures1::common::lab_trace(
         creatures1::common::LabTrace::lifecycle,
-        "world opened path=%s creatures=%u objects=%u",
+        "world opened path=%s creatures=%u objects=%u native_rows=%s",
         native_path.GetString(), static_cast<unsigned>(creature_count()),
-        static_cast<unsigned>(non_scenery_object_count()));
+        static_cast<unsigned>(non_scenery_object_count()),
+        creatures1::common::compat_summary().c_str());
     bind_event_bar();
     redraw_loaded_bubble_text();
     SetModifiedFlag(FALSE);
@@ -796,7 +798,7 @@ void C1WindowsDocument::repair_world_data() {
     constexpr std::uint8_t kInvisibleToCreatures = 0x10;
     for (std::size_t index = 0; index < object_count(); ++index) {
         creatures1::objects::Object* object = object_at(index);
-        if (object != nullptr &&
+        if (LC_FIX(26) && object != nullptr &&  // original-bugs.md row 26
             (object->classifier_base() & 0xffffff00u) == kOceanDomeSound &&
             !object->has_bounds_flag(kInvisibleToCreatures)) {
             // As CAOS `setv attr` sets it.
@@ -944,7 +946,18 @@ void C1WindowsDocument::repair_world_data() {
     const std::size_t script_count = (std::min)(
         creatures1::scripting::g_script_definition_count,
         creatures1::scripting::kScriptDefinitionCapacity);
+    // Each fix's row of original-bugs.md: Retreat 69, Say Need 70, the
+    // drum 71, the island boat 72.
+    const auto fix_enabled = [](const StockScriptFix& fix) {
+        if (fix.family == 4) {
+            return fix.event == 21 ? LC_FIX(69) : LC_FIX(70);
+        }
+        return fix.family == 2 ? LC_FIX(71) : LC_FIX(72);
+    };
     for (const StockScriptFix& fix : kStockScriptFixes) {
+        if (!fix_enabled(fix)) {
+            continue;
+        }
         for (std::size_t index = 0; index < script_count; ++index) {
             creatures1::scripting::ScriptDefinitionEntry& entry =
                 creatures1::scripting::g_script_definition_entries[index];
@@ -2249,7 +2262,8 @@ void C1WindowsDocument::OnFileSaveResumingWorld() {
             *this, nullptr, world_update_timer_interval_ms_);
         return;
     }
-    FrameWorldTimer timer(*frame, world_timer_is_armed());
+    // Native re-arms a paused world too (original-bugs.md row 33).
+    FrameWorldTimer timer(*frame, world_timer_is_armed() || !LC_FIX(33));
     creatures1::application::save_active_document_and_resume_world_timer(
         *this, &timer, world_update_timer_interval_ms_);
 }
@@ -2261,7 +2275,8 @@ void C1WindowsDocument::OnFileSaveAsResumingWorld() {
             *this, nullptr, world_update_timer_interval_ms_);
         return;
     }
-    FrameWorldTimer timer(*frame, world_timer_is_armed());
+    // Native re-arms a paused world too (original-bugs.md row 33).
+    FrameWorldTimer timer(*frame, world_timer_is_armed() || !LC_FIX(33));
     creatures1::application::save_active_document_as_and_resume_world_timer(
         *this, &timer, world_update_timer_interval_ms_);
 }
@@ -2685,7 +2700,7 @@ void C1WindowsDocument::commit_text_input() {
         // The native said it anyway -- an empty speech bubble over the hand,
         // and an empty word for every creature in earshot.  Only the typing
         // bubble, if one is up, is put away.
-        if (text.find_first_not_of(' ') == std::string::npos) {
+        if (LC_FIX(32) && text.find_first_not_of(' ') == std::string::npos) {
             pointer_tool_->set_persistent_bubble_text({}, runtime);
         } else {
             pointer_tool_->set_text_with_toolbar_update(text, runtime);
@@ -4083,7 +4098,8 @@ void C1WindowsDocument::purge_destroy_when_finished_macros( creatures1::objects:
     std::vector<creatures1::scripting::Macro*> paused;
     for (creatures1::scripting::Macro* macro :
          creatures1::scripting::g_running_macros) {
-        if (macro != nullptr && macro->object_context.script_owner == &object &&
+        if (LC_FIX(18) && macro != nullptr &&
+            macro->object_context.script_owner == &object &&
             macro->destroy_when_finished && macro->paused_by_prefixed_command) {
             paused.push_back(macro);
         }

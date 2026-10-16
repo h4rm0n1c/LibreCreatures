@@ -1,4 +1,5 @@
 #include "sound.hpp"
+#include "../common/compat.hpp"
 
 #include <algorithm>
 #include <array>
@@ -824,7 +825,8 @@ std::unique_ptr<SoundManager> initialize_sound_system(SoundSystemHost& host) {
 
     auto manager = std::make_unique<SoundManager>(host);
     manager->clear_sound_cache();
-    manager->set_cache_capacity(kSoundCacheCapacityBytes);
+    manager->set_cache_capacity(LC_FIX(36) ? kSoundCacheCapacityBytes
+                                           : kNativeSoundCacheCapacityBytes);
 
     std::int32_t raw_effect_volume = 0;
     if (host.read_effect_volume(raw_effect_volume)) {

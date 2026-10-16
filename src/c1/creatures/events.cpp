@@ -1,4 +1,5 @@
 #include "events.hpp"
+#include "../common/compat.hpp"
 
 #include <cstdlib>
 
@@ -224,6 +225,41 @@ void queue_tact_stimulus_for_overlapping_creatures(
     // stimulus to every creature in the world, the source included.  The
     // intended shape is the one `stim tact` already has: each creature the
     // source touches (or that rides the source vehicle) gets it.
+    if (!LC_FIX(17)) {  // native, original-bugs.md row 17
+        for (std::size_t source_index = 0;
+             source_index < host.creature_count(); ++source_index) {
+            Creature* target_creature = host.creature_at(source_index);
+            if (target_creature == nullptr) {
+                host.report_invalid_creature_index();
+                continue;
+            }
+            world::WorldRect source_bounds{};
+            source.get_bounds(&source_bounds);
+            for (std::size_t candidate_index = 0;
+                 candidate_index < host.creature_count(); ++candidate_index) {
+                Creature* candidate = host.creature_at(candidate_index);
+                if (candidate == nullptr) {
+                    host.report_invalid_creature_index();
+                    continue;
+                }
+                if (host.is_same_object(*candidate, source) ||
+                    !target_is_in_tactile_region(source, *candidate,
+                                                 source_bounds, host)) {
+                    continue;
+                }
+                // The outer creature gets the stimulus once any creature
+                // touches the source.
+                objects::QueuedCreatureStimulus queued{};
+                if (host.copy_built_in_stimulus(
+                        *target_creature, stimulus_index, source, queued) &&
+                    host.is_creature_classifier(*target_creature)) {
+                    host.queue_creature_stimulus(queued);
+                }
+                break;
+            }
+        }
+        return;
+    }
     world::WorldRect source_bounds{};
     source.get_bounds(&source_bounds);
     for (std::size_t index = 0; index < host.creature_count(); ++index) {

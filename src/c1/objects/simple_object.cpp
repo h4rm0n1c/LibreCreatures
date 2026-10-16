@@ -1,4 +1,5 @@
 #include "simple_object.hpp"
+#include "../common/compat.hpp"
 
 #include "bubble.hpp"
 #include "compound_object.hpp"
@@ -173,6 +174,11 @@ void SimpleObject::tick(SimpleObjectTickHost& host) {
 
 void SimpleObject::update_unbounded_position_and_redraw(
     SimpleObjectTickHost& host) {
+    // Native handles the click before the hand moves (original-bugs.md
+    // row 29).
+    if (!LC_FIX(29) && host.pointer_input_pending()) {
+        host.process_pending_pointer_input(*this);
+    }
     world::WorldRect old_object_bounds{};
     get_bounds(&old_object_bounds);
     SimpleObject* pointer_tool = host.pointer_tool();
@@ -187,7 +193,7 @@ void SimpleObject::update_unbounded_position_and_redraw(
     }
     const int world_y = host.pointer_mouse_world_y();
 
-    if (host.pointer_input_pending()) {
+    if (LC_FIX(29) && host.pointer_input_pending()) {
         // LibreCreatures deviation.  UpdateUnboundedPositionAndRedraw
         // @00427fd0 handed the click to PointerTool::ProcessPendingInput
         // before moving the hand to the mouse, so the object under the click
@@ -460,7 +466,8 @@ void SimpleObject::end_interaction_with_source(
                 probe_y = creature_bounds.max_y - kCreatureFootMargin;
             }
             world::WorldRect floor_room{};
-            if (has_bounds_flag(0x40u) &&
+            // Native keeps the room update_movement_bounds found (row 27).
+            if (LC_FIX(27) && has_bounds_flag(0x40u) &&
                 host.find_floor_room_below(probe_x, probe_y, floor_room)) {
                 set_movement_bounds(floor_room);
                 if (creature_drop) {

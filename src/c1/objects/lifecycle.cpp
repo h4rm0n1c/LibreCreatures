@@ -1,4 +1,5 @@
 #include "lifecycle.hpp"
+#include "../common/compat.hpp"
 
 #include "events.hpp"
 #include "object.hpp"
@@ -59,7 +60,9 @@ void delete_object_and_purge_runtime_references(
 
     // Not native, as in Object::initialize_runtime_state: a carried norn
     // deleted from the hand would otherwise leave the hand frozen.
-    host.release_from_pointer_tool(object);
+    if (LC_FIX(31)) {  // original-bugs.md row 31
+        host.release_from_pointer_tool(object);
+    }
 
     host.remove_from_event_bar(object, true);
     host.purge_destroy_when_finished_macros(object);
@@ -76,7 +79,8 @@ void delete_object_and_purge_runtime_references(
     // only makes sense if the clear was meant for the deleted creature
     // alone; the ordinary `kill` path (Object::InitializeRuntimeState) tests
     // it that way.  Deselect only when the deleted object is the selection.
-    if (host.selected_creature_exists() && host.is_selected_creature(object)) {
+    if (host.selected_creature_exists() &&
+        (!LC_FIX(30) || host.is_selected_creature(object))) {  // row 30
         host.clear_selected_creature(true);
     }
 

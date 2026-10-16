@@ -1,4 +1,5 @@
 #include "map.hpp"
+#include "../common/compat.hpp"
 
 #include <algorithm>
 #include <cstdint>
@@ -98,7 +99,9 @@ void find_nearest_room_bounds_at_point(const MapRoomTable& room_table,
         }
     }
 
-    if (output_bounds.bottom != kNoRoomBottom || room_table.room_count == 0) {
+    // Native leaves the gap open (original-bugs.md row 22).
+    if (!LC_FIX(22) || output_bounds.bottom != kNoRoomBottom ||
+        room_table.room_count == 0) {
         return;
     }
 

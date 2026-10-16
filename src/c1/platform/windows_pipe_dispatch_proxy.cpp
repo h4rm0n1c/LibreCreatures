@@ -1,4 +1,5 @@
 #include "windows_pipe_dispatch_proxy.hpp"
+#include "../common/compat.hpp"
 
 #include "../common/lab_trace.hpp"
 #include "windows_shell.hpp"
@@ -88,7 +89,8 @@ bool WindowsPipeDispatchProxy::kit_process_has_exited() const {
 // on its Tools item only shuts the slot down instead of opening the kit.
 // Ask for the same shutdown here, once, when the kit's process is gone.
 void WindowsPipeDispatchProxy::request_shutdown_of_exited_kit() const {
-    if (shutdown_requested_ || !kit_process_has_exited()) {
+    // Native never notices (original-bugs.md row 64).
+    if (!LC_FIX(64) || shutdown_requested_ || !kit_process_has_exited()) {
         return;
     }
     C1MainFrame* frame = active_main_frame();
@@ -122,7 +124,8 @@ bool WindowsPipeDispatchProxy::send_to_kit(std::uint32_t first_word,
         const DWORD error = GetLastError();
         // Native gives up at once on a missing pipe.  The wait above is for
         // a kit still starting; one whose process has ended never will.
-        if (error == ERROR_FILE_NOT_FOUND && kit_process_has_exited()) {
+        if (LC_FIX(64) && error == ERROR_FILE_NOT_FOUND &&
+            kit_process_has_exited()) {
             request_shutdown_of_exited_kit();
             return false;
         }

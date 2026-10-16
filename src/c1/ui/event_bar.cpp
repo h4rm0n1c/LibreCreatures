@@ -1,4 +1,5 @@
 #include "event_bar.hpp"
+#include "../common/compat.hpp"
 
 #include <algorithm>
 #include <iomanip>
@@ -320,12 +321,19 @@ void EventBar::on_left_button_down(
         // was never scrolled to.  LibreCreatures deviation: tracking goes
         // off first, so the request survives.
         const bool is_creature = interaction.is_creature(*object);
-        if (!is_creature && !interaction.viewport_navigation_is_disabled()) {
+        // Native requests the move first (original-bugs.md row 68).
+        const bool stop_first = LC_FIX(68);
+        if (stop_first && !is_creature &&
+            !interaction.viewport_navigation_is_disabled()) {
             interaction.stop_tracking_selected_creature();
         }
         interaction.request_viewport_origin(
             object->sound_source_x() - interaction.viewport_width() / 2,
             object->sound_source_y() - interaction.viewport_height() / 2);
+        if (!stop_first && !is_creature &&
+            !interaction.viewport_navigation_is_disabled()) {
+            interaction.stop_tracking_selected_creature();
+        }
 
         if (!is_creature) {
             return;

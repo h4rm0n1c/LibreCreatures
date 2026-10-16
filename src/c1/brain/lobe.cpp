@@ -1,5 +1,6 @@
 #include "lobe.hpp"
 #include "neuron.hpp"
+#include "../common/compat.hpp"
 #include "../common/lab_trace.hpp"
 #include "rules.hpp"
 #include "brain.hpp"
@@ -450,11 +451,13 @@ void Lobe::update_late_phase(Brain* brain, std::uint32_t tick) {
         // neuron's leftover connectivity data. Confirmed as a genuine C1
         // implementation bug, not an intentional neural-net property: reset
         // both pairs per neuron and evaluate each rule independently of the
-        // other's connection count.
-        registers[12] = 0;
-        registers[13] = 0;
-        registers[14] = 0;
-        registers[15] = 0;
+        // other's connection count.  (original-bugs.md row 2)
+        if (LC_FIX(2)) {
+            registers[12] = 0;
+            registers[13] = 0;
+            registers[14] = 0;
+            registers[15] = 0;
+        }
 
         // One input-register pair per connection rule: register 12+i is the
         // gain-scaled weighted sum of that rule's firing targets, and 14+i is
@@ -467,6 +470,9 @@ void Lobe::update_late_phase(Brain* brain, std::uint32_t tick) {
                 rule_index == 0 ? neuron.type0_dendrite_count
                                 : neuron.type1_dendrite_count;
             if (connection_count == 0) {
+                if (!LC_FIX(2)) {
+                    break;  // native: the other rule is not evaluated
+                }
                 continue;
             }
 
@@ -835,8 +841,11 @@ void Lobe::update_late_phase(Brain* brain, std::uint32_t tick) {
                     // never move out of the way.
                     bool duplicate = false;
                     for (std::uint8_t index = 0; index < count; ++index) {
-                        if (&connection_array[index] != loose &&
-                            connection_array[index].strength != 0 &&
+                        // Native tests every dendrite, the loose one and
+                        // other loose ones included (original-bugs.md row 6).
+                        if ((!LC_FIX(6) ||
+                             (&connection_array[index] != loose &&
+                              connection_array[index].strength != 0)) &&
                             connection_array[index].source == selected) {
                             duplicate = true;
                             break;

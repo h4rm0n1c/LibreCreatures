@@ -1,4 +1,5 @@
 #include "document.hpp"
+#include "../common/compat.hpp"
 
 #include <array>
 #include <new>
@@ -54,7 +55,9 @@ constexpr std::uint32_t kWorldTickPhaseCount = 16;
 // rather than preserving it -- LibreCreatures targets correct gameplay, not
 // byte-for-byte native fidelity (that's byte_match's job, and this constant
 // has no equivalent there since it isn't part of the fidelity contract).
+// original-bugs.md row 1; native mode keeps the five.
 constexpr std::uint32_t kCreatureUpdateCohortCount = 4;
+constexpr std::uint32_t kNativeCreatureUpdateCohortCount = 5;
 constexpr std::uint32_t kAmbientSoundCount = 0x1c;
 constexpr std::uint32_t kAmbientSoundCooldownMinimum = 0x32;
 constexpr std::uint32_t kAmbientSoundCooldownRange = 0x32;
@@ -361,7 +364,9 @@ void Document::update_world(DocumentWorldUpdateHost& host) {
     for (std::size_t index = 0; index < host.running_macro_count();) {
         // ExecuteInterpreter remains a separate held semantic row; this
         // adapter is its typed world-scheduler boundary.
-        index = host.execute_running_macro(index);
+        const std::size_t next = host.execute_running_macro(index);
+        // Native steps to the next slot whatever was removed (row 61).
+        index = LC_FIX(61) ? next : index + 1;
     }
 
     const std::uint32_t cohort = host.creature_update_cohort();
@@ -388,7 +393,8 @@ void Document::update_world(DocumentWorldUpdateHost& host) {
     }
 
     host.set_creature_update_cohort(
-        cohort + 1 < kCreatureUpdateCohortCount
+        cohort + 1 < (LC_FIX(1) ? kCreatureUpdateCohortCount
+                                : kNativeCreatureUpdateCohortCount)
             ? cohort + 1
             : 0);
 

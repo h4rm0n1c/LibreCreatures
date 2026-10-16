@@ -1,4 +1,5 @@
 #include "creature.hpp"
+#include "../common/compat.hpp"
 
 #include <algorithm>
 #include <cstdlib>
@@ -846,8 +847,10 @@ void Creature::speak_dominant_drive_phrase(
             append_response(dominant_drive_index == 7 ? 4 : 5);
             // LibreCreatures deviation: SpeakDominantDrivePhrase @0040b160
             // joins the verb and the creature's own kind with no space, so a
-            // lonely norn said "comeNorn" and a crowded one "runNorn".
-            append_space();
+            // lonely norn said "comeNorn" and a crowded one "runNorn".  (row 14)
+            if (LC_FIX(14)) {
+                append_space();
+            }
             const objects::Object& creature_object =
                 phrase_host.object_for_creature(*this);
             const std::int32_t attention_index =
@@ -926,19 +929,22 @@ void Creature::process_heard_words(
     // listener cut "push food" to "push" for every later one, which then
     // acted on its own attention target.  Split a copy instead; _mbsinc
     // still advances over each token boundary.
+    // Native splits the shared buffer itself (original-bugs.md row 37).
     std::string words(mutable_words);
-    char* token = words.data();
+    char* token = LC_FIX(37) ? words.data() : mutable_words;
     while (true) {
         // LibreCreatures deviation.  Native starts the next token right
         // after one space, so a second space, or a trailing one, gave an
         // empty token, which was learnt as an unknown word for the attended
         // object and weakened or erased its name.  Skip spaces, and stop
-        // when no text is left.
-        while (*token == ' ') {
-            token = const_cast<char*>(text_api.next_character(token));
-        }
-        if (*token == '\0') {
-            break;
+        // when no text is left.  (original-bugs.md row 39)
+        if (LC_FIX(39)) {
+            while (*token == ' ') {
+                token = const_cast<char*>(text_api.next_character(token));
+            }
+            if (*token == '\0') {
+                break;
+            }
         }
         char* word_end = token;
         if (*token == '\0') {
@@ -1271,7 +1277,9 @@ void Creature::update_attention(CreatureAttentionHost& host) {
                 // unsigned here too.
                 sensory_lobe.neuron(static_cast<std::uint32_t>(
                     target_neuron_index)).activation =
-                    winning_record.lobe_activation;
+                    LC_FIX(8) || winning_record.lobe_activation < 0x80
+                        ? winning_record.lobe_activation
+                        : std::uint8_t{0};  // native: signed, negatives 0 (row 8)
             }
         }
 
@@ -1329,7 +1337,8 @@ void Creature::update_attention(CreatureAttentionHost& host) {
         const std::int32_t pending_attention_index =
             goal_direction_state_.attention_record_index;
         if (pending_attention_index != -1 &&
-            goal_direction_state_.delivery_countdown != 0) {
+            goal_direction_state_.delivery_countdown != 0 &&
+            (LC_FIX(40) || skeleton_.motion_link != nullptr)) {  // row 40
             const std::uint32_t target_attention_index =
                 skeleton_.motion_link == nullptr
                     ? 0u
@@ -1529,8 +1538,10 @@ void Creature::update_action_selection(
         // clear the mark, and every later update returns at the top as if an
         // involuntary action were playing -- the creature ignores its brain
         // until its attention changes.  No script means no involuntary
-        // action is playing.
-        active_involuntary_action_index_ = kNoActiveInvoluntaryAction;
+        // action is playing.  (original-bugs.md row 11)
+        if (LC_FIX(11)) {
+            active_involuntary_action_index_ = kNoActiveInvoluntaryAction;
+        }
     }
 
     brain::Lobe& decision_lobe = brain_->lobe(static_cast<std::uint32_t>(
@@ -2732,8 +2743,10 @@ void Creature::select_walk_gait() {
     // animation before choosing gait k, and does not check gait 7 at all, so
     // it could choose an empty gait and leave an approach with nothing to
     // walk; this checks the gait it chooses.
+    // Native tests gait k + 1's animation, and none for gait 7 (row 12).
+    const std::size_t tested_offset = LC_FIX(12) ? 0 : 1;
     for (std::size_t gait = 0; gait < kGaitTableEntryCount - 1; ++gait) {
-        const auto& sequence = skeleton_.gait_animation_table[gait];
+        const auto& sequence = skeleton_.gait_animation_table[gait + tested_offset];
         if (sequence[0] == '\0' || gait_levels[gait] <= best_level) {
             continue;
         }
@@ -2741,7 +2754,8 @@ void Creature::select_walk_gait() {
         best_level = gait_levels[gait];
     }
     if (skeleton_.motion_link != nullptr &&
-        skeleton_.gait_animation_table[kGaitTableEntryCount - 1][0] != '\0' &&
+        (!LC_FIX(12) ||
+         skeleton_.gait_animation_table[kGaitTableEntryCount - 1][0] != '\0') &&
         gait_levels[kGaitTableEntryCount - 1] > best_level) {
         best_gait = kGaitTableEntryCount - 1;
     }
@@ -2844,13 +2858,14 @@ bool Creature::can_perceive(const objects::Object& target,
     // not perceived.  A creature parked outside the world, such as a norn in
     // its egg before it hatches, perceives nothing.  (Native already keeps
     // that creature itself unseen: it lies outside the world rectangle.)
-    if (world.is_unplaced_new_object(target, target_bounds)) {
+    // (original-bugs.md row 73)
+    if (LC_FIX(73) && world.is_unplaced_new_object(target, target_bounds)) {
         return false;
     }
-    if (skeleton_.down_foot_x < 0 ||
+    if (LC_FIX(73) && (skeleton_.down_foot_x < 0 ||
         skeleton_.down_foot_x > world::kWorldWidth ||
         skeleton_.down_foot_y < 0 ||
-        skeleton_.down_foot_y > world::kWorldHeight) {
+        skeleton_.down_foot_y > world::kWorldHeight)) {
         return false;
     }
 
@@ -2922,7 +2937,8 @@ void Creature::update_perception(
         // before the attention pass dropped the target, so the creature
         // remembered the object as below every floor.  Keep its last real
         // position; the attention pass still drops the target.
-        if (is_off_world_position(source_host.sound_source_y(*record.target))) {
+        if (LC_FIX(9) &&
+            is_off_world_position(source_host.sound_source_y(*record.target))) {
             continue;
         }
         const int current_x = source_host.sound_source_x(*record.target);
@@ -3211,7 +3227,7 @@ void Creature::apply_stimulus(
         // itself -- chemicals, lobe input, goal learning -- still applies.
         const int source_x = source_host.sound_source_x(*source_object);
         const int source_y = source_host.sound_source_y(*source_object);
-        if (is_off_world_position(source_y)) {
+        if (LC_FIX(9) && is_off_world_position(source_y)) {
             if (record.target == source_object) {
                 record.target = nullptr;
             }
@@ -3367,7 +3383,8 @@ void Creature::notify_dependents_on_removal(
         object_count = non_scenery_objects.object_count();
     }
 
-    if (dependent_count != 0 || !disappoint_when_empty) {
+    // Native disappoints on every empty-handed drop (original-bugs.md row 13).
+    if (dependent_count != 0 || (LC_FIX(13) && !disappoint_when_empty)) {
         return;
     }
 
@@ -3497,7 +3514,8 @@ std::string Creature::format_status_for_external_query(
                 stage = index + 1;
             }
         }
-        field(std::to_string(stage));
+        // Native repeats the age field at stage 0 (original-bugs.md row 15).
+        field(stage == 0 && !LC_FIX(15) ? age_text : std::to_string(stage));
     }
 
     // Health is the life-force chemical as a percentage; zero or dead reports
@@ -3558,7 +3576,9 @@ std::string Creature::format_status_for_external_query(
             if (native_room_index == -1) {
                 native_room_index = static_cast<int>(index);
             }
-            if (room.bounds.top < foot_y && foot_y <= room.bounds.bottom) {
+            // Native takes the first match (original-bugs.md row 43).
+            if (!LC_FIX(43) ||
+                (room.bounds.top < foot_y && foot_y <= room.bounds.bottom)) {
                 room_index = static_cast<int>(index);
                 break;
             }
@@ -3675,7 +3695,8 @@ void Creature::clear_references_to_object(
     // An object going away is forgotten as a killed one is: if it was the
     // attended target, the next UpdateAttention still runs its transition,
     // and the records that pointed at it lose their attention input.
-    if (candidate != nullptr) {
+    // Native only clears the pointers (original-bugs.md row 9).
+    if (LC_FIX(9) && candidate != nullptr) {
         forget_killed_object(*candidate);
     }
     if (skeleton_.motion_link == candidate) {
@@ -4182,7 +4203,7 @@ void Creature::serialize(
             // LibreCreatures before the fix, can remember a killed object's
             // parked (1000, 4000) as where its kind is.  Load such a record as
             // unknown, the constructor's (-1, -1); the target is null here.
-            if (is_off_world_position(record.world_y)) {
+            if (LC_FIX(9) && is_off_world_position(record.world_y)) {
                 record.world_x = -1;
                 record.world_y = -1;
             }
@@ -4371,7 +4392,7 @@ void Creature::deserialize(CreatureArchive& archive,
     // and Creature::Deserialize @0040dda0 renames the genome without it, so a
     // renamed import kept breeding with the old file -- whichever creature's
     // genome now has that name.  Follow the rename; no gamete stays none.
-    if (gamete_genome_source_filename_ != 0) {
+    if (LC_FIX(49) && gamete_genome_source_filename_ != 0) {  // row 49
         gamete_genome_source_filename_ = skeleton_.genome_source_filename;
     }
 

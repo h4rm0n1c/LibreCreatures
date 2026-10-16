@@ -1,4 +1,5 @@
 #include "classifier_scripts.hpp"
+#include "../common/compat.hpp"
 
 #include <cstddef>
 #include <utility>
@@ -201,8 +202,8 @@ bool execute_script_for_classifier(objects::Object* script_owner,
     if (macro != nullptr && classifier.event == ScriptEvent::timer) {
         return true;
     }
-    if (macro != nullptr && script_owner != nullptr && !force_restart &&
-        macro->paused_by_prefixed_command) {
+    if (LC_FIX(18) && macro != nullptr && script_owner != nullptr &&
+        !force_restart && macro->paused_by_prefixed_command) {
         // LibreCreatures deviation.  Native loads the new script into the
         // owner's running Macro here, whatever point that script has reached.
         // A script paused only because sys:/dde:/app: ended its turn

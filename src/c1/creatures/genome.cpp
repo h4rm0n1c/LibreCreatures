@@ -1,4 +1,5 @@
 #include "genome.hpp"
+#include "../common/compat.hpp"
 
 #include <algorithm>
 #include <array>
@@ -352,7 +353,8 @@ void Genome::copy_gene_with_mutation(Genome& source,
         // The two payload bytes AFTER the tag stay mutable: varying hue
         // rotation and colour swap is real genetics and is the point of the
         // extension.  Only the tag is held still.
-        if (source.cursor_ + 4 <= end &&
+        // Native copies the tag like any other byte (original-bugs.md row 7).
+        if (LC_FIX(7) && source.cursor_ + 4 <= end &&
             is_pigment_extension(source.payload_, source.cursor_)) {
             payload_.insert(payload_.end(),
                             source.payload_.begin() + source.cursor_,

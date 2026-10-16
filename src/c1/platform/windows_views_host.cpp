@@ -2,6 +2,7 @@
 
 #include "sdl_world_view.hpp"
 
+#include "../common/compat.hpp"
 #include "../scripting/macro.hpp"
 #include "../world/room_edges.hpp"
 
@@ -280,7 +281,9 @@ void C1WindowsView::restore_sound_mixer() {
 void C1WindowsView::suspend_sound_mixer() {
     if (document() != nullptr && g_active_sound_manager != nullptr &&
         !g_active_sound_manager->mixer_suspended()) {
-        document()->release_all_object_sound_channels();
+        if (LC_FIX(62)) {  // original-bugs.md row 62
+            document()->release_all_object_sound_channels();
+        }
     }
     if (g_active_sound_manager != nullptr) {
         g_active_sound_manager->suspend_mixer();
@@ -561,7 +564,10 @@ void C1WindowsView::configure_world_update_timer(std::uint32_t command) {
     // LibreCreatures records the new speed and re-arms only a running world.
     const CWnd* frame = AfxGetMainWnd();
     creatures1::world::configure_update_timer_interval(
-        state, command, current_document->world_timer_is_armed() ? &scheduler : nullptr,
+        state, command,
+        current_document->world_timer_is_armed() || !LC_FIX(33)  // row 33
+            ? &scheduler
+            : nullptr,
         frame == nullptr
             ? 0
             : reinterpret_cast<std::uintptr_t>(frame->GetSafeHwnd()));

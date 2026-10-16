@@ -1,4 +1,5 @@
 #include "embedded_kits.hpp"
+#include "../common/compat.hpp"
 
 #include <algorithm>
 #include <array>
@@ -206,7 +207,9 @@ bool execute_embedded_kit_tool(EmbeddedKitExecutionApi& api,
         // modern versions of Windows."  10.4's ExecuteEmbeddedKitTool
         // (@00444af0) ends by raising the kit's window (@004449b0); 10.3
         // (@004444e0) left it to Windows, which often opens it behind the game.
-        api.bring_kit_window_to_front(tool_index);
+        if (LC_FIX(75)) {  // original-bugs.md row 75
+            api.bring_kit_window_to_front(tool_index);
+        }
     }
     return launched;
 }

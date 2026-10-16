@@ -1,4 +1,5 @@
 #include "windows_embedded_kit_host.hpp"
+#include "../common/compat.hpp"
 #include "windows_creature_transfer_host.hpp"
 #include "windows_egg_transfer.hpp"
 #include "../common/lab_trace.hpp"
@@ -513,6 +514,11 @@ LRESULT C1MainFrame::OnPipeServerCommand(WPARAM wparam, LPARAM) {
 // the tooltip now does too, with the kit's name as the Tools menu shows it.
 // Other buttons, and a slot with no registration, keep MFC's lookup.
 BOOL C1MainFrame::OnKitToolTipText(UINT id, NMHDR* header, LRESULT* result) {
+    // Native takes every tooltip from its string table (original-bugs.md
+    // row 67).
+    if (!LC_FIX(67)) {
+        return CFrameWnd::OnToolTipText(id, header, result);
+    }
     constexpr UINT kFirstKitCommand = 0x8086;
     const auto* text_a = reinterpret_cast<TOOLTIPTEXTA*>(header);
     const auto* text_w = reinterpret_cast<TOOLTIPTEXTW*>(header);

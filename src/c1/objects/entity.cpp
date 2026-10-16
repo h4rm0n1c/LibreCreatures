@@ -1,4 +1,5 @@
 #include "entity.hpp"
+#include "../common/compat.hpp"
 
 #include <array>
 #include <algorithm>
@@ -167,7 +168,8 @@ void Entity::advance_image_sequence_for_moving_vehicle() {
     // for frame 10 -- picked frame 49 while moving and 10 while standing.
     // Decode it as Entity::advance_image_sequence does.  No stock vehicle
     // animates a lowercase frame while moving.
-    const int frame = static_cast<unsigned char>(sequence_byte) < 'a'
+    // Native: byte - '0' always (original-bugs.md row 59).
+    const int frame = !LC_FIX(59) || static_cast<unsigned char>(sequence_byte) < 'a'
                           ? static_cast<unsigned char>(sequence_byte) - '0'
                           : static_cast<unsigned char>(sequence_byte) - 'W';
     current_image_index_ = static_cast<std::uint8_t>(

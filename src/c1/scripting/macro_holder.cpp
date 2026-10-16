@@ -1,4 +1,5 @@
 #include "macro_holder.hpp"
+#include "../common/compat.hpp"
 
 #include "../application/sfc_ole.hpp"
 
@@ -120,9 +121,12 @@ bool MacroHolder::execute_and_publish_macro_output(void* callback_context) {
     // reply; publish_macro_output does it the same way.  Shared by the
     // SFC.OLE and pipe transports; DDE replies are built elsewhere and always
     // carried the output, empty or not.
-    host_.publish_macro_output(
-        static_cast<application::OleScriptVariant*>(callback_context),
-        output_buffer.data(), output_length);
+    // 10.3 skips an empty reply (original-bugs.md row 74).
+    if (LC_FIX(74) || output_length != 0) {
+        host_.publish_macro_output(
+            static_cast<application::OleScriptVariant*>(callback_context),
+            output_buffer.data(), output_length);
+    }
     return true;
 }
 
@@ -141,7 +145,9 @@ bool MacroHolder::dispatch_format_brain_activity_report(
     // macro output; the kits already take their reply from the VARIANT.
     auto* context =
         static_cast<application::OleScriptVariant*>(callback_context);
-    run_report_script();
+    if (LC_FIX(35)) {  // original-bugs.md row 35
+        run_report_script();
+    }
     std::string report;
     if (!host_.format_brain_activity_report(
             macro()->object_context.target_object, report,
@@ -198,7 +204,9 @@ bool MacroHolder::format_brain_activity_report(char* output_buffer,
         return false;
     }
 
-    run_report_script();
+    if (LC_FIX(35)) {  // original-bugs.md row 35
+        run_report_script();
+    }
     std::string report;
     if (!host_.format_brain_activity_report(
             macro()->object_context.target_object, report,
