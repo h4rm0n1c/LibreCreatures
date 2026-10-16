@@ -2206,20 +2206,20 @@ bool Macro::execute_room_command(MacroCommand command,
         return false;
     }
 
-    // Native `room` always consumes the index and four bounds first.  The
-    // fifth operand is consumed only when the index names one of the forty
-    // fixed MapData records; an out-of-range index takes the common discard
-    // path without consuming room_type.
+    // Native `room` consumes all six operands whatever the index.  An index
+    // past the forty fixed MapData records changes nothing, but its common
+    // discard path (0x004202fa) still parses room_type; leaving it unread
+    // made the next command parse as `0` and end the script.
     const std::uint32_t room_index = parse_rvalue(runtime, system);
     const int left = static_cast<int>(parse_rvalue(runtime, system));
     const int top = static_cast<int>(parse_rvalue(runtime, system));
     const int right = static_cast<int>(parse_rvalue(runtime, system));
     const int bottom = static_cast<int>(parse_rvalue(runtime, system));
+    const std::uint32_t room_type = parse_rvalue(runtime, system);
     if (room_index > 0x27u) {
         return true;
     }
 
-    const std::uint32_t room_type = parse_rvalue(runtime, system);
     system.set_room_definition(room_index, left, top, right, bottom,
                                room_type);
     return true;
