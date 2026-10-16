@@ -1,4 +1,5 @@
 #include "skeleton.hpp"
+#include "../common/compat.hpp"
 
 #include <algorithm>
 #include <array>
@@ -886,8 +887,8 @@ bool Skeleton::body_sprites_are_stale(std::string_view image_directory,
         // a creature whose generated .spr was deleted with no body sprites at
         // all -- it loads, walks and breeds, but is invisible, and nothing
         // ever restores it.  The file is derived from the genome, so rebuild
-        // it here instead.
-        return true;
+        // it here instead.  (original-bugs.md row 16)
+        return LC_FIX(16);
     }
     (void)first_frame_offset;
 

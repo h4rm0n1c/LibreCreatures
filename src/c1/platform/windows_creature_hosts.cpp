@@ -1,4 +1,5 @@
 #include "windows_creature_hosts.hpp"
+#include "../common/compat.hpp"
 
 #include "../objects/object.hpp"
 #include "../objects/debug.hpp"
@@ -698,10 +699,11 @@ WindowsCreatureFanoutHost::motion_link_facts(
     // that is not known.  Two creatures with no known father -- made with
     // new: crea, or a clone -- were taken as siblings.  Only a known parent
     // can be shared.
+    // (original-bugs.md row 38)
     facts.shares_a_parent =
-        (self.mother_moniker != 0 &&
+        ((!LC_FIX(38) || self.mother_moniker != 0) &&
          link_skeleton.mother_moniker == self.mother_moniker) ||
-        (self.father_moniker != 0 &&
+        ((!LC_FIX(38) || self.father_moniker != 0) &&
          link_skeleton.father_moniker == self.father_moniker);
     // The species test masks off the event and species bytes, leaving family
     // and genus; the sex comparison is the genome sex, not the display gender.

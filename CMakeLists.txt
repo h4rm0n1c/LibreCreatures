@@ -75,6 +75,21 @@ target_include_directories(Creatures PRIVATE
     ${SOURCE_ROOT}
 )
 
+# Native-compatibility builds (src/c1/common/compat.hpp, docs/original-bugs.md):
+# LC_NATIVE_MODE compiles every switchable fix out; LC_COMPAT_RUNTIME reads
+# C1_NATIVE_ROWS at startup instead.  Use one or neither.
+option(LC_NATIVE_MODE "Build the native game: every switchable fix off" OFF)
+option(LC_COMPAT_RUNTIME "Switch fixes at run time with C1_NATIVE_ROWS" OFF)
+if(LC_NATIVE_MODE AND LC_COMPAT_RUNTIME)
+    message(FATAL_ERROR "LC_NATIVE_MODE and LC_COMPAT_RUNTIME are separate builds")
+endif()
+if(LC_NATIVE_MODE)
+    target_compile_definitions(Creatures PRIVATE LC_NATIVE_MODE=1)
+endif()
+if(LC_COMPAT_RUNTIME)
+    target_compile_definitions(Creatures PRIVATE LC_COMPAT_RUNTIME=1)
+endif()
+
 
 target_link_libraries(Creatures PRIVATE
     # MFC, ANSI/MBCS (not the "u" Unicode variant) -- the original is an

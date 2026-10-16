@@ -1,4 +1,5 @@
 #include "vehicle.hpp"
+#include "../common/compat.hpp"
 
 #include "events.hpp"
 #include "../common/lab_trace.hpp"
@@ -175,9 +176,11 @@ void Vehicle::tick(VehicleTickHost& host) {
     // terrain lookup read past its table.  Keep the stored position inside
     // one world width, fraction included.
     constexpr std::int32_t kWorldWidth8_8 = world::kWorldWidth << 8;
-    position_x_8_8 %= kWorldWidth8_8;
-    if (position_x_8_8 < 0) {
-        position_x_8_8 += kWorldWidth8_8;
+    if (LC_FIX(52)) {  // row 52
+        position_x_8_8 %= kWorldWidth8_8;
+        if (position_x_8_8 < 0) {
+            position_x_8_8 += kWorldWidth8_8;
+        }
     }
     const int new_world_x = wrap_vehicle_x_once(position_x_8_8 >> 8);
     const int new_world_y = position_y_8_8 >> 8;
@@ -275,7 +278,9 @@ void Vehicle::tick(VehicleTickHost& host) {
         // and native then drags it across the world with every vehicle move,
         // unredrawn: the Flying Lemon.  An object no longer touching the
         // vehicle is not a passenger; return it to ordinary world bounds.
-        if (auto* simple = dynamic_cast<SimpleObject*>(candidate)) {
+        auto* simple = LC_FIX(23) ? dynamic_cast<SimpleObject*>(candidate)
+                                  : nullptr;  // row 23
+        if (simple != nullptr) {
             world::WorldRect vehicle_bounds{};
             world::WorldRect passenger_bounds{};
             get_bounds(&vehicle_bounds);

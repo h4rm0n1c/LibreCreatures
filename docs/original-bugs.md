@@ -29,6 +29,38 @@ When a commit fixes a defect of the original game:
    change. Add later commits for the same defect to the same row.
 3. If the defect was in our translation and not in the original, do not
    add it here.
+4. Give the row a native-compatibility switch: add `LC_FIX_<row>` to
+   `src/c1/common/compat.hpp` and keep the native behaviour behind
+   `LC_FIX(<row>)` (see "Native mode" below).  A guard against a native
+   crash or memory corruption is listed there instead, without a switch.
+
+## Native mode
+
+Every row in the Game tables can be switched back to the native
+behaviour, so LibreCreatures can be compared with the original
+executable.  `src/c1/common/compat.hpp` has one switch per row:
+
+- **Default build:** every fix on.
+- **Native build** (`LC_NATIVE_MODE`; CMake `-DLC_NATIVE_MODE=ON`, lab
+  profiles `librecreatures-native` and `librecreatures-neorender-native`):
+  every switchable fix off.  `-DLC_FIX_<row>=1` keeps one row fixed.
+- **Runtime build** (`LC_COMPAT_RUNTIME`; CMake `-DLC_COMPAT_RUNTIME=ON`,
+  lab profiles `librecreatures-compat` and `librecreatures-neorender-compat`):
+  the environment variable `C1_NATIVE_ROWS` names the rows that run native,
+  as `all` or a comma list, and `-<row>` keeps one fixed (`all,-4,-5`).
+
+The lab trace's "world opened" line names the rows running native.
+
+Some rows are not switched:
+
+- **Guards** against native crashes, memory corruption or reads past a
+  buffer: rows 3, 10, 19, 20, 21, 34, 46, 47, 48, 58, 60, 63 and 66.  On
+  any input where native does not crash or corrupt memory they behave as
+  native does; a crash cannot be compared.
+- **Row 25:** native's plane depends on heap addresses, so it cannot be
+  reproduced.
+- **Row 65:** LibreCreatures does what native does when the syntax-error
+  box's OK is pressed; a modal box would stop every automated run.
 
 Checked: **code** = read in the native disassembly; **lab** = the defect
 was reproduced in the lab (on the CE executable, or on a faithful

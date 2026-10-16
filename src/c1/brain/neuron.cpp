@@ -2,6 +2,7 @@
 
 #include "brain.hpp"
 #include "brain_recorder.hpp"
+#include "../common/compat.hpp"
 #include "../common/lab_trace.hpp"
 
 #include <array>
@@ -55,6 +56,13 @@ struct ConnectionSetSignature {
     bool operator==(const ConnectionSetSignature& other) const {
         return pointer_sum == other.pointer_sum &&
                pointer_product_low == other.pointer_product_low;
+    }
+
+    // Native's packed value.  With fewer than four dendrites the product's
+    // low bits depend on where the lobe's neurons sit in memory, so native's
+    // answer does too.
+    std::uint32_t packed() const {
+        return (pointer_sum << 16) | pointer_product_low;
     }
 };
 
@@ -229,7 +237,8 @@ void migrate_rule_connections(LobeNeuron& neuron, Brain& owner_brain,
             // candidate was rejected and the fallback below zeroed the
             // neuron's weights instead of moving its dendrites.  Only a
             // different neuron can make the candidate a duplicate.
-            if (existing == &neuron) {
+            // (original-bugs.md row 4)
+            if (LC_FIX(4) && existing == &neuron) {
                 continue;
             }
             const std::uint8_t existing_count =
@@ -241,8 +250,18 @@ void migrate_rule_connections(LobeNeuron& neuron, Brain& owner_brain,
             const Dendrite* existing_connections =
                 rule_index == 0 ? existing->type0_dendrites
                                 : existing->type1_dendrites;
-            if (connection_set_signature(existing_connections, existing_count) ==
-                candidate_signature) {
+            const ConnectionSetSignature existing_signature =
+                connection_set_signature(existing_connections, existing_count);
+            // Native compares the packed values (original-bugs.md row 5).
+            if (!LC_FIX(5)) {
+                if (existing_signature.packed() == candidate_signature.packed()) {
+                    duplicate = true;
+                    ++duplicate_rejects;
+                    break;
+                }
+                continue;
+            }
+            if (existing_signature == candidate_signature) {
                 if (!same_target_set(existing_connections, connections,
                                      existing_count)) {
                     ++false_matches;

@@ -29,6 +29,7 @@ constexpr std::uint32_t kSoundChannelCount = 32;
 // be 370 KB (juke.wav), so new sounds found no room and were silently
 // dropped.  The whole stock Sounds folder is about 9 MB.
 constexpr std::uint32_t kSoundCacheCapacityBytes = 32 * 1024 * 1024;
+constexpr std::uint32_t kNativeSoundCacheCapacityBytes = 0x80000;  // row 36
 
 struct SoundFormat {
     std::uint16_t format_tag = 0;

@@ -1,4 +1,5 @@
 #include "macro.hpp"
+#include "../common/compat.hpp"
 
 #include <algorithm>
 #include <array>
@@ -166,8 +167,8 @@ void Macro::serialize(MacroArchive& archive) {
         // replace it before its next turn: a norn saved mid-lay left her egg
         // at the world origin.  Every loaded script is held so until its
         // first turn after loading; an event for its owner waits at most
-        // that one turn.
-        paused_by_prefixed_command = true;
+        // that one turn.  (original-bugs.md row 18)
+        paused_by_prefixed_command = LC_FIX(18);
         return;
     }
 
@@ -550,7 +551,7 @@ MacroControlFlowResult Macro::execute_global_subroutine_command() {
         // inside bracketed text, so `dbgm [subr test]` before the real label
         // sent gsub to the byte after the message (and the cache kept it).
         // Bracketed text is a string operand; skip it whole.
-        if (script_buffer[scan_offset] == '[') {
+        if (LC_FIX(56) && script_buffer[scan_offset] == '[') {  // row 56
             while (scan_offset + 1 < readable_capacity &&
                    script_buffer[scan_offset + 1] != ']') {
                 ++scan_offset;
@@ -3252,7 +3253,7 @@ MacroControlFlowResult Macro::execute_object_enumeration_command(
              candidate + sizeof(CaosToken) <= readable_capacity; ++candidate) {
             // Bracketed text is a string operand, not commands: `[next]`
             // or `[enum]` in a word or a speech line must not count.
-            if (script_buffer[candidate] == '[') {
+            if (LC_FIX(55) && script_buffer[candidate] == '[') {  // row 55
                 while (candidate + 1 < readable_capacity &&
                        script_buffer[candidate + 1] != ']') {
                     ++candidate;
@@ -3263,7 +3264,8 @@ MacroControlFlowResult Macro::execute_object_enumeration_command(
             CaosToken token = 0;
             std::memcpy(&token, script_buffer.data() + candidate,
                         sizeof(token));
-            if (token ==
+            // Native stops at the first next (original-bugs.md row 54).
+            if (LC_FIX(54) && token ==
                 static_cast<CaosToken>(MacroCommand::enumerate_objects)) {
                 ++nested_enums;
                 continue;
@@ -3361,7 +3363,7 @@ MacroControlFlowResult Macro::execute_object_enumeration_command(
     }
 
     std::int64_t resume_after = static_cast<std::int64_t>(*index_value);
-    if (index_serial.has_value()) {
+    if (LC_FIX(53) && index_serial.has_value()) {  // row 53
         if (const std::optional<std::int64_t> moved =
                 runtime.non_scenery_index_after_removals(resume_after,
                                                          *index_serial)) {
@@ -3451,7 +3453,7 @@ MacroControlFlowResult Macro::execute_control_flow_command(
             // text, `[ending]` (holding "endi") closed it early and `[doif]`
             // added a level that was never closed.  Bracketed text is a
             // string operand; skip it whole.
-            if (script_buffer[candidate] == '[') {
+            if (LC_FIX(55) && script_buffer[candidate] == '[') {  // row 55
                 while (candidate + 1 < readable_capacity &&
                        script_buffer[candidate + 1] != ']') {
                     ++candidate;
@@ -4185,8 +4187,14 @@ MacroControlFlowResult Macro::dispatch_interpreter_command(
         switch (static_cast<MacroPrefixCommand>(static_cast<CaosToken>(command))) {
         case MacroPrefixCommand::aim:
         case MacroPrefixCommand::blackboard:
-        case MacroPrefixCommand::new_object:
             return MacroControlFlowResult::iteration_complete;
+        case MacroPrefixCommand::new_object:
+            // Native ends the turn (original-bugs.md row 18).
+            if (LC_FIX(18)) {
+                return MacroControlFlowResult::iteration_complete;
+            }
+            paused_by_prefixed_command = true;
+            return MacroControlFlowResult::cursor_changed;
         case MacroPrefixCommand::application:
         case MacroPrefixCommand::dde:
         case MacroPrefixCommand::system:

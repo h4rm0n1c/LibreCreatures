@@ -1,4 +1,5 @@
 #include "object.hpp"
+#include "../common/compat.hpp"
 
 #include "../objects/events.hpp"
 #include "../creatures/events.hpp"
@@ -242,10 +243,16 @@ Object* Object::find_topmost_overlapping_object(
     const ObjectOverlapHost& world) const {
     world::WorldRect search_bounds{};
     if (world.is_pointer_tool(*this)) {
-        return find_object_under_pointer(bounds_flag_mask, bounds_flag_value,
-                                         world);
+        // Native: the highest plane under the hand (original-bugs.md row 28).
+        if (!LC_FIX(28)) {
+            search_bounds = world.pointer_tool_bounds(*this);
+        } else {
+            return find_object_under_pointer(bounds_flag_mask,
+                                             bounds_flag_value, world);
+        }
+    } else {
+        get_bounds(&search_bounds);
     }
-    get_bounds(&search_bounds);
 
     Object* topmost_object = nullptr;
     int topmost_render_plane = -1;
@@ -404,14 +411,18 @@ void Object::initialize_runtime_state(ObjectInitializationHost& runtime) {
     // something, that object follows the mouse and the hand is placed on it,
     // so removing it -- a norn eating food straight out of the hand -- left
     // the hand frozen where it was until the world was reloaded.
-    runtime.release_from_pointer_tool(*this);
+    if (LC_FIX(31)) {  // original-bugs.md row 31
+        runtime.release_from_pointer_tool(*this);
+    }
     // Not native either (issue #11): `kill` parks the object at (1000, 4000)
     // but, unlike the permanent delete, leaves creatures pointing at it, so
     // the next perception pass took the parked position as where that kind
     // of object is.  Drop the creatures' live references now, as the delete
     // and the hand's hide (PointerTool::HandleQueuedEvent5) do.  A record's
     // position is the memory of a whole category, so it is kept.
-    runtime.forget_killed_object(*this);
+    if (LC_FIX(9)) {  // original-bugs.md row 9
+        runtime.forget_killed_object(*this);
+    }
     runtime.remove_from_event_bar(*this, true);
     runtime.purge_destroy_when_finished_macros(*this);
 

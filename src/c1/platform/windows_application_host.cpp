@@ -1,4 +1,5 @@
 #include "world_in_use.hpp"
+#include "../common/compat.hpp"
 #include <cstdio>
 #include "windows_sfc_ole_host.hpp"
 #include "windows_macro_host.hpp"
@@ -62,7 +63,9 @@ void C1NativeMuteControl::set_mute_enabled(bool enabled) {
 }
 
 void C1NativeMuteControl::stop_all_sounds() {
-    document_.release_all_object_sound_channels();
+    if (LC_FIX(62)) {  // original-bugs.md row 62
+        document_.release_all_object_sound_channels();
+    }
     if (g_active_sound_manager != nullptr) {
         g_active_sound_manager->stop_all_sounds();
     }

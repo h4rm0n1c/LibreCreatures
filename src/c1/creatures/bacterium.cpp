@@ -1,4 +1,5 @@
 #include "bacterium.hpp"
+#include "../common/compat.hpp"
 
 #include <algorithm>
 #include <cstdlib>
@@ -147,15 +148,30 @@ void Bacterium::replicate_and_mutate(
                     static_cast<std::int32_t>(offspring.kill_threshold_) +
                     static_cast<std::int32_t>(random_source.next() % 0x15u) -
                     10;
-                offspring.kill_threshold_ =
-                    static_cast<std::uint8_t>(std::clamp(kill, 0x82, 0xff));
+                if (LC_FIX(44)) {
+                    offspring.kill_threshold_ =
+                        static_cast<std::uint8_t>(std::clamp(kill, 0x82, 0xff));
+                } else {  // native: the byte wraps, then is raised to 130
+                    offspring.kill_threshold_ = static_cast<std::uint8_t>(kill);
+                    if (offspring.kill_threshold_ < 0x82u) {
+                        offspring.kill_threshold_ = 0x82u;
+                    }
+                }
             }
         } else {
             const std::int32_t activation =
                 static_cast<std::int32_t>(offspring.activation_threshold_) +
                 static_cast<std::int32_t>(random_source.next() % 0x15u) - 10;
-            offspring.activation_threshold_ =
-                static_cast<std::uint8_t>(std::clamp(activation, 0, 0x82));
+            if (LC_FIX(44)) {
+                offspring.activation_threshold_ =
+                    static_cast<std::uint8_t>(std::clamp(activation, 0, 0x82));
+            } else {  // native: the byte wraps, then is capped at 130
+                offspring.activation_threshold_ =
+                    static_cast<std::uint8_t>(activation);
+                if (offspring.activation_threshold_ > 0x82u) {
+                    offspring.activation_threshold_ = 0x82u;
+                }
+            }
         }
     } else {
         // LibreCreatures deviation.  ReplicateAndMutate @00401c70 stores
@@ -166,7 +182,7 @@ void Bacterium::replicate_and_mutate(
         // chemicals 232-235 (histamine A and B, sleep and fever toxin).
         // Mutate among the disease chemicals, as new bacteria choose.
         const std::int32_t chemical_id = normalized_masked_random(
-            random_source.next(), 0x80000003u) - 0x18;
+            random_source.next(), 0x80000003u) - (LC_FIX(42) ? 0x18 : 0);
         const std::uint32_t output_slot = static_cast<std::uint32_t>(
             normalized_masked_random(random_source.next(), 0x80000003u));
         offspring.output_chemical_ids_[output_slot] =

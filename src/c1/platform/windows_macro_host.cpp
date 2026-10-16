@@ -14,6 +14,7 @@
 #include "../application/sfc_ole.hpp"
 #include "../brain/lobe.hpp"
 #include "../objects/vehicle.hpp"
+#include "../common/compat.hpp"
 #include "../common/lab_trace.hpp"
 #include "../common/logging.hpp"
 #include "../scripting/classifier_scripts.hpp"
@@ -220,8 +221,10 @@ void WindowsMacroHost::publish_macro_output(
         return;
     }
     BSTR previous = reinterpret_cast<BSTR>(context->bstr_value);
-    const UINT size = (std::max)(::SysStringByteLen(previous),
-                                 static_cast<UINT>(output_length));
+    // 10.3 allocates exactly the output (original-bugs.md row 74).
+    const UINT size = LC_FIX(74) ? (std::max)(::SysStringByteLen(previous),
+                                              static_cast<UINT>(output_length))
+                                 : static_cast<UINT>(output_length);
     BSTR reply = ::SysAllocStringByteLen(nullptr, size);
     if (reply == nullptr) {
         return;
@@ -1053,8 +1056,10 @@ void WindowsMacroHost::drive_presentation_for_bound_creatures(
     // pickups bound everyone in the cabin to a lift that had already
     // arrived, for good: norns stuck in the lift.  Everyone off means the
     // pickups still waiting are off too.
-    document_.cancel_immediate_object_events_from(
-        target, creatures1::objects::ObjectEventId::event_4);
+    if (LC_FIX(24)) {  // original-bugs.md row 24
+        document_.cancel_immediate_object_events_from(
+            target, creatures1::objects::ObjectEventId::event_4);
+    }
     for (std::size_t index = 0; index < document_.creature_count(); ++index) {
         auto* creature = dynamic_cast<creatures1::creatures::Creature*>(
             document_.creature_at(index));
@@ -1985,13 +1990,17 @@ void resynchronize_moved_vehicle(creatures1::objects::Object& object) {
 void WindowsMacroHost::move_to_and_redraw(creatures1::objects::Object& object,
                                           int world_x, int world_y) {
     document_.move_to_and_redraw(object, world_x, world_y);
-    resynchronize_moved_vehicle(object);
+    if (LC_FIX(57)) {  // row 57
+        resynchronize_moved_vehicle(object);
+    }
 }
 
 void WindowsMacroHost::move_by_and_redraw(creatures1::objects::Object& object,
                                           int delta_x, int delta_y) {
     document_.move_by_and_redraw(object, delta_x, delta_y);
-    resynchronize_moved_vehicle(object);
+    if (LC_FIX(57)) {  // row 57
+        resynchronize_moved_vehicle(object);
+    }
 }
 
 void WindowsMacroHost::set_motion_target_part_index(
