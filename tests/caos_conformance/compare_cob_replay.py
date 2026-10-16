@@ -14,6 +14,12 @@ gone by the end of the run.  A COB that failed to inject on one side only is
 always reported.  Family counts follow from the objects and are reported at the end only.
 Only persistent differences and one-sided failures fail the comparison; a difference already there before the COB (such as a fixed
 build's world-data repair) is not repeated.
+
+A difference in which a classifier has the same number of objects on both
+sides and only their attributes are split differently is reported as
+"state" and does not fail: timer scripts change attributes (food ripening
+from 80 to 67, say), and two games sampled a moment apart catch them at
+different steps.  A different number of objects always counts.
 """
 import json
 import sys
@@ -42,20 +48,25 @@ def differences(original, other, include_families=False):
     else:
         from collections import Counter
         ca, cb = Counter(a), Counter(b)
+        per_class_a = Counter(item[0] for item in a if item)
+        per_class_b = Counter(item[0] for item in b if item)
         for item in set(ca) | set(cb):
             if ca[item] != cb[item]:
-                found.add(("object", item, ca[item], cb[item]))
+                key = item[0] if item else None
+                kind = "state" if per_class_a[key] == per_class_b[key] else "object"
+                found.add((kind, item, ca[item], cb[item]))
     if include_families and original[1] != other[1]:
         found.add(("families", original[1], other[1]))
     return found
 
 
 def describe(item):
-    if item[0] == "object":
+    if item[0] in ("object", "state"):
         _, fields, count_a, count_b = item
         name = classifier(fields[0]) if fields and fields[0].lstrip("-").isdigit() else repr(fields)
         attr = fields[1] if len(fields) > 1 else "?"
-        return f"{name} attr {attr}: original {count_a}, other {count_b}"
+        label = "state: " if item[0] == "state" else ""
+        return f"{label}{name} attr {attr}: original {count_a}, other {count_b}"
     if item[0] == "families":
         return f"family counts: original {item[1]}, other {item[2]}"
     return f"snapshot: original {item[1]}, other {item[2]}"
@@ -85,7 +96,7 @@ def main():
             tuple(outputs.get(k) for k in ("snapshot.objects", "snapshot.families")),
             include_families=True)
         seen = set()
-        persistent = transient = one_sided = 0
+        persistent = transient = one_sided = states = 0
         for cob in cobs + [""]:
             prefix = f"{cob}/" if cob else ""
             keys = (prefix + "snapshot.objects", prefix + "snapshot.families")
@@ -100,6 +111,9 @@ def main():
                 lasting = item in final
                 print(f"{instance}  {label}: {describe(item)}"
                       f"{'' if lasting else '  (transient)'}")
+                if item[0] == "state":
+                    states += 1
+                    continue
                 persistent += lasting
                 transient += not lasting
             seen = now
@@ -108,7 +122,8 @@ def main():
                 print(f"{instance}  (end of run): {describe(item)}")
         introduced = persistent + one_sided
         print(f"{instance}: {len(cobs)} COBs; {persistent} persistent differences, "
-              f"{one_sided} one-sided failures, {transient} transient")
+              f"{one_sided} one-sided failures, {transient} transient, "
+              f"{states} attribute-state only")
         failed |= introduced > 0
     return 1 if failed else 0
 
