@@ -234,6 +234,9 @@
 #ifndef LC_FIX_75
 #define LC_FIX_75 LC_FIX_DEFAULT  // kit window raised (CE 10.4)
 #endif
+#ifndef LC_FIX_76
+#define LC_FIX_76 LC_FIX_DEFAULT  // kit pipe waits for a starting kit
+#endif
 
 namespace creatures1::common {
 

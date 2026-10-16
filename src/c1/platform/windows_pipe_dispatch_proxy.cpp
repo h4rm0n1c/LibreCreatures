@@ -106,16 +106,36 @@ void WindowsPipeDispatchProxy::request_shutdown_of_exited_kit() const {
 
 bool WindowsPipeDispatchProxy::send_to_kit(std::uint32_t first_word,
                                            std::uint32_t second_word) const {
-    // Keep trying for up to a second: straight after one message (a new
-    // kit's YOUR_ID_IS, say) the kit's pipe can be missing or busy for a
-    // moment -- in the lab the call right after YOUR_ID_IS failed to find it.
-    // The earlier rule -- three tries,
-    // and a missing pipe taken to mean the kit had closed -- dropped the
-    // message sent right after a kit started: the Funeral Kit, launched by
-    // clicking a dead creature, never heard of the death.
+    // LibreCreatures deviation (CPipeDispatchProxy::SendToKit, called from
+    // Invoke @00449950).  Keep trying for up to a second: straight after one
+    // message (a new kit's YOUR_ID_IS, say) the kit's pipe can be missing or
+    // busy for a moment -- in the lab the call right after YOUR_ID_IS failed
+    // to find it.  Native's rule -- three tries, and a missing pipe taken to
+    // mean the kit had closed -- dropped the message sent right after a kit
+    // started: the Funeral Kit, launched by clicking a dead creature, never
+    // heard of the death.
     HANDLE pipe = INVALID_HANDLE_VALUE;
+    // Native: three tries 50 ms apart, and a missing pipe taken to mean the
+    // kit has closed (original-bugs.md row 76).
+    for (int attempt = 0; !LC_FIX(76) && attempt < 3 &&
+                          pipe == INVALID_HANDLE_VALUE;
+         ++attempt) {
+        pipe = CreateFileA(pipe_name_.data(), GENERIC_WRITE, 0, nullptr,
+                           OPEN_EXISTING, 0, nullptr);
+        if (pipe == INVALID_HANDLE_VALUE) {
+            if (GetLastError() == ERROR_FILE_NOT_FOUND) {
+                OutputDebugStringA(
+                    "CPipeDispatchProxy::SendToKit: Pipe not found - kit has "
+                    "closed\n");
+                return false;
+            }
+            if (attempt < 2) {
+                Sleep(50);
+            }
+        }
+    }
     const DWORD started = GetTickCount();
-    while (pipe == INVALID_HANDLE_VALUE) {
+    while (LC_FIX(76) && pipe == INVALID_HANDLE_VALUE) {
         pipe = CreateFileA(pipe_name_.data(), GENERIC_WRITE, 0, nullptr,
                            OPEN_EXISTING, 0, nullptr);
         if (pipe != INVALID_HANDLE_VALUE) {
