@@ -34,6 +34,14 @@ public:
         return reinterpret_cast<T>(static_cast<std::uintptr_t>(address));
     }
 
+    // Points every import whose name ends with `name` (e.g. "!rand") at
+    // `function`; false when there is none.  Only the copy changes.
+    bool bind_import(const std::string& name, void* function);
+
+    // Makes the cdecl function at `address` return at once (a C3 at its
+    // entry), in the copy.
+    void make_return(std::uint32_t address);
+
 private:
     std::uint32_t base_ = 0;
 };

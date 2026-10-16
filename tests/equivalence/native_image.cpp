@@ -13,6 +13,7 @@ namespace equivalence {
 namespace {
 
 std::vector<std::string> g_import_names;
+std::vector<std::uint32_t*> g_import_slots;
 
 // Reached from an import thunk: `push index; call trap`.
 extern "C" void __cdecl import_trap(std::uint32_t index) {
@@ -109,6 +110,7 @@ bool NativeImage::load(const std::string& path, std::string& error) {
                 }
                 const auto index = static_cast<std::uint32_t>(g_import_names.size());
                 g_import_names.push_back(name);
+                g_import_slots.push_back(slots);
                 if (stub + 10 > 0x10000) {
                     error = "too many imports";
                     return false;
@@ -128,6 +130,25 @@ bool NativeImage::load(const std::string& path, std::string& error) {
     }
     FlushInstructionCache(GetCurrentProcess(), mapped, kHoleSize);
     return true;
+}
+
+bool NativeImage::bind_import(const std::string& name, void* function) {
+    bool bound = false;
+    for (std::size_t i = 0; i < g_import_names.size(); ++i) {
+        const std::string& import = g_import_names[i];
+        if (import.size() >= name.size() &&
+            import.compare(import.size() - name.size(), name.size(), name) == 0) {
+            *g_import_slots[i] =
+                static_cast<std::uint32_t>(reinterpret_cast<std::uintptr_t>(function));
+            bound = true;
+        }
+    }
+    return bound;
+}
+
+void NativeImage::make_return(std::uint32_t address) {
+    *at<std::uint8_t*>(address) = 0xc3;
+    FlushInstructionCache(GetCurrentProcess(), at<void*>(address), 1);
 }
 
 } // namespace equivalence
