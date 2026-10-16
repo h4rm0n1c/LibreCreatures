@@ -84,7 +84,7 @@ bool MacroHolder::reset_result_and_invoke_result_entry(
     case MacroExecutionMode::start_execution:
         return start_macro_execution(output_buffer);
     case MacroExecutionMode::execute_to_output:
-        return execute_macro_to_output_buffer(output_buffer);
+        return execute_macro_to_output_buffer(output_buffer, output_capacity);
     case MacroExecutionMode::format_brain_activity_report:
         return format_brain_activity_report(output_buffer, output_capacity);
     case MacroExecutionMode::default_success_3:
@@ -107,9 +107,12 @@ bool MacroHolder::execute_and_publish_macro_output(void* callback_context) {
         return false;
     }
 
+    // ExecuteAndPublishMacroOutput @00419340 runs the macro into a 16 KiB
+    // stack buffer; a reply can be that long, not just the 0x1000 bytes of a
+    // kit's own command buffer.
     std::array<char, 0x4000> output_buffer{};
-    const std::uint32_t output_length =
-        host_.execute_macro_to_output_buffer(*macro(), output_buffer.data());
+    const std::uint32_t output_length = host_.execute_macro_to_output_buffer(
+        *macro(), output_buffer.data(), output_buffer.size());
     // Fix from Creatures 1 Community Edition 10.4 by lisdude
     // (https://lisdude.com/Creatures/Community/C1/), ported here.
     // CMacroHolder::ExecuteAndPublishMacroOutput @00419340
@@ -177,7 +180,7 @@ void MacroHolder::run_report_script() {
     if (macro() == nullptr || macro()->script_buffer.empty()) {
         return;
     }
-    host_.execute_macro_to_output_buffer(*macro(), nullptr);
+    host_.execute_macro_to_output_buffer(*macro(), nullptr, 0);
 }
 
 bool MacroHolder::start_macro_execution(void* callback_context) {
@@ -187,13 +190,14 @@ bool MacroHolder::start_macro_execution(void* callback_context) {
     return true;
 }
 
-bool MacroHolder::execute_macro_to_output_buffer(char* output_buffer) {
+bool MacroHolder::execute_macro_to_output_buffer(char* output_buffer,
+                                                 std::size_t output_capacity) {
     if (macro() == nullptr) {
         return false;
     }
 
     callback_result_ = host_.execute_macro_to_output_buffer(
-        *macro(), output_buffer);
+        *macro(), output_buffer, output_capacity);
     return true;
 }
 

@@ -230,8 +230,8 @@ void WindowsDdeCallbackHost::set_tool_available(std::string_view topic_name,
 std::string WindowsDdeCallbackHost::render_macro_output(
     creatures1::scripting::Macro& macro, std::size_t output_capacity) {
     // Not execute_macro_to_output_buffer: that helper serves the pipe and
-    // caps a reply at its 0x1000 bytes, while CreateMacroData's own buffer is
-    // 0x4000.  The count Macro::execute_to_output_buffer returns includes the
+    // SFC.OLE, whose reply buffer is the caller's, while CreateMacroData's
+    // own buffer is 0x4000.  The count Macro::execute_to_output_buffer returns includes the
     // NUL over the final separator, which is exactly what the native sends.
     creatures1::scripting::MacroSchedulerHostAdapter scheduler(*this, *this);
     std::string output;

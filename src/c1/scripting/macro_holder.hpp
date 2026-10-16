@@ -39,8 +39,10 @@ public:
     // Scheduling/interpreter policy remains in the application host; the
     // callback selection and result carrier remain MacroHolder-owned.
     virtual bool start_macro(Macro& macro) = 0;
+    // Writes at most output_capacity - 1 bytes and a NUL (nothing when
+    // output_buffer is null); returns the length the macro wrote.
     virtual std::uint32_t execute_macro_to_output_buffer(
-        Macro& macro, char* output_buffer) = 0;
+        Macro& macro, char* output_buffer, std::size_t output_capacity) = 0;
     virtual void publish_macro_output(application::OleScriptVariant* context,
                                       const char* output,
                                       std::size_t output_length) = 0;
@@ -80,7 +82,8 @@ public:
     bool dispatch_format_brain_activity_report(
         void* callback_context);
     bool start_macro_execution(void* callback_context);
-    bool execute_macro_to_output_buffer(char* output_buffer);
+    bool execute_macro_to_output_buffer(char* output_buffer,
+                                        std::size_t output_capacity);
     bool format_brain_activity_report(char* output_buffer,
                                       std::size_t output_capacity);
     // Runs the loaded script so that its work values pick the report.

@@ -164,18 +164,22 @@ bool WindowsMacroHost::start_macro(creatures1::scripting::Macro& macro) {
 }
 
 std::uint32_t WindowsMacroHost::execute_macro_to_output_buffer(
-    creatures1::scripting::Macro& macro, char* output_buffer) {
+    creatures1::scripting::Macro& macro, char* output_buffer,
+    std::size_t output_capacity) {
     creatures1::scripting::MacroSchedulerHostAdapter scheduler(*this, *this);
     std::string output;
     const creatures1::common::LabTraceContext trace_context("injected pipe");
     const std::size_t written = macro.execute_to_output_buffer(scheduler,
                                                                output);
-    if (output_buffer != nullptr) {
-        // The native writes into a caller-owned fixed buffer; the recovered
-        // pipe protocol caps a response at 0x1000 bytes.
-        constexpr std::size_t kOutputCapacity = 0x1000;
+    if (output_buffer != nullptr && output_capacity != 0) {
+        // The native writes into the caller's fixed buffer: 16 KiB for a
+        // kit's pipe or SFC.OLE reply (ExecuteAndPublishMacroOutput
+        // @00419340).  This capped every reply at 0x1000 bytes, so a long
+        // output (an enum over a big world) was cut short where the
+        // original returned it whole.  Native writes past its buffer; this
+        // stops at the caller's capacity.
         const std::size_t copied =
-            (std::min)(output.size(), kOutputCapacity - 1);
+            (std::min)(output.size(), output_capacity - 1);
         std::memcpy(output_buffer, output.data(), copied);
         output_buffer[copied] = '\0';
     }
@@ -247,7 +251,8 @@ bool WindowsMacroHost::start_macro_execution(
 bool WindowsMacroHost::execute_macro_to_output(
     creatures1::scripting::MacroHolder& holder, char* output_buffer) {
     return holder.macro() != nullptr &&
-           execute_macro_to_output_buffer(*holder.macro(), output_buffer) != 0;
+           execute_macro_to_output_buffer(*holder.macro(), output_buffer,
+                                          0x1000) != 0;
 }
 
 bool WindowsMacroHost::default_result(

@@ -345,7 +345,8 @@ public:
                           void* context) override;
     bool start_macro(creatures1::scripting::Macro& macro) override;
     std::uint32_t execute_macro_to_output_buffer(
-        creatures1::scripting::Macro& macro, char* output_buffer) override;
+        creatures1::scripting::Macro& macro, char* output_buffer,
+        std::size_t output_capacity) override;
     void publish_macro_output(creatures1::application::OleScriptVariant* context,
                               const char* output,
                               std::size_t output_length) override;
