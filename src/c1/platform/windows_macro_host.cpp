@@ -2191,6 +2191,12 @@ void WindowsMacroHost::speak_dominant_drive_phrase(
 
 // --- WindowsNewObjectHost --------------------------------------------------
 
+// LibreCreatures deviation (original-bugs row 77): Object::Object
+// @00425750 registers the object before SimpleObject @00426cf0 and
+// CompoundObject @0042a800 acquire its gallery, so a missing sprite file
+// throws out of a half-built object that the registry still holds; the
+// new-expression frees it and the next world tick calls Tick on freed
+// memory.  Here a `new:` object is registered only once it is fully built.
 creatures1::objects::Object* WindowsNewObjectHost::adopt(
     std::unique_ptr<creatures1::objects::Object> object) {
     creatures1::world::WorldRuntime* runtime = document_.world_runtime();
