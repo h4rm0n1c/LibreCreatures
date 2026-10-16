@@ -1,0 +1,24 @@
+# CAOS conformance: creatures.  Rules as in core.caos; the experiment copies
+# the stock genomes into the world ("genetics": [<install>/Genetics]).
+#
+# A creature's brain is wired at random when it is made, so what it does
+# cannot be compared across exes.  These tests make a creature from a stock
+# genome (new: crea tokn <genome> <sex>) and read in the same turn what the
+# genome fixes: its classifier, life stage, state flags, all 256
+# chemicals and 16 drives, its winning drive, where it stands; then kill it.
+
+crea.make: inst,new: crea tokn mum1 2,dde: putv fmly,dde: putv gnus,dde: putv spcs,dde: putv dead,dde: putv aslp,dde: putv cage,kill targ,dde: putv totl 4 0 0
+crea.male: inst,new: crea tokn dad1 1,dde: putv fmly,dde: putv gnus,dde: putv spcs,dde: putv cage,kill targ
+crea.chemicals: inst,new: crea tokn mum1 2,setv var0 0,reps 256,dde: putv chem var0,addv var0 1,repe,kill targ
+crea.chemicals_male: inst,new: crea tokn dad1 1,setv var0 0,reps 256,dde: putv chem var0,addv var0 1,repe,kill targ
+crea.drives: inst,new: crea tokn mum1 2,setv var0 0,reps 16,dde: putv driv var0,addv var0 1,repe,dde: putv drv!,kill targ
+crea.mvto: inst,new: crea tokn mum1 2,mvto 3000 900,dde: putv posl,dde: putv post,dde: putv posr,dde: putv posb,dde: putv wdth,dde: putv hght,kill targ
+crea.limits: inst,new: crea tokn mum1 2,mvto 3000 900,dde: putv liml,dde: putv limt,dde: putv limr,dde: putv limb,kill targ
+crea.sleep: inst,new: crea tokn mum1 2,aslp 1,dde: putv aslp,aslp 0,dde: putv aslp,kill targ
+crea.attention: inst,new: crea tokn mum1 2,doif attn eq 0,dde: puts [no attention],endi,dde: putv baby,kill targ
+crea.obv: inst,new: crea tokn mum1 2,setv obv0 5,setv obv1 -6,dde: putv obv0,dde: putv obv1,kill targ
+crea.attr: inst,new: crea tokn mum1 2,dde: putv attr,dde: putv actv,kill targ
+crea.two: inst,new: crea tokn mum1 2,setv var0 targ,new: crea tokn dad1 1,dde: putv totl 4 0 0,dde: putv totl 4 1 0,doif targ ne var0,dde: puts [two],endi,kill targ,targ var0,kill targ,dde: putv totl 4 0 0
+# enum 4 0 0 does not find a creature made in the same turn (totl counts it),
+# in the original as in LC; this test leaves its two creatures alive.
+crea.enum: inst,new: crea tokn mum1 2,new: crea tokn dad1 1,setv var0 0,enum 4 0 0,addv var0 1,next,dde: putv var0,enum 4 0 0,kill targ,next,dde: putv totl 4 0 0
