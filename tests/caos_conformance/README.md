@@ -13,8 +13,9 @@ must be the same.
      "instances": {"ab-a1": "original", "ab-a2": "lc_native", "ab-b1": "lc_fixed"}}
     tests/caos_conformance/compare.py <experiment dir> <original's instance>
 
-Suites: `core.caos` and `objects.caos` (same experiment, another
-`caos_suite`).
+Suites: `core.caos`, `objects.caos` and `creatures.caos` (same
+experiment, another `caos_suite`; the creature suite also needs
+`"genetics": [<install>/Genetics]`).
 
 `core.caos` covers the language core: variables and arithmetic (with the
 edges: overflow, negative division, division by zero), comparisons and
@@ -44,3 +45,10 @@ First run (2026-10-16), CE 10.3 against LibreCreatures 856e4ae:
 `objects.caos`, first run (2026-10-16), CE 10.3 against 856e4ae: LC native
 and LC as shipped both match on 38 of 38 tests. Messages 0, 1 and 2 run a
 simple object's scripts 1, 2 and 0 and set `actv` to 1, 2 and 0 in both.
+
+`creatures.caos`, first run (2026-10-16), CE 10.3 against 856e4ae: LC
+native and LC as shipped both match on 13 of 13 tests. A creature's brain
+is wired at random when it is made, so the suite reads what the genome
+fixes, in the turn the creature is made: classifier, life stage, flags,
+all 256 chemicals and 16 drives, the winning drive, position and limits.
+`enum 4 0 0` does not find a creature made in the same turn in either.
