@@ -54,7 +54,7 @@ The lab trace's "world opened" line names the rows running native.
 Some rows are not switched:
 
 - **Guards** against native crashes, memory corruption or reads past a
-  buffer: rows 3, 10, 19, 20, 21, 34, 46, 47, 48, 58, 60, 63 and 66.  On
+  buffer: rows 3, 10, 19, 20, 21, 34, 46, 47, 48, 58, 60, 63, 66 and 77.  On
   any input where native does not crash or corrupt memory they behave as
   native does; a crash cannot be compared.
 - **Row 25:** native's plane depends on heap addresses, so it cannot be
@@ -152,6 +152,7 @@ files.
 | 46 | A lift and its call buttons hold pointers to each other but report neither as a reference, so a button deleted with a call pending (or freed at save) leaves the lift reading freed memory, and a button whose lift is deleted keeps using it. | Lift, CallButton (no ReferencesObject / ClearReferencesToObject; `~CallButton` @00423840, `~Lift` @0042c3a0) | 1fe2091 | code, lab |
 | 47 | Placing a call button writes the lift's eight-entry floor table at floor_count unchecked, so a ninth button writes past it, and a button in no room indexes the room table with -1. | `CallButton::UpdateLiftStateAndQueueRedraw` @00429a70 | 1fe2091 | code |
 | 48 | Exporting a creature deletes it before the file is flushed and closed, and a failed write leaves it removed from the world but not deleted, so a full disk loses the norn. | `OnExportCurrentCreature` @00431d20 | bd85a4e, 31af2db | code |
+| 77 | A `new:` object whose sprite file is missing crashes the game. The object is added to the object list before its sprite is loaded; the load fails, the half-built object is freed, and the next world tick runs the freed object. COBs that use a sprite they do not ship (Creatures Caves 891 "Duck", 1401) crash the original after its "Cross your fingers" box. | `Object::Object` @00425750, `SimpleObject::SimpleObject` @00426cf0, `CompoundObject::CompoundObject` @0042a800 | 3ec81ce | code, lab (CE) |
 
 ### The hand and the interface
 
