@@ -1,0 +1,98 @@
+# CAOS conformance: the language core and simple objects.
+#
+# One test a line, "name: script".  Each runs once through the kit pipe on a
+# fresh Eden world with no creatures, in the original Creatures.exe and in
+# LibreCreatures; the two outputs must be the same.  Tests print only what
+# does not depend on object handles, the clock or rand, start with inst so
+# they run in one turn, and kill what they make.  Test objects are 2 23 199
+# (packed 35112704) and 2 23 198 (35112448), which Eden does not use.
+#
+# Tests named native_error.* hit a defect the original reports as a syntax
+# error (original-bugs.md row 55, 56), which it shows as a modal box (row
+# 65): the pipe call then times out.  compare.py lists them apart.
+#
+# Not here: native crash inputs (the original-bugs.md guards: rndv over the
+# whole range, divv/modv of -2147483648 by -1, a bad object pointer).
+
+# --- variables and arithmetic
+setv: inst,setv var0 42,dde: putv var0
+setv.negative: inst,setv var0 -42,dde: putv var0
+setv.all: inst,setv var0 0,setv var1 1,setv var2 2,setv var3 3,setv var4 4,setv var5 5,setv var6 6,setv var7 7,setv var8 8,setv var9 9,dde: putv var0,dde: putv var5,dde: putv var9
+vars.start_zero: inst,dde: putv var0,dde: putv var9
+addv: inst,setv var0 40,addv var0 2,dde: putv var0
+addv.overflow: inst,setv var0 2147483647,addv var0 1,dde: putv var0
+subv: inst,setv var0 2,subv var0 44,dde: putv var0
+mulv: inst,setv var0 -6,mulv var0 7,dde: putv var0
+mulv.overflow: inst,setv var0 65536,mulv var0 65536,dde: putv var0
+divv: inst,setv var0 43,divv var0 2,dde: putv var0
+divv.negative: inst,setv var0 -43,divv var0 2,dde: putv var0
+divv.negative_divisor: inst,setv var0 43,divv var0 -2,dde: putv var0
+divv.zero: inst,setv var0 43,divv var0 0,dde: putv var0
+modv: inst,setv var0 43,modv var0 5,dde: putv var0
+modv.negative: inst,setv var0 -43,modv var0 5,dde: putv var0
+modv.zero: inst,setv var0 43,modv var0 0,dde: putv var0
+negv: inst,setv var0 42,negv var0,dde: putv var0
+andv: inst,setv var0 12,andv var0 10,dde: putv var0
+orrv: inst,setv var0 12,orrv var0 10,dde: putv var0
+var_from_var: inst,setv var1 9,setv var0 var1,addv var0 var1,dde: putv var0
+rndv.fixed: inst,rndv var0 5 5,dde: putv var0
+rndv.range: inst,setv var1 0,reps 200,rndv var0 3 7,doif var0 lt 3,setv var1 1,endi,doif var0 gt 7,setv var1 1,endi,repe,dde: putv var1
+rndv.reversed: inst,setv var1 0,reps 200,rndv var0 7 3,doif var0 lt 3,setv var1 1,endi,doif var0 gt 7,setv var1 1,endi,repe,dde: putv var1
+
+# --- comparisons and branches
+doif.eq: inst,setv var0 3,doif var0 eq 3,dde: puts [yes],else,dde: puts [no],endi
+doif.ne: inst,setv var0 3,doif var0 ne 3,dde: puts [yes],else,dde: puts [no],endi
+doif.lt: inst,setv var0 -3,doif var0 lt 0,dde: puts [yes],else,dde: puts [no],endi
+doif.gt: inst,setv var0 -3,doif var0 gt 0,dde: puts [yes],else,dde: puts [no],endi
+doif.le: inst,setv var0 3,doif var0 le 3,dde: puts [a],endi,doif var0 le 2,dde: puts [b],endi
+doif.ge: inst,setv var0 3,doif var0 ge 3,dde: puts [a],endi,doif var0 ge 4,dde: puts [b],endi
+doif.nested: inst,setv var0 1,setv var1 2,doif var0 eq 1,doif var1 eq 3,dde: puts [a],else,dde: puts [b],endi,dde: puts [c],else,dde: puts [d],endi
+doif.no_else: inst,doif 1 eq 2,dde: puts [a],endi,dde: puts [b]
+native_error.doif_bracket_else: inst,doif 1 eq 2,dde: puts [else],dde: puts [a],else,dde: puts [b],endi
+native_error.doif_bracket_endi: inst,doif 1 eq 2,dde: puts [ending],dde: puts [a],endi,dde: puts [b]
+
+# --- loops and subroutines
+reps: inst,setv var0 0,reps 5,addv var0 2,repe,dde: putv var0
+reps.nested: inst,setv var0 0,reps 3,reps 4,addv var0 1,repe,repe,dde: putv var0
+loop.untl: inst,setv var0 0,loop,addv var0 3,untl var0 gt 10,dde: putv var0
+gsub: inst,setv var0 1,gsub dubl,gsub dubl,dde: putv var0,stop,subr dubl,mulv var0 2,retn
+gsub.nested: inst,setv var0 1,gsub aaaa,dde: putv var0,stop,subr aaaa,addv var0 10,gsub bbbb,retn,subr bbbb,mulv var0 3,retn
+native_error.gsub_bracket_label: inst,setv var0 1,dde: puts [subr xxxx],gsub xxxx,dde: putv var0,stop,subr xxxx,addv var0 5,retn
+stop: inst,dde: puts [a],stop,dde: puts [b]
+
+# --- dde: output
+dde.puts: inst,dde: puts [hello world]
+dde.putv_many: inst,dde: putv 1,dde: putv -1,dde: putv 0
+dde.mixed: inst,setv var0 7,dde: puts [x=],dde: putv var0,dde: puts [;]
+
+# --- objects: make, classify, move, read back, kill
+new.count: inst,setv var0 totl 2 23 199,new: simp eggs 8 0 2000 0,setv clas 35112704,dde: putv var0,dde: putv totl 2 23 199,kill targ,dde: putv totl 2 23 199
+new.fields: inst,new: simp eggs 8 0 2000 0,setv clas 35112704,dde: putv fmly,dde: putv gnus,dde: putv spcs,dde: putv clas,kill targ
+attr: inst,new: simp eggs 8 0 2000 0,setv clas 35112704,setv attr 64,dde: putv attr,setv attr 199,dde: putv attr,kill targ
+obv: inst,new: simp eggs 8 0 2000 0,setv clas 35112704,setv obv0 11,setv obv1 -22,setv obv2 33,dde: putv obv0,dde: putv obv1,dde: putv obv2,kill targ
+obv.start: inst,new: simp eggs 8 0 2000 0,setv clas 35112704,dde: putv obv0,dde: putv obv1,dde: putv obv2,dde: putv actv,kill targ
+actv: inst,new: simp eggs 8 0 2000 0,setv clas 35112704,setv actv 2,dde: putv actv,kill targ
+pose: inst,new: simp eggs 8 0 2000 0,setv clas 35112704,pose 3,dde: putv pose,pose 7,dde: putv pose,kill targ
+size: inst,new: simp eggs 8 0 2000 0,setv clas 35112704,dde: putv wdth,dde: putv hght,kill targ
+mvto: inst,new: simp eggs 8 0 2000 0,setv clas 35112704,mvto 3000 700,dde: putv posl,dde: putv post,dde: putv posr,dde: putv posb,kill targ
+mvby: inst,new: simp eggs 8 0 2000 0,setv clas 35112704,mvto 3000 700,mvby -40 25,dde: putv posl,dde: putv post,kill targ
+mvto.wrap: inst,new: simp eggs 8 0 2000 0,setv clas 35112704,mvto 8340 700,dde: putv posl,dde: putv posr,kill targ
+limits: inst,new: simp eggs 8 0 2000 0,setv clas 35112704,mvto 3000 700,dde: putv liml,dde: putv limt,dde: putv limr,dde: putv limb,kill targ
+world.room_table: inst,dde: putv room 0 0,dde: putv room 0 1,dde: putv room 0 2,dde: putv room 0 3,dde: putv room 7 0,dde: putv room 7 3
+touc: inst,new: simp eggs 8 0 2000 0,setv clas 35112704,mvto 3000 700,setv var0 targ,new: simp eggs 8 0 2000 0,setv clas 35112448,mvto 3010 705,dde: putv touc var0 targ,mvto 4000 700,dde: putv touc var0 targ,kill targ,targ var0,kill targ
+tick: inst,new: simp eggs 8 0 2000 0,setv clas 35112704,tick 25,dde: putv totl 2 23 199,kill targ
+kill.count: inst,new: simp eggs 8 0 2000 0,setv clas 35112704,new: simp eggs 8 0 2000 0,setv clas 35112704,new: simp eggs 8 0 2000 0,setv clas 35112704,dde: putv totl 2 23 199,enum 2 23 199,kill targ,next,dde: putv totl 2 23 199
+
+# --- enum
+enum.count: inst,new: simp eggs 8 0 2000 0,setv clas 35112704,new: simp eggs 8 0 2000 0,setv clas 35112704,setv var0 0,enum 2 23 199,addv var0 1,next,dde: putv var0,enum 2 23 199,kill targ,next
+enum.none: inst,setv var0 0,enum 2 23 199,addv var0 1,next,dde: putv var0,dde: puts [end]
+enum.nested_empty: inst,setv var0 0,enum 2 23 199,enum 2 23 198,addv var0 1,next,next,dde: putv var0,dde: puts [end]
+native_error.enum_bracket_next: inst,setv var0 0,enum 2 23 199,dde: puts [next],addv var0 1,next,dde: putv var0,dde: puts [end]
+enum.kill_all: inst,new: simp eggs 8 0 2000 0,setv clas 35112704,new: simp eggs 8 0 2000 0,setv clas 35112704,new: simp eggs 8 0 2000 0,setv clas 35112704,new: simp eggs 8 0 2000 0,setv clas 35112704,enum 2 23 199,kill targ,next,dde: putv totl 2 23 199,enum 2 23 199,kill targ,next
+
+# --- the world (fresh Eden)
+world.rooms: inst,dde: putv rms#
+world.ground: inst,dde: putv gnd#,dde: putv gndw
+world.grnd: inst,dde: putv grnd 3000,dde: putv grnd 100
+world.vrsn: inst,dde: putv vrsn
+world.totals: inst,dde: putv totl 4 0 0,dde: putv totl 3 1 0
