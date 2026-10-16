@@ -1,0 +1,64 @@
+# CAOS conformance: compound objects, vehicles, installed scripts and
+# events, targets, appearance and bounds.  Rules as in core.caos.
+#
+# A message (mesg writ) or timer runs its script on a later tick.  Such a
+# test is split: *.send makes the object and sends, and *.check, some tests
+# later, reads what the script did and kills the object.  The pipe calls in
+# between take far longer than a tick.  Each send/check pair uses its own
+# species: 2 23 190..197 (packed 2<<24 | 23<<16 | species<<8).
+
+# --- scripts installed with scrp, then events.  A pipe script has no owner
+# (no creature is selected), so it cannot send a message: mesg writ sends
+# from the owner.  A sender object's timer script sends instead.
+# Messages 0, 1 and 2 run the receiver's scripts 1, 2 and 0 (activate 1,
+# activate 2, deactivate).
+pipe.mesg_no_owner: inst,scrp 2 23 190 1,setv obv0 7,endm
+pipe.mesg_no_owner_send: inst,new: simp eggs 8 0 2000 0,setv clas 35110400,mesg writ targ 0,dde: puts [sent]
+event.receiver1: inst,scrp 2 23 191 1,setv obv0 11,endm
+event.receiver2: inst,scrp 2 23 191 2,setv obv0 12,endm
+event.receiver0: inst,scrp 2 23 191 0,setv obv0 13,endm
+event.sender: inst,scrp 2 23 192 9,enum 2 23 191,mesg writ targ obv2,next,tick 0,endm
+event.send: inst,new: simp eggs 8 0 2000 0,setv clas 35110656,setv obv2 0,new: simp eggs 8 0 2000 0,setv clas 35110656,setv obv2 1,new: simp eggs 8 0 2000 0,setv clas 35110656,setv obv2 2,new: simp eggs 8 0 2000 0,setv clas 35110912,tick 1
+timer.script: inst,scrp 2 23 193 9,addv obv1 1,tick 0,endm
+timer.object: inst,new: simp eggs 8 0 2000 0,setv clas 35111168,tick 1
+scrx.ends_script: inst,dde: puts [a],scrx 2 23 197 1,dde: puts [b]
+bounds.send: inst,new: simp eggs 8 0 2000 0,setv clas 35111424,setv attr 64,mvto 3000 700
+
+# --- compound objects
+comp.parts: inst,new: comp eggs 8 0 0,new: part 0 0 0 0 2000,new: part 1 20 10 1 2001,setv clas 35112704,mvto 3000 700,dde: putv posl,dde: putv post,dde: putv wdth,dde: putv hght,kill targ
+comp.part_pose: inst,new: comp eggs 8 0 0,new: part 0 0 0 0 2000,new: part 1 20 10 1 2001,setv clas 35112704,part 1,pose 3,dde: putv pose,part 0,dde: putv pose,kill targ
+comp.mvby: inst,new: comp eggs 8 0 0,new: part 0 0 0 0 2000,new: part 1 20 10 1 2001,setv clas 35112704,mvto 3000 700,mvby 15 -5,dde: putv posl,dde: putv post,dde: putv posr,dde: putv posb,kill targ
+comp.fields: inst,new: comp eggs 8 0 0,new: part 0 0 0 0 2000,setv clas 35112704,dde: putv fmly,dde: putv gnus,dde: putv spcs,setv obv2 5,dde: putv obv2,kill targ
+
+# --- vehicles
+vhcl.vectors: inst,new: vhcl eggs 8 0,new: part 0 0 0 0 2000,setv clas 51889920,setv xvec 256,setv yvec -128,dde: putv xvec,dde: putv yvec,kill targ
+vhcl.mvto: inst,new: vhcl eggs 8 0,new: part 0 0 0 0 2000,setv clas 51889920,mvto 3000 700,dde: putv posl,dde: putv post,dde: putv fmly,kill targ
+vhcl.cabn: inst,new: vhcl eggs 8 0,new: part 0 0 0 0 2000,setv clas 51889920,cabn 2 3 30 20,mvto 3000 700,dde: putv posl,kill targ
+
+# --- appearance
+pose.base: inst,new: simp eggs 8 0 2000 0,setv clas 35112704,base 2,pose 1,dde: putv pose,kill targ
+anim.first: inst,new: simp eggs 8 0 2000 0,setv clas 35112704,anim [345],dde: putv pose,kill targ
+attr.room_bound: inst,new: simp eggs 8 0 2000 0,setv clas 35112704,setv attr 64,mvto 3000 700,dde: putv liml,dde: putv limt,dde: putv limr,dde: putv limb,kill targ
+attr.room_bound_moved: inst,new: simp eggs 8 0 2000 0,setv clas 35112704,setv attr 64,mvto 3000 700,mvto 5200 600,dde: putv liml,dde: putv limt,dde: putv limr,dde: putv limb,kill targ
+
+# --- targets
+targ.var: inst,new: simp eggs 8 0 2000 0,setv clas 35112704,setv var0 targ,new: simp eggs 8 0 2000 0,setv clas 35112448,targ var0,dde: putv spcs,kill targ,enum 2 23 198,kill targ,next
+targ.compare: inst,new: simp eggs 8 0 2000 0,setv clas 35112704,setv var0 targ,doif targ eq var0,dde: puts [same],endi,new: simp eggs 8 0 2000 0,setv clas 35112448,doif targ ne var0,dde: puts [other],endi,kill targ,targ var0,kill targ
+rtar.one: inst,new: simp eggs 8 0 2000 0,setv clas 35112704,setv var0 targ,targ 0,rtar 2 23 199,doif targ eq var0,dde: puts [found],endi,kill targ
+pipe.context: inst,doif ownr eq 0,dde: puts [no owner],endi,doif from eq 0,dde: puts [no from],endi,doif _it_ eq 0,dde: puts [no it],endi
+totl.wildcards: inst,new: simp eggs 8 0 2000 0,setv clas 35112704,new: simp eggs 8 0 2000 0,setv clas 35112448,dde: putv totl 2 23 199,dde: putv totl 2 23 0,enum 2 23 0,doif spcs gt 197,kill targ,endi,next
+
+# --- sound (the lab mutes the world): accepted, no output
+sound.commands: inst,new: simp eggs 8 0 2000 0,setv clas 35112704,snde drm1,sndc drm1,sndl drm1,sndq drm1 5,kill targ,dde: puts [ok]
+
+# --- checks for the sends above
+pipe.mesg_no_owner_check: inst,enum 2 23 190,dde: putv obv0,kill targ,next
+event.check: inst,enum 2 23 191,dde: putv obv2,dde: putv obv0,dde: putv actv,dde: puts [;],kill targ,next,enum 2 23 192,kill targ,next
+timer.check: inst,enum 2 23 193,dde: putv obv1,kill targ,next
+bounds.check: inst,enum 2 23 194,dde: putv liml,dde: putv limt,dde: putv limr,dde: putv limb,dde: putv posb,kill targ,next
+cleanup.scrx_190: inst,scrx 2 23 190 1
+cleanup.scrx_191: inst,scrx 2 23 191 1
+cleanup.scrx_191_2: inst,scrx 2 23 191 2
+cleanup.scrx_191_0: inst,scrx 2 23 191 0
+cleanup.scrx_192: inst,scrx 2 23 192 9
+cleanup.scrx_193: inst,scrx 2 23 193 9
