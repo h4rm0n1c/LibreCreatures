@@ -58,6 +58,8 @@ dad6):
 | `Creature::ProcessDreaming` with `CInstinct::RunDreamStep` | 00409360, 00407370 | 20,000 (767,905 dream steps) | 0 cases differ | 8,250 cases differ, all from rows 2, 4, 5, 6, 50 and 51 |
 | `Creature::UpdatePerception` with `Creature::CanPerceiveObject` | 0040bf10, 00409750 | 200,000 | 0 cases differ | 82,231 cases differ, all from rows 9, 38 and 73 |
 | `Creature::UpdateGoalDirection` with `Creature::ApplyGoalDirection` | 0040ccc0, 0040abc0 | 200,000 | 0 cases differ | 0 cases differ (no row in this code) |
+| Map geometry: `FindNearestMapRoomBoundsAtPoint`, `MapData::FindRoomContainingPoint`, `GetAmbientTemperatureAtPoint`, `Object::UpdateMovementBounds` | 00422d70, 00422df0, 00422e40, 00426470 | 200,000 (6,400,000 points, 1,600,000 objects) | 0 cases differ | 167,929 cases differ, all from row 22 |
+| Creature fan-out: the seven `MapData::QueueEvent...` and `Queue...Stimulus` functions | 00422f90 to 00423470 | 100,000 (600,000 calls) | 0 cases differ | 19,406 cases differ, all from rows 17, 22 and 73 |
 
 The values that each test compares:
 
@@ -78,9 +80,13 @@ The values that each test compares:
   matrix, after each update.
 - Goal direction: the 40 attention records, the goal-direction state and
   the stimulus-source and verb lobes, after each update.
+- Map geometry: the nearest room's rectangle, the room that contains the
+  point, the temperature and the movement bounds.
+- Creature fan-out: the queued object events, the queued stimuli and the
+  stimulus context, after each call.
 
-The perception and goal-direction tests found three defects in
-LibreCreatures. All are fixed:
+The perception, goal-direction, geometry and fan-out tests found five
+defects in LibreCreatures. All are fixed:
 
 - `apply_stimulus` set the seen flag of an attention record. The original
   does not.
@@ -91,6 +97,11 @@ LibreCreatures. All are fixed:
   places to the left. When the call button's interaction event was set,
   LibreCreatures chose the lift where the original chooses the call
   button.
+- The game's host started the nearest-room function from an empty
+  rectangle. The original keeps the caller's sides when no room spans the
+  point.
+- The overlap test of the fan-out counted a rectangle with no area as
+  touching. The original uses IntersectRect.
 
 The procedure for each test is in
 [`tests/equivalence/README.md`](../tests/equivalence/README.md).
@@ -156,9 +167,10 @@ The Creatures Caves archive has 434 COB files. The replay installs them in
 
 ## What the tests do not cover
 
-- Functions without a function test. The skeleton and poses,
-  movement, vehicles and the world file have no function test. The CAOS
-  tests and the COB replay test some of their behaviour.
+- Functions without a function test. The skeleton and poses, movement
+  other than the movement bounds, vehicles and the world file have no
+  function test. The CAOS tests and the COB replay test some of their
+  behaviour.
 - Pictures and sound. The tests do not compare the picture or the sound
   output.
 - The kits. The tests do not compare the kit programs.
