@@ -38,7 +38,7 @@ constexpr char kLearnedWordConsonants[] =
 constexpr std::array<std::uint8_t, 16> kActionPhraseNeedsTarget = {
     1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0};
 constexpr std::array<std::uint8_t, 16> kActionPhraseWordIndices = {
-    0x4a, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0x0a, 0xff, 0xff, 0xff, 0xff,
+    0x4a, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0x0a, 0x0b, 0xff, 0xff, 0xff,
     0xff};
 
 // These are the three pointer tables at 00454330, 004543d0, and 00454410
