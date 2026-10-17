@@ -192,5 +192,21 @@ for mode in fixed native rows; do
     $cxx $flags $define -o "$exe" "$here/skeleton_equivalence.cpp" "$here/native_image.cpp" \
         "$out/skeleton_traps_$mode.cpp" $skeleton
 done
+# Vehicles, lifts and call buttons: the skeleton closure with the objects.
+vehicle="$src/objects/vehicle.cpp $src/objects/lift.cpp $src/objects/call_button.cpp \
+         $src/objects/simple_object.cpp $src/objects/compound_object.cpp $skeleton"
+for mode in fixed native rows; do
+    case $mode in
+        fixed) define= ;;
+        native) define=-DLC_NATIVE_MODE ;;
+        rows) define="-DLC_NATIVE_MODE -DEQUIVALENCE_EXPECT=1 -DLC_FIX_23=1 -DLC_FIX_41=1 -DLC_FIX_45=1 -DLC_FIX_52=1" ;;
+    esac
+    exe="$out/vehicle_equivalence_$mode.exe"
+    $cxx $flags $define -Wl,--no-demangle -o "$exe" "$here/vehicle_equivalence.cpp" \
+        "$here/native_image.cpp" $vehicle > "$out/vehicle_$mode.link" 2>&1 || true
+    python3 "$here/trap_stubs.py" "$out/vehicle_$mode.link" "$out/vehicle_traps_$mode.cpp"
+    $cxx $flags $define -o "$exe" "$here/vehicle_equivalence.cpp" "$here/native_image.cpp" \
+        "$out/vehicle_traps_$mode.cpp" $vehicle
+done
 echo "built in $out"
 

@@ -61,6 +61,7 @@ dad6):
 | Map geometry: `FindNearestMapRoomBoundsAtPoint`, `MapData::FindRoomContainingPoint`, `GetAmbientTemperatureAtPoint`, `Object::UpdateMovementBounds` | 00422d70, 00422df0, 00422e40, 00426470 | 200,000 (6,400,000 points, 1,600,000 objects) | 0 cases differ | 167,929 cases differ, all from row 22 |
 | Creature fan-out: the seven `MapData::QueueEvent...` and `Queue...Stimulus` functions | 00422f90 to 00423470 | 100,000 (600,000 calls) | 0 cases differ | 19,406 cases differ, all from rows 17, 22 and 73 |
 | Skeleton: 13 functions of body layout, stepping, poses and movement | 0043b5a0 to 0043c380 | 200,000 (3,200,000 operations) | 0 cases differ | 16,358 cases differ, all from row 22 |
+| Vehicles, lifts and call buttons: 11 functions | 00429a70 to 0042c680 | 50,000 (8,045,880 operations) | 0 cases differ | 36,625 cases differ, all from rows 23, 41, 45 and 52 |
 
 The values that each test compares:
 
@@ -88,6 +89,9 @@ The values that each test compares:
 - Skeleton: every body part's image, position, pose, view and plane, the
   down foot, the chain ends, the bounds, the poses and the dirty
   rectangles, after each operation.
+- Vehicles and lifts: the vehicle's parts, motion, collision and floors,
+  the passengers, the call buttons, the scripts, the queued events and the
+  queued stimuli, after each operation.
 
 The perception, goal-direction, geometry, fan-out and skeleton tests
 found seven defects in LibreCreatures. All are fixed:
@@ -187,9 +191,8 @@ The Creatures Caves archive has 434 COB files. The replay installs them in
 
 ## What the tests do not cover
 
-- Functions without a function test. Vehicles, falling and other
-  movement outside the skeleton, and the world file have no function
-  test. The CAOS tests and the COB replay test some of their behaviour.
+- Functions without a function test. Falling and other movement of
+  simple objects, and the world file have no function test. The CAOS tests and the COB replay test some of their behaviour.
 - Pictures and sound. The tests do not compare the picture or the sound
   output.
 - The kits. The tests do not compare the kit programs.
