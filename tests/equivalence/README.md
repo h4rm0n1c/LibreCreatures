@@ -146,3 +146,37 @@ up scripts, 239,083 looked up involuntary actions, 32,260 queued events,
 - LC native: 0 differing cases.
 - LC as shipped: 10,357 differing cases, the same cases as with row 11
   alone fixed; row 11 is the only switch in the two functions.
+
+## Dreaming: `Creature::ProcessDreaming` @00409360 with `CInstinct::RunDreamStep` @00407370 (CE 10.3)
+
+Instinct replay while asleep: the reset step, replay steps (a biochemistry
+update, the first eight lobes cleared, the instinct's three neurons and
+decision neuron driven, a brain update), the dream chemical restored on
+steps 0x23-0x27, and the finishing step (every dendrite's long-term weight
+raised to its short-term weight, the brain reset, the instinct dropped, the
+dream counted down).
+
+    WINEPREFIX=<throwaway prefix> tests/equivalence/run_dream.sh \
+        <CE 10.3 Creatures.exe> <cases> <build-dir> <genome.gen>...
+
+The native side is real: a CBrain built as in the brain test (a stock
+genome's brain, saved and perturbed) and a CBiochemistry built as in the
+biochemistry test (`brain_native.hpp`, `biochemistry_native.hpp`), native
+CInstinct blocks (deleted through a recording vtable) and a Creature-shaped
+block at the offsets ProcessDreaming reads. Each case queues 1 to 4 random
+instincts, some part-way through, and runs up to 90 steps; after each, the
+whole brain, every concentration and locus, the instinct queue, the
+biochemistry tick and the instincts deleted must match. rand is shared as
+in the brain test.
+
+- The dreaming code has no switch of its own; LC as shipped differs through
+  the brain (2, 4, 5, 6) and biochemistry (50, 51) rows it calls, so the
+  `rows` build fixes just those six and must differ on exactly the same
+  cases.
+- Not generated: negative instinct neuron indices (genome bytes are 0-255).
+
+First run (2026-10-17), the 12 stock genomes: 20,000 cases, 767,905 dream
+steps, 15,121 instincts finished.
+- LC native: 0 differing cases.
+- LC as shipped: 8,250 differing cases, the same cases as the build with
+  only rows 2, 4, 5, 6, 50 and 51 fixed.
