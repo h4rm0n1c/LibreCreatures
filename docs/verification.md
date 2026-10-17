@@ -114,6 +114,18 @@ found seven defects in LibreCreatures. All are fixed:
 The procedure for each test is in
 [`tests/equivalence/README.md`](../tests/equivalence/README.md).
 
+## Table check
+
+`tests/equivalence/check_tables.py` compares 29 tables that LibreCreatures
+copies from the original executable with the bytes in the executable. All
+29 are the same.
+
+The check found two copy defects. Both are fixed:
+
+- The table of words for actions had no word for "walk east". A creature
+  said nothing when it walked east and wanted to say so.
+- One unused byte of the ambient table was wrong.
+
 ## CAOS tests
 
 Directory: `tests/caos_conformance`.
