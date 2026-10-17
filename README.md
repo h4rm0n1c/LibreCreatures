@@ -23,6 +23,9 @@ boundaries, so the guide is a useful starting point before changing code.
 every way LibreCreatures behaves differently from CE and the 1996 kits:
 fixed defects, new features, and deliberate changes.
 
+[Comparison with the original game](docs/verification.md) lists the tests
+that compare LibreCreatures with the original executable, and their results.
+
 ## Status
 
 This is a work in progress. The main simulation, creature systems, CAOS
