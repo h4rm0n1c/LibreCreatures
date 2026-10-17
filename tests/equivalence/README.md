@@ -77,7 +77,8 @@ cases, 70,008 brain updates.
 
 What a creature does with a stimulus: magnitude scaling or the sense-neuron
 offset, sleep gating and halving, the attention record of the source's kind
-(target, position, sense neuron and activation), the attention (2) and
+(target, position, sense neuron and activation, visible and seen flags),
+the attention (2) and
 general sensory (5) lobe inputs, the four chemicals, and the goal-direction
 matrix's learning from drive reducers.
 
@@ -102,11 +103,13 @@ A source sometimes stands at y 4000, where `kill` parks objects (row 9).
   game makes them: native divides the update unsigned and LC signed, which
   would differ only for a negative weight.
 
-First run (2026-10-17), the 12 stock genomes: 200,000 cases, 499,582
-stimuli.
+Run of 2026-10-17, the 12 stock genomes: 200,000 cases, 500,153 stimuli.
 - LC native: 0 differing cases.
-- LC as shipped: 43,365 differing cases, the same cases as with row 9
+- LC as shipped: 43,866 differing cases, the same cases as with row 9
   alone fixed; row 9 is the only switch in apply_stimulus.
+- The first run did not compare the seen flag. The perception test found
+  that LC's apply_stimulus set it and ApplyStimulus does not; the test now
+  compares it, and LC is fixed.
 
 ## Action selection: `Creature::UpdateActionSelection` @0040c630 with `Creature::SetAction` @0040b680 (CE 10.3)
 
@@ -213,3 +216,52 @@ attention shifts, 43,593 verb deliveries.
 - LC as shipped: 40,943 differing cases, the same cases as the build with
   only rows 8 and 40 fixed; they are the only switches in the code under
   test.
+
+## Perception: `Creature::UpdatePerception` @0040bf10 with `Creature::CanPerceiveObject` @00409750 (CE 10.3)
+
+What a creature notices in one update: moving sound sources (stimuli 5 and
+6), objects seen first or again (stimulus 8, with the first-seen and
+return-to-view magnitudes), records that go out of view, the motion link's
+kin neurons in the general sensory lobe (5), and the wall and vehicle
+neurons. CanPerceiveObject decides each sighting from facing, the
+movement bounds or the nearest map room, and distance. The stimuli go
+through TriggerBuiltInStimulus @0040b820 and ApplyStimulus.
+
+    WINEPREFIX=<throwaway prefix> tests/equivalence/run_perception.sh \
+        <CE 10.3 Creatures.exe> <cases> <build-dir> <genome.gen>...
+
+The native side is a Creature-shaped block with the 40 records, the
+built-in stimulus contexts, the goal matrix, lobes 2, 5 and 7, the
+chemicals, sleep, facing, foot point, limb end, movement bounds, bounds
+reference, motion link, monikers and sex. Eight objects of random kind
+stand near it; two are creatures with random monikers and sex. The native
+object registry (0x4704a8, 0x4704ac) and LC's host list the same objects,
+the creature itself sometimes among them. Bounds, sound positions and
+flags come from one table on both sides. The four rectangle imports are
+bound to plain functions, and FindNearestMapRoomBoundsAtPoint @00422d70 is
+replaced on both sides by one function, because world geometry is not
+under test. LC uses the kin and map-room rules that the game's host uses
+(`motion_link_facts_for`, `is_map_room_marker`).
+
+Some record targets have the classifier of another record, as after
+`setv clas`. One update per case; then every record (target, position,
+sense neuron and activation, visible, seen), lobes 2, 5 and 7, the
+chemicals and the goal matrix must match.
+
+- Not generated: genera with no attention record (row 10).
+- Not covered: objects that `new:` has just made at the world origin
+  (row 73's first part); the host always answers "placed".
+
+First run (2026-10-17), the 12 stock genomes: 200,000 cases, 104,009
+records seen first, 33,348 cases with a creature as motion link.
+- The run found two translation defects in LC, now fixed:
+  - apply_stimulus set the seen flag of the record. ApplyStimulus does
+    not. After a stimulus from an object, LC gave the smaller sighting
+    magnitude where C1 gives the first-seen magnitude.
+  - When a record came back into view, LC used the seen flag of that
+    record. UpdatePerception uses the flag of the slot for the target's
+    classifier now.
+- LC native: 0 differing cases.
+- LC as shipped: 82,231 differing cases, the same cases as the build with
+  only rows 9, 38 and 73 fixed; they are the only switches in the code
+  under test.

@@ -114,5 +114,20 @@ for mode in fixed native rows; do
     $cxx $flags $define $wrap -o "$exe" "$here/attention_equivalence.cpp" "$here/native_image.cpp" \
         "$out/attention_traps_$mode.cpp" $creature
 done
+# Perception: the creature closure, rand shared.
+for mode in fixed native rows; do
+    case $mode in
+        fixed) define= ;;
+        native) define=-DLC_NATIVE_MODE ;;
+        rows) define="-DLC_NATIVE_MODE -DEQUIVALENCE_EXPECT=1 -DLC_FIX_9=1 -DLC_FIX_38=1 -DLC_FIX_73=1" ;;
+    esac
+    exe="$out/perception_equivalence_$mode.exe"
+    wrap="-Wl,--wrap=rand -Wl,--wrap=srand"
+    $cxx $flags $define $wrap -Wl,--no-demangle -o "$exe" "$here/perception_equivalence.cpp" \
+        "$here/native_image.cpp" $creature > "$out/perception_$mode.link" 2>&1 || true
+    python3 "$here/trap_stubs.py" "$out/perception_$mode.link" "$out/perception_traps_$mode.cpp"
+    $cxx $flags $define $wrap -o "$exe" "$here/perception_equivalence.cpp" "$here/native_image.cpp" \
+        "$out/perception_traps_$mode.cpp" $creature
+done
 echo "built in $out"
 

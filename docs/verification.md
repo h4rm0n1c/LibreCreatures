@@ -53,9 +53,10 @@ dad6):
 | --- | --- | --- | --- | --- |
 | `CBiochemistry::Update` | 0042ee10 | 200,000 (899,974 updates) | 0 cases differ | 55,452 cases differ, all from rows 50 and 51 |
 | `CBrain::Update` | 00404e90 | 20,000 (70,008 updates) | 0 cases differ | 6,526 cases differ, all from rows 2, 4, 5 and 6 |
-| `Creature::ApplyStimulus` | 0040b8a0 | 200,000 (499,582 stimuli) | 0 cases differ | 43,365 cases differ, all from row 9 |
+| `Creature::ApplyStimulus` | 0040b8a0 | 200,000 (500,153 stimuli) | 0 cases differ | 43,866 cases differ, all from row 9 |
 | `Creature::UpdateActionSelection` with `Creature::SetAction` | 0040c630, 0040b680 | 200,000 (1,068,397 updates) | 0 cases differ | 10,357 cases differ, all from row 11 |
 | `Creature::ProcessDreaming` with `CInstinct::RunDreamStep` | 00409360, 00407370 | 20,000 (767,905 dream steps) | 0 cases differ | 8,250 cases differ, all from rows 2, 4, 5, 6, 50 and 51 |
+| `Creature::UpdatePerception` with `Creature::CanPerceiveObject` | 0040bf10, 00409750 | 200,000 | 0 cases differ | 82,231 cases differ, all from rows 9, 38 and 73 |
 
 The values that each test compares:
 
@@ -63,14 +64,25 @@ The values that each test compares:
   update.
 - Brain: all fields of each neuron and dendrite, and the active count,
   active fraction and loose dendrite count of each lobe, after each update.
-- Stimulus: the 40 attention records, the inputs to the attention and
-  sensory lobes, all chemical concentrations and the goal-direction matrix,
-  after each stimulus.
+- Stimulus: the 40 attention records with their visible and seen flags,
+  the inputs to the attention and sensory lobes, all chemical
+  concentrations and the goal-direction matrix, after each stimulus.
 - Action selection: the action state, each script lookup in sequence, the
   calls to the sleep indicator, the queued events and the speech choice,
   after each update.
 - Dreaming: the brain, the chemicals, the instinct queue and the
   biochemistry tick, after each dream step.
+- Perception: the 40 attention records, the attention, sensory and
+  stimulus-source lobes, all chemical concentrations and the goal-direction
+  matrix, after each update.
+
+The perception test found two defects in LibreCreatures. Both are fixed:
+
+- `apply_stimulus` set the seen flag of an attention record. The original
+  does not.
+- When an object came back into view, LibreCreatures used the seen flag of
+  the record. The original uses the flag of the record for the object's
+  current classifier.
 
 The procedure for each test is in
 [`tests/equivalence/README.md`](../tests/equivalence/README.md).
@@ -136,7 +148,7 @@ The Creatures Caves archive has 434 COB files. The replay installs them in
 
 ## What the tests do not cover
 
-- Functions without a function test. Perception, the skeleton and poses,
+- Functions without a function test. The skeleton and poses,
   movement, vehicles and the world file have no function test. The CAOS
   tests and the COB replay test some of their behaviour.
 - Pictures and sound. The tests do not compare the picture or the sound
