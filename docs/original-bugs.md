@@ -54,7 +54,7 @@ The lab trace's "world opened" line names the rows running native.
 Some rows are not switched:
 
 - **Guards** against native crashes, memory corruption or reads past a
-  buffer: rows 3, 10, 19, 20, 21, 34, 46, 47, 48, 58, 60, 63, 66, 77 and 78.  On
+  buffer: rows 3, 10, 19, 20, 21, 34, 46, 47, 48, 58, 60, 63, 66, 77, 78 and 79.  On
   any input where native does not crash or corrupt memory they behave as
   native does; a crash cannot be compared.
 - **Row 25:** native's plane depends on heap addresses, so it cannot be
@@ -154,6 +154,7 @@ files.
 | 48 | Exporting a creature deletes it before the file is flushed and closed, and a failed write leaves it removed from the world but not deleted, so a full disk loses the norn. | `OnExportCurrentCreature` @00431d20 | bd85a4e, 31af2db | code |
 | 77 | A `new:` object whose sprite file is missing crashes the game. The object is added to the object list before its sprite is loaded; the load fails, the half-built object is freed, and the next world tick runs the freed object. COBs that use a sprite they do not ship (Creatures Caves 891 "Duck", 1401) crash the original after its "Cross your fingers" box. | `Object::Object` @00425750, `SimpleObject::SimpleObject` @00426cf0, `CompoundObject::CompoundObject` @0042a800 | 3ec81ce | code, lab (CE) |
 | 78 | `mvto` on a compound object, vehicle or blackboard that has no part 0 yet crashes the game: the move reads part 0's picture without checking that the part exists. | `CompoundObject::MoveToAndRedraw` @0042ae40 (fault at 0042ae94) | 86b7204 | code, lab (CE) |
+| 79 | An object whose picture number equals the number of pictures in its sprite range is drawn from past the end of the picture list: the renderer reads whatever memory follows, and can crash. Creatures Caves 187 "Goldfish" (`anim [5678R]` on 8-picture ranges) crashes the original this way when other COBs are installed beside it. | `CWorldRenderer::RenderWorldRectToDIB` @00412aa0 (`cmp`/`jg`), crash in `CImage::GetPixelData` @00442ac0 | 5924b70, 19036e8 | code, lab (CE, gdb) |
 
 ### The hand and the interface
 
