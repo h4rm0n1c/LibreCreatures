@@ -915,8 +915,11 @@ void Creature::process_heard_words(
     CreatureSpeechHost& speech_output,
     BuiltInStimulusDebugHost* debug_host,
     common::DebugLogHost* log_host) {
-    if (skeleton_.sleep_indicator_active || source_object == nullptr ||
-        mutable_words == nullptr || *mutable_words == '\0') {
+    // ProcessHeardWords @0040a630 has no sleep test: a sleeping creature
+    // still hears.  Only what it calls (learning a word, the action phrase,
+    // the stimulus) checks sleep.
+    if (source_object == nullptr || mutable_words == nullptr ||
+        *mutable_words == '\0') {
         return;
     }
 
