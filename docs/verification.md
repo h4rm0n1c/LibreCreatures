@@ -57,6 +57,7 @@ dad6):
 | `Creature::UpdateActionSelection` with `Creature::SetAction` | 0040c630, 0040b680 | 200,000 (1,068,397 updates) | 0 cases differ | 10,357 cases differ, all from row 11 |
 | `Creature::ProcessDreaming` with `CInstinct::RunDreamStep` | 00409360, 00407370 | 20,000 (767,905 dream steps) | 0 cases differ | 8,250 cases differ, all from rows 2, 4, 5, 6, 50 and 51 |
 | `Creature::UpdatePerception` with `Creature::CanPerceiveObject` | 0040bf10, 00409750 | 200,000 | 0 cases differ | 82,231 cases differ, all from rows 9, 38 and 73 |
+| `Creature::UpdateGoalDirection` with `Creature::ApplyGoalDirection` | 0040ccc0, 0040abc0 | 200,000 | 0 cases differ | 0 cases differ (no row in this code) |
 
 The values that each test compares:
 
@@ -75,14 +76,21 @@ The values that each test compares:
 - Perception: the 40 attention records, the attention, sensory and
   stimulus-source lobes, all chemical concentrations and the goal-direction
   matrix, after each update.
+- Goal direction: the 40 attention records, the goal-direction state and
+  the stimulus-source and verb lobes, after each update.
 
-The perception test found two defects in LibreCreatures. Both are fixed:
+The perception and goal-direction tests found three defects in
+LibreCreatures. All are fixed:
 
 - `apply_stimulus` set the seen flag of an attention record. The original
   does not.
 - When an object came back into view, LibreCreatures used the seen flag of
   the record. The original uses the flag of the record for the object's
   current classifier.
+- One row of the table that chooses a goal-direction verb was copied two
+  places to the left. When the call button's interaction event was set,
+  LibreCreatures chose the lift where the original chooses the call
+  button.
 
 The procedure for each test is in
 [`tests/equivalence/README.md`](../tests/equivalence/README.md).

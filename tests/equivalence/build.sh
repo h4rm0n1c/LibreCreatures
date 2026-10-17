@@ -129,5 +129,20 @@ for mode in fixed native rows; do
     $cxx $flags $define $wrap -o "$exe" "$here/perception_equivalence.cpp" "$here/native_image.cpp" \
         "$out/perception_traps_$mode.cpp" $creature
 done
+# Goal direction: the creature closure, rand shared.  The code under test has
+# no switch, so there is no row build.
+for mode in fixed native; do
+    case $mode in
+        fixed) define= ;;
+        native) define=-DLC_NATIVE_MODE ;;
+    esac
+    exe="$out/goal_equivalence_$mode.exe"
+    wrap="-Wl,--wrap=rand -Wl,--wrap=srand"
+    $cxx $flags $define $wrap -Wl,--no-demangle -o "$exe" "$here/goal_equivalence.cpp" \
+        "$here/native_image.cpp" $creature > "$out/goal_$mode.link" 2>&1 || true
+    python3 "$here/trap_stubs.py" "$out/goal_$mode.link" "$out/goal_traps_$mode.cpp"
+    $cxx $flags $define $wrap -o "$exe" "$here/goal_equivalence.cpp" "$here/native_image.cpp" \
+        "$out/goal_traps_$mode.cpp" $creature
+done
 echo "built in $out"
 
