@@ -617,10 +617,12 @@ void Creature::regenerate_learned_word_response(
         find_prefix_end(record.recognized_word, text_api);
     copy_prefix_preserving_existing_first_byte(record, prefix_end, text_api);
 
-    // The length test in the recovered control flow collapses to the same
-    // observable condition in both paths: repeat only responses shorter than
-    // three bytes.  The original capacities are retained at the CRT edge.
-    if (std::strlen(record.response_word) < 3) {
+    // RegenerateLearnedWordResponse @0040a1f0 (0040a2ff..0040a32f) repeats a
+    // response shorter than three bytes, and also one shorter than five when
+    // the heard word is longer than five ("school" -> "Xcho" -> "XchoXcho").
+    const std::size_t response_length = std::strlen(record.response_word);
+    if (response_length < 3 ||
+        (std::strlen(record.recognized_word) > 5 && response_length < 5)) {
         char response_suffix[12]{};
         text_api.copy_string(response_suffix, 10, record.response_word);
         text_api.append_string(record.response_word,
