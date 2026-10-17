@@ -455,3 +455,23 @@ First run (2026-10-18): 200,000 cases, 3,200,000 operations, 235,065 steps,
 - LC as shipped: 16,358 differing cases, the same cases as the build with
   only row 22 fixed. Row 22 (the nearest room, through the down-foot
   setter) is the only switch the code under test reaches.
+
+## Tables copied from the original
+
+    tests/equivalence/check_tables.py <CE 10.3 Creatures.exe>
+
+Compares 29 LC tables with the bytes at their addresses in the exe. They
+include numeric tables, enum tables, string pointer tables, the default
+stimulus contexts (through their pointer table) and the vocabulary banks.
+The script reads each table from the LC source. Exit status 1 when a
+table differs.
+
+The sweep of 2026-10-18 searched the exe for every constant table in
+`src/c1`. It found two more copy defects, now fixed:
+- `kActionPhraseWordIndices` entry 11 (walk east) was 0xff. C1 has 11, so
+  a creature says the word for walking east.
+- `kAmbientEnvironmentRecords` record 9 byte 2 was 255. C1 has 0. LC does
+  not read that byte.
+
+Three earlier copy defects were found by the function tests (the goal
+interaction scores and the motion pose table, see above).
