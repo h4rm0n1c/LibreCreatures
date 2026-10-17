@@ -37,6 +37,9 @@ additions and deliberate changes.
 [Bugs in the original game](original-bugs.md) lists the defects of
 Creatures 1 and its kits that LibreCreatures fixes, with the evidence.
 
+[Comparison with the original game](verification.md) lists the tests that
+compare LibreCreatures with the original executable, and their results.
+
 For build prerequisites, packaging, and supplying game data, see
 [Building and packaging](building.md).
 
