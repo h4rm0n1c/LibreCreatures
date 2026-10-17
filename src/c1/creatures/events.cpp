@@ -1,15 +1,20 @@
 #include "events.hpp"
 #include "../common/compat.hpp"
 
+#include <algorithm>
 #include <cstdlib>
 
 namespace creatures1::creatures {
 namespace {
 
+// IntersectRect, as the native fan-out calls it: the intersection must not be
+// empty, so an empty or inverted rectangle overlaps nothing.
 bool rectangles_overlap(const world::WorldRect& first,
                         const world::WorldRect& second) {
-    return first.min_x < second.max_x && second.min_x < first.max_x &&
-           first.min_y < second.max_y && second.min_y < first.max_y;
+    return std::max(first.min_x, second.min_x) <
+               std::min(first.max_x, second.max_x) &&
+           std::max(first.min_y, second.min_y) <
+               std::min(first.max_y, second.max_y);
 }
 
 bool target_is_in_tactile_region(
