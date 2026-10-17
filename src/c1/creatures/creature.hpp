@@ -807,6 +807,9 @@ public:
     const GoalDirectionWeightMatrix& goal_direction_weight_matrix() const {
         return goal_direction_weight_matrix_;
     }
+    GoalDirectionWeightMatrix& goal_direction_weight_matrix() {
+        return goal_direction_weight_matrix_;
+    }
 
     // Rebuilds the infant response for one learned word.  The multibyte
     // traversal and secure string operations are Microsoft CRT boundaries.
