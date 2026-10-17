@@ -78,7 +78,7 @@ inline constexpr std::array<AmbientEnvironmentRecord, 10>
         {-1, 1, 0, 0, 2},
         {-1, 1, 0, 0, 3},
         {0, 1, 0, 0, 0},
-        {0, 1, 255, -1, 255},
+        {0, 1, 0, -1, 255},
     }};
 
 struct AmbientLightProfile {
