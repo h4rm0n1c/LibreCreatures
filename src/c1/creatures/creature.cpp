@@ -1468,6 +1468,47 @@ void Creature::set_action(std::uint32_t action_id,
     }
 }
 
+CreatureMotionLinkFacts motion_link_facts_for(const Creature& self, const Creature* link,
+                                              std::uint32_t link_classifier) {
+    // UpdatePerception @ 0040bf10 reads the link's SkeletonRenderPoseState
+    // monikers at offsets 0/4/8 -- genome, mother, father -- which is only
+    // meaningful when the link is a creature-family object.
+    CreatureMotionLinkFacts facts{};
+    facts.is_creature = ((link_classifier >> 24) & 0xffu) == 4u;
+    if (!facts.is_creature || link == nullptr) {
+        return facts;
+    }
+    const Skeleton& link_skeleton = link->skeleton();
+    const Skeleton& own = self.skeleton();
+    facts.link_is_my_parent =
+        link_skeleton.genome_source_filename == own.mother_moniker ||
+        link_skeleton.genome_source_filename == own.father_moniker;
+    facts.link_is_my_child =
+        link_skeleton.mother_moniker == own.genome_source_filename ||
+        link_skeleton.father_moniker == own.genome_source_filename;
+    // LibreCreatures deviation.  UpdatePerception @0040bf10 compares the
+    // mothers and the fathers with no test for 0, the moniker of a parent
+    // that is not known.  Two creatures with no known father -- made with
+    // new: crea, or a clone -- were taken as siblings.  Only a known parent
+    // can be shared.
+    // (original-bugs.md row 38)
+    facts.shares_a_parent =
+        ((!LC_FIX(38) || own.mother_moniker != 0) &&
+         link_skeleton.mother_moniker == own.mother_moniker) ||
+        ((!LC_FIX(38) || own.father_moniker != 0) &&
+         link_skeleton.father_moniker == own.father_moniker);
+    // The species test masks off the event and species bytes, leaving family
+    // and genus; the sex comparison is the genome sex, not the display gender.
+    facts.is_opposite_sex =
+        ((link_classifier ^ own.classifier_base()) & 0xffff0000u) == 0 &&
+        link->genome_sex() != self.genome_sex();
+    return facts;
+}
+
+bool is_map_room_marker(std::uint32_t classifier) {
+    return (classifier & 0xffff0000u) == 0x03020000u;
+}
+
 ActionTargetRequirement action_target_requirement_for(std::size_t action_index) {
     // g_action_target_requirements[16] @ 00454450, one entry per Decision-lobe
     // neuron index, which is also the C1CreatureAction value.  Actions 12-15

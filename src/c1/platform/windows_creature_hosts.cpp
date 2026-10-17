@@ -670,48 +670,8 @@ creatures1::creatures::CreatureMotionLinkFacts
 WindowsCreatureFanoutHost::motion_link_facts(
     const creatures1::objects::Object& object,
     const creatures1::creatures::Creature& creature) const {
-    // UpdatePerception @ 0040bf10 reads the link's SkeletonRenderPoseState
-    // monikers at offsets 0/4/8 -- genome, mother, father -- which is only
-    // meaningful when the link is a creature-family object.
-    creatures1::creatures::CreatureMotionLinkFacts facts{};
-    facts.is_creature = ((object.classifier_base() >> 24) & 0xffu) == 4u;
-    if (!facts.is_creature) {
-        return facts;
-    }
-
-    const creatures1::creatures::Creature* link =
-        document_.creature_for_object(object);
-    if (link == nullptr) {
-        return facts;
-    }
-
-    const creatures1::creatures::Skeleton& link_skeleton = link->skeleton();
-    const creatures1::creatures::Skeleton& self = creature.skeleton();
-
-    facts.link_is_my_parent =
-        link_skeleton.genome_source_filename == self.mother_moniker ||
-        link_skeleton.genome_source_filename == self.father_moniker;
-    facts.link_is_my_child =
-        link_skeleton.mother_moniker == self.genome_source_filename ||
-        link_skeleton.father_moniker == self.genome_source_filename;
-    // LibreCreatures deviation.  UpdatePerception @0040bf10 compares the
-    // mothers and the fathers with no test for 0, the moniker of a parent
-    // that is not known.  Two creatures with no known father -- made with
-    // new: crea, or a clone -- were taken as siblings.  Only a known parent
-    // can be shared.
-    // (original-bugs.md row 38)
-    facts.shares_a_parent =
-        ((!LC_FIX(38) || self.mother_moniker != 0) &&
-         link_skeleton.mother_moniker == self.mother_moniker) ||
-        ((!LC_FIX(38) || self.father_moniker != 0) &&
-         link_skeleton.father_moniker == self.father_moniker);
-    // The species test masks off the event and species bytes, leaving family
-    // and genus; the sex comparison is the genome sex, not the display gender.
-    facts.is_opposite_sex =
-        ((object.classifier_base() ^ self.classifier_base()) & 0xffff0000u) ==
-            0 &&
-        link->genome_sex() != creature.genome_sex();
-    return facts;
+    return creatures1::creatures::motion_link_facts_for(
+        creature, document_.creature_for_object(object), object.classifier_base());
 }
 
 bool WindowsCreatureFanoutHost::is_this_creature(
@@ -734,10 +694,7 @@ bool WindowsCreatureFanoutHost::read_bounds(
 
 bool WindowsCreatureFanoutHost::is_map_room_reference(
     const creatures1::objects::Object& reference) const {
-    // CanPerceiveObject @ 00409750 tests the reference's packed classifier
-    // family and genus, not a bounds flag: family 3 genus 2 is the map-room
-    // marker object, and a creature anchored to it perceives nothing.
-    return (reference.classifier_base() & 0xffff0000u) == 0x03020000u;
+    return creatures1::creatures::is_map_room_marker(reference.classifier_base());
 }
 
 bool WindowsCreatureFanoutHost::is_unplaced_new_object(
