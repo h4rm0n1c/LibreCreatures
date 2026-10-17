@@ -63,6 +63,7 @@ dad6):
 | Skeleton: 13 functions of body layout, stepping, poses and movement | 0043b5a0 to 0043c380 | 200,000 (3,200,000 operations) | 0 cases differ | 16,358 cases differ, all from row 22 |
 | Vehicles, lifts and call buttons: 11 functions | 00429a70 to 0042c680 | 50,000 (8,045,880 operations) | 0 cases differ | 36,625 cases differ, all from rows 23, 41, 45 and 52 |
 | Simple objects: pick-up, carrying, putting down and the edit drop | 00426ee0 to 00428d30 | 50,000 (2,000,000 operations) | 0 cases differ | 5,265 cases differ, all from rows 22 and 27 |
+| Learned words and phrases: 7 functions | 00409e80 to 0040b160 | 50,000 (1,200,000 operations) | 0 cases differ | 12,663 cases differ, all from row 14 |
 
 The values that each test compares:
 
@@ -96,9 +97,11 @@ The values that each test compares:
 - Simple objects: each object's mode, carrier, position, plane and
   movement bounds, the scripts, the queued events and the queued stimuli,
   after each operation.
+- Learned words: all 80 word records, the words said, the speech events
+  and the rand state, after each operation.
 
-The perception, goal-direction, geometry, fan-out and skeleton tests
-found seven defects in LibreCreatures. All are fixed:
+The perception, goal-direction, geometry, fan-out, skeleton and
+learned-word tests found eight defects in LibreCreatures. All are fixed:
 
 - `apply_stimulus` set the seen flag of an attention record. The original
   does not.
@@ -118,6 +121,8 @@ found seven defects in LibreCreatures. All are fixed:
   were one row out of place.
 - When a creature carried the object it moved toward, LibreCreatures did
   not see that it already held it, and chose a reach pose.
+- A creature's baby-talk form of a long word was not repeated when it was
+  three or four letters long.
 
 The procedure for each test is in
 [`tests/equivalence/README.md`](../tests/equivalence/README.md).
