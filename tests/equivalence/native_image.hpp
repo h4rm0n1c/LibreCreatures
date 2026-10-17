@@ -42,6 +42,10 @@ public:
     // entry), in the copy.
     void make_return(std::uint32_t address);
 
+    // Replaces the function at `address` with a jump to `function`, in the
+    // copy.  `function` must take the same arguments in the same places.
+    void redirect(std::uint32_t address, const void* function);
+
 private:
     std::uint32_t base_ = 0;
 };
