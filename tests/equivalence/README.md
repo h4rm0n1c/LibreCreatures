@@ -180,3 +180,36 @@ steps, 15,121 instincts finished.
 - LC native: 0 differing cases.
 - LC as shipped: 8,250 differing cases, the same cases as the build with
   only rows 2, 4, 5, 6, 50 and 51 fixed.
+
+## Attention: `Creature::UpdateAttention` @0040bbc0 with `Creature::SetAction` (CE 10.3)
+
+The choice of attended object from the attention lobe (7), and on a change
+of target: the motion link and its part centre, the decision (6), sensory
+(5) and stimulus-source (2) lobes cleared and fed, the sleep indicator's
+teardown, SetAction(quiescent), the decision lobe's exclusions from the
+action-target table, and a pending goal-direction verb into the verb lobe
+(3). Every record's sense neuron is then cleared.
+
+    WINEPREFIX=<throwaway prefix> tests/equivalence/run_attention.sh \
+        <CE 10.3 Creatures.exe> <cases> <build-dir> <genome.gen>...
+
+The native side is a Creature-shaped block and a CBrain-shaped block with
+the five lobes, at the offsets the function reads. Scripts and events are
+recorded as in the action test. A new target's part centre comes from the
+LC object paired with the native one, so both sides see the same point. Half
+the cases aim the pending verb at an object that then wins attention. One
+update per case; then the motion link and target point, every record's
+sense neuron, all neurons of the five lobes (firing, activation,
+exclusion), the goal-direction state, the sleep indicator calls, the script
+lookups and the events must match.
+
+- Not generated: genera with no attention record (row 10), negative verb
+  neurons, attention lobes of other than 40 and decision lobes of other than
+  16 neurons.
+
+First run (2026-10-17), the 12 stock genomes: 200,000 cases, 177,038
+attention shifts, 43,593 verb deliveries.
+- LC native: 0 differing cases.
+- LC as shipped: 40,943 differing cases, the same cases as the build with
+  only rows 8 and 40 fixed; they are the only switches in the code under
+  test.
