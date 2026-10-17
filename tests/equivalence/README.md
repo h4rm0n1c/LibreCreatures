@@ -391,3 +391,67 @@ First run (2026-10-18): 100,000 cases, 600,000 calls, 123,503 events and
 - LC as shipped: 19,406 differing cases, the same cases as the build with
   only rows 17, 22 and 73 fixed. They are the only switches in the code
   under test.
+
+## Skeleton: body layout, stepping, poses and movement (CE 10.3)
+
+| Function | Address | LC |
+| --- | --- | --- |
+| `RecomputeBodyPartLayout` | 0043b5a0 | `Skeleton::recompute_body_part_layout` |
+| `UpdateLimbFramesForPose` | 0043b8f0 | `update_limb_frames_for_pose` |
+| `UpdateAnchorAndBounds` | 0043b950 | `update_anchor_and_bounds` |
+| `ApplyPoseString` | 0043ba20 | `apply_pose_string` |
+| `AdvancePoseAnimation` | 0043bb20 | `Creature::advance_pose_animation` |
+| `SetTargetPoseString` | 0043be00 | `set_target_pose_string` |
+| `IsPoseAtTarget` | 0043be70 | `is_pose_at_target` |
+| `SetTargetPoseFromTableIndex` | 0043bf10 | `set_target_pose_from_table_index` |
+| `SelectTargetPoseForMotion` | 0043bf40 | `select_target_pose_for_motion` |
+| `SetDownFootPositionAndRecomputeLayout` | 0043c070 | `set_down_foot_position_and_recompute_layout` |
+| `TranslateBy` | 0043c0b0 | `translate_by` |
+| `SetDownFootPositionAndInvalidateBounds` | 0043c2f0 | `set_down_foot_position_and_invalidate_bounds` |
+| `UpdateAndInvalidateBounds` | 0043c380 | `update_and_invalidate_bounds` |
+
+    WINEPREFIX=<throwaway prefix> tests/equivalence/run_skeleton.sh \
+        <CE 10.3 Creatures.exe> <cases> <build-dir>
+
+Each case builds one creature body twice: an LC Skeleton with a Body and
+six limb chains (head 1, legs 3, arms 2, tail 2 parts), and native
+Creature, Body and Limb blocks with the same state. These are random:
+- the attachment tables and the image sizes (a 256-image gallery, so every
+  byte image index is in range);
+- the image bases, poses, views and render planes;
+- facing, down foot, eyes, expression and movement bounds;
+- the current and target poses and the 100-entry pose table;
+- the motion link (none, an object, or an object the creature carries)
+  and its target point;
+- a room table.
+
+Then 16 random operations run on both sides. After each operation the whole
+skeleton must match: each part's image, position, pose, view and plane; the
+down foot; the chain ends; the sprite and previous bounds; the boundary
+flag; facing; the poses; the animation sequence and cursor; the transition
+count; the return values; and the queued dirty rectangles.
+
+The native vtable has the Skeleton's own entries for the slots these
+functions call. The renderer's dirty queue (00412610) and PlaySoundEffect
+(0042ce20) are recorders. UpdateMovementBounds and the nearest-room
+function run as native code. LC's hosts are the game's. Sounds are muted
+on the LC side, so the step sound is not compared; the step is seen in the
+down foot.
+
+Set `EQUIVALENCE_CASE=<n>` to print the poses after each operation of
+case n.
+
+First run (2026-10-18): 200,000 cases, 3,200,000 operations, 235,065 steps,
+1,402,030 operations after a wall correction.
+- The test found two translation defects in LC, now fixed:
+  - Rows 5 to 8 of the motion pose table (00454690) held the native rows
+    4 to 7. When its target was a little below it, a creature took a
+    higher pose digit than C1 gives.
+  - `select_target_pose_for_motion` tested `motion_link == this`.
+    SelectTargetPoseForMotion tests whether the link's bounds reference is
+    the creature, as for a carried object, and then returns 1 at once.
+    Before the fix, 247 of 2,000 cases differed.
+- LC native: 0 differing cases.
+- LC as shipped: 16,358 differing cases, the same cases as the build with
+  only row 22 fixed. Row 22 (the nearest room, through the down-foot
+  setter) is the only switch the code under test reaches.

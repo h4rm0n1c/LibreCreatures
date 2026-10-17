@@ -60,6 +60,7 @@ dad6):
 | `Creature::UpdateGoalDirection` with `Creature::ApplyGoalDirection` | 0040ccc0, 0040abc0 | 200,000 | 0 cases differ | 0 cases differ (no row in this code) |
 | Map geometry: `FindNearestMapRoomBoundsAtPoint`, `MapData::FindRoomContainingPoint`, `GetAmbientTemperatureAtPoint`, `Object::UpdateMovementBounds` | 00422d70, 00422df0, 00422e40, 00426470 | 200,000 (6,400,000 points, 1,600,000 objects) | 0 cases differ | 167,929 cases differ, all from row 22 |
 | Creature fan-out: the seven `MapData::QueueEvent...` and `Queue...Stimulus` functions | 00422f90 to 00423470 | 100,000 (600,000 calls) | 0 cases differ | 19,406 cases differ, all from rows 17, 22 and 73 |
+| Skeleton: 13 functions of body layout, stepping, poses and movement | 0043b5a0 to 0043c380 | 200,000 (3,200,000 operations) | 0 cases differ | 16,358 cases differ, all from row 22 |
 
 The values that each test compares:
 
@@ -84,9 +85,12 @@ The values that each test compares:
   point, the temperature and the movement bounds.
 - Creature fan-out: the queued object events, the queued stimuli and the
   stimulus context, after each call.
+- Skeleton: every body part's image, position, pose, view and plane, the
+  down foot, the chain ends, the bounds, the poses and the dirty
+  rectangles, after each operation.
 
-The perception, goal-direction, geometry and fan-out tests found five
-defects in LibreCreatures. All are fixed:
+The perception, goal-direction, geometry, fan-out and skeleton tests
+found seven defects in LibreCreatures. All are fixed:
 
 - `apply_stimulus` set the seen flag of an attention record. The original
   does not.
@@ -102,6 +106,10 @@ defects in LibreCreatures. All are fixed:
   point.
 - The overlap test of the fan-out counted a rectangle with no area as
   touching. The original uses IntersectRect.
+- Four rows of the table that chooses a creature's pose toward its target
+  were one row out of place.
+- When a creature carried the object it moved toward, LibreCreatures did
+  not see that it already held it, and chose a reach pose.
 
 The procedure for each test is in
 [`tests/equivalence/README.md`](../tests/equivalence/README.md).
@@ -167,10 +175,9 @@ The Creatures Caves archive has 434 COB files. The replay installs them in
 
 ## What the tests do not cover
 
-- Functions without a function test. The skeleton and poses, movement
-  other than the movement bounds, vehicles and the world file have no
-  function test. The CAOS tests and the COB replay test some of their
-  behaviour.
+- Functions without a function test. Vehicles, falling and other
+  movement outside the skeleton, and the world file have no function
+  test. The CAOS tests and the COB replay test some of their behaviour.
 - Pictures and sound. The tests do not compare the picture or the sound
   output.
 - The kits. The tests do not compare the kit programs.

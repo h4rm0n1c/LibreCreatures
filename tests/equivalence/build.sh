@@ -175,5 +175,22 @@ for mode in fixed native rows; do
     $cxx $flags $define -o "$exe" "$here/fanout_equivalence.cpp" "$here/native_image.cpp" \
         "$out/fanout_traps_$mode.cpp" $fanout
 done
+# Skeleton: the creature closure with the body, the entity, the image and
+# the map.
+skeleton="$src/creatures/body.cpp $src/objects/entity.cpp $src/display/image.cpp \
+          $src/world/map.cpp $creature"
+for mode in fixed native rows; do
+    case $mode in
+        fixed) define= ;;
+        native) define=-DLC_NATIVE_MODE ;;
+        rows) define="-DLC_NATIVE_MODE -DEQUIVALENCE_EXPECT=1 -DLC_FIX_22=1" ;;
+    esac
+    exe="$out/skeleton_equivalence_$mode.exe"
+    $cxx $flags $define -Wl,--no-demangle -o "$exe" "$here/skeleton_equivalence.cpp" \
+        "$here/native_image.cpp" $skeleton > "$out/skeleton_$mode.link" 2>&1 || true
+    python3 "$here/trap_stubs.py" "$out/skeleton_$mode.link" "$out/skeleton_traps_$mode.cpp"
+    $cxx $flags $define -o "$exe" "$here/skeleton_equivalence.cpp" "$here/native_image.cpp" \
+        "$out/skeleton_traps_$mode.cpp" $skeleton
+done
 echo "built in $out"
 
