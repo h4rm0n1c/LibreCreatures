@@ -3088,10 +3088,16 @@ void Creature::update_perception(
         }
         if (!record.visible) {
             if (can_perceive(*record.target, world)) {
-                const std::uint32_t magnitude = record.stimulus_seen
+                // Native reads and sets the seen flag of the target's own
+                // slot, from its classifier now; after `setv clas` that is
+                // not this record.
+                AttentionRecord& seen_record = attention_records_[
+                    get_attention_record_index(
+                        source_host.classify(*record.target))];
+                const std::uint32_t magnitude = seen_record.stimulus_seen
                                                    ? 0x1au
                                                    : 0x3cu;
-                record.stimulus_seen = true;
+                seen_record.stimulus_seen = true;
                 deliver_visibility_stimulus(record.target, magnitude);
                 record.visible = true;
             }
@@ -3304,8 +3310,10 @@ void Creature::apply_stimulus(
         }
         record.target_neuron_index = descriptor.target_neuron_index;
         record.lobe_activation = descriptor.target_lobe_activation;
+        // ApplyStimulus @0040b8a0 sets the visible flag only.  The seen flag
+        // (+0x11) belongs to UpdatePerception, which chooses the first-seen
+        // magnitude by it.
         record.visible = true;
-        record.stimulus_seen = true;
 
         if (brain_ != nullptr) {
             // The Stimulus-source lobe is indexed by the *attention record*, not by

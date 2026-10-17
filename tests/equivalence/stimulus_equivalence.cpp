@@ -307,6 +307,7 @@ int main(int argc, char** argv) {
             record.world_x = static_cast<int>(random.below(8352));
             record.world_y = static_cast<int>(random.below(1200));
             record.visible = random.chance(2);
+            record.stimulus_seen = random.chance(2);
             std::uint8_t* raw = native.data() + kAttentionRecords + r * kAttentionStride;
             *reinterpret_cast<void**>(raw) = native_of(record.target);
             raw[4] = record.target_neuron_index;
@@ -314,6 +315,7 @@ int main(int argc, char** argv) {
             *reinterpret_cast<int*>(raw + 8) = record.world_x;
             *reinterpret_cast<int*>(raw + 12) = record.world_y;
             raw[16] = record.visible ? 1 : 0;
+            raw[17] = record.stimulus_seen ? 1 : 0;
         }
         auto& matrix = creature->goal_direction_weight_matrix();
         for (std::size_t r = 0; r < 40; ++r) {
@@ -379,14 +381,15 @@ int main(int argc, char** argv) {
                     raw[4] != record.target_neuron_index || raw[5] != record.lobe_activation ||
                     *reinterpret_cast<const int*>(raw + 8) != record.world_x ||
                     *reinterpret_cast<const int*>(raw + 12) != record.world_y ||
-                    (raw[16] != 0) != record.visible) {
+                    (raw[16] != 0) != record.visible || (raw[17] != 0) != record.stimulus_seen) {
                     std::snprintf(text, sizeof text,
-                                  "attention record %u: native n%u a%u (%d,%d) v%u, lc n%u a%u (%d,%d) v%u",
+                                  "attention record %u: native n%u a%u (%d,%d) v%u s%u, lc n%u a%u (%d,%d) v%u s%u",
                                   static_cast<unsigned>(r), raw[4], raw[5],
                                   *reinterpret_cast<const int*>(raw + 8),
-                                  *reinterpret_cast<const int*>(raw + 12), raw[16],
+                                  *reinterpret_cast<const int*>(raw + 12), raw[16], raw[17],
                                   record.target_neuron_index, record.lobe_activation,
-                                  record.world_x, record.world_y, record.visible ? 1 : 0);
+                                  record.world_x, record.world_y, record.visible ? 1 : 0,
+                                  record.stimulus_seen ? 1 : 0);
                     note(text);
                 }
             }
