@@ -82,6 +82,16 @@ enum class ActionTargetRequirement : std::uint8_t {
 // g_action_target_requirements @ 00454450: which actions need a target.
 ActionTargetRequirement action_target_requirement_for(std::size_t action_index);
 
+class Creature;
+// UpdatePerception @0040bf10: what the motion link is to `self`.  `link` is
+// the link's Creature when it has one; `link_classifier` is its packed
+// classifier.
+CreatureMotionLinkFacts motion_link_facts_for(const Creature& self, const Creature* link,
+                                              std::uint32_t link_classifier);
+// CanPerceiveObject @00409750: family 3 genus 2 is the map-room marker; a
+// creature anchored to it perceives nothing.
+bool is_map_room_marker(std::uint32_t classifier);
+
 // A Creature is also represented by an Object in the world hierarchy, but
 // this clean model does not fake that inheritance across incomplete layouts.
 // The world supplies the identity relationship explicitly where an Object
