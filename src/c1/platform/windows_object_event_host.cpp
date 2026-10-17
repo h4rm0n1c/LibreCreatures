@@ -992,7 +992,12 @@ int WindowsCreatureWordsHost::pointer_tool_sound_source_x() const {
 
 creatures1::world::WorldRect
 WindowsCreatureWordsHost::creature_movement_bounds() const {
-    return creature_.skeleton().movement_bounds();
+    // The "look" search @0040ace1: a creature with a bounds reference (in a
+    // vehicle) uses the reference's movement bounds.
+    const creatures1::objects::Object* reference =
+        creature_.skeleton().bounds_reference_object();
+    return reference != nullptr ? reference->movement_bounds()
+                                : creature_.skeleton().movement_bounds();
 }
 
 std::size_t WindowsCreatureWordsHost::non_scenery_object_count() const {
