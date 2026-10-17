@@ -641,3 +641,60 @@ things said, 88,981 words relearned.
 - LC native: 0 differing cases.
 - LC as shipped: 12,663 differing cases, the same cases as the build with
   only row 14 fixed (the space in "come Norn").
+
+## Heard words: `Creature::ProcessHeardWords` @0040a630 (CE 10.3)
+
+What a creature does with a sentence it hears:
+- it matches each word to its name, a noun (the 39 object categories) or
+  a verb;
+- it learns a word it does not know as the name of what it attends to;
+- it takes a stimulus: nothing understood, or words from the hand or from
+  another creature;
+- it obeys yes, no, look and what;
+- it gives attention and a verb through ApplyGoalDirection.
+
+The "look" search (0040ac90), UpdateLearnedWordRecord, TriggerBuiltInStimulus,
+ApplyStimulus, SpeakActionPhrase and ApplyGoalDirection run as native code.
+
+    WINEPREFIX=<throwaway prefix> tests/equivalence/run_heard.sh \
+        <CE 10.3 Creatures.exe> <cases> <build-dir> <genome.gen>...
+
+The native creature is a Creature-shaped block with:
+- the learned-word and attention records;
+- the built-in stimulus contexts;
+- the goal matrix and goal-direction state;
+- lobes 2, 3, 5 and 7, and all chemicals;
+- sleep, the motion link, the movement bounds, the bounds reference (a
+  vehicle, one case in three), the selected action and the classifier.
+
+Eight objects of random kind and the hand stand near it. The native object
+registry and LC's host list them alike, with bounds and sound positions from
+one table. The CRT text functions, rand and the speech outputs are as in
+the learned-word test. LC's hosts are the game's.
+
+Each case speaks 8 sentences of 1 to 4 words. A word is the creature's
+name, a noun, a verb, yes/no/look/what, or a word it does not know, in
+either case. Some sentences have extra spaces. The speaker is the hand,
+another creature or an object, and sometimes the creature is asleep.
+After each sentence these must match:
+- all learned-word and attention records;
+- the four lobes, the chemicals and the goal matrix;
+- the goal-direction state;
+- everything said and queued, and the rand state.
+
+- Not generated: words of vowels only (row 80), genera with no attention
+  record (row 10), words too long for a record.
+
+First run (2026-10-18): 50,000 cases, 400,000 sentences, 27,416 with
+"look".
+- The test found three translation defects in LC, now fixed:
+  - LC ignored what a sleeping creature heard. ProcessHeardWords has no
+    sleep test; only what it calls checks sleep.
+  - "look" set a verb (0xff). Native sets only the attention magnitude,
+    so "look" gives attention and no verb.
+  - The game's host gave "look" the creature's own movement bounds. Native
+    takes the bounds reference's (a vehicle's) movement bounds when there
+    is one. Before the fix, 142 of 5,000 cases differed.
+- LC native: 0 differing cases.
+- LC as shipped: 28,016 differing cases, the same cases as the build with
+  only rows 9, 37 and 39 fixed.

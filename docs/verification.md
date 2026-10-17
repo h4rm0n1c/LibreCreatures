@@ -64,6 +64,7 @@ dad6):
 | Vehicles, lifts and call buttons: 11 functions | 00429a70 to 0042c680 | 50,000 (8,045,880 operations) | 0 cases differ | 36,625 cases differ, all from rows 23, 41, 45 and 52 |
 | Simple objects: pick-up, carrying, putting down and the edit drop | 00426ee0 to 00428d30 | 50,000 (2,000,000 operations) | 0 cases differ | 5,265 cases differ, all from rows 22 and 27 |
 | Learned words and phrases: 7 functions | 00409e80 to 0040b160 | 50,000 (1,200,000 operations) | 0 cases differ | 12,663 cases differ, all from row 14 |
+| `Creature::ProcessHeardWords` with the "look" search | 0040a630, 0040ac90 | 50,000 (400,000 sentences) | 0 cases differ | 28,016 cases differ, all from rows 9, 37 and 39 |
 
 The values that each test compares:
 
@@ -99,9 +100,13 @@ The values that each test compares:
   after each operation.
 - Learned words: all 80 word records, the words said, the speech events
   and the rand state, after each operation.
+- Heard words: the word and attention records, the stimulus-source, verb,
+  sensory and attention lobes, all chemicals, the goal matrix and
+  goal-direction state, and everything said, after each sentence.
 
-The perception, goal-direction, geometry, fan-out, skeleton and
-learned-word tests found eight defects in LibreCreatures. All are fixed:
+The perception, goal-direction, geometry, fan-out, skeleton, learned-word
+and heard-word tests found eleven defects in LibreCreatures. All are
+fixed:
 
 - `apply_stimulus` set the seen flag of an attention record. The original
   does not.
@@ -123,6 +128,11 @@ learned-word tests found eight defects in LibreCreatures. All are fixed:
   not see that it already held it, and chose a reach pose.
 - A creature's baby-talk form of a long word was not repeated when it was
   three or four letters long.
+- A sleeping creature did not hear. The original lets a sleeping creature
+  hear.
+- "look" also gave a verb.
+- "look" from a creature in a vehicle searched the creature's own area
+  instead of the vehicle's.
 
 The procedure for each test is in
 [`tests/equivalence/README.md`](../tests/equivalence/README.md).
