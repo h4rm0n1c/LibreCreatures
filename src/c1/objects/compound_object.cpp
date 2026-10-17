@@ -159,6 +159,11 @@ void CompoundObject::move_to(int world_x, int world_y) {
 
 void CompoundObject::move_to_and_redraw(
     int world_x, int world_y, CompoundObjectMoveRedrawHost& renderer) {
+    // LibreCreatures deviation (original-bugs row 78):
+    // CompoundObject::MoveToAndRedraw @0042ae40 reads parts[0].entity->gallery
+    // with no check, so `mvto` on a compound object, vehicle or blackboard
+    // that has no part 0 yet reads address 4 and crashes (0x0042ae94).  A
+    // missing part 0 has empty bounds here.
     world::WorldRect old_bounds{};
     if (parts_[0].entity != nullptr) {
         parts_[0].entity->get_current_image_bounds(old_bounds);
