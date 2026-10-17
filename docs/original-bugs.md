@@ -54,7 +54,7 @@ The lab trace's "world opened" line names the rows running native.
 Some rows are not switched:
 
 - **Guards** against native crashes, memory corruption or reads past a
-  buffer: rows 3, 10, 19, 20, 21, 34, 46, 47, 48, 58, 60, 63, 66, 77, 78 and 79.  On
+  buffer: rows 3, 10, 19, 20, 21, 34, 46, 47, 48, 58, 60, 63, 66, 77, 78, 79 and 80.  On
   any input where native does not crash or corrupt memory they behave as
   native does; a crash cannot be compared.
 - **Row 25:** native's plane depends on heap addresses, so it cannot be
@@ -112,6 +112,7 @@ files.
 | 42 | A mutated bacterium's output chemical loses the -0x18 offset new bacteria use, so it becomes chemical 0-3 (nothing, pain, need for pleasure, hunger) instead of a disease chemical 232-235 (histamine A or B, sleep toxin, fever toxin). | `ReplicateAndMutate` @00401c70 | 41dbe9a | code |
 | 43 | The creature status report names the first room spanning the norn's x that has a floor, so where rooms are stacked it reports the upper room. | `FormatStatusForExternalQuery` @0040e520 | 41dbe9a | code, lab |
 | 44 | A bacterial threshold mutation adds its step into the byte before clamping, so a step past 255 or below 0 wraps: kill threshold 250 + 10 becomes 130, activation threshold 0 - 1 becomes 130. | `ReplicateAndMutate` @00401c70 | 0693c52 | code |
+| 80 | A creature that hears a word of vowels only ("a", "oo") makes its baby-talk form by scanning past the end of the word, because the vowel test also matches the end of the string, and the copy writes over the bytes after the word: its response, its reinforcement and the next word. | `RegenerateLearnedWordResponse` @0040a1f0 | a9c267d | code |
 
 ### Scripts
 
