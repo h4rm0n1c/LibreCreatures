@@ -1080,10 +1080,11 @@ void Creature::process_heard_words(
                 source_object, 0, source_host, debug_host, log_host);
             break;
         case static_cast<std::int32_t>(HeardWordActionSlot::look):
+            // ProcessHeardWords @0040aa51 sets only the magnitude; the verb
+            // neuron stays -1, so "look" gives attention and no verb.
             attention_record_index = static_cast<std::int32_t>(
                 resolve_pointer_attention_target(
                     heard_words_host.pointer_attention_api()));
-            verb_action_neuron = 0xff;
             attention_magnitude = 0xff;
             break;
         case static_cast<std::int32_t>(HeardWordActionSlot::what):
