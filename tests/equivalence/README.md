@@ -307,3 +307,87 @@ memories cleared, 112,363 updates fed lobe 2, 74,895 gave a verb.
   button (record 2, verb 4) and LC favoured the lift (record 27, verb 2).
 - LC native: 0 differing cases.
 - LC as shipped: 0 differing cases. The code under test has no switch.
+
+## Map geometry: the room functions and `Object::UpdateMovementBounds` (CE 10.3)
+
+- `FindNearestMapRoomBoundsAtPoint` @00422d70: the room whose x span holds
+  the point and whose floor is nearest the point's y. It changes the
+  caller's rectangle in place.
+- `MapData::FindRoomContainingPoint` @00422df0: the first room that contains
+  the point (PtInRect).
+- `GetAmbientTemperatureAtPoint` @00422e40: the map's temperature, outside
+  every room or in a room of type 1.
+- `Object::UpdateMovementBounds` @00426470: the movement bounds for each of
+  the five bounds modes, and the whole world for the edit object.
+
+    WINEPREFIX=<throwaway prefix> tests/equivalence/run_geometry.sh \
+        <CE 10.3 Creatures.exe> <cases> <build-dir>
+
+Each case makes a room table of 0 to 40 rooms in the native MapData layout,
+at the MapData pointer 0x468d64, and the same table for LC. Most rooms
+share edges in a grid, as the game's rooms do; some have gaps, overlaps, no
+area or inverted corners. Then 32 points, many on room edges, go to the
+three room functions, with a random starting rectangle for the nearest-room
+function. Then 8 objects of random bounds mode, flags, bounds, reference
+and vehicle data go to UpdateMovementBounds. LC's host for the nearest room
+is the game's (`C1WindowsDocument`).
+
+First run (2026-10-18): 200,000 cases, 6,400,000 points (1,327,665 with no
+room over the x), 1,600,000 objects.
+- The test found one translation defect in LC, now fixed: the game's host
+  started the nearest-room function from an empty rectangle. The original
+  keeps the caller's left, top and right when no room spans the x, so an
+  object kept its last room's sides. In the native build LC gave
+  `{0, 0, 0, 9999}`. Before the fix, 931 of 5,000 cases differed.
+- LC native: 0 differing cases.
+- LC as shipped: 167,929 differing cases, the same cases as the build with
+  only row 22 fixed. Row 22 is the only switch in the code under test.
+
+## Creature fan-out: `MapData::QueueEvent...` and `Queue...Stimulus` (CE 10.3)
+
+The seven functions that send an event or a stimulus to the creatures near
+an object:
+
+| Function | Address | Creatures chosen |
+| --- | --- | --- |
+| `QueueEventForCreaturesInSpeechRange` | 00422f90 | in the speech window |
+| `QueueEventForCreaturesThatCanPerceiveObject` | 00423030 | that can perceive the object |
+| `QueueTactEventForOverlappingCreatures` | 00423090 | that touch the object, or ride it |
+| `QueueForPerceivingCreatures` | 00423150 | that can perceive the object |
+| `QueueForOverlappingCreatures` | 004231f0 | that touch the object, or ride it |
+| `QueueSignStimulusForPerceivingCreatures` | 00423390 | that can perceive the object |
+| `QueueTactStimulusForOverlappingCreatures` | 00423470 | every creature, when one creature touches the object (row 17) |
+
+    WINEPREFIX=<throwaway prefix> tests/equivalence/run_fanout.sh \
+        <CE 10.3 Creatures.exe> <cases> <build-dir>
+
+Each case makes 0 to 8 creatures (the native creature list at 0x4704bc,
+0x4704c0) and 4 other objects near each other. Each has a random
+classifier, flags (vehicle, invisible), facing, foot point, movement
+bounds, bounds and bounds reference. Each creature has random built-in
+stimulus contexts. Some bounds have no area or inverted corners. Then the
+case makes 6 calls of random function and arguments. The source is any of
+the objects or creatures. CanPerceiveObject, the nearest-room function and
+QueueObjectEvent run as native code, on a random room table. LC's host is
+the game's (`WindowsCreatureFanoutHost`).
+
+After each call, the queued object events (immediate ring at 0x466470,
+delayed table at 0x46e1e0), the queued stimuli (ring at 0x466468) and the
+passed stimulus context must match.
+
+- Not compared: the native sign and tact helpers also write source and
+  target into the creature's own built-in context. LC's host copies the
+  context instead, and every reader writes both fields before use.
+- Not generated: negative stimulus indices (native reads before the
+  contexts).
+
+First run (2026-10-18): 100,000 cases, 600,000 calls, 123,503 events and
+147,822 stimuli queued.
+- The test found one translation defect in LC, now fixed: the overlap test
+  counted a rectangle with no area, or with inverted corners, as touching a
+  rectangle around it. The original uses IntersectRect, which needs an
+  intersection with area. Before the fix, 15 of 3,000 cases differed.
+- LC native: 0 differing cases.
+- LC as shipped: 19,406 differing cases, the same cases as the build with
+  only rows 17, 22 and 73 fixed. They are the only switches in the code
+  under test.

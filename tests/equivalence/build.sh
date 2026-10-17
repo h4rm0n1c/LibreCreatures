@@ -144,5 +144,36 @@ for mode in fixed native; do
     $cxx $flags $define $wrap -o "$exe" "$here/goal_equivalence.cpp" "$here/native_image.cpp" \
         "$out/goal_traps_$mode.cpp" $creature
 done
+# Map geometry: the room functions and Object::UpdateMovementBounds.
+geometry="$src/world/map.cpp $src/platform/mfc_adapters.cpp $src/objects/object.cpp \
+          $src/world/geometry.cpp $src/common/compat.cpp"
+for mode in fixed native rows; do
+    case $mode in
+        fixed) define= ;;
+        native) define=-DLC_NATIVE_MODE ;;
+        rows) define="-DLC_NATIVE_MODE -DEQUIVALENCE_EXPECT=1 -DLC_FIX_22=1" ;;
+    esac
+    exe="$out/geometry_equivalence_$mode.exe"
+    $cxx $flags $define -Wl,--no-demangle -o "$exe" "$here/geometry_equivalence.cpp" \
+        "$here/native_image.cpp" $geometry > "$out/geometry_$mode.link" 2>&1 || true
+    python3 "$here/trap_stubs.py" "$out/geometry_$mode.link" "$out/geometry_traps_$mode.cpp"
+    $cxx $flags $define -o "$exe" "$here/geometry_equivalence.cpp" "$here/native_image.cpp" \
+        "$out/geometry_traps_$mode.cpp" $geometry
+done
+# Creature fan-out: the creature closure with the event producers and the map.
+fanout="$src/creatures/events.cpp $src/world/map.cpp $creature"
+for mode in fixed native rows; do
+    case $mode in
+        fixed) define= ;;
+        native) define=-DLC_NATIVE_MODE ;;
+        rows) define="-DLC_NATIVE_MODE -DEQUIVALENCE_EXPECT=1 -DLC_FIX_17=1 -DLC_FIX_22=1 -DLC_FIX_73=1" ;;
+    esac
+    exe="$out/fanout_equivalence_$mode.exe"
+    $cxx $flags $define -Wl,--no-demangle -o "$exe" "$here/fanout_equivalence.cpp" \
+        "$here/native_image.cpp" $fanout > "$out/fanout_$mode.link" 2>&1 || true
+    python3 "$here/trap_stubs.py" "$out/fanout_$mode.link" "$out/fanout_traps_$mode.cpp"
+    $cxx $flags $define -o "$exe" "$here/fanout_equivalence.cpp" "$here/native_image.cpp" \
+        "$out/fanout_traps_$mode.cpp" $fanout
+done
 echo "built in $out"
 
