@@ -390,6 +390,12 @@ void WorldRenderer::render_world_rect_to_dib(
         // frame it was carried in; see Entity::drawn_image_index).
         const std::size_t image_index = entity->drawn_image_index();
         // Gallery allocates exactly image_count entries; equality is invalid.
+        // LibreCreatures deviation (original-bugs row 79):
+        // RenderWorldRectToDIB @00412aa0 keeps an entity when its image index
+        // is not greater than the gallery's count (cmp/jg), so index == count
+        // draws the CImage one past the array: whatever heap block follows,
+        // which can crash in CImage::GetPixelData @00442ac0.  An entity with
+        // no such image (valid_sprite_image above) is not drawn here.
 
         int relative_x = entity->world_x() - render_rect.min_x;
         if (relative_x < 0x1051) {
