@@ -81,5 +81,23 @@ for mode in fixed native row11; do
     $cxx $flags $define $wrap -o "$exe" "$here/action_equivalence.cpp" "$here/native_image.cpp" \
         "$out/action_traps_$mode.cpp" $creature
 done
+# Dreaming: the creature closure, with the brain and biochemistry builders.
+# rows: native with only the brain and biochemistry rows fixed, the only
+# switches the dreaming code reaches.
+for mode in fixed native rows; do
+    case $mode in
+        fixed) define= ;;
+        native) define=-DLC_NATIVE_MODE ;;
+        rows) define="-DLC_NATIVE_MODE -DEQUIVALENCE_EXPECT=1 -DLC_FIX_2=1 -DLC_FIX_4=1 \
+                      -DLC_FIX_5=1 -DLC_FIX_6=1 -DLC_FIX_50=1 -DLC_FIX_51=1" ;;
+    esac
+    exe="$out/dream_equivalence_$mode.exe"
+    wrap="-Wl,--wrap=rand -Wl,--wrap=srand"
+    $cxx $flags $define $wrap -Wl,--no-demangle -o "$exe" "$here/dream_equivalence.cpp" \
+        "$here/native_image.cpp" $creature > "$out/dream_$mode.link" 2>&1 || true
+    python3 "$here/trap_stubs.py" "$out/dream_$mode.link" "$out/dream_traps_$mode.cpp"
+    $cxx $flags $define $wrap -o "$exe" "$here/dream_equivalence.cpp" "$here/native_image.cpp" \
+        "$out/dream_traps_$mode.cpp" $creature
+done
 echo "built in $out"
 
