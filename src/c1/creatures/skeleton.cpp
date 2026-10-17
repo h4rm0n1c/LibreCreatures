@@ -829,7 +829,9 @@ std::uint32_t Skeleton::select_target_pose_for_motion(
     if (motion_link == nullptr || motion_target_y > down_foot_y) {
         return 0xffffffffU;
     }
-    if (motion_link == this) {
+    // Native 0043bf73: the link is already this creature's (its bounds
+    // reference is this creature, as for a carried object).
+    if (motion_link->bounds_reference_object() == this) {
         return 1;
     }
 
