@@ -531,3 +531,55 @@ passengers.
 - LC as shipped: 36,625 differing cases, the same cases as the build with
   only rows 23, 41, 45 and 52 fixed. They are the only switches in the code
   under test.
+
+## Simple objects: pick-up, carrying and putting down (CE 10.3)
+
+| Function | Address | LC |
+| --- | --- | --- |
+| `SimpleObject::HandleQueuedEvent4` (pick up) | 00427cc0 | `handle_queued_event_4` |
+| `SimpleObject` queued event 5 (put down) with `EndInteractionWithSource` | 00427f40, 00428bb0 | `handle_queued_event_5` |
+| `SimpleObject::Tick` carried (mode 4), `UpdateEntityForExplicitRectBoundsAndRedraw` | 00427a70, 00428d30 | `tick` |
+| `SimpleObject::FinalizeObjectEdit` | 00426ee0 | `finalize_object_edit` |
+
+`UpdateMovementBounds`, the nearest-room function and
+`FindTopmostOverlappingObject` @00425c30 run as native code.
+
+    WINEPREFIX=<throwaway prefix> tests/equivalence/run_simple_object.sh \
+        <CE 10.3 Creatures.exe> <cases> <build-dir>
+
+The native objects use the native vtable of their class, with these
+changes:
+- slots 22 and 23 are the native MoveBy and MoveTo without the redraw;
+- `SetBoundsMode` (004257f0) only stores the mode, so its renderable-set
+  upkeep is not compared;
+- the carried tick returns once the object is placed (a jump at 00428ea7
+  skips the redraw);
+- script dispatch (00419e00) is a recorder on both sides.
+
+Each case has:
+- a room table;
+- the object under test, with random carry flags (hand 0x02, creature
+  0x01, vehicle-proof 0x20, room-bound 0x40), plane and position;
+- two other simple objects, one of them sometimes carried by creature A;
+- two creatures with random body plane, sprite bounds, movement bounds,
+  right-hand chain end and facing;
+- two vehicles (lift-like genus 3 2, or plain), with random parts, planes
+  and local bounds;
+- the hand.
+
+Then 40 operations: pick up by the hand, a creature or an object; put
+down by the hand or a creature; a carried tick; the edit drop at a random
+privilege; and moves of the creatures and vehicles. After each, every
+simple object's mode, reference, position, plane and movement bounds, the
+scripts run, and the queued events and stimuli must match.
+
+- Not generated: a machine as carrier (native reads a pointer byte for the
+  plane), the hand's own tick (row 29, mouse input), image sequences.
+
+First run (2026-10-18): 50,000 cases, 2,000,000 operations, 483,463 with
+the object carried by a creature, 32,982 in a vehicle, 85,234 carried
+ticks.
+- LC native: 0 differing cases. The test found no defect.
+- LC as shipped: 5,265 differing cases, the same cases as the build with
+  only rows 22 and 27 fixed. Row 28 is also in the code, on the branch
+  for the hand's own search, which this test does not generate.

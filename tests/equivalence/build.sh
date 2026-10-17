@@ -208,5 +208,20 @@ for mode in fixed native rows; do
     $cxx $flags $define -o "$exe" "$here/vehicle_equivalence.cpp" "$here/native_image.cpp" \
         "$out/vehicle_traps_$mode.cpp" $vehicle
 done
+# Simple objects: the vehicle closure with the creature fan-out.
+simple="$src/creatures/events.cpp $vehicle"
+for mode in fixed native rows; do
+    case $mode in
+        fixed) define= ;;
+        native) define=-DLC_NATIVE_MODE ;;
+        rows) define="-DLC_NATIVE_MODE -DEQUIVALENCE_EXPECT=1 -DLC_FIX_22=1 -DLC_FIX_27=1" ;;
+    esac
+    exe="$out/simple_object_equivalence_$mode.exe"
+    $cxx $flags $define -Wl,--no-demangle -o "$exe" "$here/simple_object_equivalence.cpp" \
+        "$here/native_image.cpp" $simple > "$out/simple_object_$mode.link" 2>&1 || true
+    python3 "$here/trap_stubs.py" "$out/simple_object_$mode.link" "$out/simple_object_traps_$mode.cpp"
+    $cxx $flags $define -o "$exe" "$here/simple_object_equivalence.cpp" "$here/native_image.cpp" \
+        "$out/simple_object_traps_$mode.cpp" $simple
+done
 echo "built in $out"
 
