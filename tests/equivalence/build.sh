@@ -47,4 +47,24 @@ for mode in fixed native row2 row4 row5 row6; do
         -o "$out/brain_equivalence_$mode.exe" \
         "$here/brain_equivalence.cpp" "$here/native_image.cpp" $brain
 done
+# The stimulus sink: creature.cpp and what it reaches.  Symbols it reaches
+# but the function under test never calls are trap stubs (trap_stubs.py).
+creature="$src/creatures/creature.cpp $src/creatures/attention.cpp $src/objects/object.cpp \
+          $src/creatures/skeleton.cpp $src/creatures/registry.cpp $src/creatures/learned_words.cpp \
+          $src/world/geometry.cpp $src/creatures/bacterium.cpp $src/brain/instinct.cpp \
+          $src/creatures/voice.cpp $src/common/time.cpp $brain $src/biochemistry/biochemistry.cpp"
+for mode in fixed native row9; do
+    case $mode in
+        fixed) define= ;;
+        native) define=-DLC_NATIVE_MODE ;;
+        row*) define="-DLC_NATIVE_MODE -DLC_FIX_${mode#row}=1 -DEQUIVALENCE_EXPECT=1" ;;
+    esac
+    exe="$out/stimulus_equivalence_$mode.exe"
+    $cxx $flags $define -Wl,--no-demangle -o "$exe" "$here/stimulus_equivalence.cpp" \
+        "$here/native_image.cpp" $creature > "$out/stimulus_$mode.link" 2>&1 || true
+    python3 "$here/trap_stubs.py" "$out/stimulus_$mode.link" "$out/stimulus_traps_$mode.cpp"
+    $cxx $flags $define -o "$exe" "$here/stimulus_equivalence.cpp" "$here/native_image.cpp" \
+        "$out/stimulus_traps_$mode.cpp" $creature
+done
 echo "built in $out"
+

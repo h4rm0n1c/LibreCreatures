@@ -72,3 +72,38 @@ cases, 70,008 brain updates.
   the stock genomes; 175 need several rows together. Rows 2, 4, 5 and 6 are
   the only switches in the brain code, and the native build matches on
   every case, so every difference comes from them.
+
+## Stimuli: `Creature::ApplyStimulus` @0040b8a0 (CE 10.3)
+
+What a creature does with a stimulus: magnitude scaling or the sense-neuron
+offset, sleep gating and halving, the attention record of the source's kind
+(target, position, sense neuron and activation), the attention (2) and
+general sensory (5) lobe inputs, the four chemicals, and the goal-direction
+matrix's learning from drive reducers.
+
+    WINEPREFIX=<throwaway prefix> tests/equivalence/run_stimulus.sh \
+        <CE 10.3 Creatures.exe> <cases> <build-dir> <genome.gen>...
+
+Each case grows an LC creature's brain from one of the genomes and gives the
+native side a Creature-shaped block holding the same state at the offsets
+ApplyStimulus reads (from its disassembly): sleep, motion link, the 40
+attention records, the goal matrix, lobes 2 and 5 and all 256 chemicals,
+all random. Six sources of random kind and position, and the creature
+itself, then send 1 to 4 random stimuli (descriptor flags, chemical ids
+weighted to the drive reducers, magnitudes below 0 and above 255); after
+each one every record, both lobes, the chemicals and the matrix must match.
+A source sometimes stands at y 4000, where `kill` parks objects (row 9).
+
+- creature.cpp reaches skeleton, sound, display and script code this
+  function never calls; those symbols are trap stubs (`trap_stubs.py`) that
+  name themselves and exit if reached.
+- Not generated: genera with no attention record (row 10's guard) and dead
+  creatures (both sides return at once). Goal weights are 0-255, as the
+  game makes them: native divides the update unsigned and LC signed, which
+  would differ only for a negative weight.
+
+First run (2026-10-17), the 12 stock genomes: 200,000 cases, 499,582
+stimuli.
+- LC native: 0 differing cases.
+- LC as shipped: 43,365 differing cases, the same cases as with row 9
+  alone fixed; row 9 is the only switch in apply_stimulus.
