@@ -126,6 +126,12 @@ const char* find_prefix_end(const char* recognized_word,
                                            : kLearnedWordVowels;
     const char* cursor = recognized_word;
 
+    // LibreCreatures deviation (guard).  RegenerateLearnedWordResponse
+    // @0040a1f0 tests each byte with _mbschr("aeiouAEIOU", c), which also
+    // finds the string's own terminator, so for a word of vowels only the
+    // scan runs on past the word's end and the copy writes over the bytes
+    // after it: the response, the reinforcement and the next record.  The
+    // scan stops at the end of the word.  (original-bugs.md row 80)
     while (*cursor != '\0') {
         const bool is_vowel =
             text_api.find_character(
