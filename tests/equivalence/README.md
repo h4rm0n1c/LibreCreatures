@@ -475,3 +475,59 @@ The sweep of 2026-10-18 searched the exe for every constant table in
 
 Three earlier copy defects were found by the function tests (the goal
 interaction scores and the motion pose table, see above).
+
+## Vehicles, lifts and call buttons (CE 10.3)
+
+| Function | Address | LC |
+| --- | --- | --- |
+| `Vehicle::Tick` | 0042bd90 | `Vehicle::tick` |
+| Vehicle queued events 0, 1, 2 | 0042c0b0, 0042c170, 0042c230 | `handle_queued_event_0` to `_2` |
+| `Lift::InitializeState` | 0042c320 | `Lift::initialize_state` |
+| `Lift::Tick` | 0042c4f0 | `Lift::tick` |
+| `Lift::RequestMoveUp`, `RequestMoveDown` | 0042c5c0, 0042c680 | `request_move_up`, `request_move_down` |
+| `Lift::SelectNearestCallButtonAndStartMove` | 0042c590 | `select_nearest_call_button_and_start_move` |
+| `CallButton::UpdateLiftStateAndQueueRedraw` | 00429a70 | `update_lift_state_and_queue_redraw` |
+| `CallButton::RequestLiftCall` | 00429c10 | `request_lift_call` |
+
+    WINEPREFIX=<throwaway prefix> tests/equivalence/run_vehicle.sh \
+        <CE 10.3 Creatures.exe> <cases> <build-dir>
+
+The native objects are real native objects. Each block has the native
+vtable of its class, so every virtual call runs native code. There are
+three exceptions:
+- slot 22 of the vehicle and lift (MoveByAndRedraw) is the native MoveBy
+  without the redraw;
+- the redraw at 0042b2b0 returns at once;
+- script dispatch (00419e00) is a recorder.
+LC's hosts are the game's.
+
+A lift case has these parts:
+- a lift of 1 to 3 parts;
+- 2 to 6 floors, as rooms one above the other;
+- one call button on each floor, registered through UpdateLiftState;
+- 0 to 3 passengers (simple objects whose bounds reference is the lift);
+- a creature and an object that ask for the lift.
+
+When a request starts the lift, the test sets a speed toward the floor on
+both sides, as the game's lift scripts do. A vehicle case has movement-bounds
+collision (flag 0x40) or terrain collision (flag 0x80, on random ground
+heights), with passengers and the same two sources. A lift case runs 200
+random operations and a vehicle case 80. After each operation these must
+match:
+- the vehicle: part positions, velocity, fixed-point position, collision
+  sides, interaction, floors, call buttons, selection, cooldown;
+- the passengers: position and movement bounds;
+- the call buttons: interaction and floor;
+- the scripts run, the queued object events and the queued stimuli.
+
+- Not generated: part animation sequences, and vehicles beyond one world
+  width (row 52).
+- Not compared: dirty rectangles.
+
+First run (2026-10-18): 50,000 cases, 8,045,880 operations, 21,120 lift
+arrivals, 106,229 operations with a collision side, 3,441,616 ticks with
+passengers.
+- LC native: 0 differing cases. The test found no defect.
+- LC as shipped: 36,625 differing cases, the same cases as the build with
+  only rows 23, 41, 45 and 52 fixed. They are the only switches in the code
+  under test.
