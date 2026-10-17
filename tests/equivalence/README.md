@@ -265,3 +265,45 @@ records seen first, 33,348 cases with a creature as motion link.
 - LC as shipped: 82,231 differing cases, the same cases as the build with
   only rows 9, 38 and 73 fixed; they are the only switches in the code
   under test.
+
+## Goal direction: `Creature::UpdateGoalDirection` @0040ccc0 with `Creature::ApplyGoalDirection` @0040abc0 (CE 10.3)
+
+How a creature with strong drives looks for a remembered object. The drives
+are scaled and set the push. Each attention record is scored from the goal
+matrix, and the best record with a known position wins. Then one of three
+things occurs:
+- The memory is cleared when the creature is in the same room, faces away
+  from the remembered position and is less than 500 pixels from it.
+- The stimulus-source lobe (2) is fed when the record has a target.
+- Otherwise a verb is chosen from the candidate tables: a known lift, the
+  call button's interaction event, left or right, above or below, and the
+  room type. The verb goes
+  into the verb lobe (3) or the pending goal-direction state.
+
+    WINEPREFIX=<throwaway prefix> tests/equivalence/run_goal.sh \
+        <CE 10.3 Creatures.exe> <cases> <build-dir> <genome.gen>...
+
+The native side is a Creature-shaped block with the 16 drive levels, the 40
+records, the goal matrix, the goal-direction state, lobes 2 and 3, death,
+sleep, the dream countdown, the bounds reference, the motion link, facing,
+foot point, movement bounds and sound position. Six objects of random kind
+are record targets and the motion link. Their interaction event byte
+(+0x24) is random. The room table (0x468d64) holds 0 to 6 random rooms of
+random type near the creature. LC's host answers from the same table, as
+the game's host does: the first room that contains the point. PtInRect is
+bound to a plain implementation.
+
+One update per case. Then every attention record, the goal-direction state
+and both lobes (firing and activation) must match.
+
+- Not generated: genera with no attention record (row 10) and goal weights
+  below 0.
+
+First run (2026-10-17), the 12 stock genomes: 200,000 cases, 6,641
+memories cleared, 112,363 updates fed lobe 2, 74,895 gave a verb.
+- The run found one translation defect in LC, now fixed: the third row of
+  the interaction-context scores (0045426c, the call button's interaction
+  event set) was copied two places to the left. C1 then favours the call
+  button (record 2, verb 4) and LC favoured the lift (record 27, verb 2).
+- LC native: 0 differing cases.
+- LC as shipped: 0 differing cases. The code under test has no switch.
