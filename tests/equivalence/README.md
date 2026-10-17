@@ -583,3 +583,61 @@ ticks.
 - LC as shipped: 5,265 differing cases, the same cases as the build with
   only rows 22 and 27 fixed. Row 28 is also in the code, on the branch
   for the hand's own search, which this test does not generate.
+
+## Learned words and phrases (CE 10.3)
+
+| Function | Address | LC |
+| --- | --- | --- |
+| `InitializeLearnedWordRecords` | 00409e80 | `initialize_learned_word_records` |
+| `InitializeDefaultVocabulary` | 0040a490 | `initialize_default_vocabulary` |
+| `UpdateLearnedWordRecord` | 0040a0c0 | `update_learned_word_record` |
+| `RegenerateLearnedWordResponse` | 0040a1f0 | `regenerate_learned_word_response` |
+| `NormalizeLearnedWordResponse` | 0040a380 | `normalize_learned_word_response` |
+| `SpeakDominantDrivePhrase` | 0040b160 | `speak_dominant_drive_phrase` |
+| `SpeakActionPhrase` | 0040afa0 | `speak_action_phrase` |
+
+    WINEPREFIX=<throwaway prefix> tests/equivalence/run_words.sh \
+        <CE 10.3 Creatures.exe> <cases> <build-dir>
+
+The native creature is a Creature-shaped block. It holds:
+- the 80 learned-word records at +0xb64, 56 bytes each: recognized word,
+  response word, and reinforcement at +0x34;
+- the classifier, the sleep flag, the drive levels, the selected action
+  and the motion link.
+
+The CRT functions rand, _mbsstr, _mbsinc, _mbschr, _mbsicmp, strcpy_s and
+strcat_s are bound to plain single-byte implementations, and LC's text API
+is the same. Speak, SpeakTextWithVoice and the speech-range event queue
+are recorders on both sides.
+
+Each case has random records (words of 1 to 12 letters, real and made up,
+any reinforcement) and a random classifier (either sex partition). Then 24
+random operations run:
+- initialize the records;
+- initialize the default vocabulary;
+- hear a word: a record's own word, another record's word or a new word,
+  from an object or a creature, awake or asleep;
+- regenerate a response;
+- normalize a response;
+- say the dominant drive's phrase;
+- say the action phrase, with or without a motion link.
+
+After each operation, all 80 records, the return value, everything said
+and queued, and the rand state must match.
+
+- Not generated: words too long for the 25-byte record (native strcpy_s
+  stops the program), and the response of a word of vowels only (row 80).
+
+First run (2026-10-18): 50,000 cases, 1,200,000 operations, 644,539
+things said, 88,981 words relearned.
+- The test found one translation defect in LC, now fixed. The baby-talk
+  response is repeated when it is shorter than three letters, and also
+  when it is shorter than five letters and the heard word is longer than
+  five. LC repeated only in the first case: "friendly" gave "nri" where
+  C1 gives "nrinri". Before the fix, 2,238 of 5,000 cases differed.
+- The test also found a native defect that LC already guarded against,
+  now row 80. For a word of vowels only, native scans past the word and
+  writes over the record.
+- LC native: 0 differing cases.
+- LC as shipped: 12,663 differing cases, the same cases as the build with
+  only row 14 fixed (the space in "come Norn").

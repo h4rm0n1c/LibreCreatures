@@ -223,5 +223,20 @@ for mode in fixed native rows; do
     $cxx $flags $define -o "$exe" "$here/simple_object_equivalence.cpp" "$here/native_image.cpp" \
         "$out/simple_object_traps_$mode.cpp" $simple
 done
+# Learned words and phrases: the creature closure, rand shared.
+for mode in fixed native rows; do
+    case $mode in
+        fixed) define= ;;
+        native) define=-DLC_NATIVE_MODE ;;
+        rows) define="-DLC_NATIVE_MODE -DEQUIVALENCE_EXPECT=1 -DLC_FIX_14=1" ;;
+    esac
+    exe="$out/words_equivalence_$mode.exe"
+    wrap="-Wl,--wrap=rand -Wl,--wrap=srand"
+    $cxx $flags $define $wrap -Wl,--no-demangle -o "$exe" "$here/words_equivalence.cpp" \
+        "$here/native_image.cpp" $creature > "$out/words_$mode.link" 2>&1 || true
+    python3 "$here/trap_stubs.py" "$out/words_$mode.link" "$out/words_traps_$mode.cpp"
+    $cxx $flags $define $wrap -o "$exe" "$here/words_equivalence.cpp" "$here/native_image.cpp" \
+        "$out/words_traps_$mode.cpp" $creature
+done
 echo "built in $out"
 
