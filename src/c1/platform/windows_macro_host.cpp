@@ -1427,33 +1427,7 @@ std::uint32_t WindowsCreatureAttentionHost::classifier_base(
 creatures1::creatures::ActionTargetRequirement
 WindowsCreatureAttentionHost::action_target_requirement(
     std::size_t action_index) const {
-    // g_action_target_requirements[16] @ 00454450, one entry per Decision-lobe
-    // neuron index, which is also the C1CreatureAction value.  Actions 12-15
-    // are reserved headroom the shipped game never uses: the table marks them
-    // not_selectable, and no family-4 script in a populated World.sfc carries
-    // their event numbers.
-    using Requirement = creatures1::creatures::ActionTargetRequirement;
-    static constexpr Requirement kActionTargetRequirements[16] = {
-        Requirement::always_eligible,     // 0  quiescent
-        Requirement::requires_target,     // 1  activate 1
-        Requirement::requires_target,     // 2  activate 2
-        Requirement::requires_target,     // 3  deactivate
-        Requirement::requires_target,     // 4  approach
-        Requirement::requires_target,     // 5  retreat
-        Requirement::requires_target,     // 6  get
-        Requirement::always_eligible,     // 7  drop
-        Requirement::always_eligible,     // 8  express need
-        Requirement::requires_no_target,  // 9  rest
-        Requirement::always_eligible,     // 10 travel west
-        Requirement::always_eligible,     // 11 travel east
-        Requirement::not_selectable,      // 12 reserved
-        Requirement::not_selectable,      // 13 reserved
-        Requirement::not_selectable,      // 14 reserved
-        Requirement::not_selectable,      // 15 reserved
-    };
-    return action_index < std::size(kActionTargetRequirements)
-               ? kActionTargetRequirements[action_index]
-               : Requirement::not_selectable;
+    return creatures1::creatures::action_target_requirement_for(action_index);
 }
 
 creatures1::creatures::AttentionClassifier

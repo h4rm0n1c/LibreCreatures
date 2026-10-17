@@ -79,6 +79,9 @@ enum class ActionTargetRequirement : std::uint8_t {
     requires_target = 3,
 };
 
+// g_action_target_requirements @ 00454450: which actions need a target.
+ActionTargetRequirement action_target_requirement_for(std::size_t action_index);
+
 // A Creature is also represented by an Object in the world hierarchy, but
 // this clean model does not fake that inheritance across incomplete layouts.
 // The world supplies the identity relationship explicitly where an Object
@@ -1298,6 +1301,10 @@ public:
     }
 
 private:
+    // tests/equivalence sets action-selection state through this; nothing
+    // in the game defines it.
+    friend class CreatureTestAccess;
+
     std::array<LearnedWordRecord, kLearnedWordRecordCount>
         learned_word_records_{};
     Skeleton skeleton_{};

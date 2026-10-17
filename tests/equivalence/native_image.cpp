@@ -151,4 +151,14 @@ void NativeImage::make_return(std::uint32_t address) {
     FlushInstructionCache(GetCurrentProcess(), at<void*>(address), 1);
 }
 
+void NativeImage::redirect(std::uint32_t address, const void* function) {
+    std::uint8_t* code = at<std::uint8_t*>(address);
+    const auto target = reinterpret_cast<std::uintptr_t>(function);
+    const std::int32_t displacement =
+        static_cast<std::int32_t>(target - (reinterpret_cast<std::uintptr_t>(code) + 5));
+    code[0] = 0xe9;  // jmp rel32
+    std::memcpy(code + 1, &displacement, 4);
+    FlushInstructionCache(GetCurrentProcess(), code, 5);
+}
+
 } // namespace equivalence

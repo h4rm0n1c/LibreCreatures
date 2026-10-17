@@ -107,3 +107,42 @@ stimuli.
 - LC native: 0 differing cases.
 - LC as shipped: 43,365 differing cases, the same cases as with row 9
   alone fixed; row 9 is the only switch in apply_stimulus.
+
+## Action selection: `Creature::UpdateActionSelection` @0040c630 with `Creature::SetAction` @0040b680 (CE 10.3)
+
+Involuntary actions (cooldowns, trigger rolls, their scripts), the choice
+of action from the decision lobe and the action-target table, clearing the
+old action's neuron, the sleep indicator's teardown, SetAction's event to
+the bounds reference, its target-override, own and quiescent script
+lookups, the speech roll and the chosen neuron's boost.
+
+    WINEPREFIX=<throwaway prefix> tests/equivalence/run_action.sh \
+        <CE 10.3 Creatures.exe> <cases> <build-dir> <genome.gen>...
+
+Each case grows an LC creature's brain from one of the genomes and gives the
+native side a Creature-shaped block with the same state at the offsets the
+two functions read (dream countdown, the eight involuntary actions, the
+active involuntary action, the selected action and boost, sleep and its
+indicator object, motion link, bounds reference and mode, the decision
+lobe). Scripts exist for a random set of classifiers: native
+`ExecuteScriptForClassifier` (@00419e00, owner in ECX, source in EDX) is
+redirected to a recorder that answers from that set, and LC's host answers
+from the same set. Both sides draw rand from the MSVC formula with equal
+seeds. Up to six updates run per case; after each, the state, every script
+lookup in order, the sleep indicator's calls, the events in the immediate
+event ring and whether a phrase was chosen must match. A phrase ends the
+case: native's phrase functions are recorders, so the rand streams part.
+LC's action-target table (`action_target_requirement_for`) is also checked
+against native's at @00454450.
+
+- Not generated: a creature with no quiescent script (native SetAction then
+  retries action 0 for ever), negative selected actions, decision lobes of
+  other than 16 neurons.
+
+First run (2026-10-17), the 12 stock genomes: 200,000 cases, 1,068,397
+updates (37,037 cases ended by speech); coverage: 307,894 updates looked
+up scripts, 239,083 looked up involuntary actions, 32,260 queued events,
+24,886 tore down the sleep indicator.
+- LC native: 0 differing cases.
+- LC as shipped: 10,357 differing cases, the same cases as with row 11
+  alone fixed; row 11 is the only switch in the two functions.

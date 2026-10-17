@@ -66,5 +66,20 @@ for mode in fixed native row9; do
     $cxx $flags $define -o "$exe" "$here/stimulus_equivalence.cpp" "$here/native_image.cpp" \
         "$out/stimulus_traps_$mode.cpp" $creature
 done
+# Action selection: the same closure, rand shared as for the brain.
+for mode in fixed native row11; do
+    case $mode in
+        fixed) define= ;;
+        native) define=-DLC_NATIVE_MODE ;;
+        row*) define="-DLC_NATIVE_MODE -DLC_FIX_${mode#row}=1 -DEQUIVALENCE_EXPECT=1" ;;
+    esac
+    exe="$out/action_equivalence_$mode.exe"
+    wrap="-Wl,--wrap=rand -Wl,--wrap=srand"
+    $cxx $flags $define $wrap -Wl,--no-demangle -o "$exe" "$here/action_equivalence.cpp" \
+        "$here/native_image.cpp" $creature > "$out/action_$mode.link" 2>&1 || true
+    python3 "$here/trap_stubs.py" "$out/action_$mode.link" "$out/action_traps_$mode.cpp"
+    $cxx $flags $define $wrap -o "$exe" "$here/action_equivalence.cpp" "$here/native_image.cpp" \
+        "$out/action_traps_$mode.cpp" $creature
+done
 echo "built in $out"
 
