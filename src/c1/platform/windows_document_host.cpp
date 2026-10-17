@@ -4312,7 +4312,10 @@ void C1WindowsDocument::move_scenery_to_and_redraw( creatures1::objects::Scenery
 }
 
 void C1WindowsDocument::find_nearest_room_bounds_at_point( int world_x, int world_y, creatures1::world::WorldRect& out_bounds) const {
-    creatures1::world::MapRectangle map_bounds{};
+    // FindNearestMapRoomBoundsAtPoint @00422d70 updates the caller's
+    // rectangle in place: with no room spanning world_x, only bottom changes.
+    creatures1::world::MapRectangle map_bounds{out_bounds.min_x, out_bounds.min_y,
+                                               out_bounds.max_x, out_bounds.max_y};
     if (world_runtime_ != nullptr) {
         creatures1::world::find_nearest_room_bounds_at_point(
             world_runtime_->map_data().room_table(), world_x, world_y,
