@@ -323,7 +323,9 @@ void Skeleton::initialize_pose_and_motion_state() {
     motion_target_y = 0;
     set_bounds_reference_object(nullptr);
     caos_object_pointer = nullptr;
-    drive_threshold_state = 1;
+    // InitializePoseAndMotionState @0043ac70 stores the word 0x0100 at
+    // +0x11d: the drive expression starts at 0, the eyes open.
+    drive_threshold_state = 0;
     eyes_open = true;
     set_gallery(nullptr);
 
