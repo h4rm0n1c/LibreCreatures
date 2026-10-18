@@ -125,9 +125,10 @@ namespace {
 
 // A script cursor as Macro::Serialize @004195f0 loads it: 0 when the saved
 // value, read as a signed int, is below 0 or past the script capacity.
-// Guard: the original keeps a cursor between the end of the script text and
-// the capacity, where its buffer holds uninitialised bytes; LibreCreatures
-// stops it at the end of the text.
+// LibreCreatures deviation (guard, original-bugs.md row 85): the original
+// keeps a cursor between the end of the script text and the capacity, where
+// its buffer holds uninitialised bytes; LibreCreatures stops it at the end of
+// the text.
 std::size_t loaded_script_offset(std::uint32_t saved,
                                  std::uint32_t capacity,
                                  std::size_t text_length) {

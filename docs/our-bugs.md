@@ -64,6 +64,10 @@ does.
 | L20 | The game's host started the nearest-room function from an empty rectangle. The original changes the caller's rectangle in place, so an object outside every room keeps the sides of its last room. | An object that left every room lost its walls; the original lets it keep the old ones. | `FindNearestMapRoomBoundsAtPoint` @00422d70 | 9ef59da | geometry test |
 | L21 | The overlap test of the creature fan-out counted a rectangle with no area as touching. The original uses IntersectRect. | Things with no size could still bump into things. | fan-out @00423090, @004231f0, @00423470 | 6f31fff | fan-out test |
 | L22 | One unused byte of ambient environment record 9 was wrong. | Nothing a player can see. | ambient table | 165ef7f | table check |
+| L25 | A world load did not send event 7 to the loaded objects. The original sends it to every object after it updates the object's bounds. | A saved world woke up with its load scripts asleep. Things that set themselves going at load stood still until something poked them. | `SFCDoc::Serialize` @004311a0 (00431a12), `DispatchEvent7AfterBoundsUpdate` @00425c00 | cb549ba | world test |
+| L26 | Clearing the map made a new Bacterium, which takes five `rand()` draws. The original only frees the map. | The dice were rolled five more times than in the original before the world even started. | `~MapData_Deleting` @00422950 | cb549ba | world test |
+| L29 | `pose` deleted the object's animation buffer. The original keeps the buffer and only sets its first byte to 0. | Nothing a player can see. A saved world lost an empty animation record that the original keeps. | `SetRelativeImageIndexAndRedraw` @00415850 | cb549ba | world test |
+| L30 | The two saved words of the event bar were kept only for one load or save. The original keeps them on the event bar, so a save writes back what the load read. | Two numbers in every saved world, with no known meaning, came back as 0. Now they come back as they went in. Their meaning is still unknown. | `CEventBar::Serialize` @00416fe0 | cb549ba | world test |
 
 ## Scripts and kits
 
@@ -71,3 +75,5 @@ does.
 | --- | --- | --- | --- | --- | --- |
 | L23 | `room` with an index past the 40 room records skipped its last operand. The original reads it and discards it. | One COB ("Creatures Update 2") stopped reading its script half way, like a recipe with the last page torn out. | `room` @004202fa | b56a5c5 | COB replay |
 | L24 | The host copied at most 4,095 bytes of a kit's macro reply. The original returns up to 16 KiB. | A kit that asked about a big world got the first 4 KB of the answer and nothing more. | `ExecuteAndPublishMacroOutput` @00419340 | 8016615 | COB replay |
+| L27 | A saved script cursor below 0 or past the script's capacity was moved to the end of the script. The original sets it to 0. The value-stack cursor had the same fault. | A script saved with a broken bookmark jumped to its last page instead of going back to the start. | `Macro::Serialize` @004195f0 | cb549ba | world test |
+| L28 | A completed `wait` let the script go on to its next command in the same tick. In the original, a completed `wait` ends the script's turn. | After every `wait`, a script did its next thing one tick too soon. Objects were a little too keen. | `wait` (ExecuteInterpreter, 004202ac) | cb549ba | world test |

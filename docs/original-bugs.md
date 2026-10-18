@@ -55,7 +55,7 @@ Some rows are not switched:
 
 - **Guards** against native crashes, memory corruption or reads past a
   buffer: rows 3, 10, 19, 20, 21, 34, 46, 47, 48, 58, 60, 63, 66, 77, 78, 79, 80,
-  81, 82 and 84.  On
+  81, 82, 84 and 85.  On
   any input where native does not crash or corrupt memory they behave as
   native does; a crash cannot be compared.
 - **Row 25:** native's plane depends on heap addresses, so it cannot be
@@ -136,6 +136,7 @@ files; **test** = seen in a function test that runs the native code
 | 56 | `gsub` finds its `subr` label by scanning the raw script, so `subr <id>` inside bracketed text before the real label sends it to the wrong place, and its cache keeps that place. | `ExecuteInterpreter` @0041dc40 (scan at 0041e420) | dce8d60 | code, lab |
 | 61 | A script that ends is removed by shifting the later scripts down a slot, but the scheduler still steps to the next slot, so the script after it loses its turn that tick and its `wait` runs a tick long. | `SFCDoc::UpdateWorld` @004324e0, `RemoveFromRunningSchedulerAndDestroy` @0041a3e0 | 0d4dcf4 | code, lab |
 | 65 | A syntax error in a script shows a modal box, "Press OK to continue, or Cancel to kill the macro", from inside the running script. Cancel on a script a kit sent through the pipe ends the game: the C runtime aborts while a string is released. | `Macro::ReportSyntaxError` @0041daa0, `MsvcBasicString_Reset` @00406420 | 71431ba, 02dea96 | code, lab |
+| 85 | A saved script cursor between the end of the script text and the script's capacity is kept on load, so the script then runs on from bytes after the text that the load never set. | `Macro::Serialize` @004195f0 | cb549ba | code, test |
 
 ### World, objects and vehicles
 
