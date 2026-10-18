@@ -721,7 +721,7 @@ int main(int argc, char** argv) {
             genome::Genome g(moniker, sex, life_stage, &file);
             creatures::SkeletonSpriteBuildServices services{
                 host, lifetime, host, host, host, host, pixel_cache, sprite_files, palette, palette_builds,
-                lc_root + "out\\", lc_root + "Images\\", nullptr, 100, nullptr};
+                lc_root + "out\\", lc_root + "Images\\", nullptr, 100};
             const bool lc_loaded = lc.load_genome(g, services, hosts, hosts);
 
             std::vector<std::uint8_t> reader_bytes = bytes;
