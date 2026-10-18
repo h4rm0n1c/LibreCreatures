@@ -618,14 +618,11 @@ int main(int argc, char** argv) {
                     std::printf("palette %u %u %u %u %u: entry %d native %u lc %u\n", c[0], c[1], c[2], c[3], c[4],
                                 at, native_table[at], lc_table.remapped_palette_index[at]);
                     if (at >= 10 && at < 246 && std::getenv("EQUIVALENCE_PALETTE_DETAIL") != nullptr) {
-                        const auto transform = display::make_creature_colour_transform(c[0], c[1], c[2], c[3], c[4]);
                         const auto& source = palette.colours[at - 10];
-                        const auto target = transform.apply(source.red, source.green, source.blue);
                         const auto& n = palette.colours[native_table[at] - 10];
                         const auto& l = palette.colours[lc_table.remapped_palette_index[at] - 10];
-                        std::printf("  source %u %u %u, lc target %d %d %d, native pick %u %u %u, lc pick %u %u %u\n",
-                                    source.red, source.green, source.blue, target[0], target[1], target[2], n.red,
-                                    n.green, n.blue, l.red, l.green, l.blue);
+                        std::printf("  source %u %u %u, native pick %u %u %u, lc pick %u %u %u\n", source.red,
+                                    source.green, source.blue, n.red, n.green, n.blue, l.red, l.green, l.blue);
                     }
                 }
                 ++palette_differing;
