@@ -68,7 +68,8 @@ life 20000 1000 -
 express 20000 1000 g
 biogenes 20000 1000 g
 braingenes 5000 250 g
-skelgenes 500 50 s"
+skelgenes 500 50 s
+breed 20000 1000 g"
 
 summary=$out/run_all.summary
 : > "$summary"

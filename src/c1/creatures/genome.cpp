@@ -443,6 +443,9 @@ void Genome::recombine_genome_streams(Genome& maternal,
 
     Genome* active = (random.next() & 1u) == 0 ? &paternal : &maternal;
     Genome* other = active == &maternal ? &paternal : &maternal;
+    // The identity of the last gene copied; 0 before the first, as the
+    // original starts it.
+    std::array<std::uint8_t, 3> copied_identity{};
     while (true) {
         const std::size_t run_length = random.next() % 0x5b + 10;
         std::size_t copied = 0;
@@ -452,6 +455,11 @@ void Genome::recombine_genome_streams(Genome& maternal,
                 mutations = mutation_count_;
                 append_end_tag(payload_);
                 return;
+            }
+            if (active->cursor_ + 7 <= active->payload_.size()) {
+                copied_identity = {active->payload_[active->cursor_ + 4],
+                                   active->payload_[active->cursor_ + 5],
+                                   active->payload_[active->cursor_ + 6]};
             }
             copy_gene_with_mutation(*active, random);
             ++copied;
@@ -481,6 +489,12 @@ void Genome::recombine_genome_streams(Genome& maternal,
         if (other->cursor_ == other->payload_.size()) {
             continue;
         }
+        // RecombineGenomeStreams @00418a20 does not cross over where the
+        // next gene has the identity of the gene it just copied (a duplicated
+        // gene): it copies another run from the same parent.
+        if (identity == copied_identity) {
+            continue;
+        }
 
         ++crossovers;
         if (random.next() % 0x51u != 0) {
@@ -493,6 +507,9 @@ void Genome::recombine_genome_streams(Genome& maternal,
             if ((active->payload_[active->cursor_ + 9] &
                  kGeneDuplicationEnabled) != 0) {
                 ++duplications;
+                // The original adds one to the gene's generation (header
+                // byte 7) in the parent's own copy, then copies it.
+                ++active->payload_[active->cursor_ + 7];
                 copy_gene_with_mutation(*active, random);
             }
         } else if ((other->payload_[other->cursor_ + 9] &

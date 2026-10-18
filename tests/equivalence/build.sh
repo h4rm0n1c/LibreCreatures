@@ -322,6 +322,18 @@ for mode in fixed native rows; do
         "$here/skelgenes_equivalence.cpp" "$here/native_image.cpp" "$out/skelgenes_traps_$mode.cpp" \
         $skelgenes
 done
+# Breeding: the genome recombination.  Row 7 is the switch in the code
+# under test; the rows build is native with that row fixed.
+for mode in fixed native rows; do
+    case $mode in
+        fixed) define= ;;
+        native) define=-DLC_NATIVE_MODE ;;
+        rows) define="-DLC_NATIVE_MODE -DEQUIVALENCE_EXPECT=1 -DLC_FIX_7=1" ;;
+    esac
+    $cxx $flags $define -o "$out/breed_equivalence_$mode.exe" "$here/breed_equivalence.cpp" \
+        "$here/native_image.cpp" $src/creatures/genome.cpp $src/common/compat.cpp \
+        $src/common/static_data.cpp $src/common/logging.cpp
+done
 # The world test's native side: the original's own load and save, through
 # the real MFC; no LC code (LC's side is the game, see run_world.sh).
 $cxx $flags -o "$out/world_roundtrip_native.exe" "$here/world_roundtrip_native.cpp" \
