@@ -630,6 +630,12 @@ bool Skeleton::build_creature_sprite_gallery(
             part, creature_genus_selector, genome.sex(), genome.life_stage(),
             body_part_variant_by_index[part_number], genome_source_filename,
             services.body_resources);
+        // LibreCreatures deviation: when no file of the part exists for any
+        // variant, stage or sex (genus 2 or 3 from a mutated genus gene; a
+        // tail part from a mutated appearance gene, as the CE data has no
+        // tail art), native LoadGenome @0043c800 goes on with file id 0,
+        // takes the image folder itself as the sprite file, and its CFile
+        // throws.  Here the load stops and fails (row 84).
         if (source.resource.stem == 0) {
             return false;
         }
