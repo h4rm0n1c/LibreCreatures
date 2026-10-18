@@ -2,7 +2,7 @@
 
 This is the list of defects in Creatures 1 itself that LibreCreatures
 corrects. It does not list defects in this port's own translation; those
-are ordinary bug fixes and are in the commit history.
+that the verification tests found are in [`our-bugs.md`](our-bugs.md).
 
 "Native" means the Community Edition `Creatures.exe` (Community Release
 10.3) that this project was recovered from. Most of these defects are
