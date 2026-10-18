@@ -55,7 +55,7 @@ Some rows are not switched:
 
 - **Guards** against native crashes, memory corruption or reads past a
   buffer: rows 3, 10, 19, 20, 21, 34, 46, 47, 48, 58, 60, 63, 66, 77, 78, 79, 80,
-  81, 82, 84, 85 and 86.  On
+  81, 82, 84, 85, 86 and 87.  On
   any input where native does not crash or corrupt memory they behave as
   native does; a crash cannot be compared.
 - **Row 25:** native's plane depends on heap addresses, so it cannot be
@@ -164,6 +164,7 @@ files; **test** = seen in a function test that runs the native code
 | 77 | A `new:` object whose sprite file is missing crashes the game. The object is added to the object list before its sprite is loaded; the load fails, the half-built object is freed, and the next world tick runs the freed object. COBs that use a sprite they do not ship (Creatures Caves 891 "Duck", 1401) crash the original after its "Cross your fingers" box. | `Object::Object` @00425750, `SimpleObject::SimpleObject` @00426cf0, `CompoundObject::CompoundObject` @0042a800 | 3ec81ce | code, lab (CE) |
 | 78 | `mvto` on a compound object, vehicle or blackboard that has no part 0 yet crashes the game: the move reads part 0's picture without checking that the part exists. | `CompoundObject::MoveToAndRedraw` @0042ae40 (fault at 0042ae94) | 86b7204 | code, lab (CE) |
 | 79 | An object whose picture number equals the number of pictures in its sprite range is drawn from past the end of the picture list: the renderer reads whatever memory follows, and can crash. Creatures Caves 187 "Goldfish" (`anim [5678R]` on 8-picture ranges) crashes the original this way when other COBs are installed beside it. | `CWorldRenderer::RenderWorldRectToDIB` @00412aa0 (`cmp`/`jg`), crash in `CImage::GetPixelData` @00442ac0 | 5924b70, 19036e8 | code, lab (CE, gdb) |
+| 87 | A speech bubble's 25-byte text field is never cleared, so a saved world holds whatever the heap had after the end of the text (seen: a piece of a script, "it var0,pose 46,d"). Nothing reads those bytes, but no two saves of the same world are alike. | `Bubble::Bubble` @00429da0, `Bubble::SetText` @0042a1a0 | 1402c65 | code, test |
 
 ### The hand and the interface
 

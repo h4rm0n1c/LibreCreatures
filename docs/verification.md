@@ -322,7 +322,7 @@ round trip).
 - 45 ticks: every field the same. The only bytes that differ are those
   after the end of a speech bubble's text: the original writes the
   uninitialised bytes of its 25-byte buffer there, and LibreCreatures
-  writes zeros.
+  writes zeros (original-bugs.md row 87).
 - Both sides take the same number of random numbers in every tick.
 
 Two limits:
@@ -334,7 +334,8 @@ Two limits:
   few bytes, gives different saves. A multi-tick comparison is exact only
   until the first migration that this can change.
 - On `neorender`, speech bubbles share one balloon image and draw their
-  words as an overlay (0c0207e). The original gives every bubble its own
+  words as an overlay (0c0207e); this is a kept deviation, also in native
+  mode. The original gives every bubble its own
   copy, so with a bubble in the world the saved image flags differ, and with
   two the object references in the file differ too. The 45-tick result is
   from a `main` build, which keeps the original's bubbles.
