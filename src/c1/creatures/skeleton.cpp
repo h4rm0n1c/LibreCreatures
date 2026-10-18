@@ -86,6 +86,18 @@ void load_fixed_text(std::string_view text, char* destination,
     std::copy_n(text.data(), copy_count, destination);
 }
 
+// A pose string as Skeleton::Serialize @0043ade0 loads it: strcpy_s into
+// the 16-byte field, so up to 15 characters and the terminator.
+// LibreCreatures deviation (guard, original-bugs.md row 86): a longer string
+// makes the original's strcpy_s fail, which ends the game; LibreCreatures
+// keeps its first 15 characters.
+void load_pose_text(std::string_view text, PoseString& pose) {
+    pose.characters.fill('\0');
+    std::copy_n(text.data(), std::min(text.size(), pose.characters.size()),
+                pose.characters.data());
+    pose.nul_terminator = '\0';
+}
+
 std::string_view fixed_text(const char* text, std::size_t capacity) {
     std::size_t length = 0;
     while (length < capacity && text[length] != '\0') {
@@ -164,15 +176,15 @@ void Skeleton::serialize(SkeletonArchive& archive,
         down_foot_x = archive.read_int32();
         down_foot_y = archive.read_int32();
         normal_render_plane = archive.read_int32();
-        load_fixed_text(archive.read_string(), current_pose.characters.data(),
-                        current_pose.characters.size());
+        load_pose_text(archive.read_string(), current_pose);
         drive_threshold_state = archive.read_byte();
         eyes_open = archive.read_byte() != 0;
         sleep_indicator_active = archive.read_byte() != 0;
         for (PoseString& pose : pose_string_table) {
-            load_fixed_text(archive.read_string(), pose.characters.data(),
-                            pose.characters.size());
+            load_pose_text(archive.read_string(), pose);
         }
+        // strcpy_s into the 18-byte gait field: up to 17 characters
+        // (a longer one is guarded as row 86 is).
         for (auto& gait : gait_animation_table) {
             load_fixed_text(archive.read_string(), gait.data(), gait.size());
         }

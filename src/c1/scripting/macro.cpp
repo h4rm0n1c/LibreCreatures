@@ -560,9 +560,10 @@ MacroControlFlowResult Macro::execute_global_subroutine_command() {
     if (target_id == subroutine_cache_id) {
         script_cursor_offset = std::min(subroutine_cache_cursor_offset,
                                          readable_capacity);
+        // `gsub` (0041e3c1) goes on in the same turn.
         return execution_terminated
                    ? MacroControlFlowResult::execution_terminated
-                   : MacroControlFlowResult::cursor_changed;
+                   : MacroControlFlowResult::iteration_complete;
     }
 
     constexpr CaosToken subroutine_marker =
@@ -607,7 +608,7 @@ MacroControlFlowResult Macro::execute_global_subroutine_command() {
             script_cursor_offset = body_offset;
             return execution_terminated
                        ? MacroControlFlowResult::execution_terminated
-                       : MacroControlFlowResult::cursor_changed;
+                       : MacroControlFlowResult::iteration_complete;
         }
     }
 
@@ -2018,14 +2019,15 @@ MacroControlFlowResult Macro::execute_over_command(MacroCommand command) {
         return MacroControlFlowResult::execution_terminated;
     }
 
-    // Native `over` has no operands.  A null target completes the command;
-    // otherwise the Object virtual image-sequence query owns the per-part
-    // animation state.  An active sequence rewinds the five-byte command so
-    // the scheduler retries OVER on the next interpreter tick.
+    // Native `over` (00420017) has no operands.  The Object virtual
+    // image-sequence query owns the per-part animation state.  An active
+    // sequence rewinds the five-byte command so the scheduler retries OVER on
+    // the next interpreter tick.  Every path, a null target and a finished
+    // sequence too, ends the script's turn.
     objects::Object* target = object_context.target_object;
     if (target == nullptr ||
         target->image_sequence_is_empty(selected_part_index)) {
-        return MacroControlFlowResult::iteration_complete;
+        return MacroControlFlowResult::cursor_changed;
     }
 
     constexpr std::size_t kCaosCommandRecordBytes = sizeof(CaosToken) + 1;
@@ -2573,9 +2575,12 @@ MacroControlFlowResult Macro::execute_approach_command(
 
     objects::Object* target = object_context.target_object;
     if (command == MacroCommand::approach) {
-        if (target != nullptr && runtime.is_creature_object(*target)) {
-            runtime.select_creature_walk_gait(*target);
+        // Native `appr` (004200be) with no Creature target goes on in the
+        // same turn and leaves the command as it is.
+        if (target == nullptr || !runtime.is_creature_object(*target)) {
+            return MacroControlFlowResult::iteration_complete;
         }
+        runtime.select_creature_walk_gait(*target);
         // Native `appr` converts the consumed command to `APPR` and rewinds
         // to it.  The next interpreter tick therefore evaluates the
         // approach continuation against the current motion target.
@@ -2594,10 +2599,11 @@ MacroControlFlowResult Macro::execute_approach_command(
         // A non-Creature target takes the native fallback: lower-case `appr`
         // is left for the ordinary gait-selection branch on the next pass.
         rewrite_consumed_command(static_cast<CaosToken>(MacroCommand::approach));
-        // Not rewound: execution carries on past the rewritten command.
+        // Not rewound; `APPR` (0041e1d0) ends the script's turn on every
+        // path.
         return execution_terminated
                    ? MacroControlFlowResult::execution_terminated
-                   : MacroControlFlowResult::iteration_complete;
+                   : MacroControlFlowResult::cursor_changed;
     }
 
     if (runtime.creature_approach_is_ready(*target)) {
@@ -2605,7 +2611,7 @@ MacroControlFlowResult Macro::execute_approach_command(
         runtime.reset_creature_animation_sequence(*target);
         return execution_terminated
                    ? MacroControlFlowResult::execution_terminated
-                   : MacroControlFlowResult::iteration_complete;
+                   : MacroControlFlowResult::cursor_changed;
     }
 
     // The native far-from-target path retries APPR on the next scheduler
@@ -3211,10 +3217,11 @@ MacroControlFlowResult Macro::execute_kill_command(
     // leaves the interpreter when that target is this Macro's script owner.
     objects::Object* target =
         object_from_value(parse_rvalue(runtime, diagnostics), runtime);
+    // `kill` (0041f19c) ends the script's turn unless it killed the owner.
     if (target == nullptr) {
         return execution_terminated
                    ? MacroControlFlowResult::execution_terminated
-                   : MacroControlFlowResult::iteration_complete;
+                   : MacroControlFlowResult::cursor_changed;
     }
 
     // Killing the owner purges the owner's destroy-when-finished macros, which
@@ -3226,7 +3233,7 @@ MacroControlFlowResult Macro::execute_kill_command(
     if (target == script_owner) {
         return MacroControlFlowResult::macro_destroyed;
     }
-    return MacroControlFlowResult::iteration_complete;
+    return MacroControlFlowResult::cursor_changed;
 }
 
 MacroControlFlowResult Macro::execute_object_enumeration_command(
@@ -3351,9 +3358,11 @@ MacroControlFlowResult Macro::execute_object_enumeration_command(
 
         object_context.target_object = object_context.script_owner;
         seek_next_command();
+        // `enum` (0041fa85) with no match goes on past `next` in the same
+        // turn.
         return execution_terminated
                    ? MacroControlFlowResult::execution_terminated
-                   : MacroControlFlowResult::cursor_changed;
+                   : MacroControlFlowResult::iteration_complete;
     }
 
     if (command != MacroCommand::next) {
@@ -3417,7 +3426,9 @@ MacroControlFlowResult Macro::execute_object_enumeration_command(
         }
         enum_removal_serials[caos_value_stack_cursor_index - 1] =
             runtime.non_scenery_removal_serial();
-        return MacroControlFlowResult::cursor_changed;
+        // `next` (0042050e) jumps back to the loop and goes on in the same
+        // turn.
+        return MacroControlFlowResult::iteration_complete;
     }
 
     object_context.target_object = object_context.script_owner;
@@ -3530,24 +3541,11 @@ MacroControlFlowResult Macro::execute_control_flow_command(
         if (!push_value(*saved_cursor)) {
             return MacroControlFlowResult::execution_terminated;
         }
-        // NOTE (2026-09-14): the decompiled dump's LAB_0041f237 ->
-        // LAB_00420c6f path (shared by native EVER and UNTIL-false)
-        // *looks* like it sets the same "iteration complete, don't yield"
-        // flag REPE uses -- tried changing this to iteration_complete to
-        // match, and it hung the live game solid (frozen frame, pipe
-        // commands timing out, world tick stopped advancing) on the very
-        // next test. Reverted. Something about this path's real semantics
-        // is NOT the same as REPE's despite the apparent shared label --
-        // do not retry this change without figuring out what actually
-        // differs first (possibly bVar30 gets reset or overridden again
-        // somewhere between LAB_00420c6f and the dispatch loop for this
-        // specific opcode, or the two "goto LAB_00420c6f" sites at
-        // 0x0041f237 are not actually the same site the disassembly
-        // seemed to suggest). Left as cursor_changed (yield once per
-        // iteration) -- this is very likely still not native-faithful,
-        // but it is what this project already had before this
-        // investigation and is known not to hang.
-        return MacroControlFlowResult::cursor_changed;
+        // `ever` (0041fec9) and a false `untl` jump back through 0041f237
+        // to the iteration-complete join 00420c6f: the loop goes on in the
+        // same turn.  (A 2026-09-14 try at this hung the game, because then
+        // `wait` and the motion commands did not end the turn either.)
+        return MacroControlFlowResult::iteration_complete;
     };
 
     switch (command) {
@@ -3612,21 +3610,11 @@ MacroControlFlowResult Macro::execute_control_flow_command(
         if (!push_value(*saved_cursor) || !push_value(*count - 1)) {
             return MacroControlFlowResult::execution_terminated;
         }
-        // REVERTED 2026-09-15: a prior pass changed this to
-        // iteration_complete, reasoning from src/decompiled/Macro.cpp's
-        // apparent shared LAB_00420c6f join with the loop-finished branch.
-        // Live-verified this pass to be net negative: it did not even fix
-        // the original "flying bird moves too slowly" report (still
-        // reproduces after the change), and broke animation/movement
-        // pacing for multiple other scripted objects (bees, fish, the
-        // island boat, the blackboard) that previously worked. Reverted to
-        // the known-good cursor_changed (yield once per iteration) pending
-        // a correct root-cause -- see
-        // ground_truth/00-working-notes/repe-fix-reverted-made-things-worse.md.
-        // Do not re-attempt the iteration_complete change without a live
-        // test confirming it first; decompiled-only reasoning was wrong
-        // here despite looking conclusive.
-        return MacroControlFlowResult::cursor_changed;
+        // `repe` (0041e742) jumps back to its loop and goes on in the same
+        // turn.  (A 2026-09-15 try at this changed the pacing of scripted
+        // movement, because then `mvby`, `mvto` and `wait` did not end the
+        // turn: `repe` was holding the turn end for them.)
+        return MacroControlFlowResult::iteration_complete;
     }
 
     case MacroCommand::ever:
@@ -3639,7 +3627,8 @@ MacroControlFlowResult Macro::execute_control_flow_command(
             return MacroControlFlowResult::execution_terminated;
         }
         script_cursor_offset = *saved_cursor;
-        return MacroControlFlowResult::cursor_changed;
+        // `retn` (0041fcbb) goes on in the same turn.
+        return MacroControlFlowResult::iteration_complete;
     }
 
     case MacroCommand::endm:
@@ -3737,9 +3726,13 @@ MacroControlFlowResult Macro::dispatch_interpreter_command(
         if (bindings.object_motion == nullptr) {
             return missing_binding();
         }
+        // `mvto` (0041fce4) and `mvby` (00420b02) end the script's turn: both
+        // jump to 00420c74, past the iteration-complete join at 00420c6f.
         return execute_object_motion_command(command, *bindings.object_motion,
                                              *bindings.runtime)
-                   ? MacroControlFlowResult::iteration_complete
+                   ? (command == MacroCommand::mcrt
+                          ? MacroControlFlowResult::iteration_complete
+                          : MacroControlFlowResult::cursor_changed)
                    : MacroControlFlowResult::execution_terminated;
 
     case MacroCommandFamily::object_appearance:
@@ -3753,10 +3746,16 @@ MacroControlFlowResult Macro::dispatch_interpreter_command(
             return execute_pose_command(command, *bindings.runtime,
                                         *bindings.diagnostics);
         }
-        return execute_preload_image_sequence_command(command,
-                                                       *bindings.runtime)
-                   ? MacroControlFlowResult::iteration_complete
-                   : MacroControlFlowResult::execution_terminated;
+        {
+            // `prld` (0041e50b) with no target skips the sequence and ends the
+            // script's turn; with a target it goes on.
+            const bool had_target = object_context.target_object != nullptr;
+            return execute_preload_image_sequence_command(command,
+                                                          *bindings.runtime)
+                       ? (had_target ? MacroControlFlowResult::iteration_complete
+                                     : MacroControlFlowResult::cursor_changed)
+                       : MacroControlFlowResult::execution_terminated;
+        }
 
     case MacroCommandFamily::object_and_script_lifecycle:
         if (command == MacroCommand::kill) {
@@ -3805,7 +3804,8 @@ MacroControlFlowResult Macro::dispatch_interpreter_command(
         }
         if (command == MacroCommand::execute) {
             consume_execute_command_arguments();
-            return MacroControlFlowResult::iteration_complete;
+            // `exec` (0041e362) ends the script's turn.
+            return MacroControlFlowResult::cursor_changed;
         }
         if (command == MacroCommand::mate) {
             if (bindings.runtime == nullptr) {
@@ -3819,8 +3819,9 @@ MacroControlFlowResult Macro::dispatch_interpreter_command(
             return missing_binding();
         }
         if (command == MacroCommand::delete_creature) {
+            // `cdie` (0041e60f) ends the script's turn.
             return execute_delete_creature_command(command, *bindings.runtime)
-                       ? MacroControlFlowResult::iteration_complete
+                       ? MacroControlFlowResult::cursor_changed
                        : MacroControlFlowResult::execution_terminated;
         }
         if (command == MacroCommand::dream) {
@@ -3854,9 +3855,10 @@ MacroControlFlowResult Macro::dispatch_interpreter_command(
                 return missing_binding();
             }
             if (command == MacroCommand::edit) {
+                // `edit` (0042033c) ends the script's turn.
                 return execute_edit_command(command, *bindings.runtime,
                                             *bindings.system)
-                           ? MacroControlFlowResult::iteration_complete
+                           ? MacroControlFlowResult::cursor_changed
                            : MacroControlFlowResult::execution_terminated;
             }
             if (command == MacroCommand::version) {
@@ -3866,9 +3868,10 @@ MacroControlFlowResult Macro::dispatch_interpreter_command(
                            : MacroControlFlowResult::execution_terminated;
             }
             if (command == MacroCommand::room) {
+                // `room` (0041f8ce) ends the script's turn.
                 return execute_room_command(command, *bindings.runtime,
                                             *bindings.system)
-                           ? MacroControlFlowResult::iteration_complete
+                           ? MacroControlFlowResult::cursor_changed
                            : MacroControlFlowResult::execution_terminated;
             }
         }
@@ -4060,7 +4063,8 @@ MacroControlFlowResult Macro::dispatch_interpreter_command(
             if (target != nullptr && bindings.runtime->is_creature_object(*target)) {
                 bindings.runtime->select_creature_walk_gait(*target);
             }
-            return MacroControlFlowResult::iteration_complete;
+            // `walk` (0041f171) ends the script's turn on every path.
+            return MacroControlFlowResult::cursor_changed;
         }
         if (command == MacroCommand::mcrt) {
             if (bindings.object_motion == nullptr) {
@@ -4125,9 +4129,10 @@ MacroControlFlowResult Macro::dispatch_interpreter_command(
             if (bindings.application == nullptr) {
                 return missing_binding();
             }
+            // `tool` (0041f2dd) ends the script's turn.
             return execute_tool_command(command, *bindings.application,
                                         *bindings.runtime)
-                       ? MacroControlFlowResult::iteration_complete
+                       ? MacroControlFlowResult::cursor_changed
                        : MacroControlFlowResult::execution_terminated;
         }
         if (command == MacroCommand::debug_message ||
@@ -4136,9 +4141,13 @@ MacroControlFlowResult Macro::dispatch_interpreter_command(
             if (bindings.debug == nullptr) {
                 return missing_binding();
             }
+            // `dbug` (0041f05e) ends the script's turn; `dbgm`, `dbgv` and
+            // `vocb` go on.
             return execute_debug_command(command, *bindings.debug,
                                          *bindings.runtime)
-                       ? MacroControlFlowResult::iteration_complete
+                       ? (command == MacroCommand::dbug
+                              ? MacroControlFlowResult::cursor_changed
+                              : MacroControlFlowResult::iteration_complete)
                        : MacroControlFlowResult::execution_terminated;
         }
         if (command == MacroCommand::version || command == MacroCommand::room) {
@@ -4152,7 +4161,8 @@ MacroControlFlowResult Macro::dispatch_interpreter_command(
                               : MacroControlFlowResult::execution_terminated)
                        : (execute_room_command(command, *bindings.runtime,
                                                *bindings.system)
-                              ? MacroControlFlowResult::iteration_complete
+                              // `room` (0041f8ce) ends the script's turn.
+                              ? MacroControlFlowResult::cursor_changed
                               : MacroControlFlowResult::execution_terminated);
         }
         return missing_binding();

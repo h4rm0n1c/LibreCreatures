@@ -1,10 +1,10 @@
-// The original's own world load and save, back to back: SFCDoc::Serialize
-// @004311a0 loads a world through MFC's real CArchive and then saves it
-// again.  The LC side of the world test is the game itself
+// The original's own world load and save: SFCDoc::Serialize @004311a0
+// loads a world through MFC's real CArchive, SFCDoc::UpdateWorld @004324e0
+// runs <ticks> world ticks (0 by default), and the world is saved again.  The LC side of the world test is the game itself
 // (C1_WORLD_ROUNDTRIP, see run_world.sh), because LC's world archive is
 // MFC's CArchive too.
 //
-//   world_roundtrip_native.exe <Creatures.exe> <install-dir> <root> <in.sfc> <out.sfc>
+//   world_roundtrip_native.exe <Creatures.exe> <install-dir> <root> <in.sfc> <out.sfc> [<ticks>]
 //
 // Every import is bound to the real DLL: MFC and the C++ runtime from the
 // install folder, the rest from Wine.  <root> holds the game's data folders
@@ -16,6 +16,7 @@
 
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <string>
 #include <vector>
@@ -59,11 +60,12 @@ bool serialize_world(equivalence::NativeImage& image, void* doc,
 } // namespace
 
 int main(int argc, char** argv) {
-    if (argc != 6) {
+    if (argc != 6 && argc != 7) {
         std::fprintf(stderr,
-                     "usage: world_roundtrip_native <Creatures.exe> <install-dir> <root> <in.sfc> <out.sfc>\n");
+                     "usage: world_roundtrip_native <Creatures.exe> <install-dir> <root> <in.sfc> <out.sfc> [<ticks>]\n");
         return 2;
     }
+    const long ticks = argc == 7 ? std::strtol(argv[6], nullptr, 10) : 0;
     const std::string root = std::string(argv[3]) + "\\";
     equivalence::NativeImage image;
     std::string error;
@@ -105,6 +107,9 @@ int main(int argc, char** argv) {
     image.make_return(0x00422250);          // RebuildCreatureSelectionMenu: a menu
     make_return_pop(image, 0x004131a0, 8);  // CWorldRenderer::RequestViewportOrigin
     image.make_return(0x00418000);          // DebugLog
+    image.make_return(0x004168b0);          // CEventBar::UpdateStatusPanes: the panes' text
+    // No autosave in the tick: the interval (g_SFCApp+0xd8) is the longest.
+    *reinterpret_cast<std::uint32_t*>(app + 0xd8) = 0xffffffffu;
     // A zeroed view and renderer, so the hand is placed at mouse (0, 0); the
     // renderer's window has a null HWND and no redraw pending.
     static std::uint8_t view[0x1000], renderer[0x4000], window[0x100];
@@ -124,8 +129,14 @@ int main(int argc, char** argv) {
         std::fprintf(stderr, "no document\n");
         return 1;
     }
-    if (!serialize_world(image, doc, root + argv[4], true) ||
-        !serialize_world(image, doc, root + argv[5], false)) {
+    if (!serialize_world(image, doc, root + argv[4], true)) {
+        return 1;
+    }
+    using UpdateWorld = void(__attribute__((thiscall))*)(void*);
+    for (long tick = 0; tick < ticks; ++tick) {
+        image.at<UpdateWorld>(0x004324e0)(doc);
+    }
+    if (!serialize_world(image, doc, root + argv[5], false)) {
         return 1;
     }
     std::printf("objects %d, creatures %d\n", *image.at<int*>(0x4704ac),

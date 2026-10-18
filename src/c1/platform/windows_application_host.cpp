@@ -7,6 +7,7 @@
 #include "windows_dde_host.hpp"
 
 #include <cstdlib>
+#include <functional>
 #include <cstring>
 #include <fstream>
 
@@ -434,15 +435,24 @@ void report_round_trip_failure(const std::string& out_path, const char* reason) 
     }
 }
 
-void run_world_round_trip(CDocTemplate& document_template, const char* setting) {
+void run_world_round_trip(CDocTemplate& document_template, const char* setting,
+                          const std::function<void()>& start_sound) {
     const std::string paths(setting);
     const std::size_t bar = paths.find('|');
     if (bar == std::string::npos) {
-        std::fprintf(stderr, "C1_WORLD_ROUNDTRIP must be <in>|<out>\n");
+        std::fprintf(stderr, "C1_WORLD_ROUNDTRIP must be <in>|<out>[|<ticks>]\n");
         ::ExitProcess(2);
     }
+    const std::size_t second_bar = paths.find('|', bar + 1);
+    const std::string out_text =
+        paths.substr(bar + 1, second_bar == std::string::npos
+                                  ? std::string::npos
+                                  : second_bar - bar - 1);
+    const long ticks = second_bar == std::string::npos
+                           ? 0
+                           : std::strtol(paths.c_str() + second_bar + 1, nullptr, 10);
     const CString in_path(paths.substr(0, bar).c_str());
-    const CString out_path(paths.substr(bar + 1).c_str());
+    const CString out_path(out_text.c_str());
     CDocument* document = document_template.OpenDocumentFile(nullptr);
     if (document == nullptr) {
         ::ExitProcess(3);
@@ -451,12 +461,14 @@ void run_world_round_trip(CDocTemplate& document_template, const char* setting) 
     if (world == nullptr) {
         ::ExitProcess(3);
     }
+    // As the game has: object scripts start and stop sounds in a tick.
+    start_sound();
     // The new document seeded rand from the clock; the test's native side
     // starts from the C runtime's default seed, 1.
     std::srand(1);
     std::string error;
-    if (!world->round_trip_world_for_test(in_path, out_path, error)) {
-        report_round_trip_failure(paths.substr(bar + 1), error.c_str());
+    if (!world->round_trip_world_for_test(in_path, out_path, ticks, error)) {
+        report_round_trip_failure(out_text, error.c_str());
         ::ExitProcess(4);
     }
     ::ExitProcess(0);
@@ -469,7 +481,14 @@ bool C1StartupHost::prepare_embedded_main_window(std::string_view world_path) {
         return false;
     }
     if (const char* round_trip = std::getenv("C1_WORLD_ROUNDTRIP")) {
-        run_world_round_trip(*document_template_, round_trip);
+        run_world_round_trip(*document_template_, round_trip, [this]() {
+            CWinApp* application = AfxGetApp();
+            main_frame_ = application == nullptr
+                              ? nullptr
+                              : DYNAMIC_DOWNCAST(C1MainFrame,
+                                                 application->m_pMainWnd);
+            ensure_sound_system();
+        });
     }
 
     // Ghidra's recovered virtual calls are CWinApp::OnFileNew for USER
