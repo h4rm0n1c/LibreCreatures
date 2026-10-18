@@ -16,6 +16,26 @@ every byte of the result.
 - Inputs the original would crash on are not generated; those are the
   ledger's guards.
 
+## All tests in one run
+
+    WINEPREFIX=<throwaway prefix> tests/equivalence/run_all.sh \
+        <CE 10.3 Creatures.exe> <install-dir> [build-dir] [--full] \
+        [--no-build] [--only name,name,...]
+
+The script builds every test (`build.sh`), runs each run script and the
+table check, and gives one line for each. It exits 1 if a test fails.
+`<install-dir>` is the game folder: the genomes are all `*.gen` and `*.GEN`
+files in its Genetics folder, and the skeleton-gene test takes copies of
+its Images, Body Data and Palettes folders. Nothing in it is written.
+
+- Case counts: about one twentieth of the first runs below by default;
+  `--full` uses the first-run counts.
+- `--no-build` uses the programs already in the build directory.
+- `--only` runs the named tests; the names are those of the run scripts
+  (`brain`, `skelgenes`, ...) and `tables`.
+- The SHA-256 of the exe is taken before the runs and checked after them.
+- Each test's output is in `<build-dir>/run_all.<name>.log`.
+
 ## Biochemistry: `CBiochemistry::Update` @0042ee10 (CE 10.3)
 
     tests/equivalence/build.sh [build-dir]
@@ -942,8 +962,8 @@ control sets.
     measures the swap control from 127.5 and takes its size (so a swap
     below the middle mixes the same way as one above it); it computes the
     hue factor in double; and it cuts the rotated channels to whole numbers
-    before the swap mixes them. Before the fix, 13,802 of 20,000 control
-    sets differed.
+    before the swap mixes them. With only part of the fix (the swap
+    measured from 128), 13,802 of 20,000 control sets still differed.
   - A new skeleton started with drive expression 1. The original starts it
     at 0.
 - The test found two defects in the original:

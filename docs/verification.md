@@ -125,7 +125,9 @@ The values that each test compares:
 
 The perception, goal-direction, geometry, fan-out, skeleton, learned-word,
 heard-word, gene-expression, brain-gene and skeleton-gene tests found
-nineteen defects in LibreCreatures. All are fixed:
+nineteen defects in LibreCreatures. All are fixed, and all are in
+[`our-bugs.md`](our-bugs.md) with the other translation defects that
+verification found:
 
 - `apply_stimulus` set the seen flag of an attention record. The original
   does not.
