@@ -146,6 +146,38 @@ bool NativeImage::bind_import(const std::string& name, void* function) {
     return bound;
 }
 
+int NativeImage::bind_real_imports(const std::string& dll_directory, std::vector<std::string>& missing) {
+    int bound = 0;
+    std::string loaded_dll;
+    HMODULE module = nullptr;
+    for (std::size_t i = 0; i < g_import_names.size(); ++i) {
+        const std::string& import = g_import_names[i];
+        const std::size_t bang = import.find('!');
+        const std::string dll = import.substr(0, bang);
+        const std::string symbol = import.substr(bang + 1);
+        if (dll != loaded_dll) {
+            loaded_dll = dll;
+            const std::string local = dll_directory + "\\" + dll;
+            module = GetFileAttributesA(local.c_str()) != INVALID_FILE_ATTRIBUTES
+                         ? LoadLibraryExA(local.c_str(), nullptr, LOAD_WITH_ALTERED_SEARCH_PATH)
+                         : LoadLibraryA(dll.c_str());
+        }
+        FARPROC function = nullptr;
+        if (module != nullptr) {
+            function = symbol[0] == '#'
+                           ? GetProcAddress(module, MAKEINTRESOURCEA(std::atoi(symbol.c_str() + 1)))
+                           : GetProcAddress(module, symbol.c_str());
+        }
+        if (function == nullptr) {
+            missing.push_back(import);
+            continue;
+        }
+        *g_import_slots[i] = static_cast<std::uint32_t>(reinterpret_cast<std::uintptr_t>(function));
+        ++bound;
+    }
+    return bound;
+}
+
 void NativeImage::make_return(std::uint32_t address) {
     *at<std::uint8_t*>(address) = 0xc3;
     FlushInstructionCache(GetCurrentProcess(), at<void*>(address), 1);
