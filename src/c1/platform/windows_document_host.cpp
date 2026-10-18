@@ -7403,6 +7403,7 @@ void C1WindowsDocument::ArchiveHost::serialize_object_payload( void* object, std
 
 bool C1WindowsDocument::round_trip_world_for_test(const CString& in_path,
                                                   const CString& out_path,
+                                                  long ticks,
                                                   std::string& error) {
     // As open_framework_document and CDocument::OnOpenDocument do, without
     // the rest of the open (repair_world_data and the work after it).
@@ -7425,6 +7426,13 @@ bool C1WindowsDocument::round_trip_world_for_test(const CString& in_path,
         load.Close();
         in.Close();
         framework_opening_ = false;
+        // The test's native side has no sound manager, so its ticks play no
+        // ambient sound and take no random number for one; muted, ours do
+        // the same.
+        semantic_document_->mute_setting = true;
+        for (long tick = 0; tick < ticks; ++tick) {
+            update_world_tick();
+        }
         CFile out(out_path, CFile::modeCreate | CFile::modeWrite | CFile::shareExclusive);
         CArchive store(&out, CArchive::store);
         store.m_pDocument = this;

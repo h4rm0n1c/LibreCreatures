@@ -726,11 +726,12 @@ public:
     void DeleteContents() override;
 
     // Not native: the C1_WORLD_ROUNDTRIP test hook.  Clears the document,
-    // loads `in_path` with Serialize and saves it at once to `out_path` with
-    // Serialize, as the world equivalence test does with the original's
-    // SFCDoc::Serialize.  False, with `error` set, when either step throws.
+    // loads `in_path` with Serialize, runs `ticks` world ticks and saves to
+    // `out_path` with Serialize, as the world equivalence test does with the
+    // original's SFCDoc::Serialize and UpdateWorld.  False, with `error` set,
+    // when a step throws.
     bool round_trip_world_for_test(const CString& in_path, const CString& out_path,
-                                   std::string& error);
+                                   long ticks, std::string& error);
 
     void OnCloseDocument() override;
 
