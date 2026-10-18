@@ -16,7 +16,9 @@ winexe=$(winepath -w "$exe")
 genomes=
 for g in "$@"; do genomes="$genomes $(winepath -w "$g")"; done
 status=0
-wine "$out/heard_equivalence_native.exe" "$winexe" $genomes -cases "$cases" | tail -2 || status=1
+wine "$out/heard_equivalence_native.exe" "$winexe" $genomes -cases "$cases" \
+    > "$out/heard-native.txt" || status=1
+tail -2 "$out/heard-native.txt"
 for build in fixed rows; do
     wine "$out/heard_equivalence_$build.exe" "$winexe" $genomes -cases "$cases" \
         > "$out/heard-$build.txt"

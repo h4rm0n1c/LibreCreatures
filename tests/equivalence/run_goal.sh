@@ -15,7 +15,9 @@ winexe=$(winepath -w "$exe")
 genomes=
 for g in "$@"; do genomes="$genomes $(winepath -w "$g")"; done
 status=0
-wine "$out/goal_equivalence_native.exe" "$winexe" $genomes -cases "$cases" | tail -2 || status=1
+wine "$out/goal_equivalence_native.exe" "$winexe" $genomes -cases "$cases" \
+    > "$out/goal-native.txt" || status=1
+tail -2 "$out/goal-native.txt"
 wine "$out/goal_equivalence_fixed.exe" "$winexe" $genomes -cases "$cases" > "$out/goal-fixed.txt"
 tail -1 "$out/goal-fixed.txt" | sed "s/^/fixed: /"
 # The code under test has no switch, so LC as shipped must match too.

@@ -12,7 +12,9 @@ src=$here/../../src/c1
 export WINEDEBUG=-all
 winexe=$(winepath -w "$exe")
 status=0
-wine "$out/skeleton_equivalence_native.exe" "$winexe" -cases "$cases" | tail -2 || status=1
+wine "$out/skeleton_equivalence_native.exe" "$winexe" -cases "$cases" \
+    > "$out/skeleton-native.txt" || status=1
+tail -2 "$out/skeleton-native.txt"
 for build in fixed rows; do
     wine "$out/skeleton_equivalence_$build.exe" "$winexe" -cases "$cases" > "$out/skeleton-$build.txt"
     tail -1 "$out/skeleton-$build.txt" | sed "s/^/$build: /"
