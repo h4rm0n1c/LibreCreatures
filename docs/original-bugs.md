@@ -54,7 +54,8 @@ The lab trace's "world opened" line names the rows running native.
 Some rows are not switched:
 
 - **Guards** against native crashes, memory corruption or reads past a
-  buffer: rows 3, 10, 19, 20, 21, 34, 46, 47, 48, 58, 60, 63, 66, 77, 78, 79 and 80.  On
+  buffer: rows 3, 10, 19, 20, 21, 34, 46, 47, 48, 58, 60, 63, 66, 77, 78, 79, 80,
+  81 and 82.  On
   any input where native does not crash or corrupt memory they behave as
   native does; a crash cannot be compared.
 - **Row 25:** native's plane depends on heap addresses, so it cannot be
@@ -66,7 +67,8 @@ Checked: **code** = read in the native disassembly; **lab** = the defect
 was reproduced in the lab (on the CE executable, or on a faithful
 translation before the fix); **A/B** = measured in a lab A/B;
 **retail** = seen in a retail executable; **data** = in the shipped world
-files.
+files; **test** = seen in a function test that runs the native code
+(`tests/equivalence`).
 
 ## Game
 
@@ -80,6 +82,7 @@ files.
 | 4 | Dendrite migration compares the candidate with every active neuron, the migrating neuron included, so the neuron always matches itself and its weights are zeroed instead of moved. | `MigrateRuleConnections` @00405da0 | 6d52950 | code, lab |
 | 5 | The migration duplicate test packs the pointer sum and product into 16 bits each, so different dendrite sets pass as duplicates. A matching test is now confirmed by comparing the target sets. | `MigrateRuleConnections` @00405da0 | 68c25ae, e058524 | code, lab |
 | 6 | A loose dendrite rejects its own previous target, or another loose dendrite's stale target, as a duplicate. | `CLobe::UpdateLatePhase` @00405170 (attach at 00405990) | 75b9911, a0c2773 | code, lab |
+| 82 | A new brain's neurons start with the firing and activation, and its dendrites with the susceptibility, that the heap held at that place: the lobe allocation never sets them, and the first brain updates read them. | `CLobe::AllocateRuntimeState` @00402840 | d0a9bcd | code, test |
 
 ### Genetics
 
@@ -88,6 +91,7 @@ files.
 | 7 | Mutation can change the four bytes of the `gext` pigment tag, which deletes the pigment extension from the creature and all its descendants (since version 1.04). | `CopyGenomeGeneWithMutation` @00418c70 | e4bfe75 | code, model |
 | 50 | A reaction keeps only the low byte of a product's yield before adding it, so 1 A -> 2 B with 128 A makes no B (256 wraps to 0). | `CBiochemistry::Update` @0042ee10 | f3050aa | code |
 | 51 | A reaction with the same chemical in both reactant slots counts its supply twice, so 1 A + 1 A -> B makes 10 B from 10 A; the saturating removal hides the shortfall. | `CBiochemistry::Update` @0042ee10 | dbde8a1 | code |
+| 81 | A gene whose payload runs past the last `gend` (a mutated header can make a short gene a 256-byte half-life gene near the end) makes the genome reader read past its buffer, and the next gene scan then searches heap memory for a gene tag and can load a gene from there. | `CGenome::FindNextMatchingGene` @00419040, `CBiochemistry::LoadGenome` @0042e940 | 925e885 | code, test |
 
 ### Creatures
 
