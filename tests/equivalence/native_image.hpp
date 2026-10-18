@@ -38,6 +38,13 @@ public:
     // `function`; false when there is none.  Only the copy changes.
     bool bind_import(const std::string& name, void* function);
 
+    // Points every import at the real export of its DLL: by name, or by
+    // ordinal for MFC.  A DLL in `dll_directory` (the game folder: mfc140,
+    // MSVCP140, VCRUNTIME140) is loaded from there; any other comes from
+    // the system (Wine).  An import with no export keeps its trap and is
+    // listed in `missing`.  Returns the number of imports bound.
+    int bind_real_imports(const std::string& dll_directory, std::vector<std::string>& missing);
+
     // Makes the cdecl function at `address` return at once (a C3 at its
     // entry), in the copy.
     void make_return(std::uint32_t address);

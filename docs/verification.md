@@ -250,6 +250,32 @@ The Creatures Caves archive has 434 COB files. The replay installs them in
     seconds. The replay answers each box in 20 seconds.
 - One file (772) is not a Creatures 1 COB.
 
+## The original's own load and save
+
+A world file does not come back unchanged when the original loads it and
+saves it again at once. The world test will compare LibreCreatures with the
+original's save, not with the input file, so these changes are expected in
+both. They were measured on 2026-10-18 with the CE 10.3 executable running
+in the function-test harness on the real MFC DLLs: `Eden.sfc` (177,269
+bytes) was loaded with `SFCDoc::Serialize` @004311a0 and saved again at once
+(186,920 bytes). The two files were compared field by field with a trace
+built from openc2e's SFC reader.
+
+| What changed | Count | Why |
+| --- | --- | --- |
+| Running scripts: 27 became 59 | 32 new macros | The load sends event 7 to every object (`Object::DispatchEvent7AfterBoundsUpdate` @00425c00, 189 calls). Event 7 scripts that wait are still running at the save. |
+| Object variables (`obv0`, `obv1`) | 12 | Set by the event 7 scripts. |
+| Animation frames set to 0 | 44 entities | The event 7 scripts start new animations. |
+| Current image | 1 entity | Set by an event 7 script. |
+| Gallery image `status` byte, 1 to 0 | 74 images | The save writes each image's pixel-cache flag. A world saved before anything was drawn writes 0. The value has no effect on a load. |
+| Macro `gsub` cache cursor | 27 macros | `Eden.sfc` holds memory addresses here, written by the 1997 engine. CE saves an offset and makes any offset outside the script 0 on load (`Macro::Serialize` @004195f0). |
+| The hand's position | 1 | The load puts the hand at the mouse (`SimpleObject::InitializeUnboundedObjectPlacement` @00428b50). |
+| View scroll position | 2 values | The save writes the view's scroll position. |
+
+With event 7 turned off in the harness, only the last four rows remain.
+The last two rows depend on the view and the mouse. The harness has a
+view at 0, 0, so they are 0 there; in the game they are the live values.
+
 ## What the tests do not cover
 
 - Functions without a function test. The hand's own movement and the
