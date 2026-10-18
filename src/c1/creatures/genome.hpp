@@ -251,7 +251,16 @@ public:
     // the matching record, as in the original C1 scanner.  Loaders consume
     // that payload through this cursor rather than indexing a decompiler
     // buffer directly.
-    std::uint8_t read_payload_byte() { return payload_[cursor_++]; }
+    //
+    // LibreCreatures deviation: CGenome reads on past the end of the genome
+    // when a matching gene's payload runs past the last gend (a mutated
+    // header can make a short gene a 256-byte half-life gene), and the next
+    // FindNextMatchingGene then scans heap memory for a tag.  Here a byte
+    // past the end reads as 0, and the scan stops at the end (row 81).
+    std::uint8_t read_payload_byte() {
+        const std::size_t at = cursor_++;
+        return at < payload_.size() ? payload_[at] : 0;
+    }
 
     // Read one packed gene payload without allowing a malformed genome to
     // advance past the available bytes.  The caller chooses the exact
