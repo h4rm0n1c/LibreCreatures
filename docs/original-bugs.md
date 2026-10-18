@@ -145,7 +145,7 @@ files; **test** = seen in a function test that runs the native code
 | --- | --- | --- | --- | --- |
 | 22 | The Black Hole: in a gap between rooms, an object's floor becomes y 9999 and the object falls out of the world. | `FindNearestMapRoomBoundsAtPoint` | fc1628c | code |
 | 23 | The Flying Lemon: a vehicle moves every object linked to it, even after a script has moved the object away. | `Vehicle::Tick` @0042bd90 | c9b8633 | code, lab (CE) |
-| 24 | A lift called to its own floor arrives at once, and its `dpas` runs before the queued `gpas` pickups, which then bind the passengers to the lift for ever. | `gpas` / `dpas` | 5e557a3 | lab |
+| 24 | A lift called to its own floor arrives at once, and its `dpas` runs before the queued `gpas` pickups, which then bind the passengers to the lift for ever. | `gpas` / `dpas` | 5e557a3 | lab (CE) |
 | 25 | The plane of a carried object is taken from a table indexed by the low byte of a pointer, so in the incubator it depends on heap addresses. | `UpdateEntityForExplicitRectBoundsAndRedraw` @00428d30 | 274c2ba, 53c46ad | code |
 | 26 | Ocean Dome Sound (2 8 15) does not have the "creatures cannot see it" flag, so norns go into the dome to find a vendor (issue #10). | World.sfc, Eden.sfc | 57eeedc | data |
 | 69 | The creature Retreat script (4 0 0 21) closes its pain branch with a stray `endi`, so every retreat ends in that branch's "pose 12 ... stop" and the plain retreat (`anim [49505152R]`) never runs. | World.sfc, Eden.sfc | a2da5b5 | data, lab |
