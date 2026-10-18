@@ -75,6 +75,11 @@ void Bubble::set_text(std::string_view text, BubbleTextHost& host) {
     }();
     std::copy_n(text.begin(), copy_count, text_buffer.begin());
     text_buffer[copy_count] = '\0';
+    // LibreCreatures deviation (guard, original-bugs.md row 87):
+    // Bubble::SetText @0042a1a0 copies with strcpy_s into a field that the
+    // constructor @00429da0 never clears, so the bytes after the terminator
+    // are whatever the heap held, and Bubble::serialize saves all 25.  They
+    // are zeros here.
     std::fill(text_buffer.begin() + copy_count + 1, text_buffer.end(), '\0');
 
     const std::string_view stored_text(text_buffer.data(), copy_count);
