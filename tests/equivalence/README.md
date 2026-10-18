@@ -862,8 +862,96 @@ First run (2026-10-18): 14 genomes, 5,000 cases, 5,263,361 neurons and
   EQUIVALENCE_MASK_STATE=1, 0 differing cases in 1,000.
 - LC as shipped: 0 differing cases. The functions have no switch.
 
-The skeleton genes (`Skeleton::LoadGenome` @0043c800) have no function
-test: the function also writes the creature's sprite file and builds its
-galleries and body parts. Its gene reads (genus, appearance, and pigment
-with the `gext` extension) were compared with LC by reading the code; no
-difference was found.
+The skeleton genes have their own test, below.
+
+## Skeleton genes: `Skeleton::LoadGenome` @0043c800 (CE 10.3)
+
+What the function does with a genome at one life stage:
+- it reads the genus, appearance and pigment genes;
+- it finds each body part's sprite and attachment files, with a fall back
+  to a lower life stage or variant, then to the other sex;
+- it writes the creature's own sprite file, with each body-part image
+  remapped through the pigment palette (`BuildCreaturePaletteRemap`
+  @00413d20);
+- it loads that file as the creature's gallery, chooses a render plane, and
+  builds the body and its limbs.
+
+The genome re-expression (0040d930) calls this function at each stage
+change.
+
+    WINEPREFIX=<throwaway prefix> tests/equivalence/run_skelgenes.sh \
+        <CE 10.3 Creatures.exe> <cases> <build-dir> <data-dir> <genome.gen>...
+
+`<data-dir>` holds the game's Images, Body Data and Palettes folders (the
+install folder). The script copies them into two new scratch roots in the
+build directory, one for each side. Each root also has an empty "out"
+folder, the secondary image directory, where the sprite file is written.
+
+Native runs all of the function, on real files. The test supplies only
+what is outside the exe:
+- MFC CFile (open, read, write, seek, close) on Win32, as MFC's does;
+- CPtrArray::SetAtGrow and RemoveAt, and the MFC new and delete;
+- the attachment file stream: its constructor and destructor (0043dd40,
+  0043c610) and `operator>>(int&)`;
+- strcpy_s, strcat_s, ceil, GetFileAttributesA (the real one), and rand (the
+  MSVC formula on both sides);
+- the app object with the directory paths, and palette.dta, given to both
+  sides.
+
+The sprite-file cache index is built by its own start-up initializer
+(004016c0). The native skeleton starts from its initializer (0043ac70); LC's
+from a new Creature, and the test first checks that the two start states
+match. The down foot, a room around it and its movement bounds are the same
+on both sides.
+
+LC uses the application resource host (`C1ResourceHost`) on a Win32 file
+backend: the game's backend reads through `std::ifstream`, which MSVC
+opens without regard to case, but the MinGW runtime under Wine does not. The
+gallery release counts references as native's does. (The game's
+`WorldRuntime` also keeps released galleries for reuse; this test does not
+include that.) The test is built with SSE maths, as the MSVC build of the
+game is, for the float steps of the palette remap.
+
+First, `BuildCreaturePaletteRemap` alone is compared with LC's remap on
+20,000 random control sets (pigments, rotation, swap); a quarter of the
+values are 0, 1, 127, 128, 129, 254 or 255. All 256 entries must match.
+
+Then each case: one genome, a sex and a last life stage 0 to 6. Half the
+cases change up to 40 bytes of the genome, as in the gene expression test.
+Both sides load stage 0, then each later stage up to the last, on the same
+skeleton.
+
+When native cannot open a file during a load (its CFile throws there), the
+test returns from the load, puts back the SEH chain head it saved before the
+call, and closes the files the load opened for writing. LC must refuse the
+same load, and the case stops there (row 84). After every other load these
+must match:
+- the creature's sprite file, byte for byte;
+- the classifier, the genome file, the parent monikers and the render plane;
+- the gallery's file and image count;
+- every body part: image base, image, plane, position, pose, view and
+  attachment table; the chain lengths;
+- the down foot, the chain ends and the sprite bounds;
+- the rand state.
+
+First run (2026-10-18): 14 genomes, 500 cases, 2,097 loads (8 refused
+by both sides), 25,068 body parts, 299 MB of sprite file; 20,000 palette
+control sets.
+- The test found two translation defects in LC, now fixed:
+  - The creature colour remap was not the original's. The original
+    measures the swap control from 127.5 and takes its size (so a swap
+    below the middle mixes the same way as one above it); it computes the
+    hue factor in double; and it cuts the rotated channels to whole numbers
+    before the swap mixes them. Before the fix, 13,802 of 20,000 control
+    sets differed.
+  - A new skeleton started with drive expression 1. The original starts it
+    at 0.
+- The test found two defects in the original:
+  - Row 83: the sprite file has two bytes too many after its frame table,
+    so the original reads every body image two bytes early.
+  - Row 84: when a body part has no file for any variant, stage or sex,
+    the original opens the image folder as the sprite file, and its CFile
+    throws. Genus 2 or 3, or a tail from an appearance gene, does this.
+- LC native: 0 differing cases.
+- LC as shipped: 492 differing cases, the same cases as the build with
+  only row 83 fixed. (The 8 refused cases stop before row 83 shows.)
