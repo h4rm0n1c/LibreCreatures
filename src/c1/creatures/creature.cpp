@@ -2763,14 +2763,17 @@ void Creature::load_genome(Genome& genome) {
         const std::size_t gait_index =
             normalize_modulo(genome.read_payload_byte(), kGaitTableEntryCount);
         auto& sequence = skeleton_.gait_animation_table[gait_index];
-        sequence.fill('\0');
+        // LoadGenome @00408960 reduces the byte modulo 100 before the zero
+        // test, so 100 and 200 also end the gait, and it leaves the bytes
+        // after the R terminator as they were.
         std::size_t byte_index = 0;
         while (byte_index < 8) {
-            const std::uint8_t value = genome.read_payload_byte();
+            const std::uint8_t value =
+                normalize_modulo(genome.read_payload_byte(), 100);
             if (value == 0) {
                 break;
             }
-            append_gait_byte(sequence, byte_index, normalize_modulo(value, 100));
+            append_gait_byte(sequence, byte_index, value);
             ++byte_index;
         }
         sequence[byte_index * 2] = 'R';
