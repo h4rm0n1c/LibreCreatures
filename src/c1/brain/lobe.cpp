@@ -262,6 +262,11 @@ void Lobe::load_genome(Genome& genome, StandardLobeIndex lobe_index) {
 }
 
 void Lobe::allocate_runtime_state() {
+    // LibreCreatures deviation: AllocateRuntimeState @00402840 takes its
+    // neuron and dendrite arrays from operator new[] and never sets a
+    // neuron's firing and activation or a dendrite's susceptibility, so a new
+    // brain starts with whatever the heap held there.  Here they start at 0,
+    // as on fresh heap memory (row 82).
     neuron_count = grid_width * grid_height;
     neurons = std::make_unique<LobeNeuron[]>(neuron_count);
     active_neurons = std::make_unique<LobeNeuron*[]>(neuron_count);
