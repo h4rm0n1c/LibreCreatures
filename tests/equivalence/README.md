@@ -983,7 +983,10 @@ does the same with the same world; the two saves must be the same, byte for
 byte.
 
     WINEPREFIX=<throwaway prefix> tests/equivalence/run_world.sh \
-        <CE 10.3 Creatures.exe> <install-dir> <build-dir> <world.sfc> [<lc-save.sfc>]
+        <CE 10.3 Creatures.exe> <install-dir> <build-dir> <world.sfc> [<lc-save.sfc>] [--ticks <n>]
+
+With `--ticks <n>` both sides run n world ticks (`SFCDoc::UpdateWorld`
+@004324e0) between the load and the save.
 
 Native side (`world_roundtrip_native.exe`): every import of the exe is
 bound to the real DLL (MFC and the C++ runtime from the install folder, the
@@ -998,10 +1001,13 @@ round trip two times; the two saves must be the same.
 
 LC side: the game itself, because LC's world archive is MFC's CArchive. A
 build with `LC_NATIVE_MODE` (c1-lab profile `librecreatures-native`) runs
-once on a lab world with `C1_WORLD_ROUNDTRIP=<in .sfc>|<out .sfc>`
-(c1-lab `run_once`). The hook makes a new document, sets the random seed to
-1 (the C runtime's first seed, which the native side keeps), loads, saves and
-exits. Row 18 holds the scripts that a load starts until their first turn,
+once on a lab world with `C1_WORLD_ROUNDTRIP=<in .sfc>|<out .sfc>[|<ticks>]`
+(c1-lab `run_once`). The hook makes a new document, starts the sound system,
+sets the random seed to 1 (the C runtime's first seed, which the native side
+keeps), loads, runs the ticks muted, saves and exits. The native side has no
+sound manager and no autosave, and the event bar's pane text is not drawn.
+A world with creatures can come from an experiment with `keep_world`; c1-lab
+`stage_world` takes the kept folder. Row 18 holds the scripts that a load starts until their first turn,
 so LC as shipped saves them at another point; the test uses the native
 build.
 
@@ -1011,3 +1017,13 @@ LC's is the same, byte for byte. The first comparison found L25 to L30 in
 [`our-bugs.md`](../../docs/our-bugs.md). See also "The original's own load
 and save" in [`verification.md`](../../docs/verification.md): what the
 original's round trip changes in a world.
+
+Second run (2026-10-18), a world the original saved with four stock norns:
+0, 1 and 10 ticks are the same byte for byte; 45 ticks are the same in every
+field (the original writes uninitialised bytes after a bubble's text). The
+first comparison found L31 and L32. Past the first dendrite migration that
+row 5 can change (tick 46 here), the original's own result depends on its
+heap layout, so a longer run cannot be compared. On `neorender` a speech
+bubble changes the save (shared balloon image, 0c0207e); use a `main` build
+for runs that make bubbles. The tracer used here needs openc2e's `Bubble`
+class registered.
