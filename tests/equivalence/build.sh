@@ -281,5 +281,26 @@ for mode in fixed native; do
     $cxx $flags $define -o "$exe" "$here/express_equivalence.cpp" "$here/native_image.cpp" \
         "$out/express_traps_$mode.cpp" $creature
 done
+# Biochemistry genes: the biochemistry closure.  No switch, no row build.
+for mode in fixed native; do
+    case $mode in
+        fixed) define= ;;
+        native) define=-DLC_NATIVE_MODE ;;
+    esac
+    $cxx $flags $define -o "$out/biogenes_equivalence_$mode.exe" \
+        "$here/biogenes_equivalence.cpp" "$here/native_image.cpp" \
+        "$here/recorder_stubs.cpp" $lc
+done
+# Brain genes: the brain closure, with rand shared.  No switch, no row
+# build.
+for mode in fixed native; do
+    case $mode in
+        fixed) define= ;;
+        native) define=-DLC_NATIVE_MODE ;;
+    esac
+    $cxx $flags $define -Wl,--wrap=rand -Wl,--wrap=srand \
+        -o "$out/braingenes_equivalence_$mode.exe" \
+        "$here/braingenes_equivalence.cpp" "$here/native_image.cpp" $brain
+done
 echo "built in $out"
 
