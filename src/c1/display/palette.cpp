@@ -86,8 +86,11 @@ void build_creature_palette_remap(PaletteRemapTable& output,
             static_cast<std::uint8_t>(index);
     }
 
-    const float colour_swap_factor =
-        (static_cast<float>(colour_swap_control) - 128.0f) / 128.0f;
+    // BuildCreaturePaletteRemap @00413d20 takes the size of the swap
+    // control's distance from 127.5 (the double at 0045d480; ANDPS with the
+    // sign mask), divided by 127.5, in double.
+    const float colour_swap_factor = static_cast<float>(
+        std::fabs(static_cast<double>(colour_swap_control) - 127.5) / 127.5);
     const float colour_swap_complement = 1.0f - colour_swap_factor;
 
     for (std::size_t source_index = 0;
@@ -100,33 +103,42 @@ void build_creature_palette_remap(PaletteRemapTable& output,
         const float blue = static_cast<float>(
             blue_ramp.intensity_by_control[source.blue]);
 
+        // The hue factor is computed in double and rounded to float, as
+        // BuildCreaturePaletteRemap @00413d20 does.
         float hue_factor;
         float transformed_red;
         float transformed_green;
         float transformed_blue;
         if (hue_rotation_control < 0x80) {
-            hue_factor = (127.0f - static_cast<float>(hue_rotation_control)) /
-                         127.0f;
+            hue_factor = static_cast<float>(
+                (127.0 - static_cast<double>(hue_rotation_control)) / 127.0);
             const float unchanged_factor = 1.0f - hue_factor;
             transformed_red = blue * hue_factor + unchanged_factor * red;
             transformed_green = unchanged_factor * green + hue_factor * red;
             transformed_blue = hue_factor * green + unchanged_factor * blue;
         } else {
-            hue_factor = (static_cast<float>(hue_rotation_control) - 128.0f) /
-                         127.0f;
+            hue_factor = static_cast<float>(
+                (static_cast<double>(hue_rotation_control) - 128.0) / 127.0);
             const float unchanged_factor = 1.0f - hue_factor;
             transformed_red = hue_factor * green + unchanged_factor * red;
             transformed_green = hue_factor * blue + unchanged_factor * green;
             transformed_blue = hue_factor * red + unchanged_factor * blue;
         }
 
+        // The rotated channels are cut to whole numbers before the red/blue
+        // swap mixes them, and the mix is cut again (CVTTSS2SI at 00413f91,
+        // 00413fcc, 00413fd0, then 00413ff6 and 00413ffa).
+        const float whole_red =
+            static_cast<float>(truncated_float_to_int(transformed_red));
+        const float whole_blue =
+            static_cast<float>(truncated_float_to_int(transformed_blue));
         const int target_red = truncated_float_to_int(
-            transformed_red * colour_swap_complement +
-            transformed_blue * colour_swap_factor);
+            whole_blue * colour_swap_factor +
+            whole_red * colour_swap_complement);
         const int target_green = truncated_float_to_int(transformed_green);
         const int target_blue = truncated_float_to_int(
-            transformed_red * colour_swap_factor +
-            transformed_blue * colour_swap_complement);
+            whole_red * colour_swap_factor +
+            whole_blue * colour_swap_complement);
 
         std::size_t nearest_index = 0;
         std::uint32_t minimum_distance =
