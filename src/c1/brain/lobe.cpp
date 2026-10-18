@@ -21,9 +21,11 @@ std::uint32_t normalize_grid_offset(std::uint8_t encoded) {
 }
 
 std::uint32_t normalize_grid_extent(std::uint8_t encoded) {
-    // Genome dimensions occupy the inclusive domain 1..63. The machine code
-    // implements ((encoded - 1) % 63) + 1, including the encoded-zero case.
-    return ((static_cast<std::uint32_t>(encoded) + 62u) % 63u) + 1u;
+    // CLobe::LoadGenome @004025d0 keeps 1..63 and maps any other byte to
+    // (encoded % 63) + 1: 0 gives 1, 64 gives 2.
+    return encoded >= 1u && encoded <= 63u
+               ? encoded
+               : (static_cast<std::uint32_t>(encoded) % 63u) + 1u;
 }
 
 std::uint32_t minimum_grid_area(StandardLobeIndex lobe_index) {
@@ -59,12 +61,14 @@ std::uint8_t sample_connection_count(
     case DendriteSpread::two_sample_average:
         offset = (first_sample + std::rand() % sample_limit) / 2;
         break;
+    // AllocateRuntimeState @00402840 takes |a + (b - range)| for these two,
+    // not |a - b|: the same distribution, but not the same count per draw.
     case DendriteSpread::two_sample_absolute_difference:
-        offset = first_sample - std::rand() % sample_limit;
+        offset = first_sample + (std::rand() % sample_limit - range);
         offset = offset < 0 ? -offset : offset;
         break;
     case DendriteSpread::two_sample_complement_difference:
-        offset = first_sample - std::rand() % sample_limit;
+        offset = first_sample + (std::rand() % sample_limit - range);
         offset = offset < 0 ? -offset : offset;
         offset = range - offset;
         break;
@@ -217,8 +221,10 @@ void Lobe::load_genome(Genome& genome, StandardLobeIndex lobe_index) {
     // was an inverted translation and made every newly loaded creature's
     // drive/verb/noun/etc. lobes 1024 neurons wide, which also made its
     // archive grow by megabytes.
+    // Only lobes 1 to 7 reach that clamp in @004025d0: the perception lobe,
+    // the concept lobe and any lobe after it keep their size.
     const std::uint32_t grid_area = grid_width * grid_height;
-    if (grid_area > 0x400u) {
+    if (minimum_area != 0u && grid_area > 0x400u) {
         grid_width = 0x20u;
         grid_height = 0x20u;
     }
@@ -267,13 +273,20 @@ void Lobe::allocate_runtime_state() {
             LobeNeuron& neuron = neurons[y * grid_width + x];
             neuron.grid_x = static_cast<std::uint8_t>(x);
             neuron.grid_y = static_cast<std::uint8_t>(y);
-            neuron.type0_dendrite_count = sample_connection_count(
-                dendrite_types[0]);
-            neuron.type1_dendrite_count = sample_connection_count(
-                dendrite_types[1]);
-            total_connection_count += neuron.type0_dendrite_count;
-            total_connection_count += neuron.type1_dendrite_count;
         }
+    }
+    // AllocateRuntimeState @00402840 draws the type 0 counts of every
+    // neuron, then the type 1 counts, so each count takes the same rand
+    // draw as in C1.
+    for (std::uint32_t index = 0; index < neuron_count; ++index) {
+        neurons[index].type0_dendrite_count =
+            sample_connection_count(dendrite_types[0]);
+        total_connection_count += neurons[index].type0_dendrite_count;
+    }
+    for (std::uint32_t index = 0; index < neuron_count; ++index) {
+        neurons[index].type1_dendrite_count =
+            sample_connection_count(dendrite_types[1]);
+        total_connection_count += neurons[index].type1_dendrite_count;
     }
 
     if (total_connection_count != 0) {
