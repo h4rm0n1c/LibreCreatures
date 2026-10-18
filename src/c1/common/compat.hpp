@@ -122,6 +122,9 @@
 #ifndef LC_FIX_73
 #define LC_FIX_73 LC_FIX_DEFAULT  // perception outside every room
 #endif
+#ifndef LC_FIX_83
+#define LC_FIX_83 LC_FIX_DEFAULT  // body sprite file without two stray bytes
+#endif
 
 // Scripts.
 #ifndef LC_FIX_18

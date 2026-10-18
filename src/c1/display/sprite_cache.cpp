@@ -1,5 +1,7 @@
 #include "sprite_cache.hpp"
 
+#include "../common/compat.hpp"
+
 #include "image.hpp"
 
 #include <cstring>
@@ -61,8 +63,14 @@ bool SpriteIndexWriter::begin() {
         return false;
     }
 
+    // LibreCreatures deviation: Skeleton::LoadGenome @0043c800 writes the
+    // frame table with two bytes more than it has (frame count * 8 + 2),
+    // and those two bytes are unset heap memory.  Its records give the
+    // image offsets without them, so the original reads every body image
+    // two bytes early (row 83).  Native mode writes the two bytes as zeros.
     const std::size_t table_size =
-        static_cast<std::size_t>(expected_frame_count_) * kRecordSize;
+        static_cast<std::size_t>(expected_frame_count_) * kRecordSize +
+        (LC_FIX(83) ? 0U : 2U);
     table_bytes_.assign(table_size, 0);
 
     std::array<std::uint8_t, 2> initial_frame_count{};
