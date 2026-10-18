@@ -72,7 +72,11 @@ void MapData::reset_for_document_delete() {
     room_count_ = 0;
     rooms_.fill({});
     ground_height_by_x_block_.fill(0);
-    bacteria_.fill(creatures1::creatures::Bacterium{});
+    // The bacteria are left as they are.  SFCDoc::DeleteContents only frees
+    // the native MapData (~MapData_Deleting @00422950); a new one, with 100
+    // new CBacterium records, comes with the next world
+    // (MapData::CreateObject @00422880).  Making a Bacterium here took five
+    // rand() draws that the original does not take.
 }
 
 void find_nearest_room_bounds_at_point(const MapRoomTable& room_table,

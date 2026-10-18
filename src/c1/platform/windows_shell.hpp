@@ -278,8 +278,7 @@ public:
     void clear_coordinate_status();
     void invalidate_main_toolbar();
     void serialize_main_toolbar(creatures1::ui::ToolbarArchiveApi& archive);
-    void serialize_event_bar(creatures1::ui::EventBarArchiveApi& archive,
-                             creatures1::ui::EventBarLegacyArchiveWords& words);
+    void serialize_event_bar(creatures1::ui::EventBarArchiveApi& archive);
     void populate_embedded_kit_menu_and_toolbar();
     void publish_embedded_kit_definition(std::size_t tool_index,
         const creatures1::application::EmbeddedKitToolDefinition& definition,
@@ -725,6 +724,13 @@ public:
     BOOL OnNewDocument() override;
 
     void DeleteContents() override;
+
+    // Not native: the C1_WORLD_ROUNDTRIP test hook.  Clears the document,
+    // loads `in_path` with Serialize and saves it at once to `out_path` with
+    // Serialize, as the world equivalence test does with the original's
+    // SFCDoc::Serialize.  False, with `error` set, when either step throws.
+    bool round_trip_world_for_test(const CString& in_path, const CString& out_path,
+                                   std::string& error);
 
     void OnCloseDocument() override;
 
@@ -3115,7 +3121,6 @@ private:
     // not an Object, so the archive host owns the instances it creates.
     std::vector<std::unique_ptr<creatures1::creatures::Owner>>
         archive_owners_;
-    creatures1::ui::EventBarLegacyArchiveWords event_bar_words_{};
 };
 
 

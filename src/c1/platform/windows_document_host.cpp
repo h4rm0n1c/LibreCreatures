@@ -6556,7 +6556,7 @@ void C1WindowsDocument::ArchiveHost::serialize_event_bar() {
         throw std::logic_error("C1 document archive has no main frame");
     }
     creatures1::platform::MfcEventBarArchive archive(stream_, *objects_);
-    frame->serialize_event_bar(archive, event_bar_words_);
+    frame->serialize_event_bar(archive);
 }
 
 void C1WindowsDocument::ArchiveHost::serialize_score(
@@ -6641,8 +6641,22 @@ void C1WindowsDocument::ArchiveHost::dispatch_loaded_non_scenery_bounds_update(s
     if (index >= document_.world_runtime_->object_count()) {
         throw std::out_of_range("C1 loaded object bounds index");
     }
-    document_.world_runtime_->object_at(index)->update_movement_bounds(
-        document_);
+    // SFCDoc::Serialize @004311a0 calls vtable slot 14 on every loaded
+    // object (00431a12): DispatchEvent7AfterBoundsUpdate @00425c00 updates
+    // the movement bounds and then runs the object's event 7 (initialise)
+    // script.  A creature runs it through its own dispatch, as the event 8
+    // handler does (WindowsObjectEventRuntime::handle_event_8).
+    creatures1::objects::Object* object = document_.world_runtime_->object_at(index);
+    if (auto* creature = dynamic_cast<creatures1::creatures::Creature*>(object)) {
+        object->update_movement_bounds(document_);
+        WindowsCreatureAttentionHost attention(document_);
+        creature->dispatch_script_event(
+            static_cast<std::uint32_t>(creatures1::objects::ObjectEventId::event_7),
+            object, false, attention, attention);
+        return;
+    }
+    WindowsObjectScriptDispatchHost scripts(document_);
+    object->dispatch_event_7_after_bounds_update(document_, scripts);
 }
 
 void C1WindowsDocument::ArchiveHost::rebuild_missing_unbounded_renderable_entry(
@@ -7385,6 +7399,51 @@ void C1WindowsDocument::ArchiveHost::serialize_object_payload( void* object, std
         throw std::logic_error("unsupported C1 object payload: " +
                                std::string(name));
     }
+}
+
+bool C1WindowsDocument::round_trip_world_for_test(const CString& in_path,
+                                                  const CString& out_path,
+                                                  std::string& error) {
+    // As open_framework_document and CDocument::OnOpenDocument do, without
+    // the rest of the open (repair_world_data and the work after it).
+    construct_semantic_document();
+    const std::string in_text(CStringA(in_path).GetString());
+    save_world_directory_.clear();
+    save_image_directory_.clear();
+    const std::size_t separator = in_text.find_last_of("/\\");
+    if (separator != std::string::npos) {
+        save_world_directory_ = in_text.substr(0, separator + 1);
+        save_image_directory_ = save_world_directory_ + "Images\\";
+    }
+    try {
+        framework_opening_ = true;
+        DeleteContents();
+        CFile in(in_path, CFile::modeRead | CFile::shareDenyWrite);
+        CArchive load(&in, CArchive::load);
+        load.m_pDocument = this;
+        Serialize(load);
+        load.Close();
+        in.Close();
+        framework_opening_ = false;
+        CFile out(out_path, CFile::modeCreate | CFile::modeWrite | CFile::shareExclusive);
+        CArchive store(&out, CArchive::store);
+        store.m_pDocument = this;
+        Serialize(store);
+        store.Close();
+        out.Close();
+    } catch (CException* exception) {
+        framework_opening_ = false;
+        char text[512] = {};
+        exception->GetErrorMessage(text, sizeof(text));
+        exception->Delete();
+        error = text;
+        return false;
+    } catch (const std::exception& exception) {
+        framework_opening_ = false;
+        error = exception.what();
+        return false;
+    }
+    return true;
 }
 
 void C1WindowsDocument::Serialize(CArchive& archive) {

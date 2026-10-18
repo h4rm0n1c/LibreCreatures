@@ -104,8 +104,7 @@ void EventBar::window_proc(EventBarWindowApi& window,
                             reinterpret_cast<std::intptr_t>(pane_right_edges));
 }
 
-void EventBar::serialize(EventBarArchiveApi& archive,
-                         EventBarLegacyArchiveWords& legacy_words) {
+void EventBar::serialize(EventBarArchiveApi& archive) {
     if (archive.is_loading()) {
         const std::int32_t archived_count =
             archive.read_displayed_object_count();
@@ -126,8 +125,8 @@ void EventBar::serialize(EventBarArchiveApi& archive,
              index < archived_size; ++index) {
             static_cast<void>(archive.read_object());
         }
-        legacy_words.first = archive.read_legacy_state_word();
-        legacy_words.second = archive.read_legacy_state_word();
+        legacy_words_.first = archive.read_legacy_state_word();
+        legacy_words_.second = archive.read_legacy_state_word();
         return;
     }
 
@@ -136,8 +135,8 @@ void EventBar::serialize(EventBarArchiveApi& archive,
     for (std::size_t index = 0; index < displayed_count_; ++index) {
         archive.write_object(displayed_objects_[index]);
     }
-    archive.write_legacy_state_word(legacy_words.first);
-    archive.write_legacy_state_word(legacy_words.second);
+    archive.write_legacy_state_word(legacy_words_.first);
+    archive.write_legacy_state_word(legacy_words_.second);
 }
 
 void EventBar::add_object(objects::Object* object,

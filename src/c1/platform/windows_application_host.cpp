@@ -6,6 +6,7 @@
 #include "windows_shell.hpp"
 #include "windows_dde_host.hpp"
 
+#include <cstdlib>
 #include <cstring>
 #include <fstream>
 
@@ -413,9 +414,62 @@ bool C1StartupHost::main_window_exists() const {
     return application != nullptr && application->m_pMainWnd != nullptr;
 }
 
+namespace {
+
+// Not native: a test hook for the world equivalence test.  With
+// C1_WORLD_ROUNDTRIP="<in>|<out>" the game makes its frame, view and an
+// empty document, loads <in> with the document's Serialize, saves it at
+// once to <out> with Serialize, and exits before any world tick.  This is
+// what the test does with the original's SFCDoc::Serialize.  The process
+// ends with ExitProcess so that closing the document does not save the
+// world.
+// The reason a round trip failed: on stderr, and in <out>.error beside the
+// output file.
+void report_round_trip_failure(const std::string& out_path, const char* reason) {
+    std::fprintf(stderr, "C1_WORLD_ROUNDTRIP failed: %s\n", reason);
+    std::fflush(stderr);
+    if (std::FILE* file = std::fopen((out_path + ".error").c_str(), "w")) {
+        std::fprintf(file, "%s\n", reason);
+        std::fclose(file);
+    }
+}
+
+void run_world_round_trip(CDocTemplate& document_template, const char* setting) {
+    const std::string paths(setting);
+    const std::size_t bar = paths.find('|');
+    if (bar == std::string::npos) {
+        std::fprintf(stderr, "C1_WORLD_ROUNDTRIP must be <in>|<out>\n");
+        ::ExitProcess(2);
+    }
+    const CString in_path(paths.substr(0, bar).c_str());
+    const CString out_path(paths.substr(bar + 1).c_str());
+    CDocument* document = document_template.OpenDocumentFile(nullptr);
+    if (document == nullptr) {
+        ::ExitProcess(3);
+    }
+    auto* world = DYNAMIC_DOWNCAST(C1WindowsDocument, document);
+    if (world == nullptr) {
+        ::ExitProcess(3);
+    }
+    // The new document seeded rand from the clock; the test's native side
+    // starts from the C runtime's default seed, 1.
+    std::srand(1);
+    std::string error;
+    if (!world->round_trip_world_for_test(in_path, out_path, error)) {
+        report_round_trip_failure(paths.substr(bar + 1), error.c_str());
+        ::ExitProcess(4);
+    }
+    ::ExitProcess(0);
+}
+
+} // namespace
+
 bool C1StartupHost::prepare_embedded_main_window(std::string_view world_path) {
     if (document_template_ == nullptr) {
         return false;
+    }
+    if (const char* round_trip = std::getenv("C1_WORLD_ROUNDTRIP")) {
+        run_world_round_trip(*document_template_, round_trip);
     }
 
     // Ghidra's recovered virtual calls are CWinApp::OnFileNew for USER
