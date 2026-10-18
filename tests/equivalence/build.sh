@@ -302,5 +302,25 @@ for mode in fixed native; do
         -o "$out/braingenes_equivalence_$mode.exe" \
         "$here/braingenes_equivalence.cpp" "$here/native_image.cpp" $brain
 done
+# Skeleton genes: the skeleton closure with the gallery, palette, sprite
+# file and resource host code.  SSE maths, as the MSVC build of the game,
+# for the palette remap's float steps.
+skelgenes="$src/display/gallery.cpp $src/display/palette.cpp $src/display/sprite_cache.cpp \
+           $src/application/resource_hosts.cpp $skeleton"
+for mode in fixed native rows; do
+    case $mode in
+        fixed) define= ;;
+        native) define=-DLC_NATIVE_MODE ;;
+        rows) define="-DLC_NATIVE_MODE -DEQUIVALENCE_EXPECT=1 -DLC_FIX_83=1" ;;
+    esac
+    exe="$out/skelgenes_equivalence_$mode.exe"
+    $cxx $flags -msse2 -mfpmath=sse $define -Wl,--wrap=rand -Wl,--wrap=srand -Wl,--no-demangle \
+        -o "$exe" "$here/skelgenes_equivalence.cpp" "$here/native_image.cpp" $skelgenes \
+        > "$out/skelgenes_$mode.link" 2>&1 || true
+    python3 "$here/trap_stubs.py" "$out/skelgenes_$mode.link" "$out/skelgenes_traps_$mode.cpp"
+    $cxx $flags -msse2 -mfpmath=sse $define -Wl,--wrap=rand -Wl,--wrap=srand -o "$exe" \
+        "$here/skelgenes_equivalence.cpp" "$here/native_image.cpp" "$out/skelgenes_traps_$mode.cpp" \
+        $skelgenes
+done
 echo "built in $out"
 

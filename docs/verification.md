@@ -69,6 +69,7 @@ dad6):
 | `Creature::LoadGenome`: the creature genes at each life stage | 00408960 | 20,000 (14 genomes, half with changed bytes) | 0 cases differ | 0 cases differ (no row in this code) |
 | `CBiochemistry::LoadGenome`: the biochemistry genes, stage by stage | 0042e940 | 20,000 (80,451 loads) | 0 cases differ | 0 cases differ (no row in this code) |
 | `CBrain::LoadGenome`: the brain of a new creature | 00404560, 004025d0, 00402840, 004047c0 | 5,000 (5,263,361 neurons, 110,453,879 dendrites) | 0 cases differ | 0 cases differ (no row in this code) |
+| `Skeleton::LoadGenome`: the body sprite file, gallery and body parts, stage by stage, with `BuildCreaturePaletteRemap` | 0043c800, 00413d20 | 500 (2,097 loads, 299 MB of sprite file; 20,000 palette control sets) | 0 cases differ | 492 cases differ, all from row 83 |
 
 The values that each test compares:
 
@@ -116,10 +117,15 @@ The values that each test compares:
   stage's load.
 - Brain genes: every lobe's parameters and rules, every neuron and
   dendrite, and the rand state.
+- Skeleton genes: the creature's sprite file byte for byte, the
+  classifier, parents and render plane, the gallery, every body part's
+  image, position, pose, view, plane and attachment table, the down foot,
+  chain ends and sprite bounds, and the rand state, after each stage's
+  load; and all 256 entries of the palette remap.
 
 The perception, goal-direction, geometry, fan-out, skeleton, learned-word,
-heard-word, gene-expression and brain-gene tests found seventeen defects
-in LibreCreatures. All are fixed:
+heard-word, gene-expression, brain-gene and skeleton-gene tests found
+nineteen defects in LibreCreatures. All are fixed:
 
 - `apply_stimulus` set the seen flag of an attention record. The original
   does not.
@@ -158,9 +164,15 @@ in LibreCreatures. All are fixed:
   original's.
 - Every lobe larger than 32 by 32 was made 32 by 32. The original does
   this only for lobes 1 to 7.
+- The creature colour remap was not the original's: the swap control's
+  centre and sign, the hue factor's precision, and the cut to whole
+  numbers before the swap.
+- A new skeleton started with drive expression 1. The original starts it
+  at 0.
 
-The biochemistry-gene and brain-gene tests also found two defects in the
-original: rows 81 and 82 of [`original-bugs.md`](original-bugs.md).
+The biochemistry-gene, brain-gene and skeleton-gene tests also found four
+defects in the original: rows 81, 82, 83 and 84 of
+[`original-bugs.md`](original-bugs.md).
 
 The procedure for each test is in
 [`tests/equivalence/README.md`](../tests/equivalence/README.md).
