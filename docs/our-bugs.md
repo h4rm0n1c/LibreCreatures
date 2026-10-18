@@ -57,6 +57,8 @@ does.
 | L17 | Every lobe larger than 32 by 32 was made 32 by 32. The original does this only for lobes 1 to 7. | A mutant norn with a big perception or concept lobe had it cut down; the original lets it keep it. | `CLobe::LoadGenome` @004025d0 | 19b7fa6 | brain-gene test |
 | L18 | `Genome::read_payload_byte` read past the end of its buffer when a gene ran past the last end mark. (The original does this too, and worse: row 81.) | A broken genome could make LC read memory that was not its own. | `CGenome` reader | 925e885 | biochemistry-gene test |
 | L19 | The creature colour remap was not the original's: the swap control is measured from 127.5 and only its size counts, the hue factor is computed in double, and the rotated channels are cut to whole numbers before the swap mixes them. | Norns came out in slightly wrong colours, and a swap gene below the middle swapped the wrong way. | `BuildCreaturePaletteRemap` @00413d20 | 8060f25 | skeleton-gene test |
+| L33 | Breeding crossed over where the next gene had the identity of the gene just copied. The original copies another run from the same parent there. | Where a parent carried a gene twice, a child could swap parents in the middle of the pair. Children came out a little longer than the original's. | `CGenome::RecombineGenomeStreams` @00418a20 | 3ca89ad | breeding test |
+| L34 | A duplicated gene kept its generation number. The original adds one to it, in the parent too, before it copies it. | A gene copied twice in a child looked like the same gene both times; the original marks the copy as the next generation. | `CGenome::RecombineGenomeStreams` @00418a20 | 3ca89ad | breeding test |
 
 ## World and objects
 

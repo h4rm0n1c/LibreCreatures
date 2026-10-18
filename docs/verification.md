@@ -70,6 +70,7 @@ dad6):
 | `CBiochemistry::LoadGenome`: the biochemistry genes, stage by stage | 0042e940 | 20,000 (80,451 loads) | 0 cases differ | 0 cases differ (no row in this code) |
 | `CBrain::LoadGenome`: the brain of a new creature | 00404560, 004025d0, 00402840, 004047c0 | 5,000 (5,263,361 neurons, 110,453,879 dendrites) | 0 cases differ | 0 cases differ (no row in this code) |
 | `Skeleton::LoadGenome`: the body sprite file, gallery and body parts, stage by stage, with `BuildCreaturePaletteRemap` | 0043c800, 00413d20 | 500 (2,097 loads, 299 MB of sprite file; 20,000 palette control sets) | 0 cases differ | 492 cases differ, all from row 83 |
+| `CGenome::RecombineGenomeStreams`: a child's genome from two parents, with the gene and byte copiers | 00418a20, 00418c70, 00418e00 | 20,000 (104,188 crossovers, 299 duplications, 290 omissions, 28,740 mutations) | 0 cases differ | 0 cases differ (row 7 is in this code; no mutation hit a pigment extension tag) |
 
 The values that each test compares:
 
@@ -122,6 +123,9 @@ The values that each test compares:
   image, position, pose, view, plane and attachment table, the down foot,
   chain ends and sprite bounds, and the rand state, after each stage's
   load; and all 256 entries of the palette remap.
+- Breeding: the child's bytes, both parents' bytes (the original writes
+  into the parent it duplicates from), the crossover, duplication,
+  omission and mutation counts, and the number of rand() draws.
 
 The perception, goal-direction, geometry, fan-out, skeleton, learned-word,
 heard-word, gene-expression, brain-gene and skeleton-gene tests found
@@ -171,6 +175,10 @@ verification found:
   numbers before the swap.
 - A new skeleton started with drive expression 1. The original starts it
   at 0.
+
+The breeding test found two more (L33 and L34): breeding crossed over at a
+gene whose identity repeated the gene just copied, and a duplicated gene
+kept its generation number.
 
 The biochemistry-gene, brain-gene and skeleton-gene tests also found four
 defects in the original: rows 81, 82, 83 and 84 of

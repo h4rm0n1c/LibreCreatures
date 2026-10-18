@@ -976,6 +976,37 @@ control sets.
 - LC as shipped: 492 differing cases, the same cases as the build with
   only row 83 fixed. (The 8 refused cases stop before row 83 shows.)
 
+## Breeding: `CGenome::RecombineGenomeStreams` @00418a20 (CE 10.3)
+
+How a child's genome is made from its parents' (the game's conception,
+`GenerateOffspringGenomeFile` @004187f0, calls it when the father is not
+zero): runs of 10 to 100 genes from one parent, a crossover at the next gene
+whose identity the other parent also has, one in 81 crossovers duplicates
+or omits a gene (when the gene's flags allow it), and every byte is copied
+with a 1-in-1601 mutation (`CopyGenomeGeneWithMutation` @00418c70,
+`CopyGenomeByteWithMutation` @00418e00).
+
+    WINEPREFIX=<throwaway prefix> tests/equivalence/run_breed.sh \
+        <CE 10.3 Creatures.exe> <cases> <build-dir> <genome.gen>...
+
+The native genomes are CGenome blocks in memory (vtable 00456094, bytes
++4, cursor +8, size +0xc), each parent followed by a zero pad and a gend.
+rand() is the MSVC formula on both sides, from one state. The counters are
+the globals 00467da8, 00467da4, 00467da0 and 00467d4c.
+
+Each case: two stock genomes (one in four the same one twice). Half the
+cases change up to 40 bytes of a parent; half flip duplication, omission
+and mutation flags of random genes; one in three gives genes the identity
+of the gene before them. The child's bytes, both parents' bytes, the four
+counters and the number of rand() draws must match.
+
+First run (2026-10-19), the 14 Genetics genomes: 20,000 cases (104,188
+crossovers, 299 duplications, 290 omissions, 28,740 mutations), 0 differ in
+the native build and as shipped. The first runs found L33 and L34 in
+[`our-bugs.md`](../../docs/our-bugs.md). Row 7 (the pigment extension tag
+is not mutated) is the only switch in this code; the rows build has it
+fixed alone, and so far no case has hit it.
+
 ## The world file: `SFCDoc::Serialize` @004311a0 (CE 10.3)
 
 The original loads a world and saves it again at once, and LibreCreatures
