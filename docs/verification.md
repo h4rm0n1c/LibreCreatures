@@ -276,10 +276,35 @@ With event 7 turned off in the harness, only the last four rows remain.
 The last two rows depend on the view and the mouse. The harness has a
 view at 0, 0, so they are 0 there; in the game they are the live values.
 
+## The world test
+
+`tests/equivalence/run_world.sh` loads a world in the original and saves it
+again at once, two times, and compares the save with the save that
+LibreCreatures makes of the same world. The LibreCreatures side is the game
+itself: the `C1_WORLD_ROUNDTRIP` hook loads the world through MFC's
+CArchive, saves it and exits. The test uses the build with every fix off
+(`LC_NATIVE_MODE`), because row 18 holds the scripts that the load starts
+until their first turn. The hook sets the random seed to 1, as the
+original's C runtime starts.
+
+First result (2026-10-18), CE 10.3, with a lab world made from `Eden.sfc`
+(189 objects, no creatures): the original's save is 186,924 bytes and the
+same in two runs. The LibreCreatures save is the same, byte for byte.
+
+The first comparison found six translation bugs, now fixed: L25 to L30 in
+[`our-bugs.md`](our-bugs.md). The load did not send event 7. Clearing the
+map used five random numbers. A bad saved script cursor went to the end of
+the script and not to 0. A completed `wait` did not end the script's turn.
+`pose` deleted the animation buffer. The event bar forgot its two saved
+words between a load and a save.
+
+The test covers one world with no creatures. Worlds with creatures, eggs
+and running kits are not yet compared.
+
 ## What the tests do not cover
 
-- Functions without a function test. The hand's own movement and the
-  world file have no function test. The CAOS tests and the COB replay test some of their behaviour.
+- Functions without a function test. The hand's own movement has no
+  function test. The world test compares one world with no creatures. The CAOS tests and the COB replay test some of their behaviour.
 - Pictures and sound. The tests do not compare the picture or the sound
   output.
 - The kits. The tests do not compare the kit programs.

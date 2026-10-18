@@ -975,3 +975,39 @@ control sets.
 - LC native: 0 differing cases.
 - LC as shipped: 492 differing cases, the same cases as the build with
   only row 83 fixed. (The 8 refused cases stop before row 83 shows.)
+
+## The world file: `SFCDoc::Serialize` @004311a0 (CE 10.3)
+
+The original loads a world and saves it again at once, and LibreCreatures
+does the same with the same world; the two saves must be the same, byte for
+byte.
+
+    WINEPREFIX=<throwaway prefix> tests/equivalence/run_world.sh \
+        <CE 10.3 Creatures.exe> <install-dir> <build-dir> <world.sfc> [<lc-save.sfc>]
+
+Native side (`world_roundtrip_native.exe`): every import of the exe is
+bound to the real DLL (MFC and the C++ runtime from the install folder, the
+rest from Wine; `NativeImage::bind_real_imports`), and the exe's own C++
+initializers run. The main frame and the document are made by their MFC
+CreateObject functions. CFile and CArchive are MFC's own. The view, the
+renderer and its window are zeroed fakes; the selection menu, the debug log,
+the viewport request and the dirty-rectangle queue are stubbed, and the
+move with redraw is redirected to the move alone. The script copies the
+install's data folders and the world into a new scratch root and runs the
+round trip two times; the two saves must be the same.
+
+LC side: the game itself, because LC's world archive is MFC's CArchive. A
+build with `LC_NATIVE_MODE` (c1-lab profile `librecreatures-native`) runs
+once on a lab world with `C1_WORLD_ROUNDTRIP=<in .sfc>|<out .sfc>`
+(c1-lab `run_once`). The hook makes a new document, sets the random seed to
+1 (the C runtime's first seed, which the native side keeps), loads, saves and
+exits. Row 18 holds the scripts that a load starts until their first turn,
+so LC as shipped saves them at another point; the test uses the native
+build.
+
+First run (2026-10-18), a lab world made from `Eden.sfc`, 189 objects, no
+creatures: the original's save is 186,924 bytes, the same in two runs, and
+LC's is the same, byte for byte. The first comparison found L25 to L30 in
+[`our-bugs.md`](../../docs/our-bugs.md). See also "The original's own load
+and save" in [`verification.md`](../../docs/verification.md): what the
+original's round trip changes in a world.
