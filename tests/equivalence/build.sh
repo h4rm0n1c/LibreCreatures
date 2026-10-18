@@ -322,5 +322,9 @@ for mode in fixed native rows; do
         "$here/skelgenes_equivalence.cpp" "$here/native_image.cpp" "$out/skelgenes_traps_$mode.cpp" \
         $skelgenes
 done
+# The world test's native side: the original's own load and save, through
+# the real MFC; no LC code (LC's side is the game, see run_world.sh).
+$cxx $flags -o "$out/world_roundtrip_native.exe" "$here/world_roundtrip_native.cpp" \
+    "$here/native_image.cpp"
 echo "built in $out"
 

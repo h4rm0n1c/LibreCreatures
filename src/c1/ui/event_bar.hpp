@@ -38,10 +38,10 @@ public:
 };
 
 // The two words are part of the historical archive record, but whole-binary
-// reads and save specimens show no application meaning for them. Keeping
-// them with the archive compatibility record prevents them becoming fake
-// EventBar runtime fields while preserving the record shape for later byte
-// verification.
+// reads and save specimens show no application meaning for them.  The
+// original keeps them on CEventBar (CEventBar::Serialize @00416fe0), so a
+// save writes back the words that the last load read; the EventBar keeps
+// them for the same reason.
 struct EventBarLegacyArchiveWords {
     std::int32_t first = 0;
     std::int32_t second = 0;
@@ -154,8 +154,7 @@ public:
                      std::uint32_t pane_count,
                      std::int32_t* pane_right_edges) const;
 
-    void serialize(EventBarArchiveApi& archive,
-                   EventBarLegacyArchiveWords& legacy_words);
+    void serialize(EventBarArchiveApi& archive);
 
     void add_object(objects::Object* object,
                     EventBarObjectPolicyApi& policy);
@@ -179,6 +178,7 @@ public:
 
 private:
     std::array<objects::Object*, kMaximumDisplayedObjects> displayed_objects_{};
+    EventBarLegacyArchiveWords legacy_words_{};
     std::size_t displayed_count_ = 0;
 };
 

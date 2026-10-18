@@ -935,9 +935,8 @@ void C1MainFrame::serialize_main_toolbar(
 }
 
 void C1MainFrame::serialize_event_bar(
-    creatures1::ui::EventBarArchiveApi& archive,
-    creatures1::ui::EventBarLegacyArchiveWords& words) {
-    event_bar_.semantic_event_bar().serialize(archive, words);
+    creatures1::ui::EventBarArchiveApi& archive) {
+    event_bar_.semantic_event_bar().serialize(archive);
 }
 
 void C1MainFrame::set_coordinate_status(std::string_view text) {

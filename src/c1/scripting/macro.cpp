@@ -121,6 +121,24 @@ void clear_object_references_from_running_macros(objects::Object* object) {
     }
 }
 
+namespace {
+
+// A script cursor as Macro::Serialize @004195f0 loads it: 0 when the saved
+// value, read as a signed int, is below 0 or past the script capacity.
+// Guard: the original keeps a cursor between the end of the script text and
+// the capacity, where its buffer holds uninitialised bytes; LibreCreatures
+// stops it at the end of the text.
+std::size_t loaded_script_offset(std::uint32_t saved,
+                                 std::uint32_t capacity,
+                                 std::size_t text_length) {
+    if (static_cast<std::int32_t>(saved) < 0 || saved > capacity) {
+        return 0;
+    }
+    return std::min<std::size_t>(saved, text_length);
+}
+
+} // namespace
+
 void Macro::serialize(MacroArchive& archive) {
     if (archive.loading()) {
         destroy_when_finished = archive.read_uint32() != 0;
@@ -136,16 +154,19 @@ void Macro::serialize(MacroArchive& archive) {
         // object's script; `drop` recovers it from the scriptorium.
         creature_runs_object_script = false;
         object_script_provenance_known = false;
-        script_cursor_offset = archive.read_uint32();
-        script_cursor_offset = std::min(script_cursor_offset,
-                                        script_buffer.size());
+        // Macro::Serialize @004195f0 sets each loaded cursor to 0 when it
+        // is below 0 or past its limit (the script capacity, or 20 for the
+        // value stack).
+        script_cursor_offset =
+            loaded_script_offset(archive.read_uint32(), script_capacity_bytes,
+                                 script_buffer.size());
     for (std::uint32_t& value : caos_value_stack) {
             value = archive.read_uint32();
         }
-        caos_value_stack_cursor_index = archive.read_uint32();
+        const std::uint32_t stack_cursor = archive.read_uint32();
         enum_removal_serials.fill(std::nullopt);
         caos_value_stack_cursor_index =
-            std::min(caos_value_stack_cursor_index, caos_value_stack.size());
+            stack_cursor > caos_value_stack.size() ? 0 : stack_cursor;
         for (std::uint32_t& value : caos_work_values) {
             value = archive.read_uint32();
         }
@@ -156,9 +177,9 @@ void Macro::serialize(MacroArchive& archive) {
         object_context.it_object = archive.read_object();
         selected_part_index = archive.read_int32();
         subroutine_cache_id = archive.read_uint32();
-        subroutine_cache_cursor_offset = archive.read_uint32();
         subroutine_cache_cursor_offset =
-            std::min(subroutine_cache_cursor_offset, script_buffer.size());
+            loaded_script_offset(archive.read_uint32(), script_capacity_bytes,
+                                 script_buffer.size());
         wait_ticks_remaining = archive.read_uint32();
         // Not native: the world format has no field for "paused because
         // sys:/dde:/app: ended its turn" (see execute_script_for_
@@ -4259,9 +4280,12 @@ MacroControlFlowResult Macro::execute_wait_command(
 
     script_cursor_offset = operand_cursor;
     parse_rvalue(runtime, diagnostics);
+    // The completed wait jumps to 00420c74, past the iteration-complete join
+    // at 00420c6f (the only `mov esi, 1`), so the script's turn ends here
+    // unless it captures output.  The next command runs on the next tick.
     return execution_terminated
                ? MacroControlFlowResult::execution_terminated
-               : MacroControlFlowResult::iteration_complete;
+               : MacroControlFlowResult::cursor_changed;
 }
 
 MacroInterpreterFinalization Macro::finalize_interpreter_iteration(

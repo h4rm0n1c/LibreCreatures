@@ -139,10 +139,15 @@ void Entity::set_relative_image_index_and_redraw(
     world::WorldRect old_bounds{};
     get_current_image_bounds(old_bounds);
 
-    // Selecting an image explicitly abandons any running sequence; the base
-    // is left alone so the relative index stays anchored to it.
-    image_sequence_.reset();
+    // Selecting an image stops any running sequence; the base is left alone
+    // so the relative index stays anchored to it.  The original
+    // (SetRelativeImageIndexAndRedraw @00415850) keeps the buffer and only
+    // zeroes its first byte, so a saved world still has the sequence record
+    // and the bytes after that first one.
     image_sequence_cursor_ = 0;
+    if (image_sequence_ != nullptr) {
+        (*image_sequence_)[0] = '\0';
+    }
     current_image_index_ = static_cast<std::uint8_t>(
         static_cast<std::int32_t>(image_index_base_) + relative_index);
     normalize_current_image_index();
