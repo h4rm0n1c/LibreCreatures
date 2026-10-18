@@ -55,7 +55,7 @@ Some rows are not switched:
 
 - **Guards** against native crashes, memory corruption or reads past a
   buffer: rows 3, 10, 19, 20, 21, 34, 46, 47, 48, 58, 60, 63, 66, 77, 78, 79, 80,
-  81 and 82.  On
+  81, 82 and 84.  On
   any input where native does not crash or corrupt memory they behave as
   native does; a crash cannot be compared.
 - **Row 25:** native's plane depends on heap addresses, so it cannot be
@@ -118,6 +118,7 @@ files; **test** = seen in a function test that runs the native code
 | 44 | A bacterial threshold mutation adds its step into the byte before clamping, so a step past 255 or below 0 wraps: kill threshold 250 + 10 becomes 130, activation threshold 0 - 1 becomes 130. | `ReplicateAndMutate` @00401c70 | 0693c52 | code |
 | 80 | A creature that hears a word of vowels only ("a", "oo") makes its baby-talk form by scanning past the end of the word, because the vowel test also matches the end of the string, and the copy writes over the bytes after the word: its response, its reinforcement and the next word. | `RegenerateLearnedWordResponse` @0040a1f0 | a9c267d | code |
 | 83 | The body sprite file that a creature gets from its genes has two bytes too many after its frame table: the loader writes the table with two more bytes than it fills, and those two bytes are unset heap memory. The records give each image's offset without them, so the game reads every body image two bytes early: the first two pixels of an image come from the image before it (from the unset bytes for the first image), and its last two pixels are lost. | `Skeleton::LoadGenome` @0043c800 | 1649770 | code, test |
+| 84 | A creature with a body part that has no sprite file for any variant, life stage or sex cannot be loaded: the body loader goes on with file id 0, takes the image folder itself as the sprite file, and MFC's CFile throws a file exception in the middle of the load. A mutated genus gene can give genus 2 or 3, which has no art, and a mutated appearance gene can ask for a tail, which the CE data does not have. | `Skeleton::LoadGenome` @0043c800, `ResolveExistingBodyPartFilenameWithFallback` @0043c3e0 | 209c91f | code, test |
 
 ### Scripts
 
