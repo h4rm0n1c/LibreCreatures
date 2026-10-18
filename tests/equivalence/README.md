@@ -748,7 +748,9 @@ change.
 
 The native genome reader is a CGenome in memory (vtable 00456094), with the
 genome bytes, the cursor, the size, the moniker, the sex and the life
-stage. The native creature is a Creature-shaped block with the stimulus
+stage. A zero pad and a `gend` follow the genome bytes, so a read past
+their end (row 81) is the same on each run. The native creature is a
+Creature-shaped block with the stimulus
 contexts, the pose and gait tables, the instinct list and a brain block
 with the lobe sizes. The lobe sizes come from LC's brain, grown from stage
 0 of the unchanged genome. The MFC operator new is bound to malloc.
@@ -762,8 +764,10 @@ change (never in a gene or end marker). One change in four is 0, 100 or
 - the 8 gaits, all 18 bytes;
 - the instinct list.
 
-First run (2026-10-18): the 14 genomes of the CE 10.3 Genetics folder,
-20,000 cases, 51,939 instincts loaded.
+First run (2026-10-18): the 12 mum and dad genomes of the CE 10.3
+Genetics folder, 20,000 cases, 51,939 instincts loaded. Second run, with
+the pad and all 14 genomes (`*.gen` and `*.GEN`): 20,000 cases, 49,462
+instincts loaded.
 - The test found two translation defects in LC, now fixed:
   - LC tested for the zero byte that ends a gait before it reduced the
     byte modulo 100. Native reduces first, so 100 and 200 also end the
@@ -773,3 +777,93 @@ First run (2026-10-18): the 14 genomes of the CE 10.3 Genetics folder,
     terminator, so only the test sees this difference.
 - LC native: 0 differing cases.
 - LC as shipped: 0 differing cases. The function has no switch.
+
+## Biochemistry genes: `CBiochemistry::LoadGenome` @0042e940 (CE 10.3)
+
+The biochemistry genes of a genome at one life stage: receptors, emitters,
+reactions, half-lives and initial concentrations. The genome re-expression
+(0040d930) calls this function at each stage change.
+
+    WINEPREFIX=<throwaway prefix> tests/equivalence/run_biogenes.sh \
+        <CE 10.3 Creatures.exe> <cases> <build-dir> <genome.gen>...
+
+The genome reader is as in the gene expression test. The native
+CBiochemistry has its owner creature at +4. A receptor or emitter locus
+resolves through the owner: the brain's resolver at [creature+0x2c18]+4,
+the creature's at creature+0x804, through vtable slot 0 as
+thiscall(kind, tissue, locus). Both sides resolve through one function: a
+hash of the domain, kind, tissue and locus gives a byte in a pool of 48, or
+no locus. Different genes share loci, so the de-duplication of receptors
+and emitters runs.
+
+Each case: one genome, a sex and a last life stage 0 to 6. Half the cases
+change up to 40 bytes of the genome, as in the gene expression test. Both
+sides load stage 0, then each later stage up to the last, on the same
+biochemistry, as the game does. After each load these must match:
+- all 256 chemicals (concentration and half-life);
+- the receptor, emitter and reaction records and their counts;
+- the locus of each record, and the pool bytes.
+
+First run (2026-10-18): 14 genomes, 20,000 cases, 80,451 loads; 1,789,890
+receptor, 1,533,781 emitter and 4,346,753 reaction records compared.
+- Before the pad, 1 case in 2,000 differed in a half-life: a mutation had
+  made a reaction gene near the end a half-life gene, so native read 256
+  bytes past the last `gend` and then found a gene in heap memory. This is
+  row 81. LC read past its vector; it now reads 0 past the end and its
+  scan stops at the end.
+- LC native: 0 differing cases.
+- LC as shipped: 0 differing cases. The function has no switch.
+
+## Brain genes: `CBrain::LoadGenome` @00404560 (CE 10.3)
+
+The brain of a new creature: the lobe genes of both load passes
+(`CLobe::LoadGenome` @004025d0), the neuron and dendrite arrays
+(`AllocateRuntimeState` @00402840), `InitializeConnections` @004047c0 and
+the perception wiring. The genome re-expression (0040d930) calls it at
+stage 0 only, so the cases are at stage 0.
+
+    WINEPREFIX=<throwaway prefix> tests/equivalence/run_braingenes.sh \
+        <CE 10.3 Creatures.exe> <cases> <build-dir> <genome.gen>...
+
+The genome reader is as in the gene expression test. The native CBrain is a
+zeroed block. The MFC operator new and new[] (#1507, #265) are bound to an
+allocator that zeros the memory. rand is the MSVC formula on both sides,
+seeded alike.
+
+Each case: one genome and a sex. Half the cases change up to 40 bytes of
+the genome, as in the gene expression test. After the load the brains must
+be the same in the world format: the parameters and rules of each lobe,
+and every neuron and dendrite. The rand state must also match.
+
+EQUIVALENCE_FILL=<byte> fills new memory with that byte instead of zeros.
+With it, native leaves three fields as the heap had them: each neuron's
+firing and activation, and each dendrite's susceptibility (row 82).
+EQUIVALENCE_MASK_STATE=1 sets those three to 0 on the native side before
+the compare.
+
+First run (2026-10-18): 14 genomes, 5,000 cases, 5,263,361 neurons and
+110,453,879 dendrites.
+- The test found four translation defects in LC, now fixed:
+  - LC drew the type 0 and type 1 dendrite counts of each neuron in
+    turn. Native draws the type 0 counts of all neurons, then the type 1
+    counts, so each neuron got a different count from the same rand
+    stream.
+  - For spread 2 and 3, LC took |a - b| of the two draws. Native takes
+    |a + (b - range)|. The distribution is the same, but not the count
+    per draw.
+  - LC mapped a lobe size byte outside 1..63 to ((byte - 1) % 63) + 1.
+    Native maps it to (byte % 63) + 1, so 0 gives 1 and 64 gives 2.
+  - LC clamped every lobe larger than 32x32 to 32x32. Native clamps only
+    lobes 1 to 7; the perception lobe, the concept lobe and any lobe after
+    it keep their size.
+  The first two change every new brain; the last two only mutated
+  genomes.
+- LC native: 0 differing cases; with EQUIVALENCE_FILL=205 and
+  EQUIVALENCE_MASK_STATE=1, 0 differing cases in 1,000.
+- LC as shipped: 0 differing cases. The functions have no switch.
+
+The skeleton genes (`Skeleton::LoadGenome` @0043c800) have no function
+test: the function also writes the creature's sprite file and builds its
+galleries and body parts. Its gene reads (genus, appearance, and pigment
+with the `gext` extension) were compared with LC by reading the code; no
+difference was found.

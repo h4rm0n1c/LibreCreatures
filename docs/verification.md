@@ -67,6 +67,8 @@ dad6):
 | `Creature::ProcessHeardWords` with the "look" search | 0040a630, 0040ac90 | 50,000 (400,000 sentences) | 0 cases differ | 28,016 cases differ, all from rows 9, 37 and 39 |
 | `Creature::UpdateEnvironmentAndLifeStage` | 0040c8d0 | 20,000 (120,000 updates, 11,688 stage changes) | 0 cases differ | 0 cases differ (no row in this code) |
 | `Creature::LoadGenome`: the creature genes at each life stage | 00408960 | 20,000 (14 genomes, half with changed bytes) | 0 cases differ | 0 cases differ (no row in this code) |
+| `CBiochemistry::LoadGenome`: the biochemistry genes, stage by stage | 0042e940 | 20,000 (80,451 loads) | 0 cases differ | 0 cases differ (no row in this code) |
+| `CBrain::LoadGenome`: the brain of a new creature | 00404560, 004025d0, 00402840, 004047c0 | 5,000 (5,263,361 neurons, 110,453,879 dendrites) | 0 cases differ | 0 cases differ (no row in this code) |
 
 The values that each test compares:
 
@@ -109,10 +111,15 @@ The values that each test compares:
   and the calls to express the genome and to die, after each update.
 - Gene expression: the 36 stimulus contexts, the 100 poses, all bytes of
   the 8 gaits and the instinct list.
+- Biochemistry genes: all chemicals, the receptor, emitter and reaction
+  records with their counts and loci, and the locus bytes, after each
+  stage's load.
+- Brain genes: every lobe's parameters and rules, every neuron and
+  dendrite, and the rand state.
 
 The perception, goal-direction, geometry, fan-out, skeleton, learned-word,
-heard-word and gene-expression tests found thirteen defects in
-LibreCreatures. All are fixed:
+heard-word, gene-expression and brain-gene tests found seventeen defects
+in LibreCreatures. All are fixed:
 
 - `apply_stimulus` set the seen flag of an attention record. The original
   does not.
@@ -143,6 +150,17 @@ LibreCreatures. All are fixed:
   reduces the byte modulo 100 before it tests for zero.
 - A gait gene cleared the bytes after the gait's terminator. The original
   keeps them. Nothing reads them.
+- A new lobe drew the two dendrite counts of each neuron in turn. The
+  original draws the first count of all neurons, then the second.
+- Two of the four dendrite count spreads used a different formula with
+  the same distribution.
+- A lobe size byte outside 1 to 63 gave a size one smaller than the
+  original's.
+- Every lobe larger than 32 by 32 was made 32 by 32. The original does
+  this only for lobes 1 to 7.
+
+The biochemistry-gene and brain-gene tests also found two defects in the
+original: rows 81 and 82 of [`original-bugs.md`](original-bugs.md).
 
 The procedure for each test is in
 [`tests/equivalence/README.md`](../tests/equivalence/README.md).

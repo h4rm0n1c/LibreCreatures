@@ -200,11 +200,15 @@ int main(int argc, char** argv) {
                 native[kGaitTable + kGaitStride * g + c] = static_cast<std::uint8_t>(ch);
             }
         }
-        // The native reader, in memory.
+        // The native reader, in memory.  A zero pad and a gend follow the
+        // genome, so that a read past its end (row 81) is the same each run.
+        std::vector<std::uint8_t> reader_bytes = bytes;
+        reader_bytes.resize(bytes.size() + 1024, 0);
+        reader_bytes.insert(reader_bytes.end(), {'g', 'e', 'n', 'd'});
         std::vector<std::uint8_t> reader(0x20, 0);
         field<std::uint32_t>(reader.data(), 0) = kGenomeVtable;
-        field<std::uint8_t*>(reader.data(), 4) = bytes.data();
-        field<std::uint8_t*>(reader.data(), 8) = bytes.data();
+        field<std::uint8_t*>(reader.data(), 4) = reader_bytes.data();
+        field<std::uint8_t*>(reader.data(), 8) = reader_bytes.data();
         field<std::uint32_t>(reader.data(), 0xc) = static_cast<std::uint32_t>(bytes.size());
         field<std::uint32_t>(reader.data(), 0x10) = 1;
         field<std::int32_t>(reader.data(), 0x14) = static_cast<std::int32_t>(sex);
