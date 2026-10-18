@@ -65,6 +65,8 @@ dad6):
 | Simple objects: pick-up, carrying, putting down and the edit drop | 00426ee0 to 00428d30 | 50,000 (2,000,000 operations) | 0 cases differ | 5,265 cases differ, all from rows 22 and 27 |
 | Learned words and phrases: 7 functions | 00409e80 to 0040b160 | 50,000 (1,200,000 operations) | 0 cases differ | 12,663 cases differ, all from row 14 |
 | `Creature::ProcessHeardWords` with the "look" search | 0040a630, 0040ac90 | 50,000 (400,000 sentences) | 0 cases differ | 28,016 cases differ, all from rows 9, 37 and 39 |
+| `Creature::UpdateEnvironmentAndLifeStage` | 0040c8d0 | 20,000 (120,000 updates, 11,688 stage changes) | 0 cases differ | 0 cases differ (no row in this code) |
+| `Creature::LoadGenome`: the creature genes at each life stage | 00408960 | 20,000 (14 genomes, half with changed bytes) | 0 cases differ | 0 cases differ (no row in this code) |
 
 The values that each test compares:
 
@@ -103,10 +105,14 @@ The values that each test compares:
 - Heard words: the word and attention records, the stimulus-source, verb,
   sensory and attention lobes, all chemicals, the goal matrix and
   goal-direction state, and everything said, after each sentence.
+- Life stage: the control-state loci, the life stage, the gamete moniker
+  and the calls to express the genome and to die, after each update.
+- Gene expression: the 36 stimulus contexts, the 100 poses, all bytes of
+  the 8 gaits and the instinct list.
 
-The perception, goal-direction, geometry, fan-out, skeleton, learned-word
-and heard-word tests found eleven defects in LibreCreatures. All are
-fixed:
+The perception, goal-direction, geometry, fan-out, skeleton, learned-word,
+heard-word and gene-expression tests found thirteen defects in
+LibreCreatures. All are fixed:
 
 - `apply_stimulus` set the seen flag of an attention record. The original
   does not.
@@ -133,6 +139,10 @@ fixed:
 - "look" also gave a verb.
 - "look" from a creature in a vehicle searched the creature's own area
   instead of the vehicle's.
+- A gait gene byte of 100 or 200 did not end the gait. The original
+  reduces the byte modulo 100 before it tests for zero.
+- A gait gene cleared the bytes after the gait's terminator. The original
+  keeps them. Nothing reads them.
 
 The procedure for each test is in
 [`tests/equivalence/README.md`](../tests/equivalence/README.md).

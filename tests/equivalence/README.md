@@ -698,3 +698,78 @@ First run (2026-10-18): 50,000 cases, 400,000 sentences, 27,416 with
 - LC native: 0 differing cases.
 - LC as shipped: 28,016 differing cases, the same cases as the build with
   only rows 9, 37 and 39 fixed.
+
+## Environment and life stage: `Creature::UpdateEnvironmentAndLifeStage` @0040c8d0 (CE 10.3)
+
+What a creature does each tick with its environment and age:
+- it sets the heat, cold and light loci from the room type and the season;
+- it sets the nearness locus when a creature of its own kind is near;
+- it sets the fertile, pregnant and ovulation loci from the gamete and
+  child genomes;
+- it goes to the next life stage when that ageing locus is set, and the
+  genome is expressed again;
+- it dies when the death locus is set.
+
+    WINEPREFIX=<throwaway prefix> tests/equivalence/run_life.sh \
+        <CE 10.3 Creatures.exe> <cases> <build-dir>
+
+The native creature is a Creature-shaped block with the control-state loci,
+the life stage, the gamete and child monikers, the genome moniker, the
+classifier, the death state and the attention records. The room table and
+the season's ambient index are at the MapData pointer. The genome
+re-expression (0040d930) and Die (0040dc30) are recorders on both sides.
+
+Each case: random loci, a stage 0 to 7, gamete and child monikers, a room
+table, a season, and possibly a creature of the same kind near it. Then 6
+updates, with random changes to the ovulation, ageing and death loci
+between them. After each update these must match:
+- the control-state loci;
+- the life stage and the gamete moniker;
+- the calls to re-express and to die.
+
+First run (2026-10-18): 20,000 cases, 120,000 updates, 11,688 stage
+changes, 17,650 calls to die.
+- LC native: 0 differing cases.
+- LC as shipped: 0 differing cases. The function has no switch.
+
+## Gene expression: `Creature::LoadGenome` @00408960 (CE 10.3)
+
+The creature genes of a genome at one life stage:
+- the 36 built-in stimulus contexts;
+- the 100 poses;
+- the 8 gaits;
+- the instincts (20 at most).
+
+The genome re-expression (0040d930) calls this function at each stage
+change.
+
+    WINEPREFIX=<throwaway prefix> tests/equivalence/run_express.sh \
+        <CE 10.3 Creatures.exe> <cases> <build-dir> <genome.gen>...
+
+The native genome reader is a CGenome in memory (vtable 00456094), with the
+genome bytes, the cursor, the size, the moniker, the sex and the life
+stage. The native creature is a Creature-shaped block with the stimulus
+contexts, the pose and gait tables, the instinct list and a brain block
+with the lobe sizes. The lobe sizes come from LC's brain, grown from stage
+0 of the unchanged genome. The MFC operator new is bound to malloc.
+
+Each case: one genome, a sex, a life stage 0 to 6, and random earlier
+contents in each table. In half the cases, up to 40 bytes of the genome
+change (never in a gene or end marker). One change in four is 0, 100 or
+200, the values that end a gait. After the load these must match:
+- the 36 stimulus contexts;
+- the 100 poses;
+- the 8 gaits, all 18 bytes;
+- the instinct list.
+
+First run (2026-10-18): the 14 genomes of the CE 10.3 Genetics folder,
+20,000 cases, 51,939 instincts loaded.
+- The test found two translation defects in LC, now fixed:
+  - LC tested for the zero byte that ends a gait before it reduced the
+    byte modulo 100. Native reduces first, so 100 and 200 also end the
+    gait. LC gave a longer gait than the original.
+  - LC cleared a gait before it wrote the gait. Native keeps the bytes
+    after the R terminator. No reader and no save looks past the
+    terminator, so only the test sees this difference.
+- LC native: 0 differing cases.
+- LC as shipped: 0 differing cases. The function has no switch.

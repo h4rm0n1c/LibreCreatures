@@ -253,5 +253,33 @@ for mode in fixed native rows; do
     $cxx $flags $define $wrap -o "$exe" "$here/heard_equivalence.cpp" "$here/native_image.cpp" \
         "$out/heard_traps_$mode.cpp" $creature
 done
+# Environment loci and life stage: the creature closure.  The code under test
+# has no switch, so there is no row build.
+for mode in fixed native; do
+    case $mode in
+        fixed) define= ;;
+        native) define=-DLC_NATIVE_MODE ;;
+    esac
+    exe="$out/life_equivalence_$mode.exe"
+    $cxx $flags $define -Wl,--no-demangle -o "$exe" "$here/life_equivalence.cpp" \
+        "$here/native_image.cpp" $creature > "$out/life_$mode.link" 2>&1 || true
+    python3 "$here/trap_stubs.py" "$out/life_$mode.link" "$out/life_traps_$mode.cpp"
+    $cxx $flags $define -o "$exe" "$here/life_equivalence.cpp" "$here/native_image.cpp" \
+        "$out/life_traps_$mode.cpp" $creature
+done
+# Creature gene expression: the creature closure.  The code under test has
+# no switch, so there is no row build.
+for mode in fixed native; do
+    case $mode in
+        fixed) define= ;;
+        native) define=-DLC_NATIVE_MODE ;;
+    esac
+    exe="$out/express_equivalence_$mode.exe"
+    $cxx $flags $define -Wl,--no-demangle -o "$exe" "$here/express_equivalence.cpp" \
+        "$here/native_image.cpp" $creature > "$out/express_$mode.link" 2>&1 || true
+    python3 "$here/trap_stubs.py" "$out/express_$mode.link" "$out/express_traps_$mode.cpp"
+    $cxx $flags $define -o "$exe" "$here/express_equivalence.cpp" "$here/native_image.cpp" \
+        "$out/express_traps_$mode.cpp" $creature
+done
 echo "built in $out"
 
