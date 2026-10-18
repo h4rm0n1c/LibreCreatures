@@ -14,7 +14,9 @@ winexe=$(winepath -w "$exe")
 genomes=
 for g in "$@"; do genomes="$genomes $(winepath -w "$g")"; done
 status=0
-wine "$out/brain_equivalence_native.exe" "$winexe" $genomes -cases "$cases" | tail -2 || status=1
+wine "$out/brain_equivalence_native.exe" "$winexe" $genomes -cases "$cases" \
+    > "$out/brain-native.txt" || status=1
+tail -2 "$out/brain-native.txt"
 for build in fixed row2 row4 row5 row6; do
     EQUIVALENCE_DIFFS="$(winepath -w "$out/brain-$build.diffs")" \
         wine "$out/brain_equivalence_$build.exe" "$winexe" $genomes -cases "$cases" |

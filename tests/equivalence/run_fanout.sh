@@ -11,7 +11,9 @@ src=$here/../../src/c1
 export WINEDEBUG=-all
 winexe=$(winepath -w "$exe")
 status=0
-wine "$out/fanout_equivalence_native.exe" "$winexe" -cases "$cases" | tail -2 || status=1
+wine "$out/fanout_equivalence_native.exe" "$winexe" -cases "$cases" \
+    > "$out/fanout-native.txt" || status=1
+tail -2 "$out/fanout-native.txt"
 for build in fixed rows; do
     wine "$out/fanout_equivalence_$build.exe" "$winexe" -cases "$cases" > "$out/fanout-$build.txt"
     tail -1 "$out/fanout-$build.txt" | sed "s/^/$build: /"

@@ -11,7 +11,9 @@ src=$here/../../src/c1
 export WINEDEBUG=-all
 winexe=$(winepath -w "$exe")
 status=0
-wine "$out/geometry_equivalence_native.exe" "$winexe" -cases "$cases" | tail -2 || status=1
+wine "$out/geometry_equivalence_native.exe" "$winexe" -cases "$cases" \
+    > "$out/geometry-native.txt" || status=1
+tail -2 "$out/geometry-native.txt"
 for build in fixed rows; do
     wine "$out/geometry_equivalence_$build.exe" "$winexe" -cases "$cases" > "$out/geometry-$build.txt"
     tail -1 "$out/geometry-$build.txt" | sed "s/^/$build: /"
