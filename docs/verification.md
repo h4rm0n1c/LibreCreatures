@@ -298,13 +298,46 @@ the script and not to 0. A completed `wait` did not end the script's turn.
 `pose` deleted the animation buffer. The event bar forgot its two saved
 words between a load and a save.
 
-The test covers one world with no creatures. Worlds with creatures, eggs
-and running kits are not yet compared.
+### World ticks
+
+`run_world.sh --ticks <n>` runs `SFCDoc::UpdateWorld` @004324e0 n times
+between the load and the save, on both sides. The native side has no sound
+manager and no autosave; the hook mutes the world, so neither side takes a
+random number for the ambient sound.
+
+Second result (2026-10-18): a world that the original saved after 2,400
+ticks with four stock norns (193 objects, 4 creatures, 521,765 bytes on a
+round trip).
+
+- 0 ticks: the same, byte for byte, after L31 was fixed.
+- 1 and 10 ticks: the same, byte for byte, after L32 was fixed.
+- 45 ticks: every field the same. The only bytes that differ are those
+  after the end of a speech bubble's text: the original writes the
+  uninitialised bytes of its 25-byte buffer there, and LibreCreatures
+  writes zeros.
+- Both sides take the same number of random numbers in every tick.
+
+Two limits:
+
+- At tick 46 a dendrite migration in one norn succeeds in LibreCreatures
+  and fails in the original. Row 5: the original's duplicate test packs
+  neuron addresses into 16 bits, so its answer depends on where the brain
+  is in memory. The original alone, run 60 ticks with its heap moved by a
+  few bytes, gives different saves. A multi-tick comparison is exact only
+  until the first migration that this can change.
+- On `neorender`, speech bubbles share one balloon image and draw their
+  words as an overlay (0c0207e). The original gives every bubble its own
+  copy, so with a bubble in the world the saved image flags differ, and with
+  two the object references in the file differ too. The 45-tick result is
+  from a `main` build, which keeps the original's bubbles.
+
+Worlds with eggs and running kits are not yet compared.
 
 ## What the tests do not cover
 
 - Functions without a function test. The hand's own movement has no
-  function test. The world test compares one world with no creatures. The CAOS tests and the COB replay test some of their behaviour.
+  function test. The world test compares two worlds, one with four
+  norns, and only until the first migration that row 5 can change. The CAOS tests and the COB replay test some of their behaviour.
 - Pictures and sound. The tests do not compare the picture or the sound
   output.
 - The kits. The tests do not compare the kit programs.
