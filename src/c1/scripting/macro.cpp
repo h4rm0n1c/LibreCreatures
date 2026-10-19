@@ -1,4 +1,5 @@
 #include "macro.hpp"
+#include "../objects/object_handle.hpp"
 #include "../common/compat.hpp"
 
 #include <algorithm>
@@ -810,8 +811,7 @@ void Macro::report_syntax_error(MacroCommandHost& host,
 namespace {
 
 std::uint32_t object_pointer_value(const objects::Object* object) {
-    return static_cast<std::uint32_t>(
-        reinterpret_cast<std::uintptr_t>(object));
+    return objects::handle_of(object);
 }
 
 std::uint32_t classifier_family(const objects::Object& object) {
@@ -2519,8 +2519,7 @@ MacroControlFlowResult Macro::execute_pointer_command(
 
 objects::Object* Macro::object_from_value(
     std::uint32_t value, const MacroRuntimeHost& runtime) const {
-    auto* const candidate =
-        reinterpret_cast<objects::Object*>(static_cast<std::uintptr_t>(value));
+    auto* const candidate = objects::object_at_handle(value);
     if (candidate == nullptr || runtime.is_live_object(candidate)) {
         return candidate;
     }
