@@ -16,6 +16,7 @@
 #include "../world/viewport.hpp"
 #include "../archive/funeral_kit.hpp"
 #include "../creatures/egg.hpp"
+#include "../objects/object_handle.hpp"
 
 #include <limits>
 #include <optional>
@@ -2954,8 +2955,8 @@ void C1WindowsDocument::update_creature_brain(std::size_t index) {
             context.hand_y = (bounds.min_y + bounds.max_y) / 2;
         }
         if (skeleton.motion_link != nullptr) {
-            context.attended_object = static_cast<std::uint32_t>(
-                reinterpret_cast<std::uintptr_t>(skeleton.motion_link));
+            context.attended_object =
+                creatures1::objects::handle_of(skeleton.motion_link);
             if (skeleton.motion_link->get_bounds(&bounds)) {
                 context.attended_x = (bounds.min_x + bounds.max_x) / 2;
                 context.attended_y = (bounds.min_y + bounds.max_y) / 2;
@@ -3900,7 +3901,7 @@ C1WindowsDocument::system_info_snapshot() const {
         // The native prints the motion link pointer itself through %d: for a
         // debug readout what matters is which object it is, or none at all.
         info.selected_creature_motion_link = static_cast<std::int32_t>(
-            reinterpret_cast<std::uintptr_t>(creature->motion_link()));
+            creatures1::objects::handle_of(creature->motion_link()));
     }
     if (g_active_app_state != nullptr) {
         info.smoothed_idle_cycle_index =

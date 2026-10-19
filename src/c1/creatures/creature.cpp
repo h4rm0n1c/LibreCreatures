@@ -1,4 +1,5 @@
 #include "creature.hpp"
+#include "../objects/object_handle.hpp"
 #include "../common/compat.hpp"
 
 #include <algorithm>
@@ -3265,8 +3266,7 @@ void Creature::apply_stimulus(
     const bool recording = brain::g_brain_events_wanted && brain_ != nullptr;
     if (recording) {
         recorded.built_in = g_built_in_stimulus;
-        recorded.source_object = static_cast<std::uint32_t>(
-            reinterpret_cast<std::uintptr_t>(source_object));
+        recorded.source_object = objects::handle_of(source_object);
         recorded.source_classifier = source_object->classifier_base();
         recorded.source_x = source_host.sound_source_x(*source_object);
         recorded.source_y = source_host.sound_source_y(*source_object);

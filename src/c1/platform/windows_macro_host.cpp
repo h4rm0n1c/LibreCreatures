@@ -18,6 +18,7 @@
 #include "../common/lab_trace.hpp"
 #include "../common/logging.hpp"
 #include "../scripting/classifier_scripts.hpp"
+#include "../objects/object_handle.hpp"
 
 namespace creatures1::platform {
 namespace {
@@ -3390,7 +3391,7 @@ std::string WindowsMacroHost::render_ecology(creatures1::scripting::Macro& /*mac
     for (creatures1::creatures::Creature* creature : creatures) {
         creatures1::objects::Object& object = document_.object_for_creature(*creature);
         const std::uint32_t classifier = object.classifier_base();
-        field(static_cast<long long>(reinterpret_cast<std::uintptr_t>(&object)));
+        field(static_cast<long long>(creatures1::objects::handle_of(&object)));
         field(creature->skeleton().down_foot_x);
         field(creature->skeleton().down_foot_y);
         field((classifier >> 24) & 0xff);
