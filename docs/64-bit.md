@@ -39,7 +39,9 @@ x64 with the same MSVC 14.44 toolchain (x64 compiler, MFC, CRT and SDK
 libraries, `/MACHINE:X64`, no `/FIXED`). The whole program, the platform
 layer too, compiles for x64 with no error. `main` links a 64-bit
 Creatures.exe (2026-10-19). On `neorender` the link also needs SDL3's x64
-library, which `third_party/SDL3` does not have yet.
+library: `third_party/SDL3/lib/x64` has it, from the same official SDL
+3.4.16 VC package as the x86 files, and the 64-bit exe needs that
+`SDL3.dll` beside it.
 
 A 64-bit build needs the x64 `mfc140.dll`, `vcruntime140.dll`,
 `vcruntime140_1.dll` and `msvcp140.dll` beside it
