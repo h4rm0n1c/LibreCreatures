@@ -35,6 +35,13 @@ bool WindowsComLocalServer::resolve_local_server_path(
 
     HKEY local_server_key = nullptr;
     if (RegOpenKeyExA(HKEY_CLASSES_ROOT, registry_path.data(), 0, KEY_READ,
+                      &local_server_key) != ERROR_SUCCESS &&
+        // Not native: a 64-bit build sees the 64-bit registry, and a 32-bit
+        // kit registers its class in the 32-bit view (docs/64-bit.md).  The
+        // 32-bit build reads that view already, so this changes nothing
+        // there.
+        RegOpenKeyExA(HKEY_CLASSES_ROOT, registry_path.data(), 0,
+                      KEY_READ | KEY_WOW64_32KEY,
                       &local_server_key) != ERROR_SUCCESS) {
         return false;
     }

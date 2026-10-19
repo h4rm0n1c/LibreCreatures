@@ -10,7 +10,8 @@
 #include <cwchar>
 #include <limits>
 
-#include <oleauto.h>
+#include <chrono>
+#include <thread>
 
 namespace creatures1::scripting {
 
@@ -20,13 +21,8 @@ constexpr std::size_t kPipeReceiveBufferSize = 0x100000;
 constexpr std::size_t kFireCommandOutputBufferSize = 0x10000;
 constexpr std::uint16_t kSupportedMacroTypeCount = 5;
 constexpr char kRecordSeparator = '\x1e';
-constexpr DISPID kCommunicateDispatchId = 1;
-constexpr WORD kRequiredInvokeFlags = DISPATCH_METHOD;
-constexpr UINT kCommunicateArgumentCount = 2;
-constexpr DWORD kPipeConnectAttempts = 3;
-constexpr DWORD kPipeRetryDelayMilliseconds = 50;
-constexpr DWORD kWorkerCreatePipeAttempts = 10;
-constexpr DWORD kWorkerCreatePipeRetryDelayMilliseconds = 1000;
+constexpr std::uint32_t kWorkerCreatePipeAttempts = 10;
+constexpr std::uint32_t kWorkerCreatePipeRetryDelayMilliseconds = 1000;
 
 std::string error_response(std::string_view detail) {
     std::string response = "ERROR";
@@ -82,179 +78,6 @@ std::string success_response(std::string_view detail = {}) {
 
 } // namespace
 
-CPipeDispatchProxy::CPipeDispatchProxy(std::uint32_t tool_index)
-    : tool_index_(tool_index) {
-    std::snprintf(pipe_name_, sizeof(pipe_name_),
-                  "\\\\.\\pipe\\Creatures1_Kit_Tool%u", tool_index_);
-}
-
-CPipeDispatchProxy::~CPipeDispatchProxy() = default;
-
-HRESULT STDMETHODCALLTYPE CPipeDispatchProxy::QueryInterface(
-    REFIID interface_id, void** object_out) {
-    if (object_out == nullptr) {
-        return E_POINTER;
-    }
-    *object_out = nullptr;
-    if (!InlineIsEqualGUID(interface_id, IID_IUnknown) &&
-        !InlineIsEqualGUID(interface_id, IID_IDispatch)) {
-        return E_NOINTERFACE;
-    }
-
-    *object_out = static_cast<IDispatch*>(this);
-    AddRef();
-    return S_OK;
-}
-
-ULONG STDMETHODCALLTYPE CPipeDispatchProxy::AddRef() {
-    return static_cast<ULONG>(InterlockedIncrement(&reference_count_));
-}
-
-ULONG STDMETHODCALLTYPE CPipeDispatchProxy::Release() {
-    const LONG remaining = InterlockedDecrement(&reference_count_);
-    if (remaining == 0) {
-        delete this;
-    }
-    return static_cast<ULONG>(remaining);
-}
-
-HRESULT STDMETHODCALLTYPE CPipeDispatchProxy::GetTypeInfoCount(UINT* count_out) {
-    if (count_out == nullptr) {
-        return E_POINTER;
-    }
-    *count_out = 0;
-    return S_OK;
-}
-
-HRESULT STDMETHODCALLTYPE CPipeDispatchProxy::GetTypeInfo(
-    UINT /*type_info_index*/, LCID /*locale_id*/, ITypeInfo** type_info_out) {
-    if (type_info_out == nullptr) {
-        return E_POINTER;
-    }
-    *type_info_out = nullptr;
-    return E_NOTIMPL;
-}
-
-HRESULT STDMETHODCALLTYPE CPipeDispatchProxy::GetIDsOfNames(
-    REFIID /*interface_id*/, LPOLESTR* names, UINT name_count,
-    LCID /*locale_id*/, DISPID* dispatch_ids) {
-    if ((name_count != 0 && names == nullptr) || dispatch_ids == nullptr) {
-        return E_POINTER;
-    }
-
-    for (UINT index = 0; index < name_count; ++index) {
-        if (names[index] == nullptr ||
-            _wcsicmp(names[index], L"Communicate") != 0) {
-            dispatch_ids[index] = DISPID_UNKNOWN;
-            return DISP_E_UNKNOWNNAME;
-        }
-        dispatch_ids[index] = kCommunicateDispatchId;
-    }
-    return S_OK;
-}
-
-void CPipeDispatchProxy::initialize_exception(EXCEPINFO* exception_info) {
-    if (exception_info == nullptr) {
-        return;
-    }
-
-    std::memset(exception_info, 0, sizeof(*exception_info));
-    exception_info->wCode = 0x3e9;
-    exception_info->bstrSource =
-        SysAllocString(L"CPipeDispatchProxy");
-    exception_info->bstrDescription =
-        SysAllocString(L"Failed to communicate with kit via pipe");
-    exception_info->scode = E_FAIL;
-}
-
-HRESULT CPipeDispatchProxy::send_arguments(
-    const VARIANTARG& first_argument, const VARIANTARG& second_argument,
-    VARIANT* result, EXCEPINFO* exception_info) {
-    const LONG first_payload = first_argument.lVal;
-    const LONG second_payload = second_argument.lVal;
-    const std::uint32_t wire_payload[2] = {
-        static_cast<std::uint32_t>(second_payload),
-        static_cast<std::uint32_t>(first_payload),
-    };
-
-    HANDLE pipe = INVALID_HANDLE_VALUE;
-    for (DWORD attempt = 0; attempt < kPipeConnectAttempts; ++attempt) {
-        pipe = CreateFileA(pipe_name_, GENERIC_WRITE, 0, nullptr,
-                           OPEN_EXISTING, 0, nullptr);
-        if (pipe != INVALID_HANDLE_VALUE) {
-            break;
-        }
-
-        const DWORD error = GetLastError();
-        if (error == ERROR_FILE_NOT_FOUND ||
-            attempt + 1 >= kPipeConnectAttempts) {
-            break;
-        }
-        Sleep(kPipeRetryDelayMilliseconds);
-    }
-
-    bool succeeded = false;
-    if (pipe != INVALID_HANDLE_VALUE) {
-        DWORD bytes_written = 0;
-        succeeded = WriteFile(pipe, wire_payload, sizeof(wire_payload),
-                              &bytes_written, nullptr) != FALSE &&
-                    bytes_written == sizeof(wire_payload);
-        if (succeeded) {
-            FlushFileBuffers(pipe);
-        }
-        CloseHandle(pipe);
-    }
-
-    if (result != nullptr) {
-        VariantInit(result);
-        result->vt = VT_BOOL;
-        result->boolVal = succeeded ? VARIANT_TRUE : VARIANT_FALSE;
-    }
-    if (succeeded) {
-        return S_OK;
-    }
-
-    initialize_exception(exception_info);
-    return DISP_E_EXCEPTION;
-}
-
-HRESULT STDMETHODCALLTYPE CPipeDispatchProxy::Invoke(
-    DISPID dispatch_id, REFIID /*interface_id*/, LCID /*locale_id*/,
-    WORD invoke_flags, DISPPARAMS* parameters, VARIANT* result,
-    EXCEPINFO* exception_info, UINT* /*argument_error*/) {
-    if (dispatch_id != kCommunicateDispatchId ||
-        (invoke_flags & kRequiredInvokeFlags) == 0) {
-        return DISP_E_MEMBERNOTFOUND;
-    }
-    if (parameters == nullptr ||
-        parameters->cArgs != kCommunicateArgumentCount ||
-        parameters->rgvarg == nullptr) {
-        return DISP_E_BADPARAMCOUNT;
-    }
-
-    // COM stores arguments in reverse order.  The binary accepts either two
-    // direct VT_I4 values or two VARIANT|VT_BYREF wrappers, but rejects a
-    // mixed pair.
-    VARIANTARG* first_argument = &parameters->rgvarg[1];
-    VARIANTARG* second_argument = &parameters->rgvarg[0];
-    constexpr VARTYPE kVariantByReference = VT_VARIANT | VT_BYREF;
-    if (first_argument->vt == kVariantByReference) {
-        if (second_argument->vt != kVariantByReference ||
-            first_argument->pvarVal == nullptr ||
-            second_argument->pvarVal == nullptr) {
-            return DISP_E_TYPEMISMATCH;
-        }
-        first_argument = first_argument->pvarVal;
-        second_argument = second_argument->pvarVal;
-    }
-    if (first_argument->vt != VT_I4 || second_argument->vt != VT_I4) {
-        return DISP_E_TYPEMISMATCH;
-    }
-
-    return send_arguments(*first_argument, *second_argument, result,
-                          exception_info);
-}
-
 PipeServer::PipeServer(PipeServerHost& host) : host_(host) {
     receive_buffer_.reserve(kPipeReceiveBufferSize);
     receive_buffer_.resize(kPipeReceiveBufferSize);
@@ -284,7 +107,8 @@ void PipeServer::run_worker() {
                 }
                 return;
             }
-            Sleep(kWorkerCreatePipeRetryDelayMilliseconds);
+            std::this_thread::sleep_for(std::chrono::milliseconds(
+                kWorkerCreatePipeRetryDelayMilliseconds));
             continue;
         }
         create_failures = 0;
@@ -560,8 +384,7 @@ std::string PipeServer::dispatch_command(std::string_view command) {
             return error_response("Failed to create macro");
         }
 
-        const std::uint32_t handle = static_cast<std::uint32_t>(
-            reinterpret_cast<std::uintptr_t>(holder.get()));
+        const std::uint32_t handle = pending_command_token(holder.get());
         register_pending_command(handle, std::move(holder));
         return success_response(std::to_string(handle));
     }
@@ -699,6 +522,18 @@ std::string PipeServer::execute_fire_command(
         output_length, output.size());
     response.append(output.data(), bytes_to_append);
     return response;
+}
+
+std::uint32_t PipeServer::pending_command_token(const MacroHolder* holder) {
+#if UINTPTR_MAX == 0xffffffffu
+    // The original gives the kit the holder's address as its token.
+    return static_cast<std::uint32_t>(reinterpret_cast<std::uintptr_t>(holder));
+#else
+    // An address does not fit in 32 bits: number the holders instead.
+    static_cast<void>(holder);
+    next_pending_token_ += 4;
+    return next_pending_token_;
+#endif
 }
 
 void PipeServer::register_pending_command(

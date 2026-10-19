@@ -317,15 +317,31 @@ void C1StartupHost::update_ole_factory_registry() {
             "CLSID\\{77C733E1-6797-11CF-BBF2-0020AF71E433}\\LocalServer32",
             0, nullptr, 0, KEY_SET_VALUE, nullptr, &clsid_key, nullptr) ==
         ERROR_SUCCESS) {
-        char module_path[MAX_PATH]{};
-        if (GetModuleFileNameA(nullptr, module_path, MAX_PATH) != 0) {
-            const std::string quoted = std::string("\"") + module_path + "\"";
-            RegSetValueExA(clsid_key, nullptr, 0, REG_SZ,
-                           reinterpret_cast<const BYTE*>(quoted.c_str()),
-                           static_cast<DWORD>(quoted.size() + 1));
-        }
+        write_sfc_local_server_path(clsid_key);
         RegCloseKey(clsid_key);
         delete_own_sfc_inproc_server_registration();
+    }
+#if defined(_WIN64)
+    // Not native: 32-bit kits read the 32-bit registry view, which a 64-bit
+    // program does not write by default (docs/64-bit.md).
+    if (RegCreateKeyExA(
+            HKEY_CLASSES_ROOT,
+            "CLSID\\{77C733E1-6797-11CF-BBF2-0020AF71E433}\\LocalServer32",
+            0, nullptr, 0, KEY_SET_VALUE | KEY_WOW64_32KEY, nullptr,
+            &clsid_key, nullptr) == ERROR_SUCCESS) {
+        write_sfc_local_server_path(clsid_key);
+        RegCloseKey(clsid_key);
+    }
+#endif
+}
+
+void C1StartupHost::write_sfc_local_server_path(HKEY clsid_key) {
+    char module_path[MAX_PATH]{};
+    if (GetModuleFileNameA(nullptr, module_path, MAX_PATH) != 0) {
+        const std::string quoted = std::string("\"") + module_path + "\"";
+        RegSetValueExA(clsid_key, nullptr, 0, REG_SZ,
+                       reinterpret_cast<const BYTE*>(quoted.c_str()),
+                       static_cast<DWORD>(quoted.size() + 1));
     }
 }
 
