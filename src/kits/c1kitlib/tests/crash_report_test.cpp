@@ -90,8 +90,29 @@ void test_file_stem() {
 
 } // namespace
 
+// A 64-bit kit's addresses: 16 hex digits once they pass 32 bits; a
+// 32-bit value keeps its 8, so a 32-bit kit's report does not change.
+void test_addresses() {
+    assert(hex_address(0x00401234) == "0x00401234");
+    assert(hex_address(0x00007FF6'12345678ull) == "0x00007FF612345678");
+    CrashInfo info;
+    info.kit = "Hatchery";
+    info.code = 0xC0000005;
+    info.address = 0x00007FF6'12345678ull;
+    info.module = "Hatchery.exe";
+    info.module_offset = 0x5678;
+    info.has_access = true;
+    info.access_address = 0x10;
+    info.registers = {{"RIP", 0x00007FF6'12345678ull}};
+    const std::string details = crash_details(info);
+    assert(details.find("Access: reading 0x00000010") != std::string::npos);
+    assert(details.find("RIP=0x00007FF612345678") != std::string::npos);
+    assert(details.find("Where: Hatchery.exe+0x00005678") != std::string::npos);
+}
+
 int main() {
     test_type_names();
+    test_addresses();
     test_access_violation();
     test_other_kinds();
     test_file_stem();

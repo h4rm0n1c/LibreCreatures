@@ -75,6 +75,14 @@ the 32-bit build's.
   in the 32-bit registry view too (`platform/windows_com_host.cpp`), and a
   64-bit build writes `SFC.OLE`'s `LocalServer32` in both views
   (`platform/windows_application_host.cpp`), so 32-bit kits find it.
+- The kits build for x64 too (`byte_match/harness/build_kits.py --arch
+  x64`). A 64-bit game and 32-bit kits cannot share one folder, because
+  each needs its own `mfc140.dll` and C runtime there; a 64-bit install
+  uses 64-bit kits. The kits' crash reporter
+  (`src/kits/shell/src/kit_crash.cpp`) reads the x64 registers, walks the
+  x64 stack and reads x64 C++ exception records; a report writes an
+  address above 32 bits with 16 hex digits (`c1kit::hex_address`), so a
+  32-bit kit's report does not change.
 - The kit protocol carries no pointer-sized field: `Communicate` takes a
   32-bit header and a 32-bit payload (a genome file id, a Funeral Kit state
   word or 0), and kits get object values only through CAOS replies, which

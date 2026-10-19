@@ -66,19 +66,34 @@ std::uint32_t pe_timestamp(HMODULE module) {
     return nt->Signature == IMAGE_NT_SIGNATURE ? nt->FileHeader.TimeDateStamp : 0;
 }
 
+// The registers the report needs, for the architecture the kit is built for
+// (a 64-bit kit: LibreCreatures docs/64-bit.md).
+#if defined(_M_X64)
+constexpr DWORD kStackWalkMachine = IMAGE_FILE_MACHINE_AMD64;
+std::uintptr_t program_counter(const CONTEXT& context) { return context.Rip; }
+std::uintptr_t stack_pointer(const CONTEXT& context) { return context.Rsp; }
+// x64 code keeps no frame pointer; the walk unwinds from the stack pointer.
+std::uintptr_t frame_address(const CONTEXT& context) { return context.Rsp; }
+#else
+constexpr DWORD kStackWalkMachine = IMAGE_FILE_MACHINE_I386;
+std::uintptr_t program_counter(const CONTEXT& context) { return context.Eip; }
+std::uintptr_t stack_pointer(const CONTEXT& context) { return context.Esp; }
+std::uintptr_t frame_address(const CONTEXT& context) { return context.Ebp; }
+#endif
+
 // The module holding `address`: its file name and base, or false.
-bool module_at(std::uint32_t address, std::string& name, std::uint32_t& base) {
+bool module_at(std::uintptr_t address, std::string& name, std::uintptr_t& base) {
     HMODULE module = nullptr;
     if (!::GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
                                   GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-                              reinterpret_cast<LPCSTR>(static_cast<std::uintptr_t>(address)),
+                              reinterpret_cast<LPCSTR>(address),
                               &module)) {
         return false;
     }
     char path[MAX_PATH] = {};
     ::GetModuleFileNameA(module, path, MAX_PATH);
     name = file_name_of(path);
-    base = static_cast<std::uint32_t>(reinterpret_cast<std::uintptr_t>(module));
+    base = reinterpret_cast<std::uintptr_t>(module);
     return true;
 }
 
@@ -150,9 +165,17 @@ std::string report_stem() {
 }
 
 // --- C++ exceptions ---------------------------------------------------------
-// The MSVC x86 throw information an 0xE06D7363 exception carries
-// (ExceptionInformation: magic, the object, its ThrowInfo).  Read with no
-// C++ objects in scope, so __try may guard it.
+// The MSVC throw information an 0xE06D7363 exception carries
+// (ExceptionInformation: magic, the object, its ThrowInfo, and on x64 the
+// image base).  On x86 the links are pointers; on x64 they are 32-bit
+// offsets from that image base.  Read with no C++ objects in scope, so
+// __try may guard it.
+
+#if defined(_M_X64)
+using MsvcLink = int;
+#else
+using MsvcLink = std::uintptr_t;
+#endif
 
 struct MsvcTypeDescriptor {
     const void* vftable;
@@ -166,21 +189,35 @@ struct MsvcPmd {
 };
 struct MsvcCatchableType {
     unsigned properties;
-    MsvcTypeDescriptor* type;
+    MsvcLink type;  // MsvcTypeDescriptor
     MsvcPmd this_displacement;
     int size;
-    void* copy_function;
+    MsvcLink copy_function;
 };
 struct MsvcCatchableTypeArray {
     int count;
-    MsvcCatchableType* types[1];
+    MsvcLink types[1];  // MsvcCatchableType
 };
 struct MsvcThrowInfo {
     unsigned attributes;
-    void* unwind;
-    void* forward_compat;
-    MsvcCatchableTypeArray* catchable;
+    MsvcLink unwind;
+    MsvcLink forward_compat;
+    MsvcLink catchable;  // MsvcCatchableTypeArray
 };
+
+// What a link names: an address on x86, an offset from `image_base` on x64.
+template <typename T>
+const T* msvc_linked(MsvcLink link, std::uintptr_t image_base) {
+    if (link == 0) {
+        return nullptr;
+    }
+#if defined(_M_X64)
+    return reinterpret_cast<const T*>(image_base + static_cast<std::uint32_t>(link));
+#else
+    (void)image_base;
+    return reinterpret_cast<const T*>(link);
+#endif
+}
 
 void copy_text(char* out, std::size_t size, const char* text) {
     std::size_t at = 0;
@@ -195,26 +232,46 @@ void read_cpp_exception(const EXCEPTION_RECORD* record, char* type, std::size_t 
                         char* what, std::size_t what_size) {
     type[0] = '\0';
     what[0] = '\0';
+#if defined(_M_X64)
+    constexpr DWORD kParameters = 4;
+#else
+    constexpr DWORD kParameters = 3;
+#endif
     if (record->ExceptionCode != c1kit::kMsvcCppExceptionCode ||
-        record->NumberParameters < 3) {
+        record->NumberParameters < kParameters) {
         return;
     }
     __try {
+        const std::uintptr_t image_base =
+            kParameters > 3 ? static_cast<std::uintptr_t>(record->ExceptionInformation[3]) : 0;
         const auto* object = reinterpret_cast<const char*>(record->ExceptionInformation[1]);
         const auto* info =
             reinterpret_cast<const MsvcThrowInfo*>(record->ExceptionInformation[2]);
-        if (info == nullptr || info->catchable == nullptr) {
+        if (info == nullptr) {
             return;
         }
-        const MsvcCatchableTypeArray* types = info->catchable;
-        if (types->count > 0 && types->types[0] != nullptr &&
-            types->types[0]->type != nullptr) {
-            copy_text(type, type_size, types->types[0]->type->name);
+        const auto* types =
+            msvc_linked<MsvcCatchableTypeArray>(info->catchable, image_base);
+        if (types == nullptr) {
+            return;
+        }
+        const auto type_of = [image_base](const MsvcCatchableType* entry) {
+            return entry == nullptr
+                       ? nullptr
+                       : msvc_linked<MsvcTypeDescriptor>(entry->type, image_base);
+        };
+        if (types->count > 0) {
+            if (const MsvcTypeDescriptor* first = type_of(
+                    msvc_linked<MsvcCatchableType>(types->types[0], image_base))) {
+                copy_text(type, type_size, first->name);
+            }
         }
         for (int index = 0; index < types->count && object != nullptr; ++index) {
-            const MsvcCatchableType* entry = types->types[index];
-            if (entry != nullptr && entry->type != nullptr &&
-                std::strcmp(entry->type->name, ".?AVexception@std@@") == 0) {
+            const auto* entry =
+                msvc_linked<MsvcCatchableType>(types->types[index], image_base);
+            const MsvcTypeDescriptor* descriptor = type_of(entry);
+            if (descriptor != nullptr &&
+                std::strcmp(descriptor->name, ".?AVexception@std@@") == 0) {
                 const auto* exception = reinterpret_cast<const std::exception*>(
                     object + entry->this_displacement.mdisp);
                 copy_text(what, what_size, exception->what());
@@ -271,14 +328,14 @@ void walk_stack(DbgHelp& help, const CONTEXT& context, DWORD thread_id, CrashInf
     HANDLE thread = ::OpenThread(THREAD_ALL_ACCESS, FALSE, thread_id);
     CONTEXT walk = context;
     STACKFRAME64 frame{};
-    frame.AddrPC.Offset = walk.Eip;
+    frame.AddrPC.Offset = program_counter(walk);
     frame.AddrPC.Mode = AddrModeFlat;
-    frame.AddrFrame.Offset = walk.Ebp;
+    frame.AddrFrame.Offset = frame_address(walk);
     frame.AddrFrame.Mode = AddrModeFlat;
-    frame.AddrStack.Offset = walk.Esp;
+    frame.AddrStack.Offset = stack_pointer(walk);
     frame.AddrStack.Mode = AddrModeFlat;
     for (int depth = 0; depth < 64; ++depth) {
-        if (!help.stack_walk(IMAGE_FILE_MACHINE_I386, process,
+        if (!help.stack_walk(kStackWalkMachine, process,
                              thread != nullptr ? thread : ::GetCurrentThread(), &frame,
                              &walk, nullptr, help.function_table, help.module_base,
                              nullptr) ||
@@ -286,12 +343,13 @@ void walk_stack(DbgHelp& help, const CONTEXT& context, DWORD thread_id, CrashInf
             break;
         }
         c1kit::CrashFrame out;
-        out.address = static_cast<std::uint32_t>(frame.AddrPC.Offset);
-        std::uint32_t base = 0;
-        if (!module_at(out.address, out.module, base)) {
+        const auto address = static_cast<std::uintptr_t>(frame.AddrPC.Offset);
+        out.address = address;
+        std::uintptr_t base = 0;
+        if (!module_at(address, out.module, base)) {
             break;  // lost the thread: an address in no module
         }
-        out.offset = out.address - base;
+        out.offset = static_cast<std::uint32_t>(address - base);
         if (symbols && help.from_address != nullptr) {
             alignas(SYMBOL_INFO) char buffer[sizeof(SYMBOL_INFO) + 256] = {};
             auto* symbol = reinterpret_cast<SYMBOL_INFO*>(buffer);
@@ -315,9 +373,8 @@ void walk_stack(DbgHelp& help, const CONTEXT& context, DWORD thread_id, CrashInf
 
 // Whether the bytes before `address` end in a call: E8 rel32, or FF /2
 // (an indirect call) of two, three, six or seven bytes.
-bool follows_call(std::uint32_t address) {
-    const auto* code = reinterpret_cast<const unsigned char*>(
-        static_cast<std::uintptr_t>(address));
+bool follows_call(std::uintptr_t address) {
+    const auto* code = reinterpret_cast<const unsigned char*>(address);
     if (::IsBadReadPtr(code - 7, 7)) {
         return false;
     }
@@ -332,9 +389,9 @@ bool follows_call(std::uint32_t address) {
     return false;
 }
 
-bool is_code(std::uint32_t address) {
+bool is_code(std::uintptr_t address) {
     MEMORY_BASIC_INFORMATION memory{};
-    if (::VirtualQuery(reinterpret_cast<void*>(static_cast<std::uintptr_t>(address)), &memory,
+    if (::VirtualQuery(reinterpret_cast<void*>(address), &memory,
                        sizeof memory) == 0 ||
         memory.State != MEM_COMMIT) {
         return false;
@@ -343,31 +400,31 @@ bool is_code(std::uint32_t address) {
                               PAGE_EXECUTE_WRITECOPY)) != 0;
 }
 
-// Return addresses read straight off the stack from `esp` up: what the walk
+// Return addresses read straight off the stack from `sp` up: what the walk
 // cannot follow through code built without frame pointers.
-void scan_stack(std::uint32_t esp, CrashInfo& info) {
+void scan_stack(std::uintptr_t sp, CrashInfo& info) {
+    constexpr std::uintptr_t kSlot = sizeof(std::uintptr_t);
     MEMORY_BASIC_INFORMATION memory{};
-    if (esp == 0 ||
-        ::VirtualQuery(reinterpret_cast<void*>(static_cast<std::uintptr_t>(esp)), &memory,
-                       sizeof memory) == 0 ||
+    if (sp == 0 ||
+        ::VirtualQuery(reinterpret_cast<void*>(sp), &memory, sizeof memory) == 0 ||
         memory.State != MEM_COMMIT) {
         return;
     }
     const std::uintptr_t end = reinterpret_cast<std::uintptr_t>(memory.BaseAddress) +
                                memory.RegionSize;
-    const std::uintptr_t limit = (std::min)(end, static_cast<std::uintptr_t>(esp) + 0x10000);
-    for (std::uintptr_t at = esp & ~std::uintptr_t{3}; at + 4 <= limit; at += 4) {
-        const std::uint32_t value = *reinterpret_cast<const std::uint32_t*>(at);
+    const std::uintptr_t limit = (std::min)(end, sp + 0x10000);
+    for (std::uintptr_t at = sp & ~(kSlot - 1); at + kSlot <= limit; at += kSlot) {
+        const std::uintptr_t value = *reinterpret_cast<const std::uintptr_t*>(at);
         if (value < 0x10000 || !is_code(value) || !follows_call(value)) {
             continue;
         }
         c1kit::CrashFrame frame;
         frame.address = value;
-        std::uint32_t base = 0;
+        std::uintptr_t base = 0;
         if (!module_at(value, frame.module, base)) {
             continue;
         }
-        frame.offset = value - base;
+        frame.offset = static_cast<std::uint32_t>(value - base);
         info.stack_scan.push_back(frame);
         if (info.stack_scan.size() >= 40) {
             break;
@@ -386,8 +443,7 @@ void list_modules(CrashInfo& info) {
          more = ::Module32Next(snapshot, &entry)) {
         c1kit::CrashModule module;
         module.name = CStringA(entry.szModule).GetString();
-        module.base =
-            static_cast<std::uint32_t>(reinterpret_cast<std::uintptr_t>(entry.modBaseAddr));
+        module.base = reinterpret_cast<std::uintptr_t>(entry.modBaseAddr);
         module.size = entry.modBaseSize;
         module.timestamp = pe_timestamp(entry.hModule);
         info.modules.push_back(module);
@@ -410,17 +466,17 @@ CrashInfo describe(CrashKind kind, const EXCEPTION_POINTERS& pointers, DWORD thr
     const EXCEPTION_RECORD* record = pointers.ExceptionRecord;
     if (record != nullptr) {
         info.code = record->ExceptionCode;
-        info.address =
-            static_cast<std::uint32_t>(reinterpret_cast<std::uintptr_t>(record->ExceptionAddress));
-        std::uint32_t base = 0;
-        if (info.address != 0 && module_at(info.address, info.module, base)) {
-            info.module_offset = info.address - base;
+        const auto address = reinterpret_cast<std::uintptr_t>(record->ExceptionAddress);
+        info.address = address;
+        std::uintptr_t base = 0;
+        if (address != 0 && module_at(address, info.module, base)) {
+            info.module_offset = static_cast<std::uint32_t>(address - base);
         }
         if (record->ExceptionCode == EXCEPTION_ACCESS_VIOLATION &&
             record->NumberParameters >= 2) {
             info.has_access = true;
             info.access_kind = static_cast<std::uint32_t>(record->ExceptionInformation[0]);
-            info.access_address = static_cast<std::uint32_t>(record->ExceptionInformation[1]);
+            info.access_address = record->ExceptionInformation[1];
         }
         char type[256];
         char what[512];
@@ -434,11 +490,23 @@ CrashInfo describe(CrashKind kind, const EXCEPTION_POINTERS& pointers, DWORD thr
         }
     }
     if (const CONTEXT* context = pointers.ContextRecord) {
+#if defined(_M_X64)
+        info.registers = {{"RAX", context->Rax}, {"RBX", context->Rbx},
+                          {"RCX", context->Rcx}, {"RDX", context->Rdx},
+                          {"RSI", context->Rsi}, {"RDI", context->Rdi},
+                          {"RBP", context->Rbp}, {"RSP", context->Rsp},
+                          {"R8", context->R8},   {"R9", context->R9},
+                          {"R10", context->R10}, {"R11", context->R11},
+                          {"R12", context->R12}, {"R13", context->R13},
+                          {"R14", context->R14}, {"R15", context->R15},
+                          {"RIP", context->Rip}, {"EFL", context->EFlags}};
+#else
         info.registers = {{"EAX", context->Eax}, {"EBX", context->Ebx},
                           {"ECX", context->Ecx}, {"EDX", context->Edx},
                           {"ESI", context->Esi}, {"EDI", context->Edi},
                           {"EBP", context->Ebp}, {"ESP", context->Esp},
                           {"EIP", context->Eip}, {"EFL", context->EFlags}};
+#endif
     }
     return info;
 }
@@ -511,7 +579,7 @@ DWORD WINAPI write_crash_files(void* parameter) {
     }
     if (job->pointers->ContextRecord != nullptr) {
         walk_stack(help, *job->pointers->ContextRecord, job->thread_id, info);
-        scan_stack(job->pointers->ContextRecord->Esp, info);
+        scan_stack(stack_pointer(*job->pointers->ContextRecord), info);
     }
     list_modules(info);
     if (write_text_file(report_path, c1kit::crash_report_text(info))) {
@@ -562,10 +630,21 @@ DWORD WINAPI write_crash_files(void* parameter) {
     }
 }
 
-// This thread's registers, taken here, and a record for `code`.  Read with
-// a few instructions: RtlCaptureContext gave a wrong EIP under Wine when
-// called from std::terminate, and catching a raised exception to copy its
-// context failed inside the C runtime's frame handler.
+// This thread's registers, taken here, and a record for `code`.
+#if defined(_M_X64)
+// x64 has no inline assembly: RtlCaptureContext.
+__declspec(noinline) void capture_here(std::uint32_t code, CONTEXT* context,
+                                       EXCEPTION_RECORD* record) {
+    std::memset(context, 0, sizeof *context);
+    ::RtlCaptureContext(context);
+    std::memset(record, 0, sizeof *record);
+    record->ExceptionCode = code;
+    record->ExceptionAddress = reinterpret_cast<void*>(context->Rip);
+}
+#else
+// Read with a few instructions: RtlCaptureContext gave a wrong EIP under Wine
+// when called from std::terminate, and catching a raised exception to copy
+// its context failed inside the C runtime's frame handler.
 __declspec(noinline) void capture_here(std::uint32_t code, CONTEXT* context,
                                        EXCEPTION_RECORD* record) {
     DWORD reg_eax = 0, reg_ebx = 0, reg_ecx = 0, reg_edx = 0, reg_esi = 0, reg_edi = 0,
@@ -601,6 +680,7 @@ __declspec(noinline) void capture_here(std::uint32_t code, CONTEXT* context,
     record->ExceptionCode = code;
     record->ExceptionAddress = reinterpret_cast<void*>(static_cast<std::uintptr_t>(reg_eip));
 }
+#endif
 
 // A failure with no exception record of its own (terminate, abort, ...):
 // one made here.
@@ -953,7 +1033,7 @@ void report_carried_on_error(const std::string& message) {
     info.module_offset = 0;
     DbgHelp help;
     walk_stack(help, context, ::GetCurrentThreadId(), info);
-    scan_stack(context.Esp, info);
+    scan_stack(stack_pointer(context), info);
     const std::string report_path = report_stem() + ".txt";
     const bool written = write_text_file(report_path, c1kit::crash_report_text(info));
     std::string details = c1kit::crash_details(info);
