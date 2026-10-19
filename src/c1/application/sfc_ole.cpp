@@ -29,12 +29,64 @@ bool CSfcOLE::remove_registered(scripting::MacroHolder* holder) {
     for (auto position = macro_holders_.begin();
          position != macro_holders_.end(); ++position) {
         if (position->get() == holder) {
+#if UINTPTR_MAX != 0xffffffffu
+            for (auto entry = holder_handles_.begin();
+                 entry != holder_handles_.end(); ++entry) {
+                if (entry->holder == holder) {
+                    holder_handles_.erase(entry);
+                    break;
+                }
+            }
+#endif
             macro_holders_.erase(position);
             return true;
         }
     }
     return false;
 }
+
+#if UINTPTR_MAX == 0xffffffffu
+
+std::uint32_t CSfcOLE::handle_of(const scripting::MacroHolder* holder) {
+    return static_cast<std::uint32_t>(reinterpret_cast<std::uintptr_t>(holder));
+}
+
+scripting::MacroHolder* CSfcOLE::holder_at(std::uint32_t handle) const {
+    return reinterpret_cast<scripting::MacroHolder*>(
+        static_cast<std::uintptr_t>(handle));
+}
+
+#else
+
+std::uint32_t CSfcOLE::handle_of(const scripting::MacroHolder* holder) {
+    if (holder == nullptr) {
+        return 0;
+    }
+    for (const HolderHandle& entry : holder_handles_) {
+        if (entry.holder == holder) {
+            return entry.handle;
+        }
+    }
+    const std::uint32_t handle = next_holder_handle_;
+    next_holder_handle_ += 4;
+    holder_handles_.push_back({handle, holder});
+    return handle;
+}
+
+scripting::MacroHolder* CSfcOLE::holder_at(std::uint32_t handle) const {
+    if (handle == 0) {
+        return nullptr;
+    }
+    for (const HolderHandle& entry : holder_handles_) {
+        if (entry.handle == handle) {
+            return find_registered(
+                const_cast<scripting::MacroHolder*>(entry.holder));
+        }
+    }
+    return nullptr;
+}
+
+#endif
 
 bool CSfcOLE::CreateMacro(const MacroCreateRequest& request,
                           MacroCreateResponse& response) {

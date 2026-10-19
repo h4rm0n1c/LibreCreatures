@@ -70,8 +70,8 @@ HDDEDATA CALLBACK dde_callback_entry(UINT type, UINT format, HCONV conversation,
             reinterpret_cast<std::uintptr_t>(service_or_item));
     request.data = static_cast<creatures1::scripting::DdeDataHandle>(
         reinterpret_cast<std::uintptr_t>(data));
-    request.data1 = static_cast<std::uint32_t>(data1);
-    request.data2 = static_cast<std::uint32_t>(data2);
+    request.data1 = static_cast<std::uintptr_t>(data1);
+    request.data2 = static_cast<std::uintptr_t>(data2);
     const creatures1::scripting::DdeDataHandle result =
         creatures1::scripting::handle_dde_callback(g_state, request,
                                                    *g_callback_host);

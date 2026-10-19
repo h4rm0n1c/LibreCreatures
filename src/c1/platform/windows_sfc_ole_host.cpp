@@ -132,11 +132,11 @@ namespace {
 // and the value sits at offset eight.  A kit sets the request to VT_I4
 // carrying its macro holder and the response to VT_BSTR carrying its own
 // ANSI command buffer, which the game also writes the reply back into.
-creatures1::scripting::MacroHolder* holder_from(const VARIANT* request) {
+creatures1::scripting::MacroHolder* holder_from(
+    const creatures1::application::CSfcOLE& sfc_ole, const VARIANT* request) {
     return request == nullptr
                ? nullptr
-               : reinterpret_cast<creatures1::scripting::MacroHolder*>(
-                     static_cast<std::intptr_t>(request->lVal));
+               : sfc_ole.holder_at(static_cast<std::uint32_t>(request->lVal));
 }
 
 // OleScriptVariant is a layout mirror of VARIANT -- tag at offset 0, value at
@@ -173,14 +173,13 @@ BOOL C1SfcOleAutomation::CreateMacro(VARIANT* request, VARIANT* response) {
     }
     // The holder goes back the way it came in: tagged VT_I4, value at eight.
     response->vt = static_cast<VARTYPE>(create_response.kind);
-    response->lVal = static_cast<LONG>(
-        reinterpret_cast<std::intptr_t>(create_response.holder));
+    response->lVal = static_cast<LONG>(sfc_ole->handle_of(create_response.holder));
     return TRUE;
 }
 
 BOOL C1SfcOleAutomation::DestroyMacro(VARIANT* request, VARIANT*) {
     creatures1::application::CSfcOLE* sfc_ole = server();
-    return sfc_ole != nullptr && sfc_ole->DestroyMacro(holder_from(request))
+    return sfc_ole != nullptr && sfc_ole->DestroyMacro(holder_from(*sfc_ole, request))
                ? TRUE
                : FALSE;
 }
@@ -189,7 +188,7 @@ BOOL C1SfcOleAutomation::LoadMacro(VARIANT* request, VARIANT* response) {
     creatures1::application::CSfcOLE* sfc_ole = server();
     return sfc_ole != nullptr &&
                    script_from(response) != nullptr &&
-                   sfc_ole->LoadMacro(holder_from(request),
+                   sfc_ole->LoadMacro(holder_from(*sfc_ole, request),
                                       *script_from(response))
                ? TRUE
                : FALSE;
@@ -198,7 +197,7 @@ BOOL C1SfcOleAutomation::LoadMacro(VARIANT* request, VARIANT* response) {
 BOOL C1SfcOleAutomation::RequestMacro(VARIANT* request, VARIANT* response) {
     creatures1::application::CSfcOLE* sfc_ole = server();
     return sfc_ole != nullptr &&
-                   sfc_ole->RequestMacro(holder_from(request),
+                   sfc_ole->RequestMacro(holder_from(*sfc_ole, request),
                                          script_from(response)) != 0
                ? TRUE
                : FALSE;
@@ -208,7 +207,7 @@ BOOL C1SfcOleAutomation::ExecuteMacro(VARIANT* request, VARIANT* response) {
     creatures1::application::CSfcOLE* sfc_ole = server();
     return sfc_ole != nullptr &&
                    script_from(response) != nullptr &&
-                   sfc_ole->ExecuteMacro(holder_from(request),
+                   sfc_ole->ExecuteMacro(holder_from(*sfc_ole, request),
                                          *script_from(response)) != 0
                ? TRUE
                : FALSE;
@@ -219,7 +218,7 @@ long C1SfcOleAutomation::CreateCommand(short execution_mode) {
     if (sfc_ole == nullptr) {
         return 0;
     }
-    return static_cast<long>(reinterpret_cast<std::intptr_t>(
+    return static_cast<long>(sfc_ole->handle_of(
         sfc_ole->CreateCommand(static_cast<std::uint16_t>(execution_mode))));
 }
 
@@ -229,8 +228,7 @@ BOOL C1SfcOleAutomation::DestroyCommand(long holder) {
         return FALSE;
     }
     return sfc_ole->DestroyCommand(
-               reinterpret_cast<creatures1::scripting::MacroHolder*>(
-                   static_cast<std::intptr_t>(holder)))
+               sfc_ole->holder_at(static_cast<std::uint32_t>(holder)))
                ? TRUE
                : FALSE;
 }
@@ -240,8 +238,7 @@ void C1SfcOleAutomation::LoadCommand(long holder, LPCTSTR command_text) {
     if (sfc_ole == nullptr || command_text == nullptr) {
         return;
     }
-    sfc_ole->LoadCommand(reinterpret_cast<creatures1::scripting::MacroHolder*>(
-                             static_cast<std::intptr_t>(holder)),
+    sfc_ole->LoadCommand(sfc_ole->holder_at(static_cast<std::uint32_t>(holder)),
                          std::string_view(command_text));
 }
 
@@ -251,8 +248,7 @@ BOOL C1SfcOleAutomation::RequestCommand(long holder, BSTR* output) {
         return FALSE;
     }
     return sfc_ole->RequestCommand(
-               reinterpret_cast<creatures1::scripting::MacroHolder*>(
-                   static_cast<std::intptr_t>(holder)),
+               sfc_ole->holder_at(static_cast<std::uint32_t>(holder)),
                output) != 0
                ? TRUE
                : FALSE;
