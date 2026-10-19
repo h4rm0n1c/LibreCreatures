@@ -30,8 +30,13 @@ struct QueuedCreatureStimulus {
     creatures1::creatures::StimulusChemicalAmounts chemical_amounts{};
 };
 
+// The original's record sizes.  Nothing depends on the byte layout (the
+// queues are read field by field), so in a 64-bit build the two pointers
+// make the records larger.
+#if UINTPTR_MAX == 0xffffffffu
 static_assert(sizeof(QueuedObjectEvent) == 24);
 static_assert(sizeof(QueuedCreatureStimulus) == 20);
+#endif
 
 inline constexpr std::size_t kObjectEventQueueCapacity = 200;
 using ObjectEventQueue = std::array<QueuedObjectEvent, kObjectEventQueueCapacity>;

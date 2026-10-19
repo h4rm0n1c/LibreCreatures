@@ -1,4 +1,5 @@
 #include "object.hpp"
+#include "object_handle.hpp"
 #include "../common/compat.hpp"
 
 #include "../objects/events.hpp"
@@ -45,6 +46,7 @@ Object::~Object() {
     // C++ emits the deleting-destructor wrapper around this source-level
     // destructor.  The wrapper's storage-release flag is ABI machinery, not
     // a second game operation.
+    forget_object_handle(this);  // 64-bit builds only; nothing in 32-bit
     if (cleanup_ != nullptr) {
         cleanup_->remove_from_renderable_set(*this);
         if (sound_handle_ >= 0) {

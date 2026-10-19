@@ -270,8 +270,8 @@ void Brain::serialize(BrainArchive& archive) {
     }
 
     const std::uint32_t archived_lobe_count = archive.read_u32();
-    lobe_count_ = std::min<std::uint32_t>(archived_lobe_count,
-                                          lobes_.size());
+    lobe_count_ = std::min<std::uint32_t>(
+        archived_lobe_count, static_cast<std::uint32_t>(lobes_.size()));
     for (Lobe& lobe : lobes_) {
         lobe.neurons.reset();
         lobe.connections.reset();
