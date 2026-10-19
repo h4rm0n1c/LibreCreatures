@@ -138,72 +138,57 @@ bool WindowsEmbeddedKitHost::launch_via_native_com(std::size_t tool_index) {
 }
 
 bool WindowsEmbeddedKitHost::launch_via_wine_proxy(std::size_t tool_index) {
-    // Recovered ExecuteEmbeddedKitTool @ 004444e0, Wine branch.  OLEKitProxy.dll
-    // sits beside the executable and is not part of this port; when it is
-    // absent the recovered code reports exactly this and gives up.
-    std::array<char, MAX_PATH> module_path{};
-    GetModuleFileNameA(nullptr, module_path.data(),
-                       static_cast<DWORD>(module_path.size()));
-    char* last_separator = strrchr(module_path.data(), '\\');
-    char* write_at =
-        last_separator == nullptr ? module_path.data() : last_separator + 1;
-    strcpy_s(write_at,
-             module_path.size() - (write_at - module_path.data()),
-             "OLEKitProxy.dll");
-
-    const HMODULE proxy_dll = LoadLibraryA(module_path.data());
-    if (proxy_dll == nullptr) {
-        AfxMessageBox("OLEKitProxy.dll not found. Kit communication is not "
-                      "available under Wine.", MB_OK, 0);
-        return false;
-    }
-
-    // Confirmed against the shipped OLEKitProxy.dll: __stdcall (ret 0xc) with
-    // szExePath, toolID and progID.  The native call passed the address of the
-    // embedded record, whose first member is the registry tool name, so the
-    // third argument is that ProgID string.
-    using LaunchKitWithInjectionFn = HANDLE(__stdcall*)(const char*, int,
-                                                        const char*);
-    const auto launch = reinterpret_cast<LaunchKitWithInjectionFn>(
-        GetProcAddress(proxy_dll, "LaunchKitWithInjection"));
-    if (launch == nullptr) {
-        FreeLibrary(proxy_dll);
-        AfxMessageBox("OLEKitProxy.dll is invalid. Kit communication is not "
-                      "available under Wine.", MB_OK, 0);
-        return false;
-    }
-
+    // LibreCreatures deviation.  Recovered ExecuteEmbeddedKitTool @ 004444e0's
+    // Wine branch went through the Community Edition's OLEKitProxy.dll,
+    // which loads itself into the kit to stand in for the COM activation
+    // Wine cannot do between processes, and carries Communicate and the
+    // macro conversation over two named pipes instead (kit-protocol/
+    // olekitproxy.md has the detail).  A LibreCreatures kit speaks both
+    // pipes itself (c1kitlib's kit_server_pipe.cpp and
+    // sfc_ole_pipe_transport.cpp), so it only needs starting, plainly, with
+    // the same command line OLEKitProxy built for it.
     WindowsComLocalServer com_resolver;
     std::string kit_executable_path;
     if (!creatures1::platform::resolve_com_progid_local_server_path(
             com_resolver,
             frame_.embedded_kit_definitions()[tool_index].prog_id,
             kit_executable_path)) {
-        FreeLibrary(proxy_dll);
         AfxMessageBox("Cannot find executable path for kit.", MB_OK, 0);
         return false;
     }
 
     const std::string kit_prog_id(
         frame_.embedded_kit_definitions()[tool_index].prog_id);
+    std::string command_line = "\"" + kit_executable_path + "\" /Embedding /ToolID=" +
+                               std::to_string(tool_index) + " /ProgID=" + kit_prog_id;
+    std::string working_directory = kit_executable_path;
+    const std::size_t last_separator = working_directory.find_last_of('\\');
+    working_directory = last_separator == std::string::npos
+                            ? std::string()
+                            : working_directory.substr(0, last_separator + 1);
+
+    STARTUPINFOA startup_info{};
+    startup_info.cb = sizeof(startup_info);
+    PROCESS_INFORMATION process_info{};
     // Let the kit take the foreground, or Windows opens it behind the game.
     ::AllowSetForegroundWindow(ASFW_ANY);
-    const HANDLE kit_process = launch(kit_executable_path.c_str(),
-                                      static_cast<int>(tool_index),
-                                      kit_prog_id.c_str());
-    if (kit_process == nullptr) {
-        FreeLibrary(proxy_dll);
+    const BOOL created = CreateProcessA(
+        nullptr, command_line.data(), nullptr, nullptr, FALSE, 0, nullptr,
+        working_directory.empty() ? nullptr : working_directory.c_str(),
+        &startup_info, &process_info);
+    if (created == FALSE) {
         AfxMessageBox("Failed to launch kit. Please check the Wine debug log "
                       "for details.", MB_OK, 0);
         return false;
     }
+    CloseHandle(process_info.hThread);
 
     // The proxy is handed to MFC with ownership, so its initial reference is
     // the one AttachDispatch takes.
     auto* proxy = new WindowsPipeDispatchProxy(tool_index);
     frame_.embedded_kit_dispatch(tool_index).AttachDispatch(proxy, TRUE);
     frame_.embedded_kit_process_handle(tool_index) =
-        reinterpret_cast<std::uintptr_t>(kit_process);
+        reinterpret_cast<std::uintptr_t>(process_info.hProcess);
     ++frame_.active_embedded_tool_count();
 
     if (!creatures1::application::send_your_id_is_message(*this, tool_index)) {
