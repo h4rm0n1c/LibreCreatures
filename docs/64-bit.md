@@ -102,3 +102,17 @@ The function tests, the CAOS tests and the world test must give the same
 results before and after each step. For a 64-bit build, the world test must
 compare object values as references, not as numbers: a saved variable that
 holds an object holds an address, which is different in every program.
+
+The kits' SFC.OLE route cannot be tested from another process in the
+lab: under Wine, COM between processes does not reach the game's SFC.OLE
+object, and the Community Edition's `OLEKitProxy.dll` (which the game
+loads to start kits under Wine) is 32-bit. The test hook
+`C1_SFC_OLE_SELFTEST=<file>` calls the game's own SFC.OLE object through
+`IDispatch` with the VARIANTs a kit sends (a query, a scheduled script as
+the Hatchery sends an egg, and the Command family), writes one line per
+step and exits (0 when all passed). Run it with c1-lab's `run_once`.
+Result (2026-10-20): the 64-bit build before the holder handle fix failed
+every call after `CreateMacro`; after it, every step passes.
+
+A 64-bit game cannot start kits under Wine at all yet: it would need a
+64-bit `OLEKitProxy.dll`. On Windows the game starts kits through COM.
