@@ -438,6 +438,15 @@ BEGIN_MESSAGE_MAP(C1MainFrame, CFrameWnd)
     ON_COMMAND(32771, &C1MainFrame::OnToggleEyeView)
     ON_UPDATE_COMMAND_UI(32771, &C1MainFrame::OnUpdateToggleEyeView)
     ON_COMMAND(32777, &C1MainFrame::OnInstantVerbVocabulary)
+    // The original's frame message map sends Help Topics (ID_HELP_FINDER),
+    // F1 (ID_HELP), Shift+F1 (ID_CONTEXT_HELP) and ID_DEFAULT_HELP to MFC's
+    // CWnd::OnHelpFinder (import 0x00450888, entries at 0x004554a8): the
+    // application's help file, CREATURES.HLP beside the exe, opens at its
+    // Help Topics.
+    ON_COMMAND(ID_HELP_FINDER, &CWnd::OnHelpFinder)
+    ON_COMMAND(ID_HELP, &CWnd::OnHelpFinder)
+    ON_COMMAND(ID_CONTEXT_HELP, &CWnd::OnHelpFinder)
+    ON_COMMAND(ID_DEFAULT_HELP, &CWnd::OnHelpFinder)
     ON_COMMAND_RANGE(0x8086, 0x8099, &C1MainFrame::OnEmbeddedKitTool)
     ON_UPDATE_COMMAND_UI_RANGE(0x8086, 0x8099,
                                &C1MainFrame::OnUpdateEmbeddedKitTool)
