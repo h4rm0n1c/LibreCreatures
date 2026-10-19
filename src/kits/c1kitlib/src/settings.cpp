@@ -30,8 +30,13 @@ public:
             RegCreateKeyExA(HKEY_CURRENT_USER, path, 0, nullptr, 0,
                             KEY_ALL_ACCESS, nullptr, &user_, &disposition) ==
             ERROR_SUCCESS;
+        // KEY_WOW64_32KEY: the game's machine settings are in the 32-bit
+        // registry view, where the launcher and the original write them; a
+        // 64-bit kit reads the same keys.  A 32-bit kit reads that view in
+        // any case (LibreCreatures docs/64-bit.md).
         const bool machine_ok =
-            RegOpenKeyExA(HKEY_LOCAL_MACHINE, path, 0, KEY_READ, &machine_) ==
+            RegOpenKeyExA(HKEY_LOCAL_MACHINE, path, 0,
+                          KEY_READ | KEY_WOW64_32KEY, &machine_) ==
             ERROR_SUCCESS;
         if (!user_ok) {
             user_ = nullptr;

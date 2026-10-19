@@ -78,7 +78,11 @@ the 32-bit build's.
 - The kits build for x64 too (`byte_match/harness/build_kits.py --arch
   x64`). A 64-bit game and 32-bit kits cannot share one folder, because
   each needs its own `mfc140.dll` and C runtime there; a 64-bit install
-  uses 64-bit kits. The kits' crash reporter
+  uses 64-bit kits. The kits read the game's machine settings in the
+  32-bit registry view, as the game does (`c1kitlib/src/settings.cpp`). A
+  64-bit kit registers its `LocalServer32` in the 64-bit view, where the
+  64-bit game looks first; a 32-bit game keeps finding the 32-bit kits.
+  The kits' crash reporter
   (`src/kits/shell/src/kit_crash.cpp`) reads the x64 registers, walks the
   x64 stack and reads x64 C++ exception records; a report writes an
   address above 32 bits with 16 hex digits (`c1kit::hex_address`), so a
