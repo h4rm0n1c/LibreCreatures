@@ -75,6 +75,18 @@ C1KIT_API MacroTransport* connect_sfc_ole(std::size_t buffer_bytes,
 C1KIT_API void describe_connect_failure(ConnectResult result, long hresult,
                                         char* buffer, std::size_t size);
 
+// Under Wine, COM between two processes does not work (confirmed in the
+// lab: CoGetClassObject/CoCreateInstance across processes fails with
+// RPC_S_SERVER_UNAVAILABLE), so connect_sfc_ole cannot reach the game there.
+// This is the same macro conversation -- the same text commands the game's
+// PipeServer already parses -- sent straight to the game's own
+// \\.\pipe\SFC_OLE, with no COM and no go-between.  `win32_error` is the
+// Win32 code of the step that failed, for a message the caller builds
+// itself (there is no HRESULT here to hand describe_connect_failure).
+C1KIT_API MacroTransport* connect_sfc_ole_pipe(std::size_t buffer_bytes,
+                                               ConnectResult* result,
+                                               std::uint32_t* win32_error);
+
 // ---------------------------------------------------------------------------
 // Game -> kit: the kit's own OLE server and its Communicate method
 // ---------------------------------------------------------------------------
@@ -108,6 +120,22 @@ public:
 
 C1KIT_API KitServer* create_kit_server(const KitIdentity& identity,
                                        KitEvents& events);
+
+// Under Wine, the game cannot reach a kit's class object over COM (the same
+// limit as connect_sfc_ole_pipe above), so it starts a kit with a plain
+// process launch instead and sends Communicate as two 32-bit words on
+// \\.\pipe\Creatures1_Kit_Tool<tool_id> (WindowsPipeDispatchProxy on the
+// game side).  This server opens that same pipe itself, in this process,
+// and calls `events` directly -- there is no class object to register and
+// nothing else involved.  `tool_id` is the kit's own copy of the slot
+// number (LaunchArgs::tool_id from its command line).
+C1KIT_API KitServer* create_kit_server_pipe(int tool_id, KitEvents& events);
+
+// True when this process is running under Wine (checked once): ntdll
+// exports wine_get_version there and nowhere on real Windows.  Chooses
+// connect_sfc_ole vs connect_sfc_ole_pipe, and create_kit_server vs
+// create_kit_server_pipe.
+C1KIT_API bool running_under_wine();
 
 // What COleObjectFactory::UpdateRegistryAll does for a kit run without
 // /Embedding: HKCR\<ProgID>\CLSID, HKCR\CLSID\{clsid}\ProgID and

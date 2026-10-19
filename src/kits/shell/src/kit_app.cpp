@@ -56,10 +56,20 @@ BOOL KitApp::InitInstance() {
         return FALSE;
     }
 
-    server_ = c1kit::create_kit_server(kit.identity, *this);
+    // Under Wine, COM between processes does not work (confirmed in the
+    // lab: a cross-process CoGetClassObject/CoCreateInstance fails with
+    // RPC_S_SERVER_UNAVAILABLE), and nothing stands in for it in process
+    // any more -- the game starts this kit with a plain process launch and
+    // writes Communicate straight to our own pipe (see kit_server_pipe.cpp).
+    // On real Windows the COM route is unchanged.
+    const bool pipe_route = c1kit::running_under_wine();
+    server_ = pipe_route ? c1kit::create_kit_server_pipe(launch.tool_id, *this)
+                         : c1kit::create_kit_server(kit.identity, *this);
     long hresult = 0;
     if (server_ == nullptr || !server_->register_class_object(&hresult)) {
-        AfxMessageBox(_T("Could not register OLE factories"));
+        AfxMessageBox(pipe_route
+                          ? _T("Could not open the game's pipe for this kit")
+                          : _T("Could not register OLE factories"));
         return FALSE;
     }
 

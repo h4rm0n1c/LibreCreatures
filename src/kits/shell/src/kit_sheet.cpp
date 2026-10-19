@@ -102,6 +102,27 @@ KitSheet::~KitSheet() {
 }
 
 bool KitSheet::connect_to_game(std::size_t buffer_bytes) {
+    // Under Wine, SFC.OLE is not reachable over COM between processes
+    // (kit_app.cpp has the same check, for the game -> kit direction); this
+    // kit reaches the game's own macro conversation directly over
+    // \\.\pipe\SFC_OLE instead (see sfc_ole_pipe_transport.cpp -- the same
+    // commands the game already parses, just with no COM in between).
+    if (c1kit::running_under_wine()) {
+        c1kit::ConnectResult result = c1kit::ConnectResult::not_registered;
+        std::uint32_t win32_error = 0;
+        transport_ = c1kit::connect_sfc_ole_pipe(buffer_bytes, &result,
+                                                 &win32_error);
+        if (transport_ != nullptr) {
+            return true;
+        }
+        char message[512];
+        std::snprintf(message, sizeof(message),
+                      "Can not communicate with application\n\n"
+                      "(connecting to the game's pipe: error %lu)",
+                      static_cast<unsigned long>(win32_error));
+        AfxMessageBox(CString(message));
+        return false;
+    }
     c1kit::ConnectResult result = c1kit::ConnectResult::not_registered;
     long hresult = 0;
     transport_ = c1kit::connect_sfc_ole(buffer_bytes, &result, &hresult);
