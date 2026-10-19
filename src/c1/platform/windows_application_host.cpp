@@ -270,8 +270,10 @@ void C1StartupHost::publish_uninstall_command(std::string_view path) {
     constexpr char uninstall_path[] =
         "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\"
         "CreaturesDeinstKey";
+    // The 32-bit view, where the 32-bit installer wrote the key.
     if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, uninstall_path, 0,
-                      KEY_SET_VALUE, &uninstall_key) != ERROR_SUCCESS) {
+                      KEY_SET_VALUE | KEY_WOW64_32KEY,
+                      &uninstall_key) != ERROR_SUCCESS) {
         return;
     }
     const std::string command(path);
@@ -416,8 +418,10 @@ void C1StartupHost::delete_autorun_registration() {
     // The recovered startup removes the installer's auto-run key outright:
     // RegDeleteKeyA(HKEY_LOCAL_MACHINE,
     //               "Software\\Gameware Development\\CreaturesAutoRun").
-    RegDeleteKeyA(HKEY_LOCAL_MACHINE,
-                  "Software\\Gameware Development\\CreaturesAutoRun");
+    // In the 32-bit view, where the 32-bit installer wrote it.
+    RegDeleteKeyExA(HKEY_LOCAL_MACHINE,
+                    "Software\\Gameware Development\\CreaturesAutoRun",
+                    KEY_WOW64_32KEY, 0);
 }
 
 

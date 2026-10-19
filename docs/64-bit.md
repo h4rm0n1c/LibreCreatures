@@ -2,7 +2,8 @@
 
 LibreCreatures is a 32-bit program, as Creatures 1 is. The 32-bit build is
 the default and the reference: the verification tests compare it with the
-original. A 64-bit build is a future option. This file lists what a 64-bit
+original. A 64-bit build is an option (`--arch x64` below); it builds and
+runs, but it is not shipped. This file lists what a 64-bit
 build needs, and what is done.
 
 ## The rule
@@ -40,10 +41,27 @@ layer too, compiles for x64 with no error. `main` links a 64-bit
 Creatures.exe (2026-10-19). On `neorender` the link also needs SDL3's x64
 library, which `third_party/SDL3` does not have yet.
 
-Not run yet. To run it, a 64-bit build needs the x64 `mfc140.dll`,
-`vcruntime140.dll`, `vcruntime140_1.dll` and `msvcp140.dll` beside it
-(`VC/Redist/MSVC/14.44.35112/x64` in the toolchain); the lab's Wine
-prefixes are already 64-bit (WoW64), so 32-bit kits can run beside it.
+A 64-bit build needs the x64 `mfc140.dll`, `vcruntime140.dll`,
+`vcruntime140_1.dll` and `msvcp140.dll` beside it
+(`VC/Redist/MSVC/14.44.35112/x64` in the toolchain). `build_source.py`
+copies them into the build folder, and c1-lab's `run_once` runs a 64-bit
+exe from a copy of that folder. The lab's Wine prefixes are already 64-bit
+(WoW64), so 32-bit kits can run beside it.
+
+The game's machine settings (`HKLM\Software\Gameware Development`) are in
+the 32-bit registry view: the launcher, the kits and the original are
+32-bit programs. A 64-bit program reads the 64-bit view, so it did not find
+the game's folders and stopped at the palette. Now every open of these keys
+asks for the 32-bit view (`KEY_WOW64_32KEY`):
+`platform/windows_registry_host.cpp` and the uninstall and autorun keys in
+`platform/windows_application_host.cpp`. A 32-bit program reads that view
+in all cases, so the 32-bit build does not change.
+
+Run (2026-10-19, `main` with the steps above): the 64-bit build, with every
+switchable fix compiled out (`/DLC_NATIVE_MODE=1`), loads the world test's
+world (the four norns) and saves it byte-identical to the original's save
+after 0, 1 and 10 ticks. With the fixes on, its saves are byte-identical to
+the 32-bit build's.
 
 ## Other work for a 64-bit build
 

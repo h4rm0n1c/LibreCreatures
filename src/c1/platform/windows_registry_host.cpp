@@ -63,8 +63,12 @@ void write_c1_window_rect(HKEY key, const RECT& rect) {
 
 
 bool open_c1_primary_registry(HKEY& key) {
+    // KEY_WOW64_32KEY: the launcher, the kits and the original are 32-bit
+    // and keep the game's machine settings in the 32-bit registry view; a
+    // 64-bit build reads the same keys.  For a 32-bit program this is the
+    // view it reads anyway (docs/64-bit.md).
     return RegOpenKeyExA(HKEY_LOCAL_MACHINE, kC1MachineRegistryPath, 0,
-                         KEY_READ, &key) == ERROR_SUCCESS;
+                         KEY_READ | KEY_WOW64_32KEY, &key) == ERROR_SUCCESS;
 }
 
 
