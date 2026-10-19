@@ -547,6 +547,12 @@ bool C1StartupHost::prepare_embedded_main_window(std::string_view world_path) {
                       ? nullptr
                       : DYNAMIC_DOWNCAST(C1MainFrame,
                                          application->m_pMainWnd);
+    // Not native: the SFC.OLE test hook (windows_sfc_ole_host.hpp), once
+    // the world is open.  Exit code 0 when every step passed, 5 when not.
+    if (const char* self_test = std::getenv("C1_SFC_OLE_SELFTEST");
+        self_test != nullptr && main_frame_ != nullptr) {
+        ::ExitProcess(creatures1::platform::run_sfc_ole_self_test(self_test) ? 0 : 5);
+    }
     return main_frame_ != nullptr;
 }
 

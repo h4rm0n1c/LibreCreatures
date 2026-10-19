@@ -51,6 +51,8 @@ public:
 protected:
     void OnFinalRelease() override;
 
+    friend bool run_sfc_ole_self_test(const char* out_path);
+
     // Declared in the recovered dispatch map's order: the entries at
     // 0x00458398 all carry lDispID -1, so MFC assigns DISPIDs by position and
     // the order below is what gives FireCommand its DISPID of 10.
@@ -77,5 +79,13 @@ private:
 // Constructing this registers the SFC.OLE factory for the process lifetime,
 // matching the native static COleObjectFactory the CRT initialiser creates.
 void register_sfc_ole_object_factory();
+
+// Not native: a test hook (C1_SFC_OLE_SELFTEST=<out file>).  Calls this
+// game's own SFC.OLE object through IDispatch with the VARIANTs a kit sends
+// (c1kitlib's sfc_ole_transport.cpp), then writes one line per step to
+// <out file>.  The lab cannot reach SFC.OLE from another process under
+// Wine, so this is how a 64-bit build's holder handles get tested.
+// Returns true when every step gave the expected answer.
+bool run_sfc_ole_self_test(const char* out_path);
 
 } // namespace creatures1::platform
