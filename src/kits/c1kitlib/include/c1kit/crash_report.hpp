@@ -35,8 +35,13 @@ constexpr std::uint32_t kCrashCodeAbort = 0xE0C14B04;
 constexpr std::uint32_t kCrashCodeCarriedOn = 0xE0C14B05;
 constexpr std::uint32_t kMsvcCppExceptionCode = 0xE06D7363;  // "msc"
 
+// An address in the kit's process: 32 bits in a 32-bit kit, 64 in a 64-bit
+// one (LibreCreatures docs/64-bit.md).  Written as 8 hex digits when it fits
+// in 32 bits, so a 32-bit kit's report does not change.
+using CrashAddress = std::uint64_t;
+
 struct CrashFrame {
-    std::uint32_t address = 0;
+    CrashAddress address = 0;
     std::string module;          // file name only; empty if unknown
     std::uint32_t offset = 0;    // from the module's base
     std::string symbol;          // empty if unknown
@@ -45,7 +50,7 @@ struct CrashFrame {
 
 struct CrashModule {
     std::string name;
-    std::uint32_t base = 0;
+    CrashAddress base = 0;
     std::uint32_t size = 0;
     std::uint32_t timestamp = 0;  // the PE header's link time
 };
@@ -58,17 +63,17 @@ struct CrashInfo {
     std::string system;           // Windows (and Wine) version
     std::string time;             // when, local time
     std::uint32_t code = 0;
-    std::uint32_t address = 0;    // where it happened
+    CrashAddress address = 0;     // where it happened
     std::string module;           // the module holding `address`
     std::uint32_t module_offset = 0;
     // An access violation: 0 read, 1 write, 8 execute; and the address.
     bool has_access = false;
     std::uint32_t access_kind = 0;
-    std::uint32_t access_address = 0;
+    CrashAddress access_address = 0;
     std::string cpp_type;         // a C++ exception's type, readable
     std::string message;          // what() or another explanation
     std::uint32_t thread_id = 0;
-    std::vector<std::pair<std::string, std::uint32_t>> registers;
+    std::vector<std::pair<std::string, CrashAddress>> registers;
     std::vector<CrashFrame> frames;
     // Return addresses found by reading the stack itself: code just after a
     // call.  Kept apart from `frames`, as some may be stale.
@@ -80,6 +85,15 @@ struct CrashInfo {
 inline std::string hex32(std::uint32_t value) {
     char text[16];
     std::snprintf(text, sizeof text, "0x%08X", static_cast<unsigned>(value));
+    return text;
+}
+
+inline std::string hex_address(CrashAddress value) {
+    if (value <= 0xFFFFFFFFu) {
+        return hex32(static_cast<std::uint32_t>(value));
+    }
+    char text[24];
+    std::snprintf(text, sizeof text, "0x%016llX", static_cast<unsigned long long>(value));
     return text;
 }
 
@@ -157,8 +171,8 @@ inline std::string readable_msvc_type(const std::string& decorated) {
 }
 
 inline std::string where_text(const std::string& module, std::uint32_t offset,
-                              std::uint32_t address) {
-    return module.empty() ? hex32(address) : module + "+" + hex32(offset);
+                              CrashAddress address) {
+    return module.empty() ? hex_address(address) : module + "+" + hex32(offset);
 }
 
 // One line for the top of the report and the dialog.
@@ -215,7 +229,7 @@ inline std::string crash_details(const CrashInfo& info) {
         const char* verb = info.access_kind == 1   ? "writing"
                            : info.access_kind == 8 ? "running code at"
                                                    : "reading";
-        line("Access", std::string(verb) + " " + hex32(info.access_address));
+        line("Access", std::string(verb) + " " + hex_address(info.access_address));
     }
     if (!info.cpp_type.empty()) {
         line("Type", info.cpp_type);
@@ -233,7 +247,7 @@ inline std::string crash_details(const CrashInfo& info) {
         out += "\nRegisters:\n";
         std::size_t column = 0;
         for (const auto& reg : info.registers) {
-            out += "  " + reg.first + "=" + hex32(reg.second);
+            out += "  " + reg.first + "=" + hex_address(reg.second);
             if (++column % 4 == 0) {
                 out += '\n';
             }
@@ -244,7 +258,7 @@ inline std::string crash_details(const CrashInfo& info) {
     }
     const auto frame_lines = [&out](const std::vector<CrashFrame>& frames) {
         for (const CrashFrame& frame : frames) {
-            out += "  " + hex32(frame.address) + "  " +
+            out += "  " + hex_address(frame.address) + "  " +
                    where_text(frame.module, frame.offset, frame.address);
             if (!frame.symbol.empty()) {
                 out += "  " + frame.symbol;
@@ -266,7 +280,8 @@ inline std::string crash_details(const CrashInfo& info) {
     if (!info.modules.empty()) {
         out += "\nModules:\n";
         for (const CrashModule& module : info.modules) {
-            out += "  " + hex32(module.base) + "-" + hex32(module.base + module.size) +
+            out += "  " + hex_address(module.base) + "-" +
+                   hex_address(module.base + module.size) +
                    "  " + module.name;
             if (module.timestamp != 0) {
                 out += "  (" + hex32(module.timestamp) + ")";

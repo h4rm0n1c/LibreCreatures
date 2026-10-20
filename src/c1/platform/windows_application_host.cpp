@@ -272,8 +272,10 @@ void C1StartupHost::publish_uninstall_command(std::string_view path) {
     constexpr char uninstall_path[] =
         "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\"
         "CreaturesDeinstKey";
+    // The 32-bit view, where the 32-bit installer wrote the key.
     if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, uninstall_path, 0,
-                      KEY_SET_VALUE, &uninstall_key) != ERROR_SUCCESS) {
+                      KEY_SET_VALUE | KEY_WOW64_32KEY,
+                      &uninstall_key) != ERROR_SUCCESS) {
         return;
     }
     const std::string command(path);
@@ -319,15 +321,31 @@ void C1StartupHost::update_ole_factory_registry() {
             "CLSID\\{77C733E1-6797-11CF-BBF2-0020AF71E433}\\LocalServer32",
             0, nullptr, 0, KEY_SET_VALUE, nullptr, &clsid_key, nullptr) ==
         ERROR_SUCCESS) {
-        char module_path[MAX_PATH]{};
-        if (GetModuleFileNameA(nullptr, module_path, MAX_PATH) != 0) {
-            const std::string quoted = std::string("\"") + module_path + "\"";
-            RegSetValueExA(clsid_key, nullptr, 0, REG_SZ,
-                           reinterpret_cast<const BYTE*>(quoted.c_str()),
-                           static_cast<DWORD>(quoted.size() + 1));
-        }
+        write_sfc_local_server_path(clsid_key);
         RegCloseKey(clsid_key);
         delete_own_sfc_inproc_server_registration();
+    }
+#if defined(_WIN64)
+    // Not native: 32-bit kits read the 32-bit registry view, which a 64-bit
+    // program does not write by default (docs/64-bit.md).
+    if (RegCreateKeyExA(
+            HKEY_CLASSES_ROOT,
+            "CLSID\\{77C733E1-6797-11CF-BBF2-0020AF71E433}\\LocalServer32",
+            0, nullptr, 0, KEY_SET_VALUE | KEY_WOW64_32KEY, nullptr,
+            &clsid_key, nullptr) == ERROR_SUCCESS) {
+        write_sfc_local_server_path(clsid_key);
+        RegCloseKey(clsid_key);
+    }
+#endif
+}
+
+void C1StartupHost::write_sfc_local_server_path(HKEY clsid_key) {
+    char module_path[MAX_PATH]{};
+    if (GetModuleFileNameA(nullptr, module_path, MAX_PATH) != 0) {
+        const std::string quoted = std::string("\"") + module_path + "\"";
+        RegSetValueExA(clsid_key, nullptr, 0, REG_SZ,
+                       reinterpret_cast<const BYTE*>(quoted.c_str()),
+                       static_cast<DWORD>(quoted.size() + 1));
     }
 }
 
@@ -402,8 +420,10 @@ void C1StartupHost::delete_autorun_registration() {
     // The recovered startup removes the installer's auto-run key outright:
     // RegDeleteKeyA(HKEY_LOCAL_MACHINE,
     //               "Software\\Gameware Development\\CreaturesAutoRun").
-    RegDeleteKeyA(HKEY_LOCAL_MACHINE,
-                  "Software\\Gameware Development\\CreaturesAutoRun");
+    // In the 32-bit view, where the 32-bit installer wrote it.
+    RegDeleteKeyExA(HKEY_LOCAL_MACHINE,
+                    "Software\\Gameware Development\\CreaturesAutoRun",
+                    KEY_WOW64_32KEY, 0);
 }
 
 
@@ -646,6 +666,12 @@ bool C1StartupHost::prepare_embedded_main_window(std::string_view world_path) {
                       ? nullptr
                       : DYNAMIC_DOWNCAST(C1MainFrame,
                                          application->m_pMainWnd);
+    // Not native: the SFC.OLE test hook (windows_sfc_ole_host.hpp), once
+    // the world is open.  Exit code 0 when every step passed, 5 when not.
+    if (const char* self_test = std::getenv("C1_SFC_OLE_SELFTEST");
+        self_test != nullptr && main_frame_ != nullptr) {
+        ::ExitProcess(creatures1::platform::run_sfc_ole_self_test(self_test) ? 0 : 5);
+    }
     return main_frame_ != nullptr;
 }
 

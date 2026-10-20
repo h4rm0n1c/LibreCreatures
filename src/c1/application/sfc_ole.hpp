@@ -99,6 +99,15 @@ public:
                      std::string_view command_text,
                      wchar_t** output_bstr);
 
+    // A macro holder as the 32-bit value a kit keeps (VT_I4 or a long).  In
+    // the 32-bit build it is the holder's address, as in the original.  A
+    // 64-bit address does not fit, so a 64-bit build numbers the holders
+    // (nonzero, 4-aligned, never reused); holder_at gives nullptr for a
+    // number that names no live holder.  The methods above still check
+    // every holder with find_registered.
+    std::uint32_t handle_of(const scripting::MacroHolder* holder);
+    scripting::MacroHolder* holder_at(std::uint32_t handle) const;
+
 private:
     scripting::MacroHolder* find_registered(
         scripting::MacroHolder* holder) const;
@@ -107,6 +116,14 @@ private:
 
     CSfcOLEHost& host_;
     std::vector<std::unique_ptr<scripting::MacroHolder>> macro_holders_;
+#if UINTPTR_MAX != 0xffffffffu
+    struct HolderHandle {
+        std::uint32_t handle;
+        const scripting::MacroHolder* holder;
+    };
+    std::vector<HolderHandle> holder_handles_;
+    std::uint32_t next_holder_handle_ = 0x00400000u;
+#endif
 };
 
 } // namespace creatures1::application

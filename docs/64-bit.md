@@ -2,7 +2,8 @@
 
 LibreCreatures is a 32-bit program, as Creatures 1 is. The 32-bit build is
 the default and the reference: the verification tests compare it with the
-original. A 64-bit build is a future option. This file lists what a 64-bit
+original. A 64-bit build is an option (`--arch x64` below); it builds and
+runs, but it is not shipped. This file lists what a 64-bit
 build needs, and what is done.
 
 ## The rule
@@ -17,25 +18,81 @@ a registry.
 
 | Value | Where | Seen by | Status |
 | --- | --- | --- | --- |
-| An object as a CAOS value (`targ`, `from`, `_it_`, `ownr`, `var0`, `obv0` and the others that can hold an object) | `objects/object_handle.hpp`: `handle_of`, `object_at_handle`; used by `scripting/macro.cpp` | Scripts (`dde: putv targ` prints it), kits, saved worlds (a variable keeps the value it held) | Done for 32-bit: the handle is the address. 64-bit: the registry, not yet written; the header stops a 64-bit build. |
+| An object as a CAOS value (`targ`, `from`, `_it_`, `ownr`, `var0`, `obv0` and the others that can hold an object) | `objects/object_handle.hpp`: `handle_of`, `object_at_handle`; used by `scripting/macro.cpp` | Scripts (`dde: putv targ` prints it), kits, saved worlds (a variable keeps the value it held) | Done. 32-bit: the handle is the address. 64-bit: `objects/object_handle.cpp` gives each object a handle (nonzero, 4-aligned, from 0x00400000, never reused) the first time one is needed; `Object`'s destructor takes it back. Test: `tests/c1_object_handle_test.cpp`. |
 | An object in the lab's records and debug readouts | `creatures/creature.cpp` (brain recorder), `platform/windows_document_host.cpp`, `platform/windows_macro_host.cpp` | The lab, the debug console | Done: uses `handle_of`. |
-| A pending macro's token | `scripting/pipe_server.cpp` (`MacroHolder` address) | Kits, through the pipe | To do: a token table. |
+| A pending macro's token | `scripting/pipe_server.cpp`, `PipeServer::pending_command_token` | Kits, through the pipe | Done. 32-bit: the `MacroHolder`'s address, as in the original. 64-bit: a counter. |
+| A macro holder the kits keep through SFC.OLE (`CreateMacro` gives it as `VT_I4`, `CreateCommand` as a `long`) | `application/sfc_ole.cpp`, `CSfcOLE::handle_of` and `holder_at`; used by `platform/windows_sfc_ole_host.cpp` | Kits, through OLE automation | Done. 32-bit: the holder's address, as in the original. 64-bit: a number (nonzero, 4-aligned, from 0x00400000, never reused). Before this, a 64-bit game cut the address to 32 bits, so every later call named no holder and the Hatchery reported "The game did not take the egg". |
+| DDEML handles (`HSZ`, `HCONV`, `HDDEDATA`) and the callback's two `ULONG_PTR` values | `scripting/dde.hpp`, `platform/windows_dde_host.cpp` | Windows only | Done: `std::uintptr_t`, so they are pointer-sized. |
 | Neuron addresses in row 5's duplicate test (native mode only) | `brain/neuron.cpp`, `original_pointer_value` | Nobody; it decides a migration | Keep: the result depends on heap addresses in the original too, so it cannot be exact on any build. The value is already cut to 32 bits explicitly. |
-| The event and stimulus queue records | `objects/events.hpp`, two `static_assert`s on the record sizes (24 and 20 bytes) | Nobody outside the program | To do: the records hold pointers. Check why the sizes are pinned, then let them grow or store handles. |
+| The event and stimulus queue records | `objects/events.hpp`, two `static_assert`s on the record sizes (24 and 20 bytes) | Nobody outside the program | Done: the sizes are the original's, and nothing depends on the byte layout, so the asserts apply to the 32-bit build only. |
 | Window, DDE and process handles | `platform/windows_*` | Windows | Already pointer-sized (`uintptr_t`). |
+
+## Where it stands
+
+The game logic (everything outside `platform/`) compiles as a 64-bit
+program with GCC and clang. (The pipe server held an unused copy of the
+kit pipe's IDispatch proxy, with the Windows COM headers; the live one is
+`platform/windows_pipe_dispatch_proxy`, so the copy is gone.) Clang's
+`-Wshorten-64-to-32` finds one narrowing in that code, now explicit
+(`brain/brain.cpp`).
+
+c1-lab's `tools/build_source.py --arch x64` builds the whole program for
+x64 with the same MSVC 14.44 toolchain (x64 compiler, MFC, CRT and SDK
+libraries, `/MACHINE:X64`, no `/FIXED`). The whole program, the platform
+layer too, compiles for x64 with no error. `main` links a 64-bit
+Creatures.exe (2026-10-19). On `neorender` the link also needs SDL3's x64
+library: `third_party/SDL3/lib/x64` has it, from the same official SDL
+3.4.16 VC package as the x86 files, and the 64-bit exe needs that
+`SDL3.dll` beside it.
+
+A 64-bit build needs the x64 `mfc140.dll`, `vcruntime140.dll`,
+`vcruntime140_1.dll` and `msvcp140.dll` beside it
+(`VC/Redist/MSVC/14.44.35112/x64` in the toolchain). `build_source.py`
+copies them into the build folder, and c1-lab's `run_once` runs a 64-bit
+exe from a copy of that folder. The lab's Wine prefixes are already 64-bit
+(WoW64), so 32-bit kits can run beside it.
+
+The game's machine settings (`HKLM\Software\Gameware Development`) are in
+the 32-bit registry view: the launcher, the kits and the original are
+32-bit programs. A 64-bit program reads the 64-bit view, so it did not find
+the game's folders and stopped at the palette. Now every open of these keys
+asks for the 32-bit view (`KEY_WOW64_32KEY`):
+`platform/windows_registry_host.cpp` and the uninstall and autorun keys in
+`platform/windows_application_host.cpp`. A 32-bit program reads that view
+in all cases, so the 32-bit build does not change.
+
+Run (2026-10-19, `main` with the steps above): the 64-bit build, with every
+switchable fix compiled out (`/DLC_NATIVE_MODE=1`), loads the world test's
+world (the four norns) and saves it byte-identical to the original's save
+after 0, 1 and 10 ticks. With the fixes on, its saves are byte-identical to
+the 32-bit build's.
 
 ## Other work for a 64-bit build
 
-- Find every narrowing of a pointer-sized value. Clang's
-  `-Wshorten-64-to-32` lists them. On Linux and macOS `long` is 64 bits
-  too; on 64-bit Windows it stays 32 bits.
+- Run `-Wshorten-64-to-32` on the platform layer too, once it builds for
+  x64. On Linux and macOS `long` is 64 bits; on 64-bit Windows it stays 32
+  bits.
 - Kits: a 32-bit kit and a 64-bit game can talk through DDE, OLE automation
-  and the pipe. The game finds a kit through `CLSID\{...}\LocalServer32`,
-  which a 32-bit kit writes in the 32-bit registry view: read both views.
-  Write `SFC.OLE`'s registration in both views, so 32-bit kits find a
-  64-bit game.
-- Check the kit protocol's packed header and the `c1kitlib` structures for
-  fields of pointer size.
+  and the pipe. Done: the game looks for a kit's `CLSID\{...}\LocalServer32`
+  in the 32-bit registry view too (`platform/windows_com_host.cpp`), and a
+  64-bit build writes `SFC.OLE`'s `LocalServer32` in both views
+  (`platform/windows_application_host.cpp`), so 32-bit kits find it.
+- The kits build for x64 too (`byte_match/harness/build_kits.py --arch
+  x64`). A 64-bit game and 32-bit kits cannot share one folder, because
+  each needs its own `mfc140.dll` and C runtime there; a 64-bit install
+  uses 64-bit kits. The kits read the game's machine settings in the
+  32-bit registry view, as the game does (`c1kitlib/src/settings.cpp`). A
+  64-bit kit registers its `LocalServer32` in the 64-bit view, where the
+  64-bit game looks first; a 32-bit game keeps finding the 32-bit kits.
+  The kits' crash reporter
+  (`src/kits/shell/src/kit_crash.cpp`) reads the x64 registers, walks the
+  x64 stack and reads x64 C++ exception records; a report writes an
+  address above 32 bits with 16 hex digits (`c1kit::hex_address`), so a
+  32-bit kit's report does not change.
+- The kit protocol carries no pointer-sized field: `Communicate` takes a
+  32-bit header and a 32-bit payload (a genome file id, a Funeral Kit state
+  word or 0), and kits get object values only through CAOS replies, which
+  are handles.
 - The lab needs a 64-bit (WoW64) Wine prefix to run a 64-bit game with
   32-bit kits.
 
@@ -45,3 +102,17 @@ The function tests, the CAOS tests and the world test must give the same
 results before and after each step. For a 64-bit build, the world test must
 compare object values as references, not as numbers: a saved variable that
 holds an object holds an address, which is different in every program.
+
+The kits' SFC.OLE route cannot be tested from another process in the
+lab: under Wine, COM between processes does not reach the game's SFC.OLE
+object, and the Community Edition's `OLEKitProxy.dll` (which the game
+loads to start kits under Wine) is 32-bit. The test hook
+`C1_SFC_OLE_SELFTEST=<file>` calls the game's own SFC.OLE object through
+`IDispatch` with the VARIANTs a kit sends (a query, a scheduled script as
+the Hatchery sends an egg, and the Command family), writes one line per
+step and exits (0 when all passed). Run it with c1-lab's `run_once`.
+Result (2026-10-20): the 64-bit build before the holder handle fix failed
+every call after `CreateMacro`; after it, every step passes.
+
+A 64-bit game cannot start kits under Wine at all yet: it would need a
+64-bit `OLEKitProxy.dll`. On Windows the game starts kits through COM.

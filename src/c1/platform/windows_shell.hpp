@@ -2659,6 +2659,7 @@ public:
     // executable, so a Community Edition install's OLEKitProxy registration
     // survives.
     void delete_own_sfc_inproc_server_registration();
+    void write_sfc_local_server_path(HKEY clsid_key);
 
     void write_patch_registry_metadata(const SfcAppPatchMetadata& /*metadata*/) override;
 

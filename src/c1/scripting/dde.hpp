@@ -10,10 +10,12 @@
 
 namespace creatures1::scripting {
 
-using DdeInstanceId = std::uint32_t;
-using DdeStringHandle = std::uint32_t;
-using DdeConversationHandle = std::uint32_t;
-using DdeDataHandle = std::uint32_t;
+using DdeInstanceId = std::uint32_t;  // a DWORD in DDEML
+// DDEML's HSZ, HCONV and HDDEDATA: pointer-sized, so 64 bits in a 64-bit
+// build (docs/64-bit.md).  Only this process sees them.
+using DdeStringHandle = std::uintptr_t;
+using DdeConversationHandle = std::uintptr_t;
+using DdeDataHandle = std::uintptr_t;
 
 // The platform adapter converts the DDEML XTYP_* values into this semantic
 // vocabulary before entering the C1 owner.  The C1 owner therefore does not
@@ -35,8 +37,8 @@ struct DdeCallbackRequest {
     DdeStringHandle item_or_topic = 0;
     DdeStringHandle service_or_item = 0;
     DdeDataHandle data = 0;
-    std::uint32_t data1 = 0;
-    std::uint32_t data2 = 0;
+    std::uintptr_t data1 = 0;  // ULONG_PTR in DDEML
+    std::uintptr_t data2 = 0;
 };
 
 // The callback entry is a Windows DDEML ABI concern.  The clean owner only

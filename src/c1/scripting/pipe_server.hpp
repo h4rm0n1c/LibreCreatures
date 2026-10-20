@@ -10,11 +10,6 @@
 #include <string_view>
 #include <vector>
 
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-#include <oaidl.h>
-
 #include "macro_holder.hpp"
 
 namespace creatures1::scripting {
@@ -168,53 +163,6 @@ public:
     virtual void flush(PipeHandle pipe) = 0;
 };
 
-// This is a C1-owned COM transport object used by the Wine kit bridge.  The
-// Windows COM ABI supplies IDispatch's vtable; the class contains only the
-// state proven by the executable (reference count, tool number, and the
-// derived pipe name).  In particular, this is not a hand-written vtable or a
-// wrapper around the decompiler's C1ComVariant/C1DispatchParameters records.
-class CPipeDispatchProxy final : public IDispatch {
-public:
-    explicit CPipeDispatchProxy(std::uint32_t tool_index);
-    ~CPipeDispatchProxy();
-
-    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID interface_id,
-                                              void** object_out) override;
-    ULONG STDMETHODCALLTYPE AddRef() override;
-    ULONG STDMETHODCALLTYPE Release() override;
-    HRESULT STDMETHODCALLTYPE GetTypeInfoCount(UINT* count_out) override;
-    HRESULT STDMETHODCALLTYPE GetTypeInfo(UINT type_info_index,
-                                          LCID locale_id,
-                                          ITypeInfo** type_info_out) override;
-    HRESULT STDMETHODCALLTYPE GetIDsOfNames(REFIID interface_id,
-                                            LPOLESTR* names,
-                                            UINT name_count,
-                                            LCID locale_id,
-                                            DISPID* dispatch_ids) override;
-    HRESULT STDMETHODCALLTYPE Invoke(DISPID dispatch_id,
-                                     REFIID interface_id,
-                                     LCID locale_id,
-                                     WORD invoke_flags,
-                                     DISPPARAMS* parameters,
-                                     VARIANT* result,
-                                     EXCEPINFO* exception_info,
-                                     UINT* argument_error) override;
-
-private:
-    HRESULT send_arguments(const VARIANTARG& first_argument,
-                           const VARIANTARG& second_argument,
-                           VARIANT* result,
-                           EXCEPINFO* exception_info);
-    static void initialize_exception(EXCEPINFO* exception_info);
-
-    LONG reference_count_ = 1;
-    std::uint32_t tool_index_ = 0;
-    char pipe_name_[64] = {};
-};
-
-static_assert(sizeof(CPipeDispatchProxy) == 76,
-              "Creatures1/CPipeDispatchProxy size mismatch");
-
 class PipeServer {
 public:
     explicit PipeServer(PipeServerHost& host);
@@ -228,6 +176,9 @@ public:
 
     void register_pending_command(
         std::uint32_t handle, std::unique_ptr<MacroHolder> holder);
+    // The token a kit gets for a pending macro: the holder's address in the
+    // 32-bit build, as in the original; a counter in a 64-bit build.
+    std::uint32_t pending_command_token(const MacroHolder* holder);
 
 private:
     std::string marshal_command_to_main_thread(std::string_view command);
@@ -237,6 +188,7 @@ private:
     PipeServerHost& host_;
     std::vector<char> receive_buffer_;
     std::map<std::uint32_t, std::unique_ptr<MacroHolder>> pending_commands_;
+    std::uint32_t next_pending_token_ = 0;
 };
 
 // The platform thread API receives an opaque parameter, but the clean
