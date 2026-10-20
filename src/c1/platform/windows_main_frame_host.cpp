@@ -7,6 +7,7 @@
 #include "windows_creature_hosts.hpp"
 #include "windows_shell.hpp"
 #include "windows_com_host.hpp"
+#include "windows_fixes_dialog.hpp"
 
 #include <stdexcept>
 
@@ -482,6 +483,7 @@ BEGIN_MESSAGE_MAP(C1MainFrame, CFrameWnd)
     ON_UPDATE_COMMAND_UI(32891, &C1MainFrame::OnUpdateMuteSounds)
     ON_UPDATE_COMMAND_UI(32892, &C1MainFrame::OnUpdateInformativeCreaturesMenu)
     ON_COMMAND(32894, &C1MainFrame::OnVolume)
+    ON_COMMAND(32970, &C1MainFrame::OnLibreFixes)
     ON_COMMAND(32832, &C1MainFrame::OnWebConnect)
     ON_COMMAND(57664, &C1MainFrame::OnAbout)
     ON_WM_TIMER()
@@ -1184,6 +1186,17 @@ void C1MainFrame::OnVolume() {
         volume_dialog_host_ = std::make_unique<C1NativeVolumeDialogHost>(*this);
     }
     creatures1::application::show_volume_dialog(*volume_dialog_host_);
+}
+
+void C1MainFrame::OnLibreFixes() {
+#if defined(LC_COMPAT_RUNTIME)
+    creatures1::platform::show_fixes_dialog(this);
+#else
+    AfxMessageBox(
+        _T("LibreFixes needs a build with the live fix toggles ")
+        _T("(every shipped LibreCreatures exe has them)."),
+        MB_OK | MB_ICONINFORMATION);
+#endif
 }
 
 void C1MainFrame::OnWebConnect() {

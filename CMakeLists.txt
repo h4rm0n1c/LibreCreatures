@@ -22,12 +22,16 @@ if(NOT MSVC)
         "with any other compiler.")
 endif()
 
-if(NOT CMAKE_SIZEOF_VOID_P EQUAL 4)
+option(LC_ALLOW_X64
+    "Allow a 64-bit configure (docs/64-bit.md): the object-handle and \
+holder-handle indirections make the recovered layout meaningful at that \
+width too, but this is still a deliberate opt-in, not the default." OFF)
+if(NOT LC_ALLOW_X64 AND NOT CMAKE_SIZEOF_VOID_P EQUAL 4)
     message(FATAL_ERROR
-        "LibreCreatures targets 32-bit x86 only -- the original binary's "
-        "recovered layout and calling conventions are not meaningful at any "
-        "other pointer width. Reconfigure with -A Win32 (or -T host=x86, "
-        "whichever your generator uses).")
+        "LibreCreatures targets 32-bit x86 by default -- the original "
+        "binary's recovered layout and calling conventions were only ever "
+        "meaningful there. Reconfigure with -A Win32 (or -T host=x86), or "
+        "pass -DLC_ALLOW_X64=ON for a deliberate 64-bit build (docs/64-bit.md).")
 endif()
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -76,10 +80,22 @@ target_include_directories(Creatures PRIVATE
 )
 
 # Native-compatibility builds (src/c1/common/compat.hpp, docs/original-bugs.md):
-# LC_NATIVE_MODE compiles every switchable fix out; LC_COMPAT_RUNTIME reads
-# C1_NATIVE_ROWS at startup instead.  Use one or neither.
+# LC_NATIVE_MODE compiles every switchable fix out, for the lab's own A/B
+# testing.  LC_COMPAT_RUNTIME is what every shipped LibreCreatures exe is: a
+# live, in-memory fix table that librefixes.ini sets at start-up and the
+# Options > LibreFixes window changes while the game runs (also still
+# readable from C1_NATIVE_ROWS, for the lab).  On by default, so a plain
+# `cmake -S . -B ...` with no -D flags gives the same build the release
+# scripts ship; LC_NATIVE_MODE turns it back off, since the two are
+# separate builds.
 option(LC_NATIVE_MODE "Build the native game: every switchable fix off" OFF)
-option(LC_COMPAT_RUNTIME "Switch fixes at run time with C1_NATIVE_ROWS" OFF)
+if(LC_NATIVE_MODE)
+    set(LC_COMPAT_RUNTIME_DEFAULT OFF)
+else()
+    set(LC_COMPAT_RUNTIME_DEFAULT ON)
+endif()
+option(LC_COMPAT_RUNTIME "Live-toggleable fixes: librefixes.ini, the \
+LibreFixes window, and C1_NATIVE_ROWS" ${LC_COMPAT_RUNTIME_DEFAULT})
 if(LC_NATIVE_MODE AND LC_COMPAT_RUNTIME)
     message(FATAL_ERROR "LC_NATIVE_MODE and LC_COMPAT_RUNTIME are separate builds")
 endif()

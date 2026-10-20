@@ -501,6 +501,9 @@ public:
     virtual void delete_autorun_registration() = 0;
 
     virtual void register_ole_factories() = 0;
+    // LibreFixes: loads librefixes.ini's starting values for the
+    // switchable fixes, before any world or game logic runs.
+    virtual void load_fix_config() = 0;
     // This is the recovered CWinApp::m_pMainWnd test.  If it is false,
     // prepare_embedded_main_window performs the host's USER-mode frame
     // creation or normal World.sfc document open.

@@ -1,9 +1,15 @@
 name: Windows build and release
 
+# Ordinary pushes and PRs only get a fast single-variant compile check
+# (LibreCreatures ships four variants -- 32/64-bit x classic/neorender
+# rendering -- and building all four on every push is wasteful). The full
+# matrix, packaged and released, only runs for a version tag or a manual
+# dispatch.
+
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, neorender]
     tags: ['v*']
   workflow_dispatch:
 
@@ -11,7 +17,8 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  smoke-build:
+    if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
     runs-on: windows-2022
     steps:
       - name: Check out source
@@ -22,48 +29,50 @@ jobs:
         with:
           arch: x86
 
-      - name: Build and package
+      - name: Configure and build (no packaging)
         shell: pwsh
-        run: .\scripts\build-release.ps1
+        run: |
+          cmake -S . -B build/smoke -G "Visual Studio 17 2022" -A Win32
+          cmake --build build/smoke --config Release --parallel
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: LibreCreatures-windows-x86
-          path: dist/LibreCreatures-windows-x86.zip
-          if-no-files-found: error
-
-  # The neorender build (SDL3 drawing, zoom, S32 art) ships on the same
-  # release page.  It is built from the neorender branch for a release tag,
-  # and on a manual run to check that it builds and packages.
-  build-neorender:
+  # The full four-way matrix: each of {main, neorender} x {x86, x64},
+  # packaged and uploaded. Only for a release tag or a manual run.
+  build-matrix:
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    strategy:
+      fail-fast: false
+      matrix:
+        branch: [main, neorender]
+        arch: [x86, x64]
     runs-on: windows-2022
     steps:
-      - name: Check out the neorender branch
+      - name: Check out ${{ matrix.branch }}
         uses: actions/checkout@v4
         with:
-          ref: neorender
+          ref: ${{ matrix.branch }}
 
-      - name: Configure MSVC x86 environment
+      - name: Configure MSVC ${{ matrix.arch }} environment
         uses: ilammy/msvc-dev-cmd@v1
         with:
-          arch: x86
+          arch: ${{ matrix.arch }}
 
       - name: Build and package
         shell: pwsh
-        run: .\scripts\build-release.ps1 -ArchivePath dist/LibreCreatures-neorender-windows-x86.zip
+        run: |
+          $suffix = if ("${{ matrix.branch }}" -eq "neorender") { "-neorender" } else { "" }
+          .\scripts\build-release.ps1 -Arch ${{ matrix.arch }} `
+            -ArchivePath "dist/LibreCreatures$suffix-windows-${{ matrix.arch }}.zip"
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: LibreCreatures-neorender-windows-x86
-          path: dist/LibreCreatures-neorender-windows-x86.zip
+          name: LibreCreatures-${{ matrix.branch }}-${{ matrix.arch }}
+          path: dist/*.zip
           if-no-files-found: error
 
   publish:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [build, build-neorender]
+    needs: [build-matrix]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -79,20 +88,19 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           cat > notes.md <<'EOF'
-          Two builds of the same game. Choose one:
+          Four builds of the same game. Choose one:
 
-          - **LibreCreatures-windows-x86.zip** is the regular build. It draws the world as the original does.
-          - **LibreCreatures-neorender-windows-x86.zip** is the neorender build. It adds SDL3 drawing, zoom, S32 and double-resolution (`@2x.s32`) art, smooth motion and world speed. `SDL3.dll` must stay beside `Creatures.exe`.
+          - **LibreCreatures-windows-x86.zip** / **-x64.zip** are the regular build. They draw the world as the original does.
+          - **LibreCreatures-neorender-windows-x86.zip** / **-x64.zip** are the neorender build. They add SDL3 drawing, zoom, S32 and double-resolution (`@2x.s32`) art, smooth motion and world speed. `SDL3.dll` must stay beside `Creatures.exe`.
 
-          Each zip has `Creatures.exe`, the kits and `c1kitlib.dll`. Copy them into a Creatures 1 install (keep copies of the files you replace), then run each kit once on its own so that it registers. Both builds need the x86 Visual C++ 2015-2022 runtime with MFC. The original game's data is not included.
+          x64 is a 64-bit build of the same source (docs/64-bit.md); x86 remains the reference. Each zip has `Creatures.exe`, the kits and `c1kitlib.dll` at that width. Copy them into a Creatures 1 install (keep copies of the files you replace), then run each kit once on its own so that it registers. All four need the matching (x86 or x64) Visual C++ 2015-2022 runtime with MFC. The original game's data is not included.
 
-          What LibreCreatures changes from Creatures 1 CE and the 1996 kits (fixes, new features and deliberate changes) is listed in [Changes from Creatures 1 Community Edition](https://github.com/h4rm0n1c/LibreCreatures/blob/main/docs/changes-from-ce.md).
+          Which fixes for defects in the original game are on is no longer fixed at build time: every exe reads `librefixes.ini` beside it (made with recommended defaults the first time it runs) and has an Options > LibreFixes window to change them while playing. [Changes from Creatures 1 Community Edition](https://github.com/h4rm0n1c/LibreCreatures/blob/main/docs/changes-from-ce.md) lists what each one does.
 
           `SOURCE-CODE.txt` in each zip names the commit it was built from.
           EOF
           gh release create "$GITHUB_REF_NAME" \
-            release/LibreCreatures-windows-x86.zip \
-            release/LibreCreatures-neorender-windows-x86.zip \
+            release/*.zip \
             --repo "$GITHUB_REPOSITORY" \
             --title "LibreCreatures $GITHUB_REF_NAME" \
             --notes-file notes.md \

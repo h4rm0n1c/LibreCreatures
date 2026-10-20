@@ -580,6 +580,7 @@ bool initialise_sfc_app(SfcAppStartupHost& host) {
         return false;
     }
 
+    host.load_fix_config();
     host.register_ole_factories();
     // The native branch tests CWinApp::m_pMainWnd here.  When the host has
     // not yet materialized the frame, it dispatches either the USER-mode

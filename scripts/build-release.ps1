@@ -1,8 +1,10 @@
 [CmdletBinding()]
 param(
-    [string]$BuildDirectory = "build/windows-msvc-x86",
+    [ValidateSet("x86", "x64")]
+    [string]$Arch = "x86",
+    [string]$BuildDirectory = "build/windows-msvc-$Arch",
     [string]$OutputDirectory = "dist/LibreCreatures",
-    [string]$ArchivePath = "dist/LibreCreatures-windows-x86.zip"
+    [string]$ArchivePath = "dist/LibreCreatures-windows-$Arch.zip"
 )
 
 $ErrorActionPreference = "Stop"
@@ -26,12 +28,19 @@ if ($archiveDirectory -and (Test-Path $archiveDirectory)) {
     Remove-Item $ArchivePath -Force -ErrorAction SilentlyContinue
 }
 
-Invoke-Checked "cmake" @(
+# x64 (docs/64-bit.md) is a deliberate opt-in at the CMake level
+# (LC_ALLOW_X64); x86 stays the plain default configure.
+$cmakeArch = if ($Arch -eq "x64") { "x64" } else { "Win32" }
+$configureArgs = @(
     "-S", ".",
     "-B", $BuildDirectory,
     "-G", "Visual Studio 17 2022",
-    "-A", "Win32"
+    "-A", $cmakeArch
 )
+if ($Arch -eq "x64") {
+    $configureArgs += "-DLC_ALLOW_X64=ON"
+}
+Invoke-Checked "cmake" $configureArgs
 Invoke-Checked "cmake" @(
     "--build", $BuildDirectory,
     "--config", "Release",
