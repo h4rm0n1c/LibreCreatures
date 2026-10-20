@@ -1,7 +1,9 @@
 #include "document.hpp"
 #include "../common/compat.hpp"
+#include "../common/lab_trace.hpp"
 
 #include <array>
+#include <chrono>
 #include <new>
 
 #include "../scripting/classifier_scripts.hpp"
@@ -9,6 +11,34 @@
 namespace creatures1::application {
 
 namespace {
+
+// Not native: four coarse timing buckets for one tick (LabTrace::timing),
+// logged only when the tick ran long -- std::chrono::steady_clock is
+// portable, so this needs no platform host method.  UI is input/viewport
+// bookkeeping and the periodic kit/status-pane broadcasts; SIM is every
+// object, script and creature update plus the tick-phase dispatch; RENDER is
+// the deferred dirty-rectangle flush; IO is the autosave, the one point in a
+// tick that touches disk.  Which bucket dominates a slow tick is the
+// question to answer before any of them gets its own thread.
+using TickClock = std::chrono::steady_clock;
+constexpr double kSlowTickTraceThresholdMs = 20.0;
+
+class PhaseTimer {
+public:
+    explicit PhaseTimer(double& accumulator)
+        : accumulator_(accumulator), start_(TickClock::now()) {}
+    ~PhaseTimer() {
+        accumulator_ += std::chrono::duration<double, std::milli>(
+                            TickClock::now() - start_)
+                            .count();
+    }
+    PhaseTimer(const PhaseTimer&) = delete;
+    PhaseTimer& operator=(const PhaseTimer&) = delete;
+
+private:
+    double& accumulator_;
+    TickClock::time_point start_;
+};
 
 constexpr std::uint32_t kFavouritePlaceNavigationMode = 1;
 constexpr std::uint32_t kWorldUpdateTimerRunning = 1;
@@ -308,12 +338,29 @@ void Document::update_world(DocumentWorldUpdateHost& host) {
     }
     host.set_world_update_in_progress(true);
 
-    if (host.has_edit_object()) {
-        host.place_edit_object_at_pointer();
-        if (host.pending_right_button()) {
-            host.clear_pending_input();
-            host.finalize_edit_object();
-            host.clear_edit_object();
+    double ui_ms = 0.0;
+    double render_ms = 0.0;
+    double io_ms = 0.0;
+    // SIM, broken down by sub-phase: which one spikes decides what (if
+    // anything) is worth its own thread.
+    double objects_ms = 0.0;
+    double scripts_ms = 0.0;
+    double brain_ms = 0.0;
+    double biochem_ms = 0.0;
+    double action_ms = 0.0;
+    double dreaming_ms = 0.0;
+    double sound_ms = 0.0;
+    double phase_ms = 0.0;
+
+    {
+        PhaseTimer timer(ui_ms);
+        if (host.has_edit_object()) {
+            host.place_edit_object_at_pointer();
+            if (host.pending_right_button()) {
+                host.clear_pending_input();
+                host.finalize_edit_object();
+                host.clear_edit_object();
+            }
         }
     }
 
@@ -322,138 +369,169 @@ void Document::update_world(DocumentWorldUpdateHost& host) {
     // dispatch below.
     host.begin_deferred_dirty_rectangles();
 
-    // Non-scenery objects can add or remove registry entries while ticking;
-    // re-read the count after each dispatch just as the native index walk did.
-    for (std::size_t index = 0;
-         index < host.non_scenery_object_count(); ++index) {
-        if (host.non_scenery_object_tick_enabled(index)) {
-            host.tick_non_scenery_object(index);
-        }
-    }
-
-    char input_character = '\0';
-    if (host.pop_text_input_character(input_character)) {
-        if (input_character == '\r') {
-            host.commit_text_input();
-        } else if (input_character == '\b') {
-            if (host.text_input_length() != 0) {
-                host.erase_last_text_input_character();
+    {
+        PhaseTimer timer(objects_ms);
+        // Non-scenery objects can add or remove registry entries while
+        // ticking; re-read the count after each dispatch just as the
+        // native index walk did.
+        for (std::size_t index = 0;
+             index < host.non_scenery_object_count(); ++index) {
+            if (host.non_scenery_object_tick_enabled(index)) {
+                host.tick_non_scenery_object(index);
             }
-            host.update_text_input_target();
-        } else if (static_cast<unsigned char>(input_character - 0x20) <
-                       0x5b &&
-                   host.text_input_length() < host.text_input_max_length() &&
-                   host.text_input_character_allowed(
-                       input_character,
-                       host.text_input_allowed_character_flags())) {
-            host.append_text_input_character(input_character);
-            host.update_text_input_target();
-        } else {
-            host.update_text_input_target();
         }
     }
 
-    host.update_selected_creature_follow_viewport();
-
-    // LibreCreatures deviation.  SFCDoc::UpdateWorld @004324e0 steps its
-    // index after every ExecuteInterpreter, but a script that ends is removed
-    // from g_running_macro_slots by compacting the array
-    // (RemoveFromRunningSchedulerAndDestroy @0041a3e0), so the next script
-    // moves into the slot just run and loses its turn that tick.  The host
-    // returns the next slot with removals accounted for.
-    for (std::size_t index = 0; index < host.running_macro_count();) {
-        // ExecuteInterpreter remains a separate held semantic row; this
-        // adapter is its typed world-scheduler boundary.
-        const std::size_t next = host.execute_running_macro(index);
-        // Native steps to the next slot whatever was removed (row 61).
-        index = LC_FIX(61) ? next : index + 1;
-    }
-
-    const std::uint32_t cohort = host.creature_update_cohort();
-    // Creature updates can change the registry.  The native index walk
-    // re-read its current size after each update, so keep the bound live
-    // instead of freezing the count at the start of the cohort.
-    for (std::size_t index = cohort; index < host.creature_count();
-         index += 4) {
-        if (!host.creature_tick_enabled(index) ||
-            host.creature_is_dreaming(index)) {
-            continue;
-        }
-        if (host.creature_is_alive(index)) {
-            if (host.selected_action_is_in_range(index)) {
-                host.boost_selected_action_activation(index);
-            }
-            host.update_creature_brain(index);
-        }
-        host.update_creature_biochemistry(index);
-        if (host.creature_is_alive(index)) {
-            host.update_creature_action_selection(index);
-        }
-        host.increment_creature_biochemistry_tick(index);
-    }
-
-    host.set_creature_update_cohort(
-        cohort + 1 < (LC_FIX(1) ? kCreatureUpdateCohortCount
-                                : kNativeCreatureUpdateCohortCount)
-            ? cohort + 1
-            : 0);
-
-    for (std::size_t index = 0; index < host.creature_count(); ++index) {
-        if (host.creature_tick_enabled(index)) {
-            host.process_creature_dreaming(index);
-        }
-    }
-
-    if (host.sound_manager_available()) {
-        host.update_sound_system();
-        const std::uint32_t cooldown = host.ambient_sound_cooldown_ticks();
-        if (cooldown == 0) {
-            if (!mute_setting && !host.sound_muted()) {
-                const std::uint32_t random_index =
-                    host.random_ambient_sound_index() % kAmbientSoundCount + 1;
-                std::uint32_t sound_id =
-                    host.ambient_sound_descriptor_override();
-                if (sound_id == 0) {
-                    sound_id =
-                        (((random_index % 10) << 8) | (random_index / 10)) <<
-                            16;
-                    sound_id += 0x3030554d;
+    {
+        PhaseTimer timer(ui_ms);
+        char input_character = '\0';
+        if (host.pop_text_input_character(input_character)) {
+            if (input_character == '\r') {
+                host.commit_text_input();
+            } else if (input_character == '\b') {
+                if (host.text_input_length() != 0) {
+                    host.erase_last_text_input_character();
                 }
-                if (host.sound_mixer_ready() &&
-                    host.load_ambient_sound(sound_id)) {
-                    host.start_ambient_sound(sound_id);
-                }
-                host.set_ambient_sound_cooldown_ticks(
-                    host.random_ambient_sound_index() %
-                        kAmbientSoundCooldownRange +
-                    kAmbientSoundCooldownMinimum);
+                host.update_text_input_target();
+            } else if (static_cast<unsigned char>(input_character - 0x20) <
+                           0x5b &&
+                       host.text_input_length() <
+                           host.text_input_max_length() &&
+                       host.text_input_character_allowed(
+                           input_character,
+                           host.text_input_allowed_character_flags())) {
+                host.append_text_input_character(input_character);
+                host.update_text_input_target();
             } else {
-                host.set_ambient_sound_cooldown_ticks(1);
+                host.update_text_input_target();
             }
-        } else {
-            host.set_ambient_sound_cooldown_ticks(cooldown - 1);
+        }
+
+        host.update_selected_creature_follow_viewport();
+    }
+
+    {
+        PhaseTimer timer(scripts_ms);
+        // LibreCreatures deviation.  SFCDoc::UpdateWorld @004324e0 steps its
+        // index after every ExecuteInterpreter, but a script that ends is
+        // removed from g_running_macro_slots by compacting the array
+        // (RemoveFromRunningSchedulerAndDestroy @0041a3e0), so the next
+        // script moves into the slot just run and loses its turn that tick.
+        // The host returns the next slot with removals accounted for.
+        for (std::size_t index = 0; index < host.running_macro_count();) {
+            // ExecuteInterpreter remains a separate held semantic row; this
+            // adapter is its typed world-scheduler boundary.
+            const std::size_t next = host.execute_running_macro(index);
+            // Native steps to the next slot whatever was removed (row 61).
+            index = LC_FIX(61) ? next : index + 1;
         }
     }
 
-    host.update_keyboard_scroll();
-    if (!host.advance_smooth_scroll()) {
-        if (host.manual_viewport_navigation()) {
-            if (!host.selected_creature_in_safe_area()) {
-                host.reset_manual_navigation_safe_frame_count();
-            } else {
-                const std::uint32_t safe_frames =
-                    host.manual_navigation_safe_frame_count() + 1;
-                host.set_manual_navigation_safe_frame_count(safe_frames);
-                if (safe_frames == 0x14) {
-                    host.reset_world_scrollbars();
-                    host.resume_following_selected_creature();
-                    host.invalidate_main_toolbar();
-                }
+    {
+        const std::uint32_t cohort = host.creature_update_cohort();
+        // Creature updates can change the registry.  The native index walk
+        // re-read its current size after each update, so keep the bound
+        // live instead of freezing the count at the start of the cohort.
+        for (std::size_t index = cohort; index < host.creature_count();
+             index += 4) {
+            if (!host.creature_tick_enabled(index) ||
+                host.creature_is_dreaming(index)) {
+                continue;
             }
-        } else if (host.follows_selected_creature_viewport()) {
-            // SFCDoc::UpdateWorld follows only in FOLLOW mode; with Track
-            // Creature turned off (mode 0) the camera stays where it is.
-            host.follow_selected_creature_viewport();
+            if (host.creature_is_alive(index)) {
+                PhaseTimer timer(brain_ms);
+                if (host.selected_action_is_in_range(index)) {
+                    host.boost_selected_action_activation(index);
+                }
+                host.update_creature_brain(index);
+            }
+            {
+                PhaseTimer timer(biochem_ms);
+                host.update_creature_biochemistry(index);
+            }
+            if (host.creature_is_alive(index)) {
+                PhaseTimer timer(action_ms);
+                host.update_creature_action_selection(index);
+            }
+            host.increment_creature_biochemistry_tick(index);
+        }
+
+        host.set_creature_update_cohort(
+            cohort + 1 < (LC_FIX(1) ? kCreatureUpdateCohortCount
+                                    : kNativeCreatureUpdateCohortCount)
+                ? cohort + 1
+                : 0);
+    }
+
+    {
+        PhaseTimer timer(dreaming_ms);
+        for (std::size_t index = 0; index < host.creature_count(); ++index) {
+            if (host.creature_tick_enabled(index)) {
+                host.process_creature_dreaming(index);
+            }
+        }
+    }
+
+    {
+        PhaseTimer timer(sound_ms);
+        if (host.sound_manager_available()) {
+            host.update_sound_system();
+            const std::uint32_t cooldown = host.ambient_sound_cooldown_ticks();
+            if (cooldown == 0) {
+                if (!mute_setting && !host.sound_muted()) {
+                    const std::uint32_t random_index =
+                        host.random_ambient_sound_index() %
+                            kAmbientSoundCount +
+                        1;
+                    std::uint32_t sound_id =
+                        host.ambient_sound_descriptor_override();
+                    if (sound_id == 0) {
+                        sound_id =
+                            (((random_index % 10) << 8) |
+                             (random_index / 10))
+                            << 16;
+                        sound_id += 0x3030554d;
+                    }
+                    if (host.sound_mixer_ready() &&
+                        host.load_ambient_sound(sound_id)) {
+                        host.start_ambient_sound(sound_id);
+                    }
+                    host.set_ambient_sound_cooldown_ticks(
+                        host.random_ambient_sound_index() %
+                            kAmbientSoundCooldownRange +
+                        kAmbientSoundCooldownMinimum);
+                } else {
+                    host.set_ambient_sound_cooldown_ticks(1);
+                }
+            } else {
+                host.set_ambient_sound_cooldown_ticks(cooldown - 1);
+            }
+        }
+    }
+
+    {
+        PhaseTimer timer(ui_ms);
+        host.update_keyboard_scroll();
+        if (!host.advance_smooth_scroll()) {
+            if (host.manual_viewport_navigation()) {
+                if (!host.selected_creature_in_safe_area()) {
+                    host.reset_manual_navigation_safe_frame_count();
+                } else {
+                    const std::uint32_t safe_frames =
+                        host.manual_navigation_safe_frame_count() + 1;
+                    host.set_manual_navigation_safe_frame_count(safe_frames);
+                    if (safe_frames == 0x14) {
+                        host.reset_world_scrollbars();
+                        host.resume_following_selected_creature();
+                        host.invalidate_main_toolbar();
+                    }
+                }
+            } else if (host.follows_selected_creature_viewport()) {
+                // SFCDoc::UpdateWorld follows only in FOLLOW mode; with
+                // Track Creature turned off (mode 0) the camera stays where
+                // it is.
+                host.follow_selected_creature_viewport();
+            }
         }
     }
 
@@ -462,18 +540,27 @@ void Document::update_world(DocumentWorldUpdateHost& host) {
         phase = 0;
     }
     host.set_world_tick_phase(phase);
-    host.dispatch_world_tick_phase(phase);
-    host.flush_deferred_dirty_rectangles();
+    {
+        PhaseTimer timer(phase_ms);
+        host.dispatch_world_tick_phase(phase);
+    }
+    {
+        PhaseTimer timer(render_ms);
+        host.flush_deferred_dirty_rectangles();
+    }
 
     const std::uint32_t world_tick_count = host.world_tick_count();
-    if (world_tick_count % kPeriodicWorldUpdateCount ==
-        kPeriodicWorldUpdateCount - 1) {
-        score.population_time_accumulator +=
-            static_cast<std::uint32_t>(host.selected_creature_count());
-        host.publish_periodic_score_to_embedded_control(score);
-    }
-    if (world_tick_count % 100 == 99) {
-        host.update_event_bar_status_panes();
+    {
+        PhaseTimer timer(ui_ms);
+        if (world_tick_count % kPeriodicWorldUpdateCount ==
+            kPeriodicWorldUpdateCount - 1) {
+            score.population_time_accumulator +=
+                static_cast<std::uint32_t>(host.selected_creature_count());
+            host.publish_periodic_score_to_embedded_control(score);
+        }
+        if (world_tick_count % 100 == 99) {
+            host.update_event_bar_status_panes();
+        }
     }
 
     const std::uint32_t now = host.current_time_ms();
@@ -481,6 +568,7 @@ void Document::update_world(DocumentWorldUpdateHost& host) {
     if (!autosave_blocked &&
         (elapsed >= host.autosave_interval_ms() ||
          now < last_autosave_time_ms) && host.privilege_level() < 2) {
+        PhaseTimer timer(io_ms);
         // SFCDoc::UpdateWorld @ 00432be6 broadcasts this same toggle code
         // here, before the save even starts, and again @ 00432c8b once it's
         // done -- a matched pair. Kits treat this code as a toggle, not a
@@ -515,6 +603,21 @@ void Document::update_world(DocumentWorldUpdateHost& host) {
 
     host.set_world_tick_count(world_tick_count + 1);
     host.set_world_update_in_progress(false);
+
+    const double sim_ms = objects_ms + scripts_ms + brain_ms + biochem_ms +
+                          action_ms + dreaming_ms + sound_ms + phase_ms;
+    const double total_ms = ui_ms + sim_ms + render_ms + io_ms;
+    if (total_ms >= kSlowTickTraceThresholdMs) {
+        creatures1::common::lab_trace(
+            creatures1::common::LabTrace::timing,
+            "slow tick breakdown: total=%.1fms sim=%.1fms render=%.1fms "
+            "io=%.1fms ui=%.1fms | sim: objects=%.1fms scripts=%.1fms "
+            "brain=%.1fms biochem=%.1fms action=%.1fms dreaming=%.1fms "
+            "sound=%.1fms phase=%.1fms",
+            total_ms, sim_ms, render_ms, io_ms, ui_ms, objects_ms,
+            scripts_ms, brain_ms, biochem_ms, action_ms, dreaming_ms,
+            sound_ms, phase_ms);
+    }
 }
 
 void Document::serialize(DocumentSerializationHost& host) {

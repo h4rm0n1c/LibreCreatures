@@ -5,9 +5,11 @@
 #include "windows_shell.hpp"
 #include "../common/compat.hpp"
 #include "../common/fix_catalog.hpp"
+#include "../common/lab_trace.hpp"
 
 #include <afxcmn.h>
 
+#include <chrono>
 #include <vector>
 
 namespace creatures1::platform {
@@ -69,16 +71,32 @@ public:
     explicit FixesDialog(CWnd* parent) : CDialog(), parent_(parent) {}
 
     INT_PTR run() {
+        // Not native: InitModalIndirect actually creates the HWND;
+        // lab_trace's own timestamp column (already on every line, the same
+        // clock everywhere) lets this be compared against OnLibreFixes'
+        // "command handler entered" line (before this) and OnInitDialog's
+        // "begin"/"end" lines (during DoModal, below) to see where time
+        // goes when opening is slow even with no slow world tick nearby.
+        const auto start = std::chrono::steady_clock::now();
         const std::vector<WORD> words = make_template();
         if (!InitModalIndirect(reinterpret_cast<LPCDLGTEMPLATE>(words.data()),
                                parent_)) {
             return -1;
         }
+        const double init_ms = std::chrono::duration<double, std::milli>(
+                                   std::chrono::steady_clock::now() - start)
+                                   .count();
+        creatures1::common::lab_trace(
+            creatures1::common::LabTrace::timing,
+            "LibreFixes: InitModalIndirect took %.1fms", init_ms);
         return DoModal();
     }
 
 protected:
     BOOL OnInitDialog() override {
+        creatures1::common::lab_trace(creatures1::common::LabTrace::timing,
+                                      "LibreFixes: OnInitDialog begin");
+        const auto start = std::chrono::steady_clock::now();
         CDialog::OnInitDialog();
         SetWindowText(_T("LibreFixes"));
         CFont* font = GetFont();
@@ -111,8 +129,14 @@ protected:
                      CRect(), this, kControlList);
         list_.SetExtendedStyle(list_.GetExtendedStyle() |
                                LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT);
+        list_.SetFont(font);
         list_.InsertColumn(0, _T("Fix"), LVCFMT_LEFT, kWidth);
 
+        // Not native: WM_SETREDRAW off for the whole insert -- otherwise a
+        // visible, LVS_EX_CHECKBOXES-styled CListCtrl relays out and
+        // repaints on every single InsertItem, turning 62 rows into tens of
+        // milliseconds (measured: ~80ms) every time this dialog opens.
+        list_.SetRedraw(FALSE);
         for (std::size_t i = 0; i < creatures1::common::kFixCatalogSize; ++i) {
             const creatures1::common::FixCatalogEntry& entry =
                 creatures1::common::kFixCatalog[i];
@@ -124,7 +148,7 @@ protected:
             set_row_checked(list_, index,
                             creatures1::common::compat_fixed(entry.row));
         }
-        list_.SetFont(font);
+        list_.SetRedraw(TRUE);
 
         reset_.Create(_T("Reset to recommended"),
                       WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
@@ -145,6 +169,12 @@ protected:
         GetClientRect(&client);
         min_size_ = client.Size();
         layout(client.Width(), client.Height());
+        const double body_ms = std::chrono::duration<double, std::milli>(
+                                   std::chrono::steady_clock::now() - start)
+                                   .count();
+        creatures1::common::lab_trace(
+            creatures1::common::LabTrace::timing,
+            "LibreFixes: OnInitDialog end (body took %.1fms)", body_ms);
         return TRUE;
     }
 

@@ -3,6 +3,7 @@
 #include "../common/compat.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cstdlib>
 #include <cstring>
 #include <iterator>
@@ -4154,8 +4155,33 @@ void Creature::update_bacterium_and_environment(
     }
 
     if (death_state_ == 0) {
+        // Not native: which of these two took long (LabTrace::timing) -- the
+        // bacterium-service tick phase that calls this showed up as the
+        // dominant cost of an occasional slow world tick; this is the next
+        // level down.
+        constexpr double kSlowCallTraceThresholdMs = 5.0;
+        const auto environment_start = std::chrono::steady_clock::now();
         update_environment_and_life_stage(host.environment_host(), log_host);
+        const double environment_ms =
+            std::chrono::duration<double, std::milli>(
+                std::chrono::steady_clock::now() - environment_start)
+                .count();
+
+        const auto goal_start = std::chrono::steady_clock::now();
         update_goal_direction(host.goal_direction_host());
+        const double goal_ms = std::chrono::duration<double, std::milli>(
+                                   std::chrono::steady_clock::now() -
+                                   goal_start)
+                                   .count();
+
+        if (environment_ms >= kSlowCallTraceThresholdMs ||
+            goal_ms >= kSlowCallTraceThresholdMs) {
+            common::lab_trace(
+                common::LabTrace::timing,
+                "slow creature update: environment_and_life_stage=%.1fms "
+                "goal_direction=%.1fms",
+                environment_ms, goal_ms);
+        }
     }
 }
 
