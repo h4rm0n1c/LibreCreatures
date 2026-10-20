@@ -37,8 +37,6 @@ class PipeMacroTransport final : public MacroTransport {
 public:
     PipeMacroTransport() { read_buffer_.resize(kReadBufferBytes); }
 
-    ~PipeMacroTransport() override { close_pipe(); }
-
     bool create_macro(short mode, long& handle) override {
         handle = 0;
         std::string command = "CREATEMACRO";
@@ -146,72 +144,70 @@ private:
         return round_trip(command, body);
     }
 
-    bool ensure_connected() {
-        if (pipe_ != INVALID_HANDLE_VALUE) {
-            return true;
-        }
-        DWORD last_error = 0;
-        for (int attempt = 0; attempt < 20; ++attempt) {
-            pipe_ = CreateFileA(kPipeName, GENERIC_READ | GENERIC_WRITE, 0,
-                                nullptr, OPEN_EXISTING, 0, nullptr);
-            if (pipe_ != INVALID_HANDLE_VALUE) {
-                break;
-            }
-            last_error = GetLastError();
-            if (last_error == ERROR_PIPE_BUSY) {
-                WaitNamedPipeA(kPipeName, 2000);
-                continue;
-            }
-            if (last_error != ERROR_FILE_NOT_FOUND) {
-                break;
-            }
-            Sleep(100);  // the game may still be starting its pipe server
-        }
-        if (pipe_ == INVALID_HANDLE_VALUE) {
-            last_error_ = last_error;
-            return false;
-        }
-        DWORD mode = 2;  // PIPE_READMODE_MESSAGE
-        SetNamedPipeHandleState(pipe_, &mode, nullptr, nullptr);
-        return true;
-    }
-
-    void close_pipe() {
-        if (pipe_ != INVALID_HANDLE_VALUE) {
-            CloseHandle(pipe_);
-            pipe_ = INVALID_HANDLE_VALUE;
-        }
-    }
-
-    // One request, one reply, over whichever connection is open; a failed
-    // write or read closes the pipe and is tried once more on a fresh one,
-    // in case the game's pipe server cycled between calls.
-    bool round_trip(const std::string& command, std::string_view& body) {
-        for (int attempt = 0; attempt < 2; ++attempt) {
-            if (!ensure_connected()) {
-                return false;
-            }
-            if (send_and_receive(command, body)) {
+    // The game's PipeServer runs one listening instance at a time: it only
+    // creates the next one once the current client disconnects (serve_client
+    // loops on ONE pipe handle; run_worker only calls create_named_pipe
+    // again after that handle closes). A kit that kept its connection open
+    // for its whole lifetime -- this transport's first version -- holds that
+    // one slot forever and locks every other kit out with ERROR_PIPE_BUSY
+    // the moment two kits are open together (seen in the lab: Observation's
+    // own poll loop starved Score and Funeral's connect attempts solid).
+    // So, like the original proxy's SendPipeCommand, every command gets its
+    // own connect-write-read-close: the connection is never held between
+    // calls, and each one's turn with the single server slot is as short as
+    // its own round trip.
+    bool connect_once(HANDLE& pipe) {
+        constexpr DWORD kBudgetMilliseconds = 3000;
+        const DWORD started = GetTickCount();
+        for (;;) {
+            pipe = CreateFileA(kPipeName, GENERIC_READ | GENERIC_WRITE, 0,
+                               nullptr, OPEN_EXISTING, 0, nullptr);
+            if (pipe != INVALID_HANDLE_VALUE) {
+                DWORD mode = 2;  // PIPE_READMODE_MESSAGE
+                SetNamedPipeHandleState(pipe, &mode, nullptr, nullptr);
                 return true;
             }
-            close_pipe();
+            last_error_ = GetLastError();
+            if (GetTickCount() - started >= kBudgetMilliseconds) {
+                return false;
+            }
+            if (last_error_ == ERROR_PIPE_BUSY) {
+                // Another kit (or this one, a moment ago) is mid-command;
+                // that is always brief, so a short wait is enough.
+                WaitNamedPipeA(kPipeName, 50);
+            } else if (last_error_ == ERROR_FILE_NOT_FOUND) {
+                Sleep(50);  // the game may still be starting its pipe server
+            } else {
+                return false;
+            }
         }
-        return false;
     }
 
-    bool send_and_receive(const std::string& command, std::string_view& body) {
+    // One request, one reply, each over its own fresh connection.
+    bool round_trip(const std::string& command, std::string_view& body) {
+        HANDLE pipe = INVALID_HANDLE_VALUE;
+        if (!connect_once(pipe)) {
+            return false;
+        }
+        const bool ok = send_and_receive(pipe, command, body);
+        CloseHandle(pipe);
+        return ok;
+    }
+
+    bool send_and_receive(HANDLE pipe, const std::string& command,
+                         std::string_view& body) {
         // The trailing NUL is part of the message on this pipe (both the
         // game's own writes and every existing client's); write it too.
         DWORD written = 0;
-        if (!WriteFile(pipe_, command.c_str(),
+        if (!WriteFile(pipe, command.c_str(),
                        static_cast<DWORD>(command.size() + 1), &written,
                        nullptr) ||
             written != command.size() + 1) {
             return false;
         }
-        FlushFileBuffers(pipe_);
+        FlushFileBuffers(pipe);
         DWORD read = 0;
-        if (!ReadFile(pipe_, read_buffer_.data(),
+        if (!ReadFile(pipe, read_buffer_.data(),
                      static_cast<DWORD>(read_buffer_.size()), &read, nullptr) ||
             read == 0) {
             return false;
@@ -224,7 +220,6 @@ private:
         return true;
     }
 
-    HANDLE pipe_ = INVALID_HANDLE_VALUE;
     DWORD last_error_ = 0;
     std::vector<char> read_buffer_;
     std::string reply_;
