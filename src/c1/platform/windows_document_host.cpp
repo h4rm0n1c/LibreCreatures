@@ -22,6 +22,7 @@
 #include <optional>
 #include <cstdio>
 #include <algorithm>
+#include <chrono>
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -3169,6 +3170,26 @@ void C1WindowsDocument::set_world_tick_phase(std::uint32_t phase) {
     world_tick_phase_ = phase;
 }
 
+namespace {
+// Not native: which of dispatch_world_tick_phase's five subsystems ran
+// long (LabTrace::timing) -- Document::update_world's own breakdown only
+// times the dispatch as one "phase" bucket; this is the next level down.
+constexpr double kSlowPhaseTraceThresholdMs = 10.0;
+
+void trace_if_slow_phase(const char* name, std::uint32_t phase,
+                         std::chrono::steady_clock::time_point start) {
+    const double ms = std::chrono::duration<double, std::milli>(
+                          std::chrono::steady_clock::now() - start)
+                          .count();
+    if (ms >= kSlowPhaseTraceThresholdMs) {
+        creatures1::common::lab_trace(
+            creatures1::common::LabTrace::timing,
+            "slow tick-phase: %s took %.1fms (world phase %u)", name, ms,
+            phase);
+    }
+}
+} // namespace
+
 void C1WindowsDocument::dispatch_world_tick_phase(std::uint32_t phase) {
     // SFCDoc::UpdateWorld @ 004324e0 dispatches through the sixteen-entry
     // table at 0x00454640 with `call [phase*4 + 0x454640]`, unconditionally
@@ -3181,6 +3202,7 @@ void C1WindowsDocument::dispatch_world_tick_phase(std::uint32_t phase) {
     //   7           -> UpdateAllCreatureDriveThresholdStates   @ 00432ce0
     //   15          -> AdvanceBacteriumServicePhase            @ 00433310
     //   3, 6, 11, 14 -> idle
+    const auto start = std::chrono::steady_clock::now();
     switch (phase) {
     case 0:
     case 4:
@@ -3189,6 +3211,7 @@ void C1WindowsDocument::dispatch_world_tick_phase(std::uint32_t phase) {
         WindowsObjectEventRuntime runtime(*this);
         event_scheduler_.process_queued_events(
             runtime, static_cast<std::int32_t>(world_tick_count()));
+        trace_if_slow_phase("object events and stimuli", phase, start);
         return;
     }
     case 1:
@@ -3197,6 +3220,7 @@ void C1WindowsDocument::dispatch_world_tick_phase(std::uint32_t phase) {
     case 13: {
         WindowsCreatureWorldUpdateHost host(*this);
         creatures1::creatures::update_all_creature_brain_inputs(host);
+        trace_if_slow_phase("creature brain inputs", phase, start);
         return;
     }
     case 2:
@@ -3204,14 +3228,18 @@ void C1WindowsDocument::dispatch_world_tick_phase(std::uint32_t phase) {
         WindowsCreatureWorldUpdateHost host(*this);
         creatures1::creatures::update_all_creature_perception_and_attention(
             host);
+        trace_if_slow_phase("creature perception and attention", phase,
+                            start);
         return;
     }
     case 7:
         run_creature_drive_threshold_phase(*this);
+        trace_if_slow_phase("creature drive thresholds", phase, start);
         return;
     case 15: {
         WindowsBacteriumServiceHost host(*this);
         creatures1::world::advance_bacterium_service_phase(host);
+        trace_if_slow_phase("bacterium service", phase, start);
         return;
     }
     default:
