@@ -134,14 +134,19 @@ set_target_properties(Creatures PROPERTIES
     LINK_FLAGS "/SUBSYSTEM:WINDOWS,6.00"
 )
 
-# SDL3 (third_party/SDL3, the official x86 VC build) draws the world view.
-# SDL3.dll ships beside Creatures.exe.
+# SDL3 (third_party/SDL3, the official VC build, x86 and x64) draws the
+# world view.  SDL3.dll ships beside Creatures.exe.
 set(SDL3_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/third_party/SDL3)
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set(SDL3_ARCH_DIR x64)
+else()
+    set(SDL3_ARCH_DIR x86)
+endif()
 target_include_directories(Creatures PRIVATE ${SDL3_ROOT}/include)
-target_link_libraries(Creatures PRIVATE ${SDL3_ROOT}/lib/x86/SDL3.lib)
+target_link_libraries(Creatures PRIVATE ${SDL3_ROOT}/lib/${SDL3_ARCH_DIR}/SDL3.lib)
 add_custom_command(TARGET Creatures POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${SDL3_ROOT}/lib/x86/SDL3.dll $<TARGET_FILE_DIR:Creatures>)
+        ${SDL3_ROOT}/lib/${SDL3_ARCH_DIR}/SDL3.dll $<TARGET_FILE_DIR:Creatures>)
 
 # Group sources by their real subdirectory in generated IDEs (Visual Studio,
 # CLion) instead of one flat list -- purely cosmetic, no effect on the build.
@@ -242,6 +247,6 @@ install(FILES
     DESTINATION .
 )
 # SDL3.dll must sit beside Creatures.exe, with SDL's licence.
-install(FILES ${SDL3_ROOT}/lib/x86/SDL3.dll DESTINATION .)
+install(FILES ${SDL3_ROOT}/lib/${SDL3_ARCH_DIR}/SDL3.dll DESTINATION .)
 install(FILES ${SDL3_ROOT}/LICENSE.txt DESTINATION . RENAME SDL3-LICENSE.txt)
 install(DIRECTORY docs DESTINATION .)
