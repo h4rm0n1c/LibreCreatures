@@ -20,10 +20,16 @@
 //   -DLC_NATIVE_MODE    every LC_FIX_<row> is 0: the native game, with the
 //                       guards below.  A row can be kept fixed with
 //                       -DLC_FIX_<row>=1.
-//   -DLC_COMPAT_RUNTIME LC_FIX(<row>) reads a table set once from the
-//                       environment: C1_NATIVE_ROWS is "all" or a comma list
-//                       of rows to run native, and "-<row>" keeps one fixed
-//                       ("all,-4,-5").  Unset, every row is fixed.
+//   -DLC_COMPAT_RUNTIME LC_FIX(<row>) reads a live, in-memory table instead
+//                       of a compile-time constant.  This is the build every
+//                       shipped LibreCreatures exe uses: librefixes.ini sets
+//                       each row's starting value (see load_fix_config()
+//                       below), the Options > LibreFixes window changes it
+//                       live through set_compat_fixed(), and the lab's own
+//                       A/B runs still set C1_NATIVE_ROWS ("all" or a comma
+//                       list of rows to run native, "-<row>" keeping one
+//                       fixed: "all,-4,-5") on top, unchanged from before and
+//                       without touching the ini.
 //
 // A row that is not in this list cannot be switched: LC_FIX(<row>) on it
 // does not compile.  Guards against native crashes and memory corruption
@@ -243,12 +249,29 @@
 
 namespace creatures1::common {
 
-// Runtime build: whether `row` runs its fix (C1_NATIVE_ROWS, read once).
-// The other builds never call it.
+// Runtime build: whether `row` runs its fix. The other builds never call
+// this; LC_FIX(row) is LC_FIX_##row's compile-time value there instead.
 bool compat_fixed(int row);
 
 // The rows running native, for logs: "none", or "all" / a row list.
 std::string compat_summary();
+
+// LibreFixes: the player-facing side of this, for a shipped runtime build.
+// This header and compat.cpp stay portable (no file or OS access); reading
+// and writing librefixes.ini is platform/windows_fix_config_host.cpp's job,
+// through these two pure in-memory operations:
+//
+// set_compat_fixed(row, fixed) updates the live flag for one catalog row
+// (fix_catalog.hpp). Every LC_FIX(row) call site re-reads it, so this takes
+// effect at once, no restart. A row outside the catalog (a guard row, or
+// not a row at all) is ignored. This is what the LibreFixes dialog's OK
+// button, and the ini loader, both call for each row they set.
+//
+// compat_fixed(row) (above) already reads a row back, so the ini writer and
+// the dialog can read starting values from it too.
+#if defined(LC_COMPAT_RUNTIME)
+void set_compat_fixed(int row, bool fixed);
+#endif
 
 } // namespace creatures1::common
 

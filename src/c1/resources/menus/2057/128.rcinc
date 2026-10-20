@@ -87,6 +87,8 @@ BEGIN
         MENUITEM "Mute Creature Voices", 32897
         MENUITEM "", 0
         MENUITEM "Informative Creatures Menu", 32892
+        MENUITEM "", 0
+        MENUITEM "LibreFixes...", 32970
     END
     POPUP "&Help"
     BEGIN

@@ -1,5 +1,6 @@
 #include "world_in_use.hpp"
 #include "../common/compat.hpp"
+#include "../common/fix_catalog.hpp"
 #include <cstdio>
 #include "windows_sfc_ole_host.hpp"
 #include "windows_macro_host.hpp"
@@ -10,6 +11,7 @@
 #include <functional>
 #include <cstring>
 #include <fstream>
+#include <vector>
 
 namespace creatures1::platform {
 
@@ -408,6 +410,123 @@ void C1StartupHost::delete_autorun_registration() {
 void C1StartupHost::register_ole_factories() {
     register_sfc_ole_object_factory();
     COleObjectFactory::RegisterAll();
+}
+
+#if defined(LC_COMPAT_RUNTIME)
+
+// Beside the running exe, like the kits' own per-process files.
+std::string fix_config_path() {
+    char module_path[MAX_PATH] = {};
+    GetModuleFileNameA(nullptr, module_path, MAX_PATH);
+    std::string path(module_path);
+    const std::size_t separator = path.find_last_of('\\');
+    path = separator == std::string::npos ? std::string()
+                                          : path.substr(0, separator + 1);
+    return path + "librefixes.ini";
+}
+
+// Writes every catalog row's *current* compat_fixed() value: the first-run
+// default (set into memory before this is called) or whatever the dialog
+// or the file just set.  Always rewriting from the live state is what lets
+// a stale or hand-edited file self-heal -- a row an older LibreCreatures
+// did not know about is simply not written; a new row appears with its
+// recommended default the first time a current build runs.
+void write_fix_config(const std::string& path) {
+    std::ofstream file(path, std::ios::binary | std::ios::trunc);
+    if (!file) {
+        return;
+    }
+    file << "; librefixes.ini -- LibreCreatures' switchable fixes for "
+            "defects in the original game.\n"
+            "; 1 runs the fix, 0 runs the original (native) behaviour.\n"
+            "; Options > LibreFixes in the game changes these and rewrites "
+            "this file; so does\n"
+            "; hand-editing it and restarting.  docs/original-bugs.md has "
+            "the full story on each\n"
+            "; row.  A row this build does not know is left alone; a row "
+            "missing here is added\n"
+            "; back at its recommended default.\n"
+            "[Fixes]\n";
+    for (std::size_t i = 0; i < creatures1::common::kFixCatalogSize; ++i) {
+        const creatures1::common::FixCatalogEntry& entry =
+            creatures1::common::kFixCatalog[i];
+        file << "; " << entry.row << ": " << entry.label << " ("
+             << entry.category << ")\n";
+        file << "Row" << entry.row << "="
+             << (creatures1::common::compat_fixed(entry.row) ? 1 : 0) << "\n";
+    }
+}
+
+namespace {
+
+// "Row<N>=<0|1>"; everything else (comments, the section header, a row this
+// build's catalog does not have) is ignored.
+void read_fix_config(const std::string& path, std::vector<bool>& seen) {
+    std::ifstream file(path, std::ios::binary);
+    if (!file) {
+        return;
+    }
+    std::string line;
+    while (std::getline(file, line)) {
+        if (line.size() < 4 || line.compare(0, 3, "Row") != 0) {
+            continue;
+        }
+        const std::size_t equals = line.find('=');
+        if (equals == std::string::npos) {
+            continue;
+        }
+        const int row = std::atoi(line.c_str() + 3);
+        const creatures1::common::FixCatalogEntry* entry =
+            creatures1::common::find_fix_catalog_entry(row);
+        if (entry == nullptr) {
+            continue;
+        }
+        const bool fixed = std::atoi(line.c_str() + equals + 1) != 0;
+        creatures1::common::set_compat_fixed(row, fixed);
+        seen[static_cast<std::size_t>(row)] = true;
+    }
+}
+
+} // namespace
+
+#endif // LC_COMPAT_RUNTIME
+
+void C1StartupHost::load_fix_config() {
+#if defined(LC_COMPAT_RUNTIME)
+    const std::string path = fix_config_path();
+    std::ifstream exists(path, std::ios::binary);
+    if (!exists) {
+        // First run (or a deleted file): every row at its recommended
+        // default, off where the fix changes simulated behaviour.
+        for (std::size_t i = 0; i < creatures1::common::kFixCatalogSize; ++i) {
+            const creatures1::common::FixCatalogEntry& entry =
+                creatures1::common::kFixCatalog[i];
+            creatures1::common::set_compat_fixed(entry.row,
+                                                 !entry.changes_simulation);
+        }
+        write_fix_config(path);
+        return;
+    }
+    exists.close();
+    // A row the file has: whatever it says.  A row the file lacks (an
+    // older file, before this row existed): its own recommended default.
+    // Indices 0 and >=128 are never used (see compat.cpp's kRowLimit).
+    std::vector<bool> seen(128, false);
+    read_fix_config(path, seen);
+    bool missing_any = false;
+    for (std::size_t i = 0; i < creatures1::common::kFixCatalogSize; ++i) {
+        const creatures1::common::FixCatalogEntry& entry =
+            creatures1::common::kFixCatalog[i];
+        if (!seen[static_cast<std::size_t>(entry.row)]) {
+            creatures1::common::set_compat_fixed(entry.row,
+                                                 !entry.changes_simulation);
+            missing_any = true;
+        }
+    }
+    if (missing_any) {
+        write_fix_config(path);
+    }
+#endif
 }
 
 bool C1StartupHost::main_window_exists() const {

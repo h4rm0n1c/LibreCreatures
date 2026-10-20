@@ -366,6 +366,7 @@ protected:
     afx_msg void OnMuteSounds();
     afx_msg void OnInformativeCreaturesMenu();
     afx_msg void OnVolume();
+    afx_msg void OnLibreFixes();
     afx_msg void OnWebConnect();
     afx_msg void OnAbout();
     afx_msg void OnUpdateCameraTrackSelectedCreature(CCmdUI* command_ui);
@@ -2665,6 +2666,12 @@ public:
 
     void register_ole_factories() override;
 
+    // LibreFixes: reads the switchable fixes' starting values from
+    // librefixes.ini beside this exe (writing a default one first if it is
+    // missing), then applies C1_NATIVE_ROWS on top as before.  A no-op
+    // outside the LC_COMPAT_RUNTIME build.
+    void load_fix_config() override;
+
     bool main_window_exists() const override;
 
     bool prepare_embedded_main_window(std::string_view world_path) override;
@@ -2717,6 +2724,15 @@ private:
         pipe_server_;
 };
 
+#if defined(LC_COMPAT_RUNTIME)
+// LibreFixes (windows_application_host.cpp): librefixes.ini's path beside
+// this exe, and rewriting it from the fix catalog's current compat_fixed()
+// values.  The LibreFixes dialog (windows_fixes_dialog.cpp) calls
+// write_fix_config after set_compat_fixed for each row the player changed;
+// C1StartupHost::load_fix_config calls both at start-up.
+std::string fix_config_path();
+void write_fix_config(const std::string& path);
+#endif
 
 class C1ShutdownHost final
     : public creatures1::application::SfcAppShutdownHost {

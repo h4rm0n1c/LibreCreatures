@@ -48,8 +48,8 @@ NativeRows read_native_rows() {
     return result;
 }
 
-const NativeRows& native_rows() {
-    static const NativeRows value = read_native_rows();
+NativeRows& native_rows() {
+    static NativeRows value = read_native_rows();
     return value;
 }
 
@@ -59,6 +59,15 @@ bool compat_fixed(int row) {
     return row <= 0 || row >= kRowLimit ||
            !native_rows().rows.test(static_cast<std::size_t>(row));
 }
+
+#if defined(LC_COMPAT_RUNTIME)
+void set_compat_fixed(int row, bool fixed) {
+    if (row <= 0 || row >= kRowLimit) {
+        return;
+    }
+    native_rows().rows.set(static_cast<std::size_t>(row), !fixed);
+}
+#endif
 
 std::string compat_summary() {
 #if defined(LC_COMPAT_RUNTIME)
