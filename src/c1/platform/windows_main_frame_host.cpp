@@ -1172,6 +1172,8 @@ void C1MainFrame::OnVolume() {
 
 void C1MainFrame::OnLibreFixes() {
 #if defined(LC_COMPAT_RUNTIME)
+    creatures1::common::lab_trace(creatures1::common::LabTrace::timing,
+                                  "OnLibreFixes: command handler entered");
     creatures1::platform::show_fixes_dialog(this);
 #else
     AfxMessageBox(
@@ -1187,6 +1189,8 @@ void C1MainFrame::OnWebConnect() {
 }
 
 void C1MainFrame::OnAbout() {
+    creatures1::common::lab_trace(creatures1::common::LabTrace::timing,
+                                  "OnAbout: command handler entered");
     C1NativeVersionDialog dialog(this);
     creatures1::ui::show_version_dialog(dialog);
 }
@@ -1271,9 +1275,35 @@ void C1MainFrame::OnUpdateInformativeCreaturesMenu(CCmdUI* command_ui) {
         ui, document->world_timer_is_armed());
 }
 
+namespace {
+// Not native: trace a world tick slower than this (LabTrace::timing) -- a
+// single WM_TIMER tick runs synchronously on the window's own thread, so a
+// slow one holds up every other queued message, including a menu command
+// whose dialog then looks like it opened late.
+constexpr double kSlowTickTraceThresholdMs = 20.0;
+
+double query_performance_counter_ms() {
+    static const double frequency = [] {
+        LARGE_INTEGER value{};
+        QueryPerformanceFrequency(&value);
+        return static_cast<double>(value.QuadPart);
+    }();
+    LARGE_INTEGER now{};
+    QueryPerformanceCounter(&now);
+    return static_cast<double>(now.QuadPart) * 1000.0 / frequency;
+}
+} // namespace
+
 void C1MainFrame::OnTimer(UINT_PTR timer_id) {
     if (timer_id == 1 && frame_policy_ != nullptr) {
+        const double tick_start = query_performance_counter_ms();
         frame_policy_->OnTimer();
+        const double tick_ms = query_performance_counter_ms() - tick_start;
+        if (tick_ms >= kSlowTickTraceThresholdMs) {
+            creatures1::common::lab_trace(
+                creatures1::common::LabTrace::timing,
+                "slow world tick: %.1fms", tick_ms);
+        }
     }
     CFrameWnd::OnTimer(timer_id);
 }
