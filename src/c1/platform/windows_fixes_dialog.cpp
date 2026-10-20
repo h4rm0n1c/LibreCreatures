@@ -46,7 +46,7 @@ std::vector<WORD> make_template() {
         words.push_back(HIWORD(value));
     };
     push_dword(DS_SETFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION |
-               WS_SYSMENU);
+               WS_SYSMENU | WS_THICKFRAME);
     push_dword(0);
     words.push_back(0);
     words.push_back(0);
@@ -83,27 +83,35 @@ protected:
         SetWindowText(_T("LibreFixes"));
         CFont* font = GetFont();
 
-        CRect note_rect(kMargin, kMargin, kWidth - kMargin, kMargin + 18);
-        MapDialogRect(&note_rect);
+        // Pixel margins, converted once from the template's dialog units;
+        // layout() below repeats with these for every size the window is
+        // resized to, dialog units only make sense against the original
+        // template rect.
+        CRect margin_rect(0, 0, kMargin, kButtonHeight);
+        MapDialogRect(&margin_rect);
+        margin_px_ = margin_rect.left;
+        button_height_px_ = margin_rect.Height();
+        CRect width_rect(0, 0, kButtonWidth, 18);
+        MapDialogRect(&width_rect);
+        button_width_px_ = width_rect.Width();
+        note_height_px_ = width_rect.Height();
+        CRect reset_width_rect(0, 0, kResetButtonWidth, 0);
+        MapDialogRect(&reset_width_rect);
+        reset_button_width_px_ = reset_width_rect.Width();
+
         note_.Create(_T("Fixes for defects in the original game. Off runs ")
                      _T("the original behaviour. docs/original-bugs.md has ")
                      _T("the story on each."),
-                     WS_CHILD | WS_VISIBLE | SS_LEFT, note_rect, this,
+                     WS_CHILD | WS_VISIBLE | SS_LEFT, CRect(), this,
                      kControlNote);
         note_.SetFont(font);
 
-        const int buttons_top = kHeight - kMargin - kButtonHeight;
-        CRect list_rect(kMargin, kMargin + 24, kWidth - kMargin,
-                        buttons_top - kMargin);
-        MapDialogRect(&list_rect);
         list_.Create(WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_BORDER |
                          LVS_REPORT | LVS_SINGLESEL | LVS_NOSORTHEADER,
-                     list_rect, this, kControlList);
+                     CRect(), this, kControlList);
         list_.SetExtendedStyle(list_.GetExtendedStyle() |
                                LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT);
-        CRect list_client;
-        list_.GetClientRect(&list_client);
-        list_.InsertColumn(0, _T("Fix"), LVCFMT_LEFT, list_client.Width());
+        list_.InsertColumn(0, _T("Fix"), LVCFMT_LEFT, kWidth);
 
         for (std::size_t i = 0; i < creatures1::common::kFixCatalogSize; ++i) {
             const creatures1::common::FixCatalogEntry& entry =
@@ -118,31 +126,64 @@ protected:
         }
         list_.SetFont(font);
 
-        CRect reset_rect(kMargin, buttons_top, kMargin + kResetButtonWidth,
-                         buttons_top + kButtonHeight);
-        MapDialogRect(&reset_rect);
         reset_.Create(_T("Reset to recommended"),
                       WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
-                      reset_rect, this, kControlReset);
+                      CRect(), this, kControlReset);
         reset_.SetFont(font);
 
-        CRect cancel_rect(kWidth - kMargin - kButtonWidth * 2 - kMargin,
-                          buttons_top, kWidth - kMargin - kButtonWidth,
-                          buttons_top + kButtonHeight);
-        MapDialogRect(&cancel_rect);
         cancel_.Create(_T("Cancel"), WS_CHILD | WS_VISIBLE | WS_TABSTOP |
                                          BS_PUSHBUTTON,
-                       cancel_rect, this, IDCANCEL);
+                       CRect(), this, IDCANCEL);
         cancel_.SetFont(font);
 
-        CRect ok_rect(kWidth - kMargin - kButtonWidth, buttons_top,
-                      kWidth - kMargin, buttons_top + kButtonHeight);
-        MapDialogRect(&ok_rect);
         ok_.Create(_T("OK"), WS_CHILD | WS_VISIBLE | WS_TABSTOP |
                                  BS_DEFPUSHBUTTON,
-                   ok_rect, this, IDOK);
+                   CRect(), this, IDOK);
         ok_.SetFont(font);
+
+        CRect client;
+        GetClientRect(&client);
+        min_size_ = client.Size();
+        layout(client.Width(), client.Height());
         return TRUE;
+    }
+
+    // Repositions every control for a client area of `width` by `height`
+    // pixels: called once from OnInitDialog (the template's own size) and
+    // again on every WM_SIZE, so the window can be resized (the list is the
+    // one control worth more room; the note and buttons just follow the
+    // edges they're pinned to).
+    void layout(int width, int height) {
+        if (!::IsWindow(note_.GetSafeHwnd())) {
+            return;
+        }
+        const int buttons_top = height - margin_px_ - button_height_px_;
+        note_.MoveWindow(margin_px_, margin_px_, width - margin_px_ * 2,
+                         note_height_px_);
+        const int list_top = margin_px_ + note_height_px_ + margin_px_ / 2;
+        list_.MoveWindow(margin_px_, list_top, width - margin_px_ * 2,
+                         buttons_top - margin_px_ - list_top);
+        CRect list_client;
+        list_.GetClientRect(&list_client);
+        list_.SetColumnWidth(0, list_client.Width());
+        reset_.MoveWindow(margin_px_, buttons_top, reset_button_width_px_,
+                          button_height_px_);
+        cancel_.MoveWindow(width - margin_px_ - button_width_px_ * 2 - margin_px_,
+                           buttons_top, button_width_px_, button_height_px_);
+        ok_.MoveWindow(width - margin_px_ - button_width_px_, buttons_top,
+                      button_width_px_, button_height_px_);
+    }
+
+    afx_msg void OnSize(UINT type, int cx, int cy) {
+        CDialog::OnSize(type, cx, cy);
+        layout(cx, cy);
+    }
+
+    afx_msg void OnGetMinMaxInfo(MINMAXINFO* info) {
+        if (min_size_.cx > 0 && min_size_.cy > 0) {
+            info->ptMinTrackSize.x = min_size_.cx;
+            info->ptMinTrackSize.y = min_size_.cy;
+        }
     }
 
     // Changes only the checkboxes shown; nothing is applied or written
@@ -183,10 +224,18 @@ private:
     CButton reset_;
     CButton cancel_;
     CButton ok_;
+    int margin_px_ = 0;
+    int button_width_px_ = 0;
+    int button_height_px_ = 0;
+    int reset_button_width_px_ = 0;
+    int note_height_px_ = 0;
+    CSize min_size_{0, 0};
 };
 
 BEGIN_MESSAGE_MAP(FixesDialog, CDialog)
     ON_BN_CLICKED(kControlReset, &FixesDialog::OnReset)
+    ON_WM_SIZE()
+    ON_WM_GETMINMAXINFO()
 END_MESSAGE_MAP()
 
 } // namespace
