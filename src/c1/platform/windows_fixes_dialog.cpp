@@ -141,7 +141,12 @@ protected:
             const creatures1::common::FixCatalogEntry& entry =
                 creatures1::common::kFixCatalog[i];
             CString text;
-            text.Format(_T("%hs: %hs"), entry.category, entry.label);
+            if (entry.tier == creatures1::common::FixTier::locked) {
+                text.Format(_T("%hs: %hs (always on)"), entry.category,
+                           entry.label);
+            } else {
+                text.Format(_T("%hs: %hs"), entry.category, entry.label);
+            }
             const int index = list_.InsertItem(
                 static_cast<int>(i), text);
             list_.SetItemData(index, static_cast<DWORD_PTR>(entry.row));
@@ -217,22 +222,84 @@ protected:
     }
 
     // Changes only the checkboxes shown; nothing is applied or written
-    // until OK, so this is safe to try and back out of with Cancel.
+    // until OK, so this is safe to try and back out of with Cancel.  A
+    // locked row is already checked and stays checked.
     afx_msg void OnReset() {
         for (int index = 0; index < list_.GetItemCount(); ++index) {
             const int row = static_cast<int>(list_.GetItemData(index));
             const creatures1::common::FixCatalogEntry* entry =
                 creatures1::common::find_fix_catalog_entry(row);
             if (entry != nullptr) {
-                set_row_checked(list_, index, !entry->changes_simulation);
+                set_row_checked(
+                    list_, index,
+                    creatures1::common::fix_tier_default_fixed(entry->tier));
             }
         }
     }
 
+    // A locked row's checkbox cannot be unchecked: veto any state-image
+    // change the list control is about to make to it.  The row is still a
+    // normal list item otherwise (selectable, readable), so this is the one
+    // targeted way to stop just the checkbox without disabling the control.
+    afx_msg void OnListItemChanging(NMHDR* header, LRESULT* result) {
+        *result = FALSE;
+        const auto* view = reinterpret_cast<NMLISTVIEW*>(header);
+        // Only a transition away from checked is ever vetoed: the
+        // population loop's own first SetItemState checks a locked row
+        // (old state has no image yet) and must go through, same as
+        // Reset's.  Only a later attempt -- a click -- to uncheck it is
+        // blocked.
+        if ((view->uChanged & LVIF_STATE) == 0 ||
+            (view->uNewState & LVIS_STATEIMAGEMASK) ==
+                INDEXTOSTATEIMAGEMASK(2)) {
+            return;
+        }
+        const int row = static_cast<int>(list_.GetItemData(view->iItem));
+        const creatures1::common::FixCatalogEntry* entry =
+            creatures1::common::find_fix_catalog_entry(row);
+        *result = entry != nullptr &&
+                 entry->tier == creatures1::common::FixTier::locked;
+    }
+
+    // Greys a locked row's text so "always on" reads as disabled, not just
+    // a label.
+    afx_msg void OnListCustomDraw(NMHDR* header, LRESULT* result) {
+        auto* draw = reinterpret_cast<NMLVCUSTOMDRAW*>(header);
+        switch (draw->nmcd.dwDrawStage) {
+        case CDDS_PREPAINT:
+            *result = CDRF_NOTIFYITEMDRAW;
+            return;
+        case CDDS_ITEMPREPAINT: {
+            const int row = static_cast<int>(
+                list_.GetItemData(static_cast<int>(draw->nmcd.dwItemSpec)));
+            const creatures1::common::FixCatalogEntry* entry =
+                creatures1::common::find_fix_catalog_entry(row);
+            if (entry != nullptr &&
+                entry->tier == creatures1::common::FixTier::locked) {
+                draw->clrText = ::GetSysColor(COLOR_GRAYTEXT);
+            }
+            *result = CDRF_DODEFAULT;
+            return;
+        }
+        default:
+            *result = CDRF_DODEFAULT;
+            return;
+        }
+    }
+
+    // A locked row never reaches set_compat_fixed: OnListItemChanging
+    // already keeps its checkbox at the default, but skipping it here too
+    // keeps the intent explicit rather than relying only on that veto.
     void OnOK() override {
         bool changed = false;
         for (int index = 0; index < list_.GetItemCount(); ++index) {
             const int row = static_cast<int>(list_.GetItemData(index));
+            const creatures1::common::FixCatalogEntry* entry =
+                creatures1::common::find_fix_catalog_entry(row);
+            if (entry != nullptr &&
+                entry->tier == creatures1::common::FixTier::locked) {
+                continue;
+            }
             const bool checked = row_checked(list_, index);
             if (checked != creatures1::common::compat_fixed(row)) {
                 creatures1::common::set_compat_fixed(row, checked);
@@ -264,6 +331,8 @@ private:
 
 BEGIN_MESSAGE_MAP(FixesDialog, CDialog)
     ON_BN_CLICKED(kControlReset, &FixesDialog::OnReset)
+    ON_NOTIFY(LVN_ITEMCHANGING, kControlList, &FixesDialog::OnListItemChanging)
+    ON_NOTIFY(NM_CUSTOMDRAW, kControlList, &FixesDialog::OnListCustomDraw)
     ON_WM_SIZE()
     ON_WM_GETMINMAXINFO()
 END_MESSAGE_MAP()

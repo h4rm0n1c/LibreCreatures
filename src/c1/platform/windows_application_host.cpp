@@ -515,31 +515,45 @@ void C1StartupHost::load_fix_config() {
 #if defined(LC_COMPAT_RUNTIME)
     const std::string path = fix_config_path();
     std::ifstream exists(path, std::ios::binary);
+    bool missing_any = false;
     if (!exists) {
         // First run (or a deleted file): every row at its recommended
         // default, off where the fix changes simulated behaviour.
         for (std::size_t i = 0; i < creatures1::common::kFixCatalogSize; ++i) {
             const creatures1::common::FixCatalogEntry& entry =
                 creatures1::common::kFixCatalog[i];
-            creatures1::common::set_compat_fixed(entry.row,
-                                                 !entry.changes_simulation);
+            creatures1::common::set_compat_fixed(
+                entry.row,
+                creatures1::common::fix_tier_default_fixed(entry.tier));
         }
-        write_fix_config(path);
-        return;
+        missing_any = true;
+    } else {
+        exists.close();
+        // A row the file has: whatever it says.  A row the file lacks (an
+        // older file, before this row existed): its own recommended
+        // default.  Indices 0 and >=128 are never used (see compat.cpp's
+        // kRowLimit).
+        std::vector<bool> seen(128, false);
+        read_fix_config(path, seen);
+        for (std::size_t i = 0; i < creatures1::common::kFixCatalogSize; ++i) {
+            const creatures1::common::FixCatalogEntry& entry =
+                creatures1::common::kFixCatalog[i];
+            if (!seen[static_cast<std::size_t>(entry.row)]) {
+                creatures1::common::set_compat_fixed(
+                    entry.row,
+                    creatures1::common::fix_tier_default_fixed(entry.tier));
+                missing_any = true;
+            }
+        }
     }
-    exists.close();
-    // A row the file has: whatever it says.  A row the file lacks (an
-    // older file, before this row existed): its own recommended default.
-    // Indices 0 and >=128 are never used (see compat.cpp's kRowLimit).
-    std::vector<bool> seen(128, false);
-    read_fix_config(path, seen);
-    bool missing_any = false;
+    // A locked row has no player-facing switch, so a hand-edited file (or
+    // one from before a row became locked) never keeps it off.
     for (std::size_t i = 0; i < creatures1::common::kFixCatalogSize; ++i) {
         const creatures1::common::FixCatalogEntry& entry =
             creatures1::common::kFixCatalog[i];
-        if (!seen[static_cast<std::size_t>(entry.row)]) {
-            creatures1::common::set_compat_fixed(entry.row,
-                                                 !entry.changes_simulation);
+        if (entry.tier == creatures1::common::FixTier::locked &&
+            !creatures1::common::compat_fixed(entry.row)) {
+            creatures1::common::set_compat_fixed(entry.row, true);
             missing_any = true;
         }
     }

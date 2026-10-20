@@ -15,17 +15,31 @@
 
 namespace creatures1::common {
 
+// Whether a row is a real player-facing choice, and if so what it starts
+// as. `locked` rows have no credible case for running native in play (a
+// crash guard, permanent data loss, corrupted output, or an interpreter
+// contract violation) -- LibreFixes shows them checked and disabled rather
+// than hiding them, so the list stays a complete, honest account of every
+// switchable row. `C1_NATIVE_ROWS`/the native build can still force one off
+// for A/B comparison; that is a developer path, not this dialog's.
+enum class FixTier {
+    locked,       // always on; shown, checked, not clickable
+    default_off,  // a real trade-off; native out of the box
+    default_on,   // a good idea by default; still a player's call
+};
+
 struct FixCatalogEntry {
     int row;
     const char* label;     // one line, from compat.hpp's own comment
     const char* category;  // compat.hpp's section grouping
-    // Whether the fix changes what the simulation does (brain, genetics,
-    // biochemistry, creature behaviour, scripts, world physics) as opposed
-    // to UI, kit/IPC or repairing broken world data on load. Decides the
-    // row's default in a fresh librefixes.ini: off when true (native
-    // behaviour out of the box), on when false.
-    bool changes_simulation;
+    FixTier tier;
 };
+
+// Whether `tier`'s row starts fixed (on) in a fresh librefixes.ini, or after
+// Reset to recommended.
+inline bool fix_tier_default_fixed(FixTier tier) {
+    return tier != FixTier::default_off;
+}
 
 // Sorted by row number.
 extern const FixCatalogEntry kFixCatalog[];
