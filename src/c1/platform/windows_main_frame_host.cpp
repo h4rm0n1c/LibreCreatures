@@ -1190,6 +1190,8 @@ void C1MainFrame::OnVolume() {
 
 void C1MainFrame::OnLibreFixes() {
 #if defined(LC_COMPAT_RUNTIME)
+    creatures1::common::lab_trace(creatures1::common::LabTrace::timing,
+                                  "OnLibreFixes: command handler entered");
     creatures1::platform::show_fixes_dialog(this);
 #else
     AfxMessageBox(
@@ -1205,6 +1207,8 @@ void C1MainFrame::OnWebConnect() {
 }
 
 void C1MainFrame::OnAbout() {
+    creatures1::common::lab_trace(creatures1::common::LabTrace::timing,
+                                  "OnAbout: command handler entered");
     C1NativeVersionDialog dialog(this);
     creatures1::ui::show_version_dialog(dialog);
 }
@@ -1301,6 +1305,12 @@ constexpr UINT kWorldPulseIntervalMs = 10;
 constexpr int kWorldClockMaximumCatchUp = 3;
 // The longest one pulse may spend stepping the world.
 constexpr double kWorldPulseBudgetMs = 50.0;
+// Not native: trace a single tick, or a whole pulse, that ran this long or
+// more (LabTrace::timing) -- the budget above only caps how many catch-up
+// ticks a pulse runs, not how long any one of them takes, and a single slow
+// tick still holds up every other message the window's waiting on,
+// including a menu command whose dialog then looks like it opened late.
+constexpr double kSlowTickTraceThresholdMs = 20.0;
 
 double performance_counter_ms() {
     static const double frequency = [] {
@@ -1350,7 +1360,15 @@ void C1MainFrame::on_world_pulse() {
     int ticks = 0;
     while (world_clock_interval_ms_ != 0 && now >= world_clock_next_tick_ms_) {
         world_clock_next_tick_ms_ += step_ms;
+        const double tick_start = performance_counter_ms();
         frame_policy_->OnTimer();
+        const double tick_ms = performance_counter_ms() - tick_start;
+        if (tick_ms >= kSlowTickTraceThresholdMs) {
+            creatures1::common::lab_trace(
+                creatures1::common::LabTrace::timing,
+                "slow world tick: %.1fms (catch-up %d of %d, speed %d)",
+                tick_ms, ticks + 1, kWorldClockMaximumCatchUp * speed, speed);
+        }
         // A world too busy to keep up at this speed runs as fast as it
         // can, without starving the window of messages.
         if (++ticks == kWorldClockMaximumCatchUp * speed ||
@@ -1360,6 +1378,13 @@ void C1MainFrame::on_world_pulse() {
             }
             break;
         }
+    }
+    const double pulse_ms = performance_counter_ms() - now;
+    if (pulse_ms >= kSlowTickTraceThresholdMs) {
+        creatures1::common::lab_trace(
+            creatures1::common::LabTrace::timing,
+            "slow world pulse: %.1fms total over %d tick(s)", pulse_ms,
+            ticks);
     }
     in_world_pulse_ = false;
     if (world_clock_interval_ms_ != 0) {

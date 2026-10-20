@@ -34,6 +34,9 @@ enum class LabTrace : std::uint32_t {
     sprites = 1u << 13,  // gallery create/release/revive, pixel loads,
                          // texture uploads
     dendrites = 1u << 14, // loose dendrite re-attachment, migration results
+    timing = 1u << 15,    // a world tick (or a menu command) slower than a
+                          // threshold, with how long it took -- for chasing
+                          // why a window sometimes opens late
 };
 
 bool lab_trace_enabled(LabTrace category);
