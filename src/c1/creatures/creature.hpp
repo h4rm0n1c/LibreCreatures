@@ -532,6 +532,8 @@ enum class DriveThresholdState : std::uint8_t {
     all_at_or_below_lower = 0,
     some_above_lower = 1,
     some_above_upper = 2,
+    // LibreCreatures only (row 88): native never makes this state.
+    anger_above_upper = 3,
 };
 
 struct CreatureStatusSnapshot {
