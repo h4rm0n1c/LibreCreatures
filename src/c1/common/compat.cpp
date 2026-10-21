@@ -13,6 +13,7 @@ constexpr int kRowLimit = 128;
 
 struct NativeRows {
     std::bitset<kRowLimit> rows;
+    std::bitset<kRowLimit> keep;  // "-<row>": kept fixed
     bool all = false;
 };
 
@@ -38,6 +39,7 @@ NativeRows read_native_rows() {
             const int row = std::atoi(item.c_str() + (keep ? 1 : 0));
             if (row > 0 && row < kRowLimit) {
                 result.rows.set(static_cast<std::size_t>(row), !keep);
+                result.keep.set(static_cast<std::size_t>(row), keep);
             }
         }
         if (comma == std::string::npos) {
@@ -66,6 +68,19 @@ void set_compat_fixed(int row, bool fixed) {
         return;
     }
     native_rows().rows.set(static_cast<std::size_t>(row), !fixed);
+}
+
+void apply_native_rows_override() {
+    const NativeRows setting = read_native_rows();
+    NativeRows& live = native_rows();
+    for (std::size_t row = 1; row < static_cast<std::size_t>(kRowLimit); ++row) {
+        if (setting.keep.test(row)) {
+            live.rows.reset(row);
+        } else if (setting.rows.test(row)) {
+            live.rows.set(row);
+        }
+    }
+    live.all = setting.all;
 }
 #endif
 

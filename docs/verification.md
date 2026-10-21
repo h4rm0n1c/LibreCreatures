@@ -18,7 +18,8 @@ row has a switch in `src/c1/common/compat.hpp`.
 - The native build (`LC_NATIVE_MODE`) has all switched fixes off. It must
   behave as the original does.
 - The runtime build (`LC_COMPAT_RUNTIME`) turns off the fixes that the
-  environment variable `C1_NATIVE_ROWS` names.
+  environment variable `C1_NATIVE_ROWS` names. The variable overrides
+  `librefixes.ini`.
 
 Some rows have no switch. They are guards against crashes and memory damage
 in the original. A crash cannot be compared.
