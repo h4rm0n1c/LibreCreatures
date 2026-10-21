@@ -215,8 +215,15 @@ add_c1_kit(Hatchery "Hatchery" ${KITS_ROOT}/hatchery)
 # ObjectInjector.OLE, Tools slot 7.
 add_c1_kit(Injector "Injector" ${KITS_ROOT}/injector)
 # "BiochemKit.exe", the Biochemistry Kit (v1.2): OLE server BiochemKit.OLE,
-# Tools slot 1.
+# Tools slot 1.  Slot 1 was never one of the ten 1996 kits, so the shared
+# toolbar strip's slot+6 fallback (add_kit_toolbar_bitmap) lands on an
+# orphaned image (an L-plate) instead of a kit icon.  The Community
+# Edition shipped BiochemKit its own toolbar bitmap beside the exe for
+# exactly this reason; this installs the same file so the COM-registration
+# bitmap lookup finds it before ever reaching that fallback.
 add_c1_kit(BiochemKit "BiochemKit" ${KITS_ROOT}/biochem)
+install(FILES ${KITS_ROOT}/biochem/resources/images/bitmap/BiochemKit.bmp
+        DESTINATION .)
 # "Ecology Kit.exe", new in LibreCreatures (no 1996 original): OLE server
 # Ecology.OLE, Tools slot 10.
 add_c1_kit(EcologyKit "Ecology Kit" ${KITS_ROOT}/ecology)

@@ -1,4 +1,5 @@
 #include "toolbars.hpp"
+#include "../common/lab_trace.hpp"
 
 #include <array>
 #include <string>
@@ -137,6 +138,10 @@ std::int32_t add_kit_toolbar_bitmap(ToolbarPlatform& platform,
                                     std::string_view kit_prog_id) {
     std::string server_path;
     if (!com.resolve_local_server_path(kit_prog_id, server_path)) {
+        creatures1::common::lab_trace(
+            creatures1::common::LabTrace::kits,
+            "toolbar bitmap: %.*s no LocalServer32",
+            static_cast<int>(kit_prog_id.size()), kit_prog_id.data());
         return -1;
     }
 
@@ -145,17 +150,29 @@ std::int32_t add_kit_toolbar_bitmap(ToolbarPlatform& platform,
         return -1;
     }
     server_path.replace(extension, std::string::npos, ".bmp");
-    if (!platform.file_exists(server_path)) {
+    const bool exists = platform.file_exists(server_path);
+    creatures1::common::lab_trace(
+        creatures1::common::LabTrace::kits,
+        "toolbar bitmap: %.*s -> %s (exists=%d)",
+        static_cast<int>(kit_prog_id.size()), kit_prog_id.data(),
+        server_path.c_str(), exists ? 1 : 0);
+    if (!exists) {
         return -1;
     }
 
     const BitmapHandle bitmap =
         platform.load_bitmap_file(server_path, 0x10, 0x10);
+    creatures1::common::lab_trace(creatures1::common::LabTrace::kits,
+                                  "toolbar bitmap: load_bitmap_file -> %p",
+                                  reinterpret_cast<void*>(bitmap));
     if (bitmap == 0) {
         return -1;
     }
 
     const std::int32_t image_index = platform.add_bitmap_to_toolbar(bitmap);
+    creatures1::common::lab_trace(creatures1::common::LabTrace::kits,
+                                  "toolbar bitmap: image_index=%d",
+                                  image_index);
     if (image_index < 0) {
         platform.destroy_bitmap(bitmap);
     }
