@@ -1470,6 +1470,15 @@ void Skeleton::recompute_body_part_layout() {
              head->pose_frame_index == 4)) {
             head_frame_offset = static_cast<std::uint8_t>(drive_threshold_state + 1);
         }
+        // LibreCreatures deviation (row 88): state 3, which native never
+        // makes, is the angry face, frame 12.  With an expression the head
+        // is in a south view: 8, or 9 for head pose 5, where state + 1
+        // would land on frame 13 (an east view, eyes closed), or 26 with
+        // the eyes closed, past the head's frames.
+        if (LC_FIX(88) && drive_threshold_state == 3 && head_frame_offset != 0 &&
+            head->attachment_frame_index == 9) {
+            head_frame_offset = 3;
+        }
         if (!eyes_open) {
             head_frame_offset = static_cast<std::uint8_t>(head_frame_offset + 13);
         }

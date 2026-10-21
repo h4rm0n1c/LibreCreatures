@@ -183,7 +183,7 @@ for mode in fixed native rows; do
     case $mode in
         fixed) define= ;;
         native) define=-DLC_NATIVE_MODE ;;
-        rows) define="-DLC_NATIVE_MODE -DEQUIVALENCE_EXPECT=1 -DLC_FIX_22=1" ;;
+        rows) define="-DLC_NATIVE_MODE -DEQUIVALENCE_EXPECT=1 -DLC_FIX_22=1 -DLC_FIX_88=1" ;;
     esac
     exe="$out/skeleton_equivalence_$mode.exe"
     $cxx $flags $define -Wl,--no-demangle -o "$exe" "$here/skeleton_equivalence.cpp" \

@@ -20,14 +20,14 @@ for build in fixed rows; do
     tail -1 "$out/skeleton-$build.txt" | sed "s/^/$build: /"
 done
 # The native build matches on every case, so each difference of LC as
-# shipped comes from a switch in the code under test: row 22, which the
-# rows build fixes alone.
+# shipped comes from a switch in the code under test: rows 22 and 88,
+# which the rows build fixes alone.
 grep -o '^case [0-9]*' "$out/skeleton-fixed.txt" > "$out/skeleton-fixed.cases"
 grep -o '^case [0-9]*' "$out/skeleton-rows.txt" > "$out/skeleton-rows.cases"
 if cmp -s "$out/skeleton-fixed.cases" "$out/skeleton-rows.cases"; then
-    echo "LC as shipped: every differing case is explained by row 22"
+    echo "LC as shipped: every differing case is explained by rows 22 and 88"
 else
-    echo "LC as shipped: differing cases not explained by row 22"; status=1
+    echo "LC as shipped: differing cases not explained by rows 22 and 88"; status=1
 fi
 switches=$({ for f in recompute_body_part_layout update_limb_frames_for_pose \
                      update_anchor_and_bounds apply_pose_string set_target_pose_string \
@@ -41,5 +41,5 @@ switches=$({ for f in recompute_body_part_layout update_limb_frames_for_pose \
              awk "/^void Object::update_movement_bounds\\(/,/^}/" "$src/objects/object.cpp"
              awk "/^void find_nearest_room_bounds_at_point\\(/,/^}/" "$src/world/map.cpp"
            } | grep -o 'LC_FIX([0-9]*)' | sort -u | tr '\n' ' ')
-[ "$switches" = "LC_FIX(22) " ] || { echo "unexpected switches: $switches"; status=1; }
+[ "$switches" = "LC_FIX(22) LC_FIX(88) " ] || { echo "unexpected switches: $switches"; status=1; }
 exit $status

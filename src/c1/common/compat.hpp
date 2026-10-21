@@ -131,6 +131,9 @@
 #ifndef LC_FIX_83
 #define LC_FIX_83 LC_FIX_DEFAULT  // body sprite file without two stray bytes
 #endif
+#ifndef LC_FIX_88
+#define LC_FIX_88 LC_FIX_DEFAULT  // angry face when Anger is the strongest drive, past its upper threshold
+#endif
 
 // Scripts.
 #ifndef LC_FIX_18

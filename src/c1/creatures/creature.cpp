@@ -3225,6 +3225,29 @@ void Creature::update_drive_threshold_state(
         skeleton_.drive_threshold_state =
             static_cast<std::uint8_t>(DriveThresholdState::some_above_lower);
     }
+    // LibreCreatures deviation (row 88): the head art's south expressions
+    // are content, (look away), happy, sad and angry, frames 8 to 12, and
+    // Skeleton::RecomputeBodyPartLayout @0043b5a0 picks them by state + 1,
+    // but UpdateDriveThresholdState @00409110 makes only states 0 to 2, so
+    // the angry face is never shown.  Anger past its upper threshold, and
+    // stronger than every other drive the face reacts to (one whose upper
+    // threshold a level can pass), makes state 3, the angry face.  A tie
+    // goes to the other drive, as in SpeakDominantDrivePhrase @0040b160, so
+    // a norn whose worst need is something else still looks sad.
+    constexpr std::size_t kAngerDrive = 11;
+    if (LC_FIX(88) && upper_thresholds[kAngerDrive] < values[kAngerDrive]) {
+        bool anger_strongest = true;
+        for (std::size_t index = 0; index < values.size(); ++index) {
+            if (index != kAngerDrive && upper_thresholds[index] < 0xff &&
+                values[index] >= values[kAngerDrive]) {
+                anger_strongest = false;
+            }
+        }
+        if (anger_strongest) {
+            skeleton_.drive_threshold_state =
+                static_cast<std::uint8_t>(DriveThresholdState::anger_above_upper);
+        }
+    }
     instinct_runtime_state_.control_state.always_on_signal = 0xff;
     skeleton_.pose_transition_component_count = 0;
     instinct_runtime_state_.control_state.asleep_signal =

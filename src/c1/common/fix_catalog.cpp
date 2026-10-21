@@ -64,7 +64,8 @@ const FixCatalogEntry kFixCatalog[] = {
     {74, "empty macro reply (CE 10.4)", "Kit protocol and sound", FixTier::locked},
     {75, "kit window raised (CE 10.4)", "Kit protocol and sound", FixTier::default_on},
     {76, "kit pipe waits for a starting kit", "Kit protocol and sound", FixTier::locked},
-    {83, "body sprite file without two stray bytes", "Creatures", FixTier::locked},};
+    {83, "body sprite file without two stray bytes", "Creatures", FixTier::locked},
+    {88, "angry face when Anger is the strongest drive, past its upper threshold", "Creatures", FixTier::default_off},};
 
 const std::size_t kFixCatalogSize = sizeof(kFixCatalog) / sizeof(kFixCatalog[0]);
 
