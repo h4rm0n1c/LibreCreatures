@@ -560,6 +560,7 @@ void C1StartupHost::load_fix_config() {
     if (missing_any) {
         write_fix_config(path);
     }
+    creatures1::common::apply_native_rows_override();
 #endif
 }
 

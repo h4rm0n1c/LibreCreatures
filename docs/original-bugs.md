@@ -48,6 +48,9 @@ executable.  `src/c1/common/compat.hpp` has one switch per row:
   lab profiles `librecreatures-compat` and `librecreatures-neorender-compat`):
   the environment variable `C1_NATIVE_ROWS` names the rows that run native,
   as `all` or a comma list, and `-<row>` keeps one fixed (`all,-4,-5`).
+  Shipped builds are runtime builds: the player sets the rows in
+  `librefixes.ini` (Options > LibreFixes).  `C1_NATIVE_ROWS` overrides the
+  file for that run, locked rows too, and is never written to it.
 
 The lab trace's "world opened" line names the rows running native.
 

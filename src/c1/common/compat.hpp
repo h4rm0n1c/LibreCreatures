@@ -274,6 +274,12 @@ std::string compat_summary();
 // the dialog can read starting values from it too.
 #if defined(LC_COMPAT_RUNTIME)
 void set_compat_fixed(int row, bool fixed);
+
+// C1_NATIVE_ROWS again, over whatever librefixes.ini set: the lab's per-game
+// switch wins over the player's file, locked rows included.  Call it after
+// the file is read and written, so the file never takes the lab's values.
+// Unset (every normal run), it changes nothing.
+void apply_native_rows_override();
 #endif
 
 } // namespace creatures1::common
