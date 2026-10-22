@@ -49,6 +49,7 @@ constexpr int kTraceLeft = 0x1d;       // lobe_render_x_origin: the sweep's star
 constexpr int kTraceWidth = 0xb7;      // it starts again once past this
 constexpr int kTraceTop = 0x87;        // the monitor's rows
 constexpr int kTraceBottom = 0xc3;
+constexpr int kMonitorRight = 0xb9;    // RenderHealthLobeFrame's fill
 constexpr int kBaseline = 0xa5;
 constexpr int kStep = 4;               // pixels a 50 ms tick
 constexpr int kMercuryLeft = 0x37;     // the thermometer's tube
@@ -167,6 +168,7 @@ void ClassicFitnessPage::init() {
               hearts_.load(main_file("Hearts.spr")) && blink_.load(main_file("Blink.spr")) &&
               canvas_.create(width_, height_);
     frame_ = skeleton_;
+    clear_monitor();
     x_ = kTraceLeft;
     y_ = kBaseline;
     state_ = pending_ = 0x14;  // InitializeHealthScannerAnimation @ 0x0040c830
@@ -214,6 +216,16 @@ void ClassicFitnessPage::thermometer() {
     }
 }
 
+// RenderHealthLobeFrame @ 0x0040cdd0: the monitor is black (index 0) when the
+// page starts and again each time the sweep starts over.
+void ClassicFitnessPage::clear_monitor() {
+    for (int y = kTraceTop; y < kTraceBottom; ++y) {
+        for (int x = kTraceLeft; x < kMonitorRight && x < width_; ++x) {
+            frame_[static_cast<std::size_t>(y) * width_ + x] = 0;
+        }
+    }
+}
+
 // Behind the sweep, three strips of four columns fade a step each: bright to
 // line to glow to black, then glow to black, then everything to black.
 void ClassicFitnessPage::fade(int scan_x) {
@@ -228,7 +240,7 @@ void ClassicFitnessPage::fade(int scan_x) {
                 std::uint8_t& pixel = frame_[static_cast<std::size_t>(y) * width_ + column];
                 if (pixel != kDim && pixel != kLine && pixel != kBright) continue;
                 if (strip == 2 || pixel == kDim) {
-                    pixel = skeleton_[static_cast<std::size_t>(y) * width_ + column];
+                    pixel = 0;
                 } else if (pixel == kLine) {
                     pixel = kDim;
                 } else if (strip == 0) {
@@ -245,7 +257,7 @@ void ClassicFitnessPage::flat() {
     fade(x_);
     for (int i = 0; i < kStep; ++i) {
         const int x = x_ + i;
-        if (x >= width_) break;
+        if (x >= kMonitorRight || x >= width_) break;
         frame_[static_cast<std::size_t>(y_) * width_ + x] = kLine;
         frame_[static_cast<std::size_t>(y_ - 1) * width_ + x] = kDim;
         frame_[static_cast<std::size_t>(y_ + 1) * width_ + x] = kDim;
@@ -261,7 +273,10 @@ void ClassicFitnessPage::line_to(int target_y, bool up) {
     int error = -(distance >> 1);
     int x = x_;
     const auto put = [&](int px, int py, std::uint8_t index) {
-        if (px >= 0 && px < width_ && py >= kTraceTop && py < kTraceBottom) {
+        // Kept inside the monitor: a beat at the end of a sweep would
+        // otherwise paint onto the frame, which nothing clears.
+        if (px >= kTraceLeft && px < kMonitorRight && px < width_ && py >= kTraceTop &&
+            py < kTraceBottom) {
             frame_[static_cast<std::size_t>(py) * width_ + px] = index;
         }
     };
@@ -287,7 +302,10 @@ void ClassicFitnessPage::tick() {
     ++heart_tick_;
     eye_frame_ = 0;
     if (have_data_) {
-        if (x_ > kTraceWidth) x_ = kTraceLeft;  // ResetHealthLobeAnimation @ 0x0040d530
+        if (x_ > kTraceWidth) {  // ResetHealthLobeAnimation @ 0x0040d530
+            clear_monitor();
+            x_ = kTraceLeft;
+        }
         switch (state_) {
         case 1:
             line_to(kBaseline, true);
