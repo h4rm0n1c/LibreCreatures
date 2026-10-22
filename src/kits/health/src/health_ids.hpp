@@ -53,4 +53,7 @@ enum : unsigned {
     kControlLobes,
 };
 
+// Options > Refill Dispensary (a kit item: KitSheet::kKitOptionFirst).
+constexpr unsigned kOptionRefillDispensary = 0x0200;
+
 } // namespace health

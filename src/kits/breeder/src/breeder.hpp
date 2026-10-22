@@ -122,6 +122,9 @@ protected:
     void on_control_state(std::uint8_t state) override;
     void before_game_quit() override;
     void before_skin_change() override;
+    void add_kit_options(CMenu& options) override;
+    bool on_kit_option(UINT id) override;
+    afx_msg void OnInitMenuPopup(CMenu* menu, UINT index, BOOL system_menu);
     afx_msg int OnCreate(LPCREATESTRUCT create);
     afx_msg void OnTimer(UINT_PTR timer_id);
     afx_msg void OnSize(UINT type, int cx, int cy);

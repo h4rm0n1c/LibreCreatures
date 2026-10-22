@@ -56,4 +56,7 @@ enum : unsigned {
     kControlFertility = 3000,
 };
 
+// Options > Refill Dispensary (a kit item: KitSheet::kKitOptionFirst).
+constexpr unsigned kOptionRefillDispensary = 0x0200;
+
 } // namespace breeder

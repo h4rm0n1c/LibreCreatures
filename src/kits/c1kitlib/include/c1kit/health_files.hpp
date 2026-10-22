@@ -69,6 +69,26 @@ inline std::vector<std::uint8_t> serialize_shop(const std::vector<ShopItem>& ite
     return writer.bytes();
 }
 
+// The 1996 install ships 12 of every item, in "Health" and "Aphro" alike.
+constexpr int kShopStockQuantity = 12;
+
+// Whether Options > Refill Dispensary has anything to do.
+inline bool shop_needs_refill(const std::vector<ShopItem>& items) {
+    for (const ShopItem& item : items) {
+        if (item.quantity < kShopStockQuantity) return true;
+    }
+    return false;
+}
+
+// Options > Refill Dispensary (not in the 1996 kits, which had no way to get
+// more): every item back up to the shipped stock.  An item a player has more
+// of is left as it is.
+inline void refill_shop(std::vector<ShopItem>& items) {
+    for (ShopItem& item : items) {
+        if (item.quantity < kShopStockQuantity) item.quantity = kShopStockQuantity;
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Chemicals
 // ---------------------------------------------------------------------------
