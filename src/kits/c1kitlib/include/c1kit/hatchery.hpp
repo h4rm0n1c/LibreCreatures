@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <iterator>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "genome.hpp"
@@ -101,19 +102,42 @@ inline std::string hatch_script(int slot, bool female) {
     return hatch_script(slot, female, slot + 1, slot + 1);
 }
 
-// Options > Scramble Eggs: any mum with any dad of the six, except the two
-// with the same number (the nest's own pairs), each of the 30 pairs equally
-// likely.  `random` is any random number.
-inline void scrambled_parents(std::uint32_t random, int& mum, int& dad) {
-    const std::uint32_t pair = random % (kEggCount * (kEggCount - 1));
-    mum = static_cast<int>(pair / (kEggCount - 1)) + 1;
-    dad = static_cast<int>(pair % (kEggCount - 1)) + 1;
-    if (dad >= mum) {
-        ++dad;
+// Parent genomes go up to mum9 and dad9: the game crosses any mum<n>.gen and
+// dad<n>.gen by name (`new: gene tokn mum<n> ...`); the 1996 kit only ever
+// named the stock six.  The nest stays six eggs.
+constexpr int kMaxParents = 9;
+
+// Which parent genomes there are, by number: the stock six unless told.
+struct ParentSet {
+    std::vector<int> mums{1, 2, 3, 4, 5, 6};
+    std::vector<int> dads{1, 2, 3, 4, 5, 6};
+};
+
+// Options > Scramble Eggs: any mum with any dad of those there, except two
+// with the same number (the nest's own pairs), each pair equally likely (30
+// with the stock six).  `random` is any random number.  Mum 1 and dad 1 when
+// there is no such pair.
+inline void scrambled_parents(std::uint32_t random, const ParentSet& set, int& mum, int& dad) {
+    std::vector<std::pair<int, int>> pairs;
+    for (const int m : set.mums) {
+        for (const int d : set.dads) {
+            if (m != d) pairs.emplace_back(m, d);
+        }
     }
+    if (pairs.empty()) {
+        mum = dad = 1;
+        return;
+    }
+    const std::pair<int, int>& pair = pairs[random % pairs.size()];
+    mum = pair.first;
+    dad = pair.second;
 }
 
-// Which parents each egg in the nest is crossed from (1 to 6).  Its own
+inline void scrambled_parents(std::uint32_t random, int& mum, int& dad) {
+    scrambled_parents(random, ParentSet(), mum, dad);
+}
+
+// Which parents each egg in the nest is crossed from (1 to 9).  Its own
 // pair, mum<n> with dad<n>, unless Scramble Eggs picked others when the nest
 // was filled, so each egg can show its pair before it hatches.  Kept in the
 // registry value "Egg Parents": six two-digit numbers, mum then dad
@@ -125,10 +149,10 @@ struct NestParents {
 
 // A scrambled pair for every egg; `random` gives any random numbers.
 template <typename Random>
-NestParents scrambled_nest_parents(Random random) {
+NestParents scrambled_nest_parents(Random random, const ParentSet& set = ParentSet()) {
     NestParents parents;
     for (int i = 0; i < kEggCount; ++i) {
-        scrambled_parents(static_cast<std::uint32_t>(random()), parents.mum[i], parents.dad[i]);
+        scrambled_parents(static_cast<std::uint32_t>(random()), set, parents.mum[i], parents.dad[i]);
     }
     return parents;
 }
@@ -137,11 +161,11 @@ NestParents scrambled_nest_parents(Random random) {
 // pair, left from before the mode was on) gets a scrambled one.  True if
 // any pair changed.
 template <typename Random>
-bool scramble_own_pairs(NestParents& parents, Random random) {
+bool scramble_own_pairs(NestParents& parents, Random random, const ParentSet& set = ParentSet()) {
     bool changed = false;
     for (int i = 0; i < kEggCount; ++i) {
         if (parents.mum[i] == parents.dad[i]) {
-            scrambled_parents(static_cast<std::uint32_t>(random()), parents.mum[i],
+            scrambled_parents(static_cast<std::uint32_t>(random()), set, parents.mum[i],
                               parents.dad[i]);
             changed = true;
         }
@@ -171,8 +195,8 @@ inline bool parse_parents(const std::string& text, NestParents& out) {
     for (int i = 0; i < kEggCount; ++i) {
         const std::size_t at = static_cast<std::size_t>(i) * 3;
         if ((i != 0 && text[at - 1] != ' ') || text[at] < '1' ||
-            text[at] > '0' + kEggCount || text[at + 1] < '1' ||
-            text[at + 1] > '0' + kEggCount) {
+            text[at] > '0' + kMaxParents || text[at + 1] < '1' ||
+            text[at + 1] > '0' + kMaxParents) {
             return false;
         }
         parents.mum[i] = text[at] - '0';
@@ -180,6 +204,61 @@ inline bool parse_parents(const std::string& text, NestParents& out) {
     }
     out = parents;
     return true;
+}
+
+// A parent's face, as the Designer shows it: the head its genes give, read
+// as the game reads them (Skeleton::LoadGenome @ 0x0043c800): the last genus
+// gene's selector & 3 (0 Norn, 1 Grendel, 2 Ettin), and the last appearance
+// gene for the head (appearance genes ignore the life stage; a group past
+// the tail wraps modulo 5, a variant past 9 modulo 10).  Genes for the other
+// sex are skipped, as the game's genome reader does.  Families are taken
+// modulo 3 and subtypes modulo 7, as CGenome::FindNextMatchingGene takes them.
+struct ParentLook {
+    int genus = 0;
+    int head_variant = 0;
+};
+
+inline ParentLook parent_look(const std::vector<Gene>& genes, bool female) {
+    ParentLook look;
+    for (const Gene& gene : genes) {
+        if (gene.family % 3 != kGeneFamilyCreature || gene.payload.size() < 2) continue;
+        if ((gene.flags & (female ? kGeneMaleOnly : kGeneFemaleOnly)) != 0) continue;
+        const int subtype = gene.subtype % 7;
+        if (subtype == 1) {
+            look.genus = gene.payload[0] & 3;
+        } else if (subtype == 2) {
+            const int group = gene.payload[0] > 4 ? gene.payload[0] % 5 : gene.payload[0];
+            const int variant = gene.payload[1] > 9 ? gene.payload[1] % 10 : gene.payload[1];
+            if (group == 0) look.head_variant = variant;
+        }
+    }
+    return look;
+}
+
+// The face: an adult's head, looking out, content (frame 8 of its sprite).
+constexpr int kParentFaceStage = 4;
+constexpr int kParentFaceFrame = 8;
+
+// The head sprite files to try, first choice first, as the game tries them
+// (ResolveExistingBodyPartFilenameWithFallback @ 0x0043c3e0): the sex's own
+// genus files (genus, or genus + 4 for a female), then the other sex's; in
+// each, the variant down to 0, and in each variant the life stage down to 0.
+// Names are part letter, genus file, stage, variant, without the extension
+// ("a402").
+inline std::vector<std::string> head_sprite_names(const ParentLook& look, bool female,
+                                                  int stage = kParentFaceStage) {
+    std::vector<std::string> names;
+    const int sex = female ? 1 : 0;
+    for (int pass = 0; pass < 2; ++pass) {
+        const int genus_file = pass == 0 ? sex * 4 + look.genus : look.genus - sex * 4 + 4;
+        for (int variant = look.head_variant; variant >= 0; --variant) {
+            for (int s = stage; s >= 0; --s) {
+                names.push_back(std::string("a") + static_cast<char>('0' + genus_file) +
+                                static_cast<char>('0' + s) + static_cast<char>('0' + variant));
+            }
+        }
+    }
+    return names;
 }
 
 // Options > Make My Creatures Colourful.  The egg's genome is crossed first

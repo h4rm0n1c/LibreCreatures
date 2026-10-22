@@ -19,7 +19,7 @@ constexpr unsigned kStartupDelayMs = 30;
 constexpr unsigned kCommandBufferBytes = 0x1000;
 
 constexpr int kDefaultPageWidthDlu = 440;
-constexpr int kDefaultPageHeightDlu = 220;
+constexpr int kDefaultPageHeightDlu = 275;  // the Designer's two rows of faces
 
 constexpr unsigned kOptionRefill = 0x0200;  // Options > Refill the nest
 constexpr unsigned kOptionScramble = 0x0210;  // Options > Scramble Eggs
@@ -43,8 +43,7 @@ enum : unsigned {
 
 // The Designer page's controls.
 enum : unsigned {
-    kControlDesignMother = 3100,
-    kControlDesignFather,
+    kControlDesignFaces = 3100,  // the parents' faces
     kControlDesignSex,
     kControlDesignColour,
     kControlDesignTint,  // + 0..4: red, green, blue tint, hue rotation, colour swap

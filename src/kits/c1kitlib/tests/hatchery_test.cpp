@@ -9,7 +9,70 @@
 
 using namespace c1kit;
 
+namespace {
+
+// Up to nine parents: scrambles draw only from those there, every pair can
+// come up, never a same-numbered one; "Egg Parents" takes 7 to 9 too.
+void test_more_parents() {
+    ParentSet set;
+    set.mums = {1, 2, 7, 9};
+    set.dads = {2, 8, 9};
+    bool seen[10][10] = {};
+    for (std::uint32_t r = 0; r < 200; ++r) {
+        int mum = 0, dad = 0;
+        scrambled_parents(r, set, mum, dad);
+        assert(mum != dad);
+        assert(mum == 1 || mum == 2 || mum == 7 || mum == 9);
+        assert(dad == 2 || dad == 8 || dad == 9);
+        seen[mum][dad] = true;
+    }
+    int pairs = 0;
+    for (const auto& row : seen) for (const bool pair : row) pairs += pair ? 1 : 0;
+    assert(pairs == 4 * 3 - 2);  // 2-2 and 9-9 never
+    NestParents parents;
+    assert(parse_parents("79 18 92 21 33 44", parents) && parents.mum[0] == 7 && parents.dad[2] == 2);
+    assert(format_parents(parents) == "79 18 92 21 33 44");
+    ParentSet none;
+    none.mums = {3};
+    none.dads = {3};
+    int mum = 0, dad = 0;
+    scrambled_parents(5, none, mum, dad);
+    assert(mum == 1 && dad == 1);
+}
+
+// The face: genus and head variant from the genes, and the files to try in
+// the game's order.
+void test_parent_look() {
+    std::vector<Gene> genes(4);
+    for (Gene& gene : genes) gene.family = kGeneFamilyCreature;
+    genes[0].subtype = 1;  // genus: selector 6 & 3 = 2 (Ettin)
+    genes[0].payload = {6, 0, 0, 0, 0, 0, 0, 0, 0};
+    genes[1].subtype = 2;  // head (group 0) variant 3
+    genes[1].payload = {0, 3};
+    genes[2].subtype = 9;  // 9 % 7 = 2: appearance; group 5 % 5 = head, variant 14 % 10
+    genes[2].payload = {5, 14};
+    genes[3].subtype = 2;  // a male-only head gene, skipped for a female
+    genes[3].flags = kGeneMaleOnly;
+    genes[3].payload = {0, 6};
+    const ParentLook female = parent_look(genes, true);
+    assert(female.genus == 2 && female.head_variant == 4);
+    const ParentLook male = parent_look(genes, false);
+    assert(male.head_variant == 6);
+    ParentLook norn;
+    norn.head_variant = 1;
+    const std::vector<std::string> names = head_sprite_names(norn, true, 2);
+    // Female files first (genus 0 + 4), variant 1 stages 2..0, variant 0,
+    // then the male files.
+    assert(names.size() == 12 && names[0] == "a421" && names[2] == "a401" && names[3] == "a420" &&
+           names[6] == "a021" && names.back() == "a000");
+    assert(head_sprite_names(norn, false, 0)[0] == "a001" && head_sprite_names(norn, false, 0)[2] == "a401");
+}
+
+}  // namespace
+
 int main() {
+    test_more_parents();
+    test_parent_look();
     Nest nest;
     assert(parse_nest("100110", nest));
     assert(nest.eggs[0] == EggState::female && nest.eggs[1] == EggState::male);
@@ -76,7 +139,7 @@ int main() {
     for (int i = 0; i < kEggCount; ++i) {
         assert(read_back.mum[i] == parents.mum[i] && read_back.dad[i] == parents.dad[i]);
     }
-    assert(!parse_parents("11 22 33 44 55 67", read_back) && read_back.mum[5] == 6);
+    assert(!parse_parents("11 22 33 44 55 60", read_back) && read_back.mum[5] == 6);
     // Turned on with eggs on their own pairs: those get scrambled ones, the
     // scrambled ones stay.
     NestParents mixed;

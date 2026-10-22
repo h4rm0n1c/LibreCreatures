@@ -249,7 +249,10 @@ are fixed.
 
 - **Hatchery:** refills the nest when it is empty instead of asking for an
   Egg Disk, and stays open after an egg.  New options: Scramble Eggs (each
-  egg crosses a random pair) and Make My Creatures Colourful.
+  egg crosses a random pair) and Make My Creatures Colourful.  The Designer
+  shows each parent's face, drawn from its own genes, and offers every
+  mum1-mum9 and dad1-dad9 in the Genetics folder (the 1996 kit only used
+  the six stock pairs); Scramble Eggs picks from them too.
 - **Owner's Kit:** the register and albums are saved as they change; the
   tabs fit; errors name the file.  (9 fixes)
 - **Health Kit and Breeder's Kit:** shop stock is saved at once; "no
