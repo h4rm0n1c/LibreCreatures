@@ -65,7 +65,30 @@ BEGIN_MESSAGE_MAP(BreederSheet, c1kitshell::KitSheet)
     ON_WM_SIZE()
     ON_WM_CLOSE()
     ON_WM_DESTROY()
+    ON_WM_INITMENUPOPUP()
 END_MESSAGE_MAP()
+
+void BreederSheet::add_kit_options(CMenu& options) {
+    options.AppendMenu(MF_STRING, kOptionRefillDispensary, _T("Refill &Dispensary"));
+}
+
+void BreederSheet::OnInitMenuPopup(CMenu* menu, UINT index, BOOL system_menu) {
+    c1kitshell::KitSheet::OnInitMenuPopup(menu, index, system_menu);
+    enable_kit_option(kOptionRefillDispensary, c1kit::shop_needs_refill(shop_));
+}
+
+// Every item back to the shipped stock, written at once like any change to
+// the stock, and shown on whichever look's shop page is up.
+bool BreederSheet::on_kit_option(UINT id) {
+    if (id != kOptionRefillDispensary) return false;
+    if (c1kit::shop_needs_refill(shop_)) {
+        c1kit::refill_shop(shop_);
+        save_shop();
+        shop_page_.refresh();
+        if (classic_shop_) classic_shop_->refresh();
+    }
+    return true;
+}
 
 // The original opened on a cover page and played sound; neither is in this
 // build, except in the classic look (the original beside this one, with the

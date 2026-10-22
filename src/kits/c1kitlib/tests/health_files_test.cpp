@@ -48,10 +48,23 @@ void test_real_file(const char* path) {
     assert(serialize_shop(items) == bytes);
 }
 
+// Refill Dispensary: short items back to 12, a larger count left alone.
+void test_refill() {
+    std::vector<ShopItem> items(3);
+    items[0].quantity = 0;
+    items[1].quantity = 12;
+    items[2].quantity = 20;
+    assert(shop_needs_refill(items));
+    refill_shop(items);
+    assert(items[0].quantity == 12 && items[1].quantity == 12 && items[2].quantity == 20);
+    assert(!shop_needs_refill(items));
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
     test_round_trip();
+    test_refill();
     if (argc > 1) {
         test_real_file(argv[1]);
     }
