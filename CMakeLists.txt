@@ -18,8 +18,8 @@ project(LibreCreatures CXX RC)
 if(NOT MSVC)
     message(FATAL_ERROR
         "LibreCreatures requires MSVC (Visual Studio, with the \"MFC and ATL "
-        "support (x86)\" individual component installed). It cannot be built "
-        "with any other compiler.")
+        "support\" individual component for the target architecture, x86 or "
+        "x64, installed). It cannot be built with any other compiler.")
 endif()
 
 option(LC_ALLOW_X64
