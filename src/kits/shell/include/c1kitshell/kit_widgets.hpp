@@ -102,4 +102,16 @@ private:
     int text_height_ = 13;
 };
 
+// A dialog made by hand as a page's child (a 1996 page inside a modern
+// one) gets a themed tab page's background, as the sheet's own pages do.
+// Nothing where the theme library is missing.
+void theme_as_tab_page(CWnd& dialog);
+
+// The modern injection pages' reading, on a pale card: the chemical's name,
+// a 0..255 bar with its level in the creature now in the liquid's colour
+// and, paler, where `dose` would take it (the game adds the dose and stops
+// at 255), and the two numbers.  `now` below 0: no creature to read.
+void draw_dose_reading(CDC& dc, const CRect& rect, CFont* font, const CString& name, int now,
+                       int dose, COLORREF liquid);
+
 } // namespace c1kitshell

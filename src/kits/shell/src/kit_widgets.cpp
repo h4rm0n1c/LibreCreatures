@@ -45,6 +45,17 @@ void PaintedView::OnPaint() {
     bitmap.CreateCompatibleBitmap(&paint, client.Width(), client.Height());
     CBitmap* previous_bitmap = memory.SelectObject(&bitmap);
     CFont* previous_font = memory.SelectObject(GetParent()->GetFont());
+    // The parent's own background first (what it gives a static control:
+    // a themed tab page's texture, lined up with the page), so a painter
+    // that leaves its corners alone matches the page around it.
+    CRect placed;
+    GetWindowRect(&placed);
+    GetParent()->ScreenToClient(&placed);
+    HBRUSH background = reinterpret_cast<HBRUSH>(GetParent()->SendMessage(
+        WM_CTLCOLORSTATIC, reinterpret_cast<WPARAM>(memory.GetSafeHdc()), reinterpret_cast<LPARAM>(GetSafeHwnd())));
+    if (background == nullptr) background = GetSysColorBrush(COLOR_BTNFACE);
+    memory.SetBrushOrg(-placed.left, -placed.top);
+    memory.FillRect(client, CBrush::FromHandle(background));
     if (painter_) {
         painter_(memory, client);
     }
@@ -297,6 +308,83 @@ void LayoutPage::place_close(int width, int height) {
 
 void LayoutPage::OnCloseKit() {
     kit_sheet_.request_game_quit();
+}
+
+void theme_as_tab_page(CWnd& dialog) {
+    using Enable = HRESULT(WINAPI*)(HWND, DWORD);
+    static const Enable enable = [] {
+        HMODULE theme = LoadLibrary(_T("uxtheme.dll"));
+        return theme != nullptr ? reinterpret_cast<Enable>(GetProcAddress(theme, "EnableThemeDialogTexture"))
+                                : nullptr;
+    }();
+    if (enable != nullptr && dialog.GetSafeHwnd() != nullptr) {
+        constexpr DWORD kEnableTab = 0x00000006;  // ETDT_ENABLETAB
+        enable(dialog.GetSafeHwnd(), kEnableTab);
+    }
+}
+
+void draw_dose_reading(CDC& dc, const CRect& rect, CFont* font, const CString& name, int now,
+                       int dose, COLORREF liquid) {
+    CRect card = rect;
+    card.DeflateRect(1, 1);
+    CBrush fill(RGB(252, 251, 248));
+    CPen edge(PS_SOLID, 1, RGB(208, 204, 196));
+    CBrush* old_brush = dc.SelectObject(&fill);
+    CPen* old_pen = dc.SelectObject(&edge);
+    dc.RoundRect(card, CPoint(10, 10));
+    dc.SelectObject(old_pen);
+    dc.SelectObject(old_brush);
+
+    LOGFONT face = {};
+    CFont* base = font != nullptr ? font
+                                  : CFont::FromHandle(static_cast<HFONT>(GetStockObject(DEFAULT_GUI_FONT)));
+    base->GetLogFont(&face);
+    CFont plain;
+    plain.CreateFontIndirect(&face);
+    face.lfWeight = FW_BOLD;
+    CFont bold;
+    bold.CreateFontIndirect(&face);
+    CFont* old_font = dc.SelectObject(&bold);
+    dc.SetBkMode(TRANSPARENT);
+    const int line = (std::max)(12, static_cast<int>(dc.GetTextExtent(_T("Ag")).cy));
+
+    CRect inner = card;
+    inner.DeflateRect(12, 10);
+    CRect title(inner.left, inner.top, inner.right, inner.top + line);
+    dc.SetTextColor(RGB(70, 66, 60));
+    dc.DrawText(name, &title, DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS | DT_NOPREFIX);
+
+    // The bar: a track, the level now, the dose beyond it, a tick a quarter.
+    const CRect bar(inner.left, title.bottom + 8, inner.right, title.bottom + 8 + 14);
+    dc.FillSolidRect(bar, RGB(232, 229, 222));
+    const int clamped_now = (std::max)(0, (std::min)(255, now));
+    const int after = (std::min)(255, clamped_now + (std::max)(0, dose));
+    const auto x_at = [&bar](int value) { return bar.left + bar.Width() * value / 255; };
+    if (now >= 0) {
+        const COLORREF pale = RGB((GetRValue(liquid) + 2 * 255) / 3, (GetGValue(liquid) + 2 * 255) / 3,
+                                  (GetBValue(liquid) + 2 * 255) / 3);
+        dc.FillSolidRect(CRect(x_at(clamped_now), bar.top, x_at(after), bar.bottom), pale);
+        dc.FillSolidRect(CRect(bar.left, bar.top, x_at(clamped_now), bar.bottom), liquid);
+    }
+    for (int tick = 64; tick < 255; tick += 64) {
+        dc.FillSolidRect(CRect(x_at(tick), bar.bottom - 4, x_at(tick) + 1, bar.bottom), RGB(160, 154, 146));
+    }
+    CBrush outline(RGB(180, 174, 166));
+    dc.FrameRect(bar, &outline);
+
+    dc.SelectObject(&plain);
+    dc.SetTextColor(RGB(110, 104, 96));
+    CRect numbers(inner.left, bar.bottom + 6, inner.right, bar.bottom + 6 + line);
+    CString text;
+    if (now < 0) {
+        text = _T("No creature selected.");
+    } else if (dose > 0) {
+        text.Format(_T("Now %d, after this dose %d"), clamped_now, after);
+    } else {
+        text.Format(_T("Now %d of 255"), clamped_now);
+    }
+    dc.DrawText(text, &numbers, DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS | DT_NOPREFIX);
+    dc.SelectObject(old_font);
 }
 
 } // namespace c1kitshell

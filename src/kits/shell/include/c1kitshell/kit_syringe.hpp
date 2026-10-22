@@ -1,7 +1,8 @@
 #pragma once
 
-// The 1996 kits' dosage syringe, for the classic look: the Biochemistry
-// Kit's (CInjectPage) and the Science Kit's injection pages.
+// The 1996 kits' dosage syringe: the Biochemistry Kit's (CInjectPage) and
+// the Science Kit's injection pages, in both looks (the modern pages frame
+// it themselves, with present()).
 //
 // DOSE.bmp (156 x 244, the game's folder) is the picture; over it a dosage
 // sprite pair (Dosage.spr and its coloured versions): six frames of the
@@ -49,6 +50,13 @@ public:
     // Centred in `area`, on white with a black frame (the 1996 picture
     // control, SS_BLACKFRAME).
     void draw(CDC& dc, const CRect& area);
+    // The picture alone, centred in `area`, for a page that draws its own
+    // frame around it.
+    void present(CDC& dc, const CRect& area) const;
+    static CSize picture_size();
+    // The liquid's colour: the commonest pixel the full barrel has where the
+    // empty one differs.  Grey before anything is loaded.
+    COLORREF liquid_colour() const;
 
 private:
     enum class Phase { idle, squeeze, drain, reform };
