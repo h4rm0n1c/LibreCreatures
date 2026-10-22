@@ -145,6 +145,7 @@ protected:
 
 private:
     void draw(CDC& dc, const CRect& rect);
+    void clear_monitor();
     void fade(int scan_x);
     void flat();
     void line_to(int target_y, bool up);
