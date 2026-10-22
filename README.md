@@ -65,9 +65,10 @@ The row numbers are those of [docs/original-bugs.md](docs/original-bugs.md).
 
 - **`main`**: the engine drawing the world through GDI, as the original does.
 - **`neorender`**: the same engine with an SDL3 world view inside the MFC
-  shell: zoom, true-colour `.s32` and double-resolution `@2x.s32` art, and a
-  fixed-step loop that keeps the 90 ms world tick ([docs/neorender.md](docs/neorender.md)
-  on that branch). It needs `SDL3.dll` beside `Creatures.exe` (included in its
+  shell: zoom, true-colour `.s32` and double-resolution `@2x.s32` art, smooth
+  motion between world ticks, and View > World speed (1x, 2x, 5x or 10x), on
+  a world clock that keeps the 90 ms tick at 1x
+  ([docs/neorender.md](docs/neorender.md) on that branch). It needs `SDL3.dll` beside `Creatures.exe` (included in its
   builds, from `third_party/SDL3`). It does not change what a world file
   stores or how the simulation behaves; a world made with it still loads in
   the original game.
