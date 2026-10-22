@@ -275,6 +275,7 @@ void BiochemSheet::OnTimer(UINT_PTR timer_id) {
             classic_monitor_->sample();
         } else {
             monitor_page_.sample();
+            inject_page_.sample_level();
         }
     } else if (timer_id == kTimerRepeat && !quitting()) {
         if (classic_) {

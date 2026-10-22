@@ -257,9 +257,12 @@ are fixed.
   puts every item back to 12, the stock the game ships.
 - **Science Kit:** the genome's species and the brain scanner's measure are
   right, and dendrite ranges and totals are read as the game reads them.
-  (5 fixes)
+  (5 fixes)  The modern look's Injections page has the 1996 syringe and
+  its injection, and shows the medicine's level now and after the dose.
 - **Biochemistry Kit:** a 33rd graph channel no longer writes past the
-  32, and the history keeps recording after 2048 samples.  (2 fixes)
+  32, and the history keeps recording after 2048 samples.  (2 fixes)  The
+  modern look's Injections page has the 1996 syringe and its injection,
+  and shows the chemical's level now and after the dose.
 - **Object Injector:** a failed inject does not use up the COB, a COB with
   none left cannot be injected, and long scripts are sent whole.  (3 fixes)
 - **Observation Kit:** lists every creature (CE stopped at 13), sorts by

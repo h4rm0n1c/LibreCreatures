@@ -85,6 +85,9 @@ enum : unsigned {
     kControlHint,
     kControlThemesGroup,  // the classic look's
     kControlSyringe,
+    // The modern Injections page's syringe and reading.
+    kControlSyringeView,
+    kControlReading,
 };
 
 // At most this many chemicals on the graph at once (the 1996 kit had four).
