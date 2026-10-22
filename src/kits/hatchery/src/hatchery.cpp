@@ -226,23 +226,9 @@ void NestPage::load_art() {
         static_cast<std::size_t>(c1kit::kEggCount * c1kit::kEggSpriteFramesPerEgg);
     // The palette the game uses, and the Images folders it looks in: the
     // world's, then the installation's.
-    CString palettes = c1kitshell::game_directory_setting("Palette Directory");
-    if (palettes.IsEmpty()) {
-        palettes = CString(sheet_.game_file("Palettes\\").c_str());
-    }
     c1kit::GamePalette palette{};
-    const bool have_palette = c1kit::parse_palette_dta(
-        read_file(std::string(CStringA(palettes)) + "palette.dta"), palette);
     std::vector<std::string> images;
-    for (const c1kit::GameDirectory which :
-         {c1kit::GameDirectory::world, c1kit::GameDirectory::installation}) {
-        const std::string directory(CStringA(c1kitshell::game_directory_setting("Image Directory", which)));
-        if (!directory.empty() &&
-            std::find(images.begin(), images.end(), directory) == images.end()) {
-            images.push_back(directory);
-        }
-    }
-    images.push_back(sheet_.game_file("Images\\"));  // as before, if no setting
+    const bool have_palette = sheet_.game_art_places(palette, images);
     c1kitshell::GameArt art;
     if (!c1kitshell::load_game_art(images, "eggs", palette, false, art) ||
         art.frames.size() < kFrames ||
@@ -554,8 +540,6 @@ BEGIN_MESSAGE_MAP(DesignerPage, c1kitshell::LayoutPage)
     ON_BN_CLICKED(kControlDesignNoOldAge, &DesignerPage::OnChoiceChanged)
     ON_BN_CLICKED(kControlDesignLockLearning, &DesignerPage::OnChoiceChanged)
     ON_BN_CLICKED(kControlDesignHardier, &DesignerPage::OnChoiceChanged)
-    ON_CBN_SELCHANGE(kControlDesignMother, &DesignerPage::OnChoiceChanged)
-    ON_CBN_SELCHANGE(kControlDesignFather, &DesignerPage::OnChoiceChanged)
     ON_CBN_SELCHANGE(kControlDesignSex, &DesignerPage::OnChoiceChanged)
     ON_WM_HSCROLL()
     ON_WM_CTLCOLOR()
@@ -564,22 +548,16 @@ END_MESSAGE_MAP()
 DesignerPage::DesignerPage(HatcherySheet& sheet)
     : LayoutPage(sheet, kDialogPage, kStringDesignerTab), sheet_(sheet) {}
 
+DesignerPage::~DesignerPage() {
+    free_faces();
+}
+
 void DesignerPage::create_controls() {
-    const TCHAR* label_text[] = {_T("Mother"), _T("Father"), _T("Sex")};
-    for (int i = 0; i < 3; ++i) {
-        make(labels_[i], _T("STATIC"), label_text[i], SS_LEFT, 0);
-    }
-    const DWORD combo = CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP;
-    make(mother_, _T("COMBOBOX"), _T(""), combo, kControlDesignMother);
-    make(father_, _T("COMBOBOX"), _T(""), combo, kControlDesignFather);
-    make(sex_, _T("COMBOBOX"), _T(""), combo, kControlDesignSex);
-    for (int n = 1; n <= c1kit::kEggCount; ++n) {
-        CString name;
-        name.Format(_T("mum%d"), n);
-        mother_.AddString(name);
-        name.Format(_T("dad%d"), n);
-        father_.AddString(name);
-    }
+    make(labels_[2], _T("STATIC"), _T("Sex"), SS_LEFT, 0);
+    load_faces();
+    faces_.create(*this, kControlDesignFaces, [this](CDC& dc, const CRect& rect) { draw_faces(dc, rect); });
+    faces_.set_mouse_handler([this](CPoint point, bool clicked) { on_faces_mouse(point, clicked); });
+    make(sex_, _T("COMBOBOX"), _T(""), CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP, kControlDesignSex);
     sex_.AddString(_T("Either"));
     sex_.AddString(_T("Male"));
     sex_.AddString(_T("Female"));
@@ -607,22 +585,18 @@ void DesignerPage::create_controls() {
     OnColourChanged();
 }
 
-// Parents and sex on the top line; the colour switch, its sliders beside
-// the swatch, then the genetics switches; status, Make this egg and Close
-// at the bottom.
+// The mothers' faces and the fathers' at the top; the sex, the colour
+// switch and Randomise on one line; the colour sliders beside the swatch,
+// then the genetics switches; status, Make this egg and Close at the bottom.
 void DesignerPage::layout(int width, int height) {
     const int line = button_height();
     int y = kMargin;
-    int x = kMargin;
-    for (int i = 0; i < 3; ++i) {
-        CComboBox& box = i == 0 ? mother_ : i == 1 ? father_ : sex_;
-        place(labels_[i], x, y + 4, 50, text_height());
-        place(box, x + 52, y, 90, line * 8);
-        x += 160;
-    }
-    y += line + kMargin;
-    place(colour_, kMargin, y, 200, line);
-    place(randomise_, kMargin + 210, y, 90, line);
+    place(faces_, kMargin, y, width - 2 * kMargin, 2 * kFaceTile + kFaceGap);
+    y += 2 * kFaceTile + kFaceGap + kMargin;
+    place(labels_[2], kMargin, y + 4, 30, text_height());
+    place(sex_, kMargin + 32, y, 90, line * 8);
+    place(colour_, kMargin + 140, y, 200, line);
+    place(randomise_, kMargin + 350, y, 90, line);
     y += line + 2;
     const int slider_left = kMargin + 90;
     const int swatch_size = 5 * (line - 2);
@@ -655,8 +629,9 @@ void DesignerPage::load_settings() {
         }
         return found;
     };
-    mother_.SetCurSel(static_cast<int>((std::min)(read("Designer Mother", 0), 5u)));
-    father_.SetCurSel(static_cast<int>((std::min)(read("Designer Father", 0), 5u)));
+    // Saved as the parent's number less one (as the old lists' places were).
+    picked_[0] = parent_or_first(0, static_cast<int>((std::min)(read("Designer Mother", 0), 8u)) + 1);
+    picked_[1] = parent_or_first(1, static_cast<int>((std::min)(read("Designer Father", 0), 8u)) + 1);
     sex_.SetCurSel(static_cast<int>((std::min)(read("Designer Sex", 0), 2u)));
     colour_.SetCheck(read("Designer Colour", 0) != 0 ? BST_CHECKED : BST_UNCHECKED);
     for (int i = 0; i < kSliders; ++i) {
@@ -673,8 +648,8 @@ void DesignerPage::save_settings() {
     if (registry == nullptr) {
         return;
     }
-    registry->write_dword("Designer Mother", static_cast<std::uint32_t>(mother_.GetCurSel()));
-    registry->write_dword("Designer Father", static_cast<std::uint32_t>(father_.GetCurSel()));
+    registry->write_dword("Designer Mother", static_cast<std::uint32_t>(picked_[0] - 1));
+    registry->write_dword("Designer Father", static_cast<std::uint32_t>(picked_[1] - 1));
     registry->write_dword("Designer Sex", static_cast<std::uint32_t>(sex_.GetCurSel()));
     registry->write_dword("Designer Colour", colour_.GetCheck() == BST_CHECKED ? 1 : 0);
     for (int i = 0; i < kSliders; ++i) {
@@ -756,12 +731,153 @@ void DesignerPage::OnChoiceChanged() {
     save_settings();
 }
 
+// Each parent's face: its genes' head (c1kit::parent_look), from the game's
+// own head sprites in the game's own order, looking out and content.  Mums
+// as females, dads as males.  A parent with no genome file has no tile; one
+// whose head art cannot be found gets an empty tile.
+void DesignerPage::load_faces() {
+    free_faces();
+    c1kit::GamePalette palette{};
+    std::vector<std::string> images;
+    const bool have_palette = sheet_.game_art_places(palette, images);
+    for (int row = 0; row < 2; ++row) {
+        numbers_[row].clear();
+        const bool female = row == 0;
+        for (int n = 1; n <= c1kit::kMaxParents; ++n) {
+            std::vector<std::uint8_t> bytes;
+            std::vector<c1kit::Gene> genes;
+            if (!sheet_.parent_genome(female, n, bytes)) continue;
+            numbers_[row].push_back(n);
+            if (!c1kit::parse_genome(bytes, genes)) continue;
+            for (const std::string& name : c1kit::head_sprite_names(c1kit::parent_look(genes, female), female)) {
+                c1kitshell::GameArt art;
+                if (!c1kitshell::load_game_art(images, name, palette, false, art) || art.frames.empty() ||
+                    (art.tier == c1kitshell::GameArtTier::spr && !have_palette)) {
+                    continue;
+                }
+                const std::size_t frame = (std::min)(static_cast<std::size_t>(c1kit::kParentFaceFrame),
+                                                     art.frames.size() - 1);
+                face_art_[row][n - 1] = sprite_bitmap(art.frames[frame]);
+                break;
+            }
+        }
+    }
+}
+
+void DesignerPage::free_faces() {
+    for (auto& row : face_art_) {
+        for (HBITMAP& face : row) {
+            if (face != nullptr) ::DeleteObject(face);
+            face = nullptr;
+        }
+    }
+}
+
+int DesignerPage::parent_or_first(int row, int number) const {
+    const std::vector<int>& there = numbers_[row];
+    if (std::find(there.begin(), there.end(), number) != there.end()) return number;
+    return there.empty() ? 1 : there.front();
+}
+
+// A row's tiles start after its label.
+CRect DesignerPage::face_tile(int row, int column) const {
+    const int left = kFaceLabelWidth + column * (kFaceTileWidth + kFaceGap);
+    const int top = row * (kFaceTile + kFaceGap);
+    return CRect(left, top, left + kFaceTileWidth, top + kFaceTile);
+}
+
+bool DesignerPage::face_at(CPoint point, int& row, int& number) const {
+    for (int r = 0; r < 2; ++r) {
+        for (std::size_t column = 0; column < numbers_[r].size(); ++column) {
+            if (face_tile(r, static_cast<int>(column)).PtInRect(point)) {
+                row = r;
+                number = numbers_[r][column];
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+void DesignerPage::on_faces_mouse(CPoint point, bool clicked) {
+    int row = -1;
+    int number = 0;
+    const bool over = face_at(point, row, number);
+    if (clicked && over) {
+        picked_[row] = number;
+        save_settings();
+    }
+    if (!over) row = -1;
+    if (clicked || row != hover_row_ || number != hover_number_) {
+        hover_row_ = row;
+        hover_number_ = number;
+        faces_.redraw();
+    }
+}
+
+// "Mother" and "Father", then a tile per parent: its face fitted to the
+// tile (shrunk if it is larger, enlarged only by whole numbers so it stays
+// crisp), and its number in the corner.  The picked
+// one is outlined; the one under the pointer gets a darker edge.
+void DesignerPage::draw_faces(CDC& dc, const CRect& rect) {
+    CFont* old_font = dc.SelectObject(GetFont());
+    dc.SetBkMode(TRANSPARENT);
+    const TCHAR* labels[2] = {_T("Mother"), _T("Father")};
+    for (int row = 0; row < 2; ++row) {
+        CRect label(rect.left, row * (kFaceTile + kFaceGap), rect.left + kFaceLabelWidth - 6,
+                    row * (kFaceTile + kFaceGap) + kFaceTile);
+        dc.SetTextColor(GetSysColor(COLOR_BTNTEXT));
+        dc.DrawText(labels[row], &label, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+        if (numbers_[row].empty()) {
+            CRect none(label.right + 6, label.top, rect.right, label.bottom);
+            dc.SetTextColor(RGB(110, 104, 96));
+            dc.DrawText(row == 0 ? _T("No mum1.gen to mum9.gen in the Genetics folder.")
+                                 : _T("No dad1.gen to dad9.gen in the Genetics folder."),
+                        &none, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+            continue;
+        }
+        for (std::size_t column = 0; column < numbers_[row].size(); ++column) {
+            const int number = numbers_[row][column];
+            const CRect tile = face_tile(row, static_cast<int>(column));
+            const bool picked = picked_[row] == number;
+            const bool hover = hover_row_ == row && hover_number_ == number;
+            CBrush fill(picked ? RGB(255, 246, 222) : RGB(255, 255, 255));
+            CPen edge(PS_SOLID, picked ? 2 : 1,
+                      picked ? RGB(196, 136, 40) : hover ? RGB(150, 144, 136) : RGB(208, 204, 196));
+            CBrush* old_brush = dc.SelectObject(&fill);
+            CPen* old_pen = dc.SelectObject(&edge);
+            dc.RoundRect(tile, CPoint(8, 8));
+            dc.SelectObject(old_pen);
+            dc.SelectObject(old_brush);
+            if (HBITMAP face = face_art_[row][number - 1]) {
+                BITMAP info = {};
+                ::GetObject(face, sizeof(info), &info);
+                const double room_w = kFaceTileWidth - 8;
+                const double room_h = kFaceTile - 8;
+                double scale = (std::min)(room_w / (std::max)(1L, info.bmWidth),
+                                          room_h / (std::max)(1L, info.bmHeight));
+                if (scale >= 2.0) scale = std::floor(scale);
+                const int w = (std::max)(1, static_cast<int>(info.bmWidth * scale));
+                const int h = (std::max)(1, static_cast<int>(info.bmHeight * scale));
+                draw_keyed(dc, face, CRect(CPoint(tile.left + (tile.Width() - w) / 2, tile.top + (tile.Height() - h) / 2),
+                                           CSize(w, h)));
+            }
+            CString label_number;
+            label_number.Format(_T("%d"), number);
+            CRect corner(tile.left + 5, tile.top + 2, tile.right - 4, tile.top + 2 + text_height());
+            dc.SetTextColor(RGB(130, 124, 116));
+            dc.DrawText(label_number, &corner, DT_LEFT | DT_SINGLELINE);
+        }
+    }
+    dc.SelectObject(old_font);
+}
+
 void DesignerPage::OnMakeEgg() {
     save_settings();
     const c1kit::EggColours tint = colours();
     CString why;
     CString done;
-    if (sheet_.hatch_designed(mother_.GetCurSel() + 1, father_.GetCurSel() + 1, sex_.GetCurSel(),
+    if (sheet_.hatch_designed(picked_[0], picked_[1], sex_.GetCurSel(),
                               colour_.GetCheck() == BST_CHECKED ? &tint : nullptr, choices(), why,
                               done)) {
         sheet_.sound().play("hslt", false);
@@ -842,6 +958,51 @@ bool HatcherySheet::create_window() {
 std::string HatcherySheet::game_file(const std::string& name) const {
     const CString directory = c1kitshell::game_directory_setting("Main Directory");
     return std::string(CStringA(directory)) + name;
+}
+
+bool HatcherySheet::game_art_places(c1kit::GamePalette& palette, std::vector<std::string>& images) const {
+    CString palettes = c1kitshell::game_directory_setting("Palette Directory");
+    if (palettes.IsEmpty()) {
+        palettes = CString(game_file("Palettes\\").c_str());
+    }
+    const bool have_palette =
+        c1kit::parse_palette_dta(read_file(std::string(CStringA(palettes)) + "palette.dta"), palette);
+    images.clear();
+    for (const c1kit::GameDirectory which :
+         {c1kit::GameDirectory::world, c1kit::GameDirectory::installation}) {
+        const std::string directory(CStringA(c1kitshell::game_directory_setting("Image Directory", which)));
+        if (!directory.empty() && std::find(images.begin(), images.end(), directory) == images.end()) {
+            images.push_back(directory);
+        }
+    }
+    images.push_back(game_file("Images\\"));  // as before, if no setting
+    return have_palette;
+}
+
+bool HatcherySheet::parent_genome(bool mum, int number, std::vector<std::uint8_t>& bytes) const {
+    const std::string name = std::string(mum ? "mum" : "dad") + std::to_string(number) + ".gen";
+    for (const c1kit::GameDirectory which :
+         {c1kit::GameDirectory::world, c1kit::GameDirectory::installation}) {
+        const std::string directory(
+            CStringA(c1kitshell::game_directory_setting("Genetics Directory", which)));
+        if (directory.empty()) continue;
+        bytes = read_file(directory + name);
+        if (!bytes.empty()) return true;
+    }
+    bytes = read_file(game_file("Genetics\\" + name));
+    return !bytes.empty();
+}
+
+c1kit::ParentSet HatcherySheet::available_parents() const {
+    c1kit::ParentSet set;
+    set.mums.clear();
+    set.dads.clear();
+    std::vector<std::uint8_t> bytes;
+    for (int n = 1; n <= c1kit::kMaxParents; ++n) {
+        if (parent_genome(true, n, bytes)) set.mums.push_back(n);
+        if (parent_genome(false, n, bytes)) set.dads.push_back(n);
+    }
+    return set;
 }
 
 int HatcherySheet::OnCreate(LPCREATESTRUCT create) {
@@ -959,14 +1120,14 @@ void HatcherySheet::save_parents() {
 
 void HatcherySheet::pick_parents() {
     parents_ = scramble_eggs_ != 0
-                   ? c1kit::scrambled_nest_parents([] { return std::rand(); })
+                   ? c1kit::scrambled_nest_parents([] { return std::rand(); }, available_parents())
                    : c1kit::NestParents();
     save_parents();
 }
 
 void HatcherySheet::ensure_scrambled() {
     if (scramble_eggs_ != 0 &&
-        c1kit::scramble_own_pairs(parents_, [] { return std::rand(); })) {
+        c1kit::scramble_own_pairs(parents_, [] { return std::rand(); }, available_parents())) {
         save_parents();
     }
 }
