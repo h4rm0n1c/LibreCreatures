@@ -71,6 +71,10 @@ enum : unsigned {
     // The classic look's: the syringe and the Injections page's extra labels.
     kControlSyringe,
     kControlRemaining,
+    // The modern Injections page's chemical list, syringe and reading.
+    kControlChemicalList,
+    kControlSyringeView,
+    kControlReading,
 };
 
 // Options > Show tooltips (the classic look's; the v1.2 kit's checkbox).

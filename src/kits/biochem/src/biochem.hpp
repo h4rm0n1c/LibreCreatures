@@ -76,15 +76,22 @@ private:
     c1kitshell::ChemicalGraph plot_{8000, 1000};
 };
 
+// Injections, the modern look: the chemicals (with Find) on the left; the
+// 1996 syringe in the middle (DOSE.bmp and the chemical's dosage colour, as
+// the 1996 page drew it), which plays its injection; the dose, Inject, the
+// chemical's level now and after the dose, and the repeat on the right.
 class InjectPage : public c1kitshell::LayoutPage {
 public:
     explicit InjectPage(BiochemSheet& sheet);
     void names_changed();
     void repeat_tick();
+    // Reads the chosen chemical's level (on the sheet's one-second tick).
+    void sample_level();
 
 protected:
     void create_controls() override;
     void layout(int width, int height) override;
+    BOOL OnSetActive() override;
     afx_msg void OnFilterChanged();
     afx_msg void OnChemicalChanged();
     afx_msg void OnInject();
@@ -92,18 +99,30 @@ protected:
     afx_msg void OnStop();
     afx_msg void OnAmountChanged();
     afx_msg void OnHScroll(UINT code, UINT position, CScrollBar* bar);
+    afx_msg void OnTimer(UINT_PTR timer_id);
     DECLARE_MESSAGE_MAP()
 
 private:
     bool inject_once();
     void stop_repeat(const CString& why);
     void update_repeat_controls();
+    int selected_chemical() const;
+    void fill_chemicals(int keep_chemical);
+    void change_liquid();
+    void set_dose(int dose);
+    void read_level();
+    void draw_reading(CDC& dc, const CRect& rect);
 
     BiochemSheet& sheet_;
-    CStatic chemical_label_;
-    CComboBox chemical_;
     CStatic filter_label_;
     CEdit filter_;
+    CListBox chemicals_;
+    c1kitshell::GamePalette palette_;
+    c1kitshell::Syringe syringe_;
+    c1kitshell::PaintedView syringe_view_;
+    c1kitshell::PaintedView reading_;
+    int liquid_ = -1;
+    int level_now_ = -1;
     CStatic dose_label_;
     CSliderCtrl dose_;
     CEdit amount_;

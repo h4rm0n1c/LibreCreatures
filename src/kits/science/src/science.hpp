@@ -259,7 +259,10 @@ private:
     int punishment_level_ = 0;
 };
 
-// Injections: a medicine, a dose, Inject, and the medicine's level now.
+// Injections: the medicines on the left; the 1996 syringe in the middle
+// (DOSE.bmp and the medicine's dosage colour, as the 1996 page drew it),
+// which plays its injection; the dose, Inject and the medicine's level now
+// and after the dose on the right.
 class InjectionsPage : public SciencePage {
 public:
     explicit InjectionsPage(ScienceSheet& sheet);
@@ -271,18 +274,26 @@ protected:
     afx_msg void OnInject();
     afx_msg void OnMedicineChanged();
     afx_msg void OnHScroll(UINT code, UINT position, CScrollBar* bar);
+    afx_msg void OnTimer(UINT_PTR timer_id);
     DECLARE_MESSAGE_MAP()
 
 private:
     void update_dose_label();
     int selected_chemical() const;
+    void change_liquid();
+    void draw_reading(CDC& dc, const CRect& rect);
 
     CListBox medicines_;
     CSliderCtrl dose_;
     CStatic dose_label_;
-    CStatic level_;
     CStatic medicine_label_;
     CButton inject_;
+    c1kitshell::GamePalette palette_;
+    c1kitshell::Syringe syringe_;
+    c1kitshell::PaintedView syringe_view_;
+    c1kitshell::PaintedView reading_;
+    int liquid_ = -1;
+    int level_now_ = -1;
 };
 
 // ---------------------------------------------------------------------------

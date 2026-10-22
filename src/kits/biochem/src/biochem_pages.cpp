@@ -310,112 +310,244 @@ void MonitorPage::sample() {
 //
 // CInjectPage (dialog 151): a chemical (with a filter), the dosage (a
 // slider and an amount), Inject, and a repeat: every n seconds, n times (0:
-// until stopped).  It sends "inst,chem <n> <amount>,endm".  The syringe
-// animation is left out.
+// until stopped).  It sends "inst,chem <n> <amount>,endm".  The 1996 page's
+// syringe is here too, from the game's DOSE.bmp and dosage sprites as the
+// 1996 page read them (the liquid is the chemical's number mod 7), and
+// plays its injection; beside it, the chemical's level in the creature now
+// and after the dose.
 
 BEGIN_MESSAGE_MAP(InjectPage, c1kitshell::LayoutPage)
     ON_EN_CHANGE(kControlFilter, &InjectPage::OnFilterChanged)
-    ON_CBN_SELCHANGE(kControlChemical, &InjectPage::OnChemicalChanged)
+    ON_LBN_SELCHANGE(kControlChemicalList, &InjectPage::OnChemicalChanged)
     ON_BN_CLICKED(kControlInject, &InjectPage::OnInject)
     ON_BN_CLICKED(kControlRepeat, &InjectPage::OnRepeatChanged)
     ON_BN_CLICKED(kControlStop, &InjectPage::OnStop)
     ON_EN_CHANGE(kControlAmount, &InjectPage::OnAmountChanged)
     ON_WM_HSCROLL()
+    ON_WM_TIMER()
 END_MESSAGE_MAP()
 
 InjectPage::InjectPage(BiochemSheet& sheet)
     : LayoutPage(sheet, kDialogPage, kStringInjectTab), sheet_(sheet) {}
 
 void InjectPage::create_controls() {
-    make(chemical_label_, _T("STATIC"), _T("Chemical:"), SS_LEFT, kControlLabel);
-    make(chemical_, _T("COMBOBOX"), _T(""), CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP, kControlChemical);
-    make(filter_label_, _T("STATIC"), _T("Filter:"), SS_LEFT, kControlLabel);
+    make(filter_label_, _T("STATIC"), _T("Find:"), SS_LEFT, kControlLabel);
     make(filter_, _T("EDIT"), _T(""), ES_AUTOHSCROLL | WS_BORDER | WS_TABSTOP, kControlFilter);
-    make(dose_label_, _T("STATIC"), _T("Amount:"), SS_LEFT, kControlLabel);
+    make(chemicals_, _T("LISTBOX"), _T(""), LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | WS_BORDER | WS_VSCROLL | WS_TABSTOP,
+         kControlChemicalList);
+    const CString palettes = c1kitshell::game_directory_setting("Palette Directory");
+    palette_.load(std::string(CStringA(palettes.IsEmpty() ? CString(_T("Palettes\\")) : palettes)) + "palette.dta");
+    syringe_.load(std::string(CStringA(c1kitshell::game_directory_setting("Main Directory"))), kDosageFiles[0],
+                  palette_);
+    liquid_ = 0;
+    syringe_view_.create(*this, kControlSyringeView, [this](CDC& dc, const CRect& rect) {
+        CRect card = rect;
+        card.DeflateRect(1, 1);
+        CBrush fill(RGB(255, 255, 255));
+        CPen edge(PS_SOLID, 1, RGB(208, 204, 196));
+        CBrush* old_brush = dc.SelectObject(&fill);
+        CPen* old_pen = dc.SelectObject(&edge);
+        dc.RoundRect(card, CPoint(10, 10));
+        dc.SelectObject(old_pen);
+        dc.SelectObject(old_brush);
+        if (syringe_.loaded()) {
+            syringe_.present(dc, rect);
+        } else {
+            CRect note = card;
+            note.DeflateRect(10, 10);
+            dc.SetBkMode(TRANSPARENT);
+            dc.SetTextColor(RGB(110, 104, 96));
+            CFont* old_font = dc.SelectObject(GetFont());
+            dc.DrawText(_T("The syringe needs DOSE.bmp and Dosage.spr in the game's folder."), &note,
+                        DT_CENTER | DT_VCENTER | DT_WORDBREAK | DT_NOPREFIX);
+            dc.SelectObject(old_font);
+        }
+    });
+    make(dose_label_, _T("STATIC"), _T("Dose:"), SS_LEFT, kControlLabel);
     make(dose_, TRACKBAR_CLASS, _T(""), TBS_HORZ | TBS_AUTOTICKS | WS_TABSTOP, kControlDose);
     dose_.SetRange(0, 255);
     dose_.SetTicFreq(32);
     dose_.SetPageSize(16);
     make(amount_, _T("EDIT"), _T("0"), ES_NUMBER | WS_BORDER | WS_TABSTOP, kControlAmount);
     make(inject_, _T("BUTTON"), _T("Inject"), BS_DEFPUSHBUTTON | WS_TABSTOP, kControlInject);
+    make(stop_, _T("BUTTON"), _T("Stop"), BS_PUSHBUTTON | WS_TABSTOP, kControlStop);
+    reading_.create(*this, kControlReading, [this](CDC& dc, const CRect& rect) { draw_reading(dc, rect); });
     make(repeat_, _T("BUTTON"), _T("Repeat"), BS_AUTOCHECKBOX | WS_TABSTOP, kControlRepeat);
     make(every_label_, _T("STATIC"), _T("Every (seconds):"), SS_LEFT, kControlLabel);
     make(every_, _T("EDIT"), _T("5"), ES_NUMBER | WS_BORDER | WS_TABSTOP, kControlEvery);
-    make(count_label_, _T("STATIC"), _T("Times (0 = until stopped):"), SS_LEFT, kControlLabel);
+    make(count_label_, _T("STATIC"), _T("Times (0 = no limit):"), SS_LEFT, kControlLabel);
     make(count_, _T("EDIT"), _T("0"), ES_NUMBER | WS_BORDER | WS_TABSTOP, kControlCount);
-    make(stop_, _T("BUTTON"), _T("Stop"), BS_PUSHBUTTON | WS_TABSTOP, kControlStop);
-    make(status_, _T("STATIC"), _T(""), SS_LEFT, kControlStatus);
-    fill_chemical_combo(chemical_, sheet_.chemical_names(), CString(), -1);
+    make(status_, _T("STATIC"), _T(""), SS_LEFT | SS_ENDELLIPSIS, kControlStatus);
+    fill_chemicals(-1);
+    change_liquid();
     update_repeat_controls();
 }
 
+// The chemicals on the left; the syringe beside them; the dose, Inject and
+// Stop, the reading and the repeat on the right; the status and Close along
+// the bottom.
 void InjectPage::layout(int width, int height) {
     const int m = kMargin;
     const int row = button_height();
+    const int bottom = height - m - row - m;
+    const CSize picture_size = c1kitshell::Syringe::picture_size();
+    const int picture_width = static_cast<int>(picture_size.cx);
+    const int picture_height = static_cast<int>(picture_size.cy);
+    const int list_width = (std::max)(150, (std::min)(220, width / 3));
+    place(filter_label_, m, m + 4, 32, text_height());
+    place(filter_, m + 36, m, list_width - 36, row - 2);
+    place(chemicals_, m, m + row + 4, list_width, (std::max)(60, bottom - (m + row + 4)));
+    const int syringe_left = 2 * m + list_width;
+    const int syringe_width = picture_width + 24;
+    place(syringe_view_, syringe_left, m, syringe_width, (std::max)(60, (std::min)(picture_height + 24, bottom - m)));
+    const int right = syringe_left + syringe_width + m;
+    const int right_width = (std::max)(170, width - right - m);
     int y = m;
-    place(chemical_label_, m, y + 4, 60, text_height());
-    place(chemical_, m + 70, y, (std::min)(320, width - 2 * m - 70), 300);
-    y += row + 4;
-    place(filter_label_, m, y + 4, 60, text_height());
-    place(filter_, m + 70, y, 160, row - 2);
-    y += row + 12;
-    place(dose_label_, m, y + 4, 60, text_height());
-    place(dose_, m + 70, y, (std::min)(320, width - 2 * m - 70 - 60), 30);
-    place(amount_, m + 70 + (std::min)(320, width - 2 * m - 70 - 60) + m, y + 4, 44, row - 4);
-    y += 36;
-    place(inject_, m + 70, y, 90, row);
-    y += row + 16;
-    place(repeat_, m, y, 120, text_height() + 2);
-    y += text_height() + 10;
-    place(every_label_, m + 18, y + 4, 140, text_height());
-    place(every_, m + 170, y, 44, row - 4);
-    y += row + 2;
-    place(count_label_, m + 18, y + 4, 150, text_height());
-    place(count_, m + 170, y, 44, row - 4);
-    y += row + 6;
-    place(stop_, m + 18, y, 90, row);
-    place(status_, m, height - m - row + 5, width - 3 * m - 84, text_height());
+    place(dose_label_, right, y + 4, 40, text_height());
+    place(amount_, right + right_width - 48, y + 2, 48, row - 4);
+    y += row;
+    place(dose_, right, y, right_width, 28);
+    y += 32;
+    place(inject_, right, y, 90, row);
+    place(stop_, right + 98, y, 70, row);
+    y += row + m;
+    const int reading_height = 2 * text_height() + 52;
+    place(reading_, right, y, right_width, reading_height);
+    y += reading_height + m + 4;
+    place(repeat_, right, y, right_width, text_height() + 2);
+    y += text_height() + 8;
+    place(every_label_, right + 8, y + 4, right_width - 8 - 46, text_height());
+    place(every_, right + right_width - 42, y, 42, row - 4);
+    y += row;
+    place(count_label_, right + 8, y + 4, right_width - 8 - 46, text_height());
+    place(count_, right + right_width - 42, y, 42, row - 4);
+    place(status_, m, height - m - row + 4, (std::max)(1, width - 3 * m - 84), text_height());
     place_close(width, height);
+}
+
+BOOL InjectPage::OnSetActive() {
+    const BOOL shown = LayoutPage::OnSetActive();
+    read_level();
+    return shown;
+}
+
+int InjectPage::selected_chemical() const {
+    const int row = chemicals_.GetCurSel();
+    return row < 0 ? -1 : static_cast<int>(chemicals_.GetItemData(row));
+}
+
+void InjectPage::fill_chemicals(int keep_chemical) {
+    CString filter;
+    filter_.GetWindowText(filter);
+    filter.MakeLower();
+    chemicals_.SetRedraw(FALSE);
+    chemicals_.ResetContent();
+    int keep_row = -1;
+    for (int chemical = 1; chemical < 256; ++chemical) {
+        const CString entry = chemical_entry(sheet_.chemical_names(), chemical);
+        CString lower = entry;
+        lower.MakeLower();
+        if (!filter.IsEmpty() && lower.Find(filter) < 0) continue;
+        const int row = chemicals_.AddString(entry);
+        chemicals_.SetItemData(row, static_cast<DWORD_PTR>(chemical));
+        if (chemical == keep_chemical) keep_row = row;
+    }
+    chemicals_.SetCurSel(keep_row >= 0 ? keep_row : (chemicals_.GetCount() > 0 ? 0 : -1));
+    chemicals_.SetRedraw(TRUE);
+    chemicals_.Invalidate();
 }
 
 void InjectPage::names_changed() {
     if (!created_) return;
-    CString filter;
-    filter_.GetWindowText(filter);
-    fill_chemical_combo(chemical_, sheet_.chemical_names(), filter, combo_chemical(chemical_));
+    fill_chemicals(selected_chemical());
+    reading_.redraw();
 }
 
 void InjectPage::OnFilterChanged() {
-    CString filter;
-    filter_.GetWindowText(filter);
-    fill_chemical_combo(chemical_, sheet_.chemical_names(), filter, combo_chemical(chemical_));
+    fill_chemicals(selected_chemical());
     OnChemicalChanged();
 }
 
 // A repeat injects the chemical it started with; changing the chemical stops
 // it (OnChemicalSelectionChanged @ 0x00407cd0).
 void InjectPage::OnChemicalChanged() {
-    if (repeating_ && combo_chemical(chemical_) != repeat_chemical_) {
+    if (repeating_ && selected_chemical() != repeat_chemical_) {
         stop_repeat(_T("Repeat stopped (chemical changed)"));
     }
+    change_liquid();
+    level_now_ = -1;
+    sample_level();
+    reading_.redraw();
+}
+
+// The liquid is the chemical's (number mod 7, the 1996 kit's path table at
+// 0x00421020), as on the classic page.
+void InjectPage::change_liquid() {
+    const int chemical = selected_chemical();
+    const int liquid = chemical < 0 ? 0 : chemical % 7;
+    if (liquid != liquid_ && syringe_.set_liquid(kDosageFiles[liquid])) {
+        liquid_ = liquid;
+        syringe_view_.redraw();
+    }
+}
+
+void InjectPage::set_dose(int dose) {
+    if (!syringe_.injecting()) {
+        syringe_.set_dose(dose);
+        syringe_view_.redraw();
+    }
+    reading_.redraw();
 }
 
 void InjectPage::OnHScroll(UINT code, UINT position, CScrollBar* bar) {
     LayoutPage::OnHScroll(code, position, bar);
+    if (syringe_.injecting()) return;
     syncing_ = true;
     CString value;
     value.Format(_T("%d"), dose_.GetPos());
     amount_.SetWindowText(value);
     syncing_ = false;
+    set_dose(dose_.GetPos());
 }
 
 void InjectPage::OnAmountChanged() {
     if (syncing_) return;
-    dose_.SetPos((std::min)(255, (std::max)(0, edit_number(amount_, 0))));
+    const int dose = (std::min)(255, (std::max)(0, edit_number(amount_, 0)));
+    if (!syringe_.injecting()) dose_.SetPos(dose);
+    set_dose(dose);
+}
+
+void InjectPage::sample_level() {
+    if (created_ && IsWindowVisible()) read_level();
+}
+
+void InjectPage::read_level() {
+    if (!created_) return;
+    const int chemical = selected_chemical();
+    int level = -1;
+    std::string reply;
+    std::vector<int> values;
+    if (chemical > 0 && sheet_.subject_present() &&
+        sheet_.query(c1kit::chemical_levels_query({chemical}), reply) &&
+        c1kit::parse_values(reply, 1, values)) {
+        level = values[0];
+    }
+    if (level != level_now_) {
+        level_now_ = level;
+        reading_.redraw();
+    }
+}
+
+void InjectPage::draw_reading(CDC& dc, const CRect& rect) {
+    const int chemical = selected_chemical();
+    const CString name = chemical < 0 ? CString(_T("No chemical chosen"))
+                                       : chemical_entry(sheet_.chemical_names(), chemical);
+    const int dose = (std::min)(255, (std::max)(0, edit_number(amount_, 0)));
+    c1kitshell::draw_dose_reading(dc, rect, GetFont(), name, level_now_, dose, syringe_.liquid_colour());
 }
 
 bool InjectPage::inject_once() {
-    const int chemical = repeating_ ? repeat_chemical_ : combo_chemical(chemical_);
+    const int chemical = repeating_ ? repeat_chemical_ : selected_chemical();
     const int amount = (std::min)(255, (std::max)(0, edit_number(amount_, 0)));
     std::string reply;
     if (chemical < 0 || !sheet_.query(c1kit::injection_script(chemical, amount), reply)) {
@@ -426,7 +558,29 @@ bool InjectPage::inject_once() {
     done.Format(_T("Injected %d of %s"), amount,
                 text(c1kitshell::chemical_display_name(sheet_.chemical_names(), chemical)).GetString());
     status_.SetWindowText(done);
+    // The syringe squeezes out a drop and drains (OnDosagePreviewTimer
+    // @ 0x00408970), then fills to the dose again.
+    if (syringe_.loaded() && !syringe_.injecting()) {
+        syringe_.start_injection();
+        SetTimer(kTimerSyringe, c1kitshell::Syringe::kTickMs, nullptr);
+    }
+    sample_level();
     return true;
+}
+
+// The syringe's animation; the slider follows the barrel as it drains.
+void InjectPage::OnTimer(UINT_PTR timer_id) {
+    if (timer_id != kTimerSyringe) {
+        LayoutPage::OnTimer(timer_id);
+        return;
+    }
+    const bool more = syringe_.tick();
+    dose_.SetPos(more ? syringe_.shown_dose() : syringe_.dose());
+    syringe_view_.redraw();
+    if (!more) {
+        KillTimer(kTimerSyringe);
+        sample_level();
+    }
 }
 
 // Inject: once, or start the repeat (StartRepeatInjection @ 0x00408610),
@@ -437,7 +591,7 @@ void InjectPage::OnInject() {
         return;
     }
     if (repeating_) return;
-    repeat_chemical_ = combo_chemical(chemical_);
+    repeat_chemical_ = selected_chemical();
     repeat_total_ = (std::max)(0, edit_number(count_, 0));
     repeat_done_ = 0;
     repeating_ = true;
@@ -493,6 +647,8 @@ void InjectPage::update_repeat_controls() {
     const bool on = repeat_.GetCheck() == BST_CHECKED;
     every_.EnableWindow(on && !repeating_);
     count_.EnableWindow(on && !repeating_);
+    every_label_.EnableWindow(on);
+    count_label_.EnableWindow(on);
     stop_.EnableWindow(repeating_);
     inject_.SetWindowText(on ? _T("Start") : _T("Inject"));
 }
