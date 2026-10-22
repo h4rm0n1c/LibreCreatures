@@ -3,6 +3,7 @@
 #include "c1kitshell/kit_syringe.hpp"
 
 #include <algorithm>
+#include <array>
 
 namespace c1kitshell {
 namespace {
@@ -102,6 +103,33 @@ void Syringe::compose() {
         }
     }
     canvas_.draw_frame(drops_, drop_frame_, kDropX, kDropY, *palette_);
+}
+
+void Syringe::present(CDC& dc, const CRect& area) const {
+    if (!loaded_) return;
+    canvas_.present(dc, area.left + (area.Width() - kPictureWidth) / 2,
+                    area.top + (area.Height() - kPictureHeight) / 2, kPictureWidth, kPictureHeight);
+}
+
+CSize Syringe::picture_size() {
+    return CSize(kPictureWidth, kPictureHeight);
+}
+
+COLORREF Syringe::liquid_colour() const {
+    const KitSprite::Frame* empty = barrel_.frame(0);
+    const KitSprite::Frame* full = barrel_.frame(1);
+    if (!loaded_ || palette_ == nullptr || empty == nullptr || full == nullptr ||
+        empty->pixels.size() != full->pixels.size()) {
+        return RGB(128, 128, 128);
+    }
+    std::array<int, 256> counts{};
+    for (std::size_t i = 0; i < full->pixels.size(); ++i) {
+        if (full->pixels[i] != 0 && full->pixels[i] != empty->pixels[i]) ++counts[full->pixels[i]];
+    }
+    const auto most = std::max_element(counts.begin(), counts.end());
+    if (*most == 0) return RGB(128, 128, 128);
+    const std::uint32_t rgb = palette_->colour(static_cast<std::uint8_t>(most - counts.begin()));
+    return RGB((rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff);
 }
 
 void Syringe::draw(CDC& dc, const CRect& area) {
