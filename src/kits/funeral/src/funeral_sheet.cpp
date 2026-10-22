@@ -80,7 +80,8 @@ FuneralSheet::FuneralSheet(CFont& default_font)
     : KitSheet(kStringTitle, 0),
       default_font_(default_font),
       graveyard_page_(*this),
-      deaths_page_(*this) {
+      deaths_page_(*this),
+      headstones_page_(*this) {
     m_psh.dwFlags |= PSH_USEHICON;
     m_psh.hIcon = AfxGetApp()->LoadIcon(kIconKit);
     classic_ = c1kitshell::ClassicArt::find({}, {}, {kIconKit});
@@ -92,8 +93,10 @@ FuneralSheet::FuneralSheet(CFont& default_font)
         cover_ = std::make_unique<c1kitshell::CoverPage>(kDialogCover, kCoverPicture, kIconKit);
         AddPage(cover_.get());
     }
-    AddPage(&graveyard_page_);
-    if (!classic_) {
+    if (classic_) {
+        AddPage(&graveyard_page_);
+    } else {
+        AddPage(&headstones_page_);
         // Not the 1996 tab per death: one list of the dead (DeathsPage).
         AddPage(&deaths_page_);
     }
@@ -311,6 +314,7 @@ void FuneralSheet::creature_died(const std::string& moniker) {
         if (!classic_) {
             // The modern look lists the dead on one page.
             deaths_page_.refresh(moniker);
+            headstones_page_.refresh();  // its note counts the dead
             SetActivePage(&deaths_page_);
             layout_pages();
             if (IsIconic()) {
@@ -398,9 +402,12 @@ void FuneralSheet::make_headstone(const std::string& moniker) {
     }
     if (!classic_) {
         deaths_page_.refresh();  // its Headstone column
+        headstones_page_.show_grave(moniker);
+        SetActivePage(&headstones_page_);
+    } else {
+        graveyard_page_.show_grave(moniker);
+        SetActivePage(&graveyard_page_);
     }
-    graveyard_page_.show_grave(moniker);
-    SetActivePage(&graveyard_page_);
     layout_pages();
 }
 

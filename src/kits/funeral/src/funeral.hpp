@@ -166,6 +166,32 @@ private:
     std::unique_ptr<MemorialPage> memorial_;
     std::unique_ptr<UnmarkedPage> unmarked_;
     CRect detail_rect_;
+    c1kitshell::PaintedView empty_;  // in the memorial's place while no one has died
+};
+
+// The modern look's Graveyard page.  The 1996 page sat at its own size in
+// the corner of a window the modern look lets grow; here it stands in the
+// middle, arrows and all, with a note under it saying what the graveyard
+// holds and how a stone gets there.
+class HeadstonesPage : public c1kitshell::LayoutPage {
+public:
+    explicit HeadstonesPage(FuneralSheet& sheet);
+    void show_grave(const std::string& moniker);
+    // The graves changed: the stone and the note again.
+    void refresh();
+
+protected:
+    void create_controls() override;
+    void layout(int width, int height) override;
+    BOOL OnSetActive() override;
+
+private:
+    void draw_note(CDC& dc, const CRect& rect);
+
+    FuneralSheet& sheet_;
+    std::unique_ptr<GraveyardPage> stone_;
+    c1kitshell::PaintedView note_;
+    std::string pending_;  // a grave to show once the stone page exists
 };
 
 // ---------------------------------------------------------------------------
@@ -221,8 +247,9 @@ private:
     CFont& default_font_;
     std::unique_ptr<c1kitshell::ClassicArt> classic_;
     std::unique_ptr<c1kitshell::CoverPage> cover_;  // classic only
-    GraveyardPage graveyard_page_;
+    GraveyardPage graveyard_page_;  // classic look only
     DeathsPage deaths_page_;  // modern look only
+    HeadstonesPage headstones_page_;  // modern look only
     std::vector<std::unique_ptr<MemorialPage>> memorial_pages_;
     std::vector<std::unique_ptr<UnmarkedPage>> unmarked_pages_;
     c1kit::KitSettings* registry_ = nullptr;

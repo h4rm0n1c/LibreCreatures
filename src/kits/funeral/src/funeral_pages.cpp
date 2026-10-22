@@ -79,6 +79,56 @@ constexpr COLORREF kStoneShadow = RGB(16, 16, 24);
 // The epitaph box on GRAVE.bmp's lit panel.
 constexpr COLORREF kPanelColour = RGB(255, 226, 120);
 
+// A pale card with a heading and a few lines under it, centred: what a
+// modern page shows where it has nothing else to show yet.
+void draw_note(CDC& dc, const CRect& rect, CFont* page_font, const CString& heading,
+               const CString& body) {
+    CRect card = rect;
+    card.DeflateRect(1, 1);
+    CBrush fill(RGB(252, 251, 248));
+    CPen edge(PS_SOLID, 1, RGB(208, 204, 196));
+    CBrush* old_brush = dc.SelectObject(&fill);
+    CPen* old_pen = dc.SelectObject(&edge);
+    dc.RoundRect(card, CPoint(10, 10));
+    dc.SelectObject(old_pen);
+    dc.SelectObject(old_brush);
+
+    LOGFONT face = {};
+    CFont* base = page_font != nullptr
+                      ? page_font
+                      : CFont::FromHandle(static_cast<HFONT>(GetStockObject(DEFAULT_GUI_FONT)));
+    base->GetLogFont(&face);
+    CFont body_font;
+    body_font.CreateFontIndirect(&face);
+    face.lfWeight = FW_BOLD;
+    face.lfHeight = face.lfHeight * 5 / 4;
+    CFont heading_font;
+    heading_font.CreateFontIndirect(&face);
+
+    CRect text = card;
+    text.DeflateRect(18, 14);
+    const UINT format = DT_CENTER | DT_WORDBREAK | DT_NOPREFIX;
+    dc.SetBkMode(TRANSPARENT);
+    CFont* old_font = dc.SelectObject(&heading_font);
+    CRect heading_size = text;
+    dc.DrawText(heading, &heading_size, format | DT_CALCRECT);
+    dc.SelectObject(&body_font);
+    CRect body_size = text;
+    dc.DrawText(body, &body_size, format | DT_CALCRECT);
+    constexpr int kGap = 8;
+    const int total = heading_size.Height() + kGap + body_size.Height();
+    const int top = text.top + (std::max)(0, (text.Height() - total) / 2);
+    CRect heading_rect(text.left, top, text.right, top + heading_size.Height());
+    dc.SelectObject(&heading_font);
+    dc.SetTextColor(RGB(70, 66, 60));
+    dc.DrawText(heading, &heading_rect, format);
+    CRect body_rect(text.left, heading_rect.bottom + kGap, text.right, text.bottom);
+    dc.SelectObject(&body_font);
+    dc.SetTextColor(RGB(110, 104, 96));
+    dc.DrawText(body, &body_rect, format);
+    dc.SelectObject(old_font);
+}
+
 } // namespace
 
 // ===========================================================================
@@ -490,6 +540,13 @@ void DeathsPage::create_controls() {
     list_.InsertColumn(0, _T("Name"), LVCFMT_LEFT, 110);
     list_.InsertColumn(1, _T("Died"), LVCFMT_LEFT, 110);
     list_.InsertColumn(2, _T("Stone"), LVCFMT_LEFT, 60);
+    empty_.create(*this, kControlDeathsEmpty, [this](CDC& dc, const CRect& rect) {
+        draw_note(dc, rect, GetFont(), _T("No deaths yet"),
+                  _T("When a creature dies, it is listed here, newest first. Select it ")
+                  _T("to see its memorial: its photographs, its life span and an ")
+                  _T("epitaph you can write. Make Headstone there raises its stone ")
+                  _T("in the Graveyard."));
+    });
     refresh();
 }
 
@@ -511,8 +568,14 @@ void DeathsPage::layout(int width, int height) {
     list_.SetColumnWidth(0, inner * 35 / 100);
     list_.SetColumnWidth(1, inner * 42 / 100);
     list_.SetColumnWidth(2, inner - inner * 35 / 100 - inner * 42 / 100);
-    detail_rect_ = CRect(CPoint(2 * kMargin + list_width, kMargin),
+    // The memorial in the middle of the space beside the list.
+    const int note_left = 2 * kMargin + list_width;
+    const int space = width - note_left - kMargin;
+    detail_rect_ = CRect(CPoint(note_left + (std::max)(0, (space - detail_width) / 2), kMargin),
                          CSize(detail_width, (std::max)(detail.Height(), 1)));
+    // With no one dead, the note fills the memorial's place.
+    place(empty_, note_left, kMargin, (std::max)(1, width - note_left - kMargin),
+          (std::max)(1, bottom - kMargin));
     for (CWnd* child : {static_cast<CWnd*>(memorial_.get()), static_cast<CWnd*>(unmarked_.get())}) {
         if (child != nullptr && child->GetSafeHwnd() != nullptr) {
             child->SetWindowPos(nullptr, detail_rect_.left, detail_rect_.top, 0, 0,
@@ -549,6 +612,7 @@ void DeathsPage::refresh(const std::string& moniker) {
         }
     }
     list_.SetRedraw(TRUE);
+    empty_.ShowWindow(rows_.empty() ? SW_SHOW : SW_HIDE);
     if (select < 0 && !rows_.empty()) {
         select = 0;
     }
@@ -624,6 +688,7 @@ void DeathsPage::show_detail(const std::string& moniker) {
                        WS_CHILD);
     child->ModifyStyleEx(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE | WS_EX_APPWINDOW, 0);
     child->SetParent(this);
+    c1kitshell::theme_as_tab_page(*child);
     if (CWnd* close = child->GetDlgItem(kControlClose)) {
         close->ShowWindow(SW_HIDE);
     }
@@ -632,6 +697,123 @@ void DeathsPage::show_detail(const std::string& moniker) {
     CRect client;
     GetClientRect(&client);
     layout(client.Width(), client.Height());
+}
+
+// ===========================================================================
+// Graveyard (the modern look; LibreCreatures)
+// ===========================================================================
+
+HeadstonesPage::HeadstonesPage(FuneralSheet& sheet)
+    : LayoutPage(sheet, kDialogBlankPage, kStringGraveyardTab), sheet_(sheet) {}
+
+// The 1996 page (dialog 182) made as this page's child, as the Deaths page
+// makes the memorial; its own Close hides, since this page has one.
+void HeadstonesPage::create_controls() {
+    stone_ = std::make_unique<GraveyardPage>(sheet_);
+    if (stone_->Create(kDialogGraveyard, this)) {
+        stone_->ModifyStyle(WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | DS_MODALFRAME,
+                            WS_CHILD);
+        stone_->ModifyStyleEx(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE | WS_EX_APPWINDOW, 0);
+        stone_->SetParent(this);
+        c1kitshell::theme_as_tab_page(*stone_);
+        if (CWnd* close = stone_->GetDlgItem(kControlClose)) {
+            close->ShowWindow(SW_HIDE);
+        }
+        stone_->ShowWindow(SW_SHOW);
+        if (!pending_.empty()) {
+            stone_->show_grave(pending_);
+        }
+    } else {
+        stone_.reset();
+    }
+    note_.create(*this, kControlHeadstoneNote, [this](CDC& dc, const CRect& rect) {
+        draw_note(dc, rect);
+    });
+}
+
+// The stone and the note side by side in the middle (stacked when the
+// window is too narrow for both), Close at the bottom right.
+void HeadstonesPage::layout(int width, int height) {
+    CRect stone(0, 0, 0, 0);
+    if (stone_ && stone_->GetSafeHwnd() != nullptr) {
+        stone_->GetWindowRect(&stone);
+    }
+    constexpr int kNoteMinWidth = 190;
+    constexpr int kNoteMaxWidth = 340;
+    const int note_height = 6 * text_height() + 28;
+    const int area = height - kMargin - button_height() - kMargin;
+    const bool side_by_side = width >= stone.Width() + kNoteMinWidth + 4 * kMargin;
+    int stone_x = 0;
+    int stone_y = 0;
+    CRect note;
+    if (side_by_side) {
+        const int note_width = (std::min)(kNoteMaxWidth, width - stone.Width() - 4 * kMargin);
+        const int pair = stone.Width() + 2 * kMargin + note_width;
+        stone_x = (width - pair) / 2;
+        stone_y = kMargin + (std::max)(0, (area - kMargin - stone.Height()) / 2);
+        const int note_top = stone_y + (std::max)(0, (stone.Height() - note_height) / 2);
+        note = CRect(CPoint(stone_x + stone.Width() + 2 * kMargin, note_top),
+                     CSize(note_width, note_height));
+    } else {
+        const int note_width = (std::max)(1, width - 2 * kMargin);
+        stone_x = (width - stone.Width()) / 2;
+        stone_y = kMargin;
+        note = CRect(CPoint(kMargin, stone_y + stone.Height() + kMargin),
+                     CSize(note_width, note_height));
+    }
+    if (stone_ && stone_->GetSafeHwnd() != nullptr) {
+        stone_->SetWindowPos(nullptr, stone_x, stone_y, 0, 0,
+                             SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+    }
+    place(note_, note.left, note.top, note.Width(), note.Height());
+    place_close(width, height);
+}
+
+BOOL HeadstonesPage::OnSetActive() {
+    refresh();
+    return LayoutPage::OnSetActive();
+}
+
+void HeadstonesPage::show_grave(const std::string& moniker) {
+    pending_ = moniker;
+    if (stone_) {
+        stone_->show_grave(moniker);
+    }
+    note_.redraw();
+}
+
+void HeadstonesPage::refresh() {
+    if (stone_) {
+        stone_->show();
+    }
+    note_.redraw();
+}
+
+// What the graveyard holds, and how a stone gets there.
+void HeadstonesPage::draw_note(CDC& dc, const CRect& rect) {
+    int made = 0;
+    for (const c1kit::Grave& grave : sheet_.graves()) {
+        if (grave.has_headstone()) {
+            ++made;
+        }
+    }
+    CString heading;
+    CString body;
+    if (made == 0) {
+        heading = _T("No headstones yet");
+        body = sheet_.graves().empty()
+                   ? _T("No creature has died yet. When one does, it is listed on the Deaths ")
+                     _T("tab, where you can write its epitaph and press Make Headstone to ")
+                     _T("raise its stone here.")
+                   : _T("Select a creature on the Deaths tab and press Make Headstone to ")
+                     _T("raise its stone here.");
+    } else {
+        heading.Format(made == 1 ? _T("%d headstone") : _T("%d headstones"), made);
+        body = made == 1 ? _T("Each stone you make on the Deaths tab stands here.")
+                         : _T("Use the arrows under the stone to walk the graveyard. Each stone ")
+                           _T("you make on the Deaths tab stands here.");
+    }
+    funeral::draw_note(dc, rect, GetFont(), heading, body);
 }
 
 } // namespace funeral

@@ -268,7 +268,9 @@ are fixed.
   creature?".  (17 fixes)
 - **Funeral Kit:** each grave is dated when the creature died, Make
   Headstone works, the life span keeps the birth year, and its files survive
-  the kit being closed by the game.  (6 fixes)
+  the kit being closed by the game.  (6 fixes)  In the modern look the
+  Graveyard tab puts the headstone in the middle with a note on how stones
+  are made, and the Deaths tab says what it shows until a creature dies.
 - **Score Kit:** larger counters, more icons, labels that fit, settings
   kept.  (12 fixes)
 - **Ecology Kit (new, Tools slot 10):** a map of the world, with rooms

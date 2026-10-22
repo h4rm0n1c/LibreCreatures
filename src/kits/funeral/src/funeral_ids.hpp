@@ -20,9 +20,12 @@ constexpr unsigned kStringNoRecord = 104;   // the unmarked grave's tab
 constexpr unsigned kStringToolName = 105;   // "Creature Graveyard"
 constexpr unsigned kStringToolHelp = 107;   // "Pay your respects"
 constexpr unsigned kStringDeathsTab = 200;  // LibreCreatures: "Deaths"
+constexpr unsigned kStringGraveyardTab = 201;  // LibreCreatures: "Graveyard"
 
 // The Deaths page (modern look)
 constexpr unsigned kControlDeathsList = 3000;
+constexpr unsigned kControlDeathsEmpty = 3001;
+constexpr unsigned kControlHeadstoneNote = 3002;
 
 // Memorial page (dialog 137)
 constexpr unsigned kControlPicture = 1071;
