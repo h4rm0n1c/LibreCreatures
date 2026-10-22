@@ -1,10 +1,13 @@
 # 64-bit builds
 
-LibreCreatures is a 32-bit program, as Creatures 1 is. The 32-bit build is
-the default and the reference: the verification tests compare it with the
-original. A 64-bit build is an option (`--arch x64` below); it builds and
-runs, but it is not shipped. This file lists what a 64-bit
-build needs, and what is done.
+Creatures 1 is a 32-bit program. LibreCreatures builds as a 32-bit program
+by default, and that build is the reference: the verification tests compare
+it with the original. LibreCreatures also builds as a 64-bit program, the
+game and the kits. Configure CMake with `-A x64 -DLC_ALLOW_X64=ON`, or run
+`scripts/build-release.ps1 -Arch x64`. The release workflow builds x64 zips
+of both branches beside the x86 zips on every version tag
+([building.md](building.md)). This file lists what a 64-bit build needs,
+and what is done.
 
 ## The rule
 
