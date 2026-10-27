@@ -144,6 +144,10 @@ added), or `Fix (bug N)` in the kits (that kit's `ORIGINAL.md`).
   there, and plays its landing sound when it lands.
 - An object let go of in the upper half of a room lands on that room's
   floor, not the floor of the room above.  (row 27)
+- With LibreFixes row 90 on (it is off by default), a creature the hand
+  lets go of in the upper half of a room lands on that room's floor, not
+  the floor of the room above.  Only a privileged hand picks up
+  creatures.  (row 90)
 - An object in a gap between rooms no longer falls out of the world (the
   Black Hole).  (row 22)
 - A vehicle no longer drags objects that a script has moved away from it
@@ -170,6 +174,9 @@ added), or `Fix (bug N)` in the kits (that kit's `ORIGINAL.md`).
 - The hand is drawn over everything, including objects made after it.
 - The hand lets go of an object that is killed or deleted while carried,
   instead of freezing.  (row 31)
+- A held object hangs in the hand's grip, centred between the fingers
+  and the thumb, not off to one side; it drops where it is drawn.  From
+  LibreC2e, by Jeff Dehut.  (row 91)
 - A shift + right-click pickup applies to that one pickup only.
 
 ### Selection, camera and event bar
