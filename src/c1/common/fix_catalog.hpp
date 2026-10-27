@@ -9,7 +9,7 @@
 //
 // Not here: the ~25 rows docs/original-bugs.md's "Native mode" section
 // lists as guards, heap-dependent or a modal box (3, 10, 19, 20, 21, 25,
-// 34, 46, 47, 48, 58, 60, 63, 65, 66, 77-82, 84-87). Those have no
+// 34, 46, 47, 48, 58, 60, 63, 65, 66, 77-82, 84-87, 89). Those have no
 // LC_FIX(<row>) call at all -- the fix is simply what the code does -- so
 // there is nothing to list, show or toggle for them.
 

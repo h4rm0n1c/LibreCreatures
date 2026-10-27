@@ -95,6 +95,13 @@ added), or `Fix (bug N)` in the kits (that kit's `ORIGINAL.md`).
   (row 40)
 - The status report names the room the creature is in where rooms are
   stacked.  (row 43)
+- With LibreFixes row 88 on (it is off by default), a norn whose strongest
+  drive is Anger, past its upper threshold, shows the head's angry face,
+  which CE never shows.  The world saves the face as sad, so CE loads it
+  unchanged.  (row 88)
+- A birth or a new life stage no longer hangs the game once about 223
+  creatures fill every drawing plane: after 1000 draws the creature keeps
+  the last plane drawn.  From LibreC2e, by Jeff Dehut.  (row 89)
 
 ### Creatures: speech and learning
 
