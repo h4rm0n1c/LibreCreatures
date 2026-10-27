@@ -214,7 +214,16 @@ void Skeleton::serialize(SkeletonArchive& archive,
     archive.write_int32(normal_render_plane);
     archive.write_string(fixed_text(current_pose.characters.data(),
                                      current_pose.characters.size()));
-    archive.write_byte(drive_threshold_state);
+    // LibreCreatures deviation (row 88): state 3, the angry face, is saved
+    // as 2 (sad), the nearest state Skeleton::Serialize @0043ade0 knows.
+    // The original reloads the saved state and recomputes it only in world
+    // phase 7, once every 16 ticks, so until then a 3 would draw head frame
+    // 13 or, with the eyes closed, 26, past the head's frames.  This world
+    // reloads as sad and is angry again at the next phase 7.  (As LibreC2e,
+    // Jeff Dehut's openc2e port of these fixes, saves it.)
+    archive.write_byte(LC_FIX(88) && drive_threshold_state == 3
+                           ? std::uint8_t{2}
+                           : drive_threshold_state);
     archive.write_byte(eyes_open ? 1 : 0);
     archive.write_byte(sleep_indicator_active ? 1 : 0);
     for (const PoseString& pose : pose_string_table) {
@@ -827,8 +836,16 @@ void Skeleton::select_normal_render_plane(SkeletonRenderPlaneHost& host) {
     constexpr std::uint32_t kPlaneRange = 0x7d1U;
     constexpr int kPlaneMinimum = 1000;
     constexpr int kConflictWidth = 8;
+    // LibreCreatures deviation (row 89, a guard): Skeleton::LoadGenome
+    // @0043c800 draws again, with no limit, while another creature's plane
+    // is 0-8 above the draw.  The range has 2001 planes, so once about 223
+    // creatures fill it every draw conflicts and the game hangs at the next
+    // birth or life stage.  After kMaxDraws the last draw is kept, sharing
+    // planes.  Below that, every draw and the plane chosen are native's.
+    // From LibreC2e (Jeff Dehut), whose Creature::choose_plane has the limit.
+    constexpr int kMaxDraws = 1000;
 
-    for (;;) {
+    for (int draw = 1;; ++draw) {
         const int candidate = static_cast<int>(
             host.next_random_value() % kPlaneRange) + kPlaneMinimum;
         bool conflicts = false;
@@ -844,7 +861,7 @@ void Skeleton::select_normal_render_plane(SkeletonRenderPlaneHost& host) {
                 break;
             }
         }
-        if (!conflicts) {
+        if (!conflicts || draw >= kMaxDraws) {
             normal_render_plane = candidate;
             return;
         }
