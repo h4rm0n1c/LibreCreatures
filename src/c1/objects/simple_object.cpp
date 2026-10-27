@@ -192,6 +192,23 @@ void SimpleObject::update_unbounded_position_and_redraw(
         world_x -= kWorldWidth;
     }
     const int world_y = host.pointer_mouse_world_y();
+    // LibreCreatures deviation (row 91): UpdateUnboundedPositionAndRedraw
+    // @00427fd0 puts a held object's top-left corner at the mouse and the
+    // hand 16 pixels above it, so the object hung from the hand's left edge,
+    // off to one side of the grip.  It is centred under the gap between the
+    // fingers and the thumb of the hand's grabbing frame (syst.spr frame 6,
+    // x 18-27, so 22 from the hand's left); its top stays at the mouse, just
+    // under the palm, as native.  This moves the object itself, so it drops
+    // where it is drawn.  From LibreC2e (Jeff Dehut), which grips held
+    // objects the same way.
+    constexpr int kHandGripX = 22;
+    const auto held_x = [&]() {
+        if (!LC_FIX(91) || entity_ == nullptr) {
+            return world_x;
+        }
+        return wrap_world_x_once(
+            world_x + kHandGripX - entity_->current_image_width() / 2);
+    };
 
     if (LC_FIX(29) && host.pointer_input_pending()) {
         // LibreCreatures deviation.  UpdateUnboundedPositionAndRedraw
@@ -202,9 +219,11 @@ void SimpleObject::update_unbounded_position_and_redraw(
         // moving onto a small target found nothing, and only the second
         // click worked.  Move the hand, and what it holds, to the mouse
         // first; the click then acts where it was made.
-        move_to(world_x, world_y);
         if (pointer_tool != nullptr && pointer_tool != this) {
+            move_to(held_x(), world_y);
             pointer_tool->move_to(world_x, world_y - 0x10);
+        } else {
+            move_to(world_x, world_y);
         }
         // Native invokes the input routine through the current receiver.
         host.process_pending_pointer_input(*this);
@@ -235,7 +254,7 @@ void SimpleObject::update_unbounded_position_and_redraw(
     const world::WorldRect old_union = union_object_and_pointer_bounds(
         old_object_bounds, old_pointer_bounds);
 
-    move_to(world_x, world_y);
+    move_to(held_x(), world_y);
     pointer_tool->move_to(world_x, world_y - 0x10);
 
     world::WorldRect new_object_bounds{};

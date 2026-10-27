@@ -2556,6 +2556,29 @@ void Creature::handle_drop_event(
             }
         }
         skeleton_.update_movement_bounds(host.movement_bounds_host());
+        // LibreCreatures deviation (row 90): HandleDropEvent @00409ae0 keeps
+        // the room Object::UpdateMovementBounds finds, the one whose floor is
+        // nearest the creature's bottom-left corner, above or below.  A
+        // creature let go of with its feet in the upper half of a room
+        // jumped up onto the floor of the room above, as an object did
+        // before row 27.  It lands on the first floor at or below its middle
+        // instead, the middle so that one let go of across a floor line
+        // lands on the side most of it is on; the room is its cage from then
+        // on, as the native room would have been.  The vehicle branch above
+        // is native.
+        if (LC_FIX(90)) {
+            world::WorldRect creature_bounds{};
+            skeleton_.get_bounds(&creature_bounds);
+            world::WorldRect floor_room{};
+            if (host.movement_bounds_host().find_floor_room_below(
+                    creature_bounds.min_x +
+                        (creature_bounds.max_x - creature_bounds.min_x) / 2,
+                    creature_bounds.min_y +
+                        (creature_bounds.max_y - creature_bounds.min_y) / 2,
+                    floor_room)) {
+                skeleton_.set_movement_bounds(floor_room);
+            }
+        }
         skeleton_.previous_sprite_bounds = skeleton_.sprite_bounds;
         skeleton_.down_foot_y = skeleton_.movement_bounds().max_y;
         skeleton_.update_anchor_and_bounds(host.sound_host());

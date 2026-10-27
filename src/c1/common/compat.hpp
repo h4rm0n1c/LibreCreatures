@@ -168,6 +168,9 @@
 #ifndef LC_FIX_27
 #define LC_FIX_27 LC_FIX_DEFAULT  // drop in a room's upper half
 #endif
+#ifndef LC_FIX_90
+#define LC_FIX_90 LC_FIX_DEFAULT  // creature dropped in a room's upper half
+#endif
 #ifndef LC_FIX_41
 #define LC_FIX_41 LC_FIX_DEFAULT  // lift arrival at fractional speeds
 #endif
@@ -219,6 +222,9 @@
 #endif
 #ifndef LC_FIX_33
 #define LC_FIX_33 LC_FIX_DEFAULT  // save/speed change keep a pause
+#endif
+#ifndef LC_FIX_91
+#define LC_FIX_91 LC_FIX_DEFAULT  // held object centred in the hand's grip
 #endif
 #ifndef LC_FIX_67
 #define LC_FIX_67 LC_FIX_DEFAULT  // kit toolbar tooltips

@@ -65,7 +65,9 @@ const FixCatalogEntry kFixCatalog[] = {
     {75, "kit window raised (CE 10.4)", "Kit protocol and sound", FixTier::default_on},
     {76, "kit pipe waits for a starting kit", "Kit protocol and sound", FixTier::locked},
     {83, "body sprite file without two stray bytes", "Creatures", FixTier::locked},
-    {88, "angry face when Anger is the strongest drive, past its upper threshold", "Creatures", FixTier::default_off},};
+    {88, "angry face when Anger is the strongest drive, past its upper threshold", "Creatures", FixTier::default_off},
+    {90, "creature dropped in a room's upper half", "World, objects and vehicles", FixTier::default_off},
+    {91, "held object centred in the hand's grip", "The hand and the interface", FixTier::default_on},};
 
 const std::size_t kFixCatalogSize = sizeof(kFixCatalog) / sizeof(kFixCatalog[0]);
 
