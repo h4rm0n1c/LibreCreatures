@@ -44,6 +44,7 @@ does.
 | L10 | The action-phrase word table had no word for action 11. | A norn walking east had nothing to say about it. | table, `kActionPhraseWordIndices` | c9dc60d | table check |
 | L11 | A new skeleton started with drive expression 1. The original starts it at 0. | A newborn's face showed the wrong mood until its first drive update. | `InitializePoseAndMotionState` @0043ac70 | 8360812 | skeleton-gene test |
 | L31 | A pose string loaded from a world kept 14 characters. The original keeps 15. | After every load, each norn forgot the last letter of all 101 of its poses. | `Skeleton::Serialize` @0043ade0 | b3bac6d | world test |
+| L35 | A creature's learned words were loaded into the wrong fields. Each record is saved as the recognized word and then the response word; the load put the first into `response_word` and the second into `recognized_word`, and the save wrote them back the same crossed way. | A norn from a world the original saved answered to the word it was meant to say and said the word it was meant to hear, for every word it was still learning to say. The save put them back as they came, so the world file looked right. | `Creature::Serialize` @00407440 | d96b32b | load equivalence test |
 
 ## Genetics and the brain
 
