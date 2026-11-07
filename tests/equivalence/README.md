@@ -1058,3 +1058,43 @@ heap layout, so a longer run cannot be compared. On `neorender` a speech
 bubble changes the save (shared balloon image, 0c0207e); use a `main` build
 for runs that make bubbles. The tracer used here needs openc2e's `Bubble`
 class registered.
+
+### The load: where each field goes (`run_world.sh --dump`)
+
+A round trip cannot see a field that the load puts in the wrong place when
+the save puts it back the same way: the two saves are still the same, byte
+for byte. The load test looks at memory instead.
+
+- After the original's load, `world_roundtrip_native.exe` writes chosen
+  fields of every creature, by offset, when `C1_WORLD_FIELD_DUMP` is set.
+  Only offsets that other tests here prove by running the original's own
+  code are used:
+  - the creature list (0x4704bc, 0x4704c0);
+  - the classifier (+0x4);
+  - the 80 learned-word records (+0xb64, 0x38 each: recognized word +0,
+    response word +0x19, reinforcement +0x34);
+  - the 16 drives (+0x2c56).
+- `C1_WORLD_FIELD_DUMP` in the env of the `C1_WORLD_ROUNDTRIP` run makes the
+  game write the same lines from LC's own fields after its load.
+- `run_world.sh ... --lc-dump <file>` compares the two line by line, before
+  it compares the saves.
+
+    WINEPREFIX=<throwaway prefix> tests/equivalence/run_world.sh \
+        <CE 10.3 Creatures.exe> <install-dir> <build-dir> <world.sfc> \
+        [<lc-save.sfc>] --lc-dump <lc-dump.txt>
+
+First run (2026-11-07), the world with four stock norns above (193 objects,
+4 creatures), at 0 ticks:
+
+- The saves were the same, byte for byte, as before.
+- The dumps were not. One record (creature 2, word 18: recognized "bab",
+  response "dada" in the original) had its two words the other way round in
+  LC. `Creature::serialize` loaded the first saved string into
+  `response_word` and saved `response_word` first: L35 in
+  [`our-bugs.md`](../../docs/our-bugs.md).
+- After the fix, every dumped field (1,029 lines) and the save are the same.
+
+Only one of the 320 records in this world has two different words. A world
+in which norns are still learning many words checks this field better.
+Fields not yet in the dump are not checked; to add one, add it on both
+sides, at an offset a function-level test proves.

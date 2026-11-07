@@ -307,6 +307,16 @@ the script and not to 0. A completed `wait` did not end the script's turn.
 `pose` deleted the animation buffer. The event bar forgot its two saved
 words between a load and a save.
 
+### The load
+
+A round trip shows that a load and a save give back the same file. It does
+not show that the load put each value in the right field: a swap that the
+save undoes gives the same file. `run_world.sh --lc-dump` compares chosen
+fields in memory after the load with the original's (the equivalence
+README, "The load: where each field goes"). Its first run found L35: a
+creature's learned words were loaded crossed and saved crossed back, so the
+world file was right and the norn was not.
+
 ### World ticks
 
 `run_world.sh --ticks <n>` runs `SFCDoc::UpdateWorld` @004324e0 n times
