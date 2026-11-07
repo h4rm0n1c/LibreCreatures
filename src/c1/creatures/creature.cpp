@@ -4353,11 +4353,15 @@ void Creature::serialize(
     skeleton_.serialize(archive, sound_host);
 
     if (archive.is_loading()) {
+        // Each record is saved as the recognized word (+0), then the response
+        // word (+0x19), then the reinforcement: the order of the record in
+        // memory.  The load equivalence test (run_world.sh --dump) checks it
+        // against the original's memory after its load.
         for (LearnedWordRecord& record : learned_word_records_) {
-            record.response_word[0] = '\0';
-            load_creature_text(archive.read_string(), record.response_word,
-                               kLearnedWordTextCapacity);
+            record.recognized_word[0] = '\0';
             load_creature_text(archive.read_string(), record.recognized_word,
+                               kLearnedWordTextCapacity);
+            load_creature_text(archive.read_string(), record.response_word,
                                kLearnedWordTextCapacity);
             record.reinforcement = archive.read_uint32();
         }
@@ -4457,9 +4461,9 @@ void Creature::serialize(
 
     for (const LearnedWordRecord& record : learned_word_records_) {
         archive.write_string(
-            creature_text(record.response_word, kLearnedWordTextCapacity));
-        archive.write_string(
             creature_text(record.recognized_word, kLearnedWordTextCapacity));
+        archive.write_string(
+            creature_text(record.response_word, kLearnedWordTextCapacity));
         archive.write_uint32(record.reinforcement);
     }
 
