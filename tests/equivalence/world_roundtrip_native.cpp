@@ -57,6 +57,65 @@ bool serialize_world(equivalence::NativeImage& image, void* doc,
     return true;
 }
 
+// The field dump of the load equivalence test (run_world.sh --dump): the
+// same lines, in the same order, as LibreCreatures writes after its load
+// (C1_WORLD_FIELD_DUMP in windows_document_host.cpp).  The offsets are the
+// ones the function-level tests already prove by running the original's own
+// code on them, not names from a struct guess:
+//   creature list 0x4704bc, count 0x4704c0 (fanout_equivalence);
+//   classifier +0x4, learned-word records +0xb64, 0x38 each: recognized
+//   word +0, response word +0x19, reinforcement +0x34; drives +0x2c56
+//   (words_equivalence, heard_equivalence).
+std::string dump_text(const char* text, std::size_t capacity) {
+    std::string out;
+    for (std::size_t i = 0; i < capacity && text[i] != '\0'; ++i) {
+        const auto byte = static_cast<unsigned char>(text[i]);
+        if (byte < 0x21 || byte > 0x7e || byte == '\\') {
+            char escaped[5];
+            std::snprintf(escaped, sizeof escaped, "\\x%02x", byte);
+            out += escaped;
+        } else {
+            out += static_cast<char>(byte);
+        }
+    }
+    return out;
+}
+
+void write_field_dump(equivalence::NativeImage& image, const char* path) {
+    constexpr std::uint32_t kCreatureList = 0x004704bc, kCreatureCount = 0x004704c0;
+    constexpr std::size_t kClassifier = 0x4, kRecords = 0xb64, kRecordSize = 0x38,
+                          kRecordCount = 80, kResponse = 0x19, kReinforcement = 0x34,
+                          kDrives = 0x2c56, kTextCapacity = 25;
+    std::FILE* file = std::fopen(path, "w");
+    if (file == nullptr) {
+        std::fprintf(stderr, "cannot write %s\n", path);
+        return;
+    }
+    const int count = *image.at<int*>(kCreatureCount);
+    auto* const* list = *image.at<std::uint8_t***>(kCreatureList);
+    std::fprintf(file, "creatures %u\n", static_cast<unsigned>(count));
+    for (int c = 0; c < count; ++c) {
+        const std::uint8_t* creature = list[c];
+        std::fprintf(file, "creature %u classifier %08x\n", static_cast<unsigned>(c),
+                     *reinterpret_cast<const std::uint32_t*>(creature + kClassifier));
+        for (std::size_t k = 0; k < kRecordCount; ++k) {
+            const auto* record = reinterpret_cast<const char*>(creature + kRecords + k * kRecordSize);
+            std::fprintf(file, "creature %u word %u recognized %s\n", static_cast<unsigned>(c),
+                         static_cast<unsigned>(k), dump_text(record, kTextCapacity).c_str());
+            std::fprintf(file, "creature %u word %u response %s\n", static_cast<unsigned>(c),
+                         static_cast<unsigned>(k), dump_text(record + kResponse, kTextCapacity).c_str());
+            std::fprintf(file, "creature %u word %u reinforcement %u\n", static_cast<unsigned>(c),
+                         static_cast<unsigned>(k),
+                         *reinterpret_cast<const std::uint32_t*>(record + kReinforcement));
+        }
+        for (std::size_t d = 0; d < 16; ++d) {
+            std::fprintf(file, "creature %u drive %u %u\n", static_cast<unsigned>(c),
+                         static_cast<unsigned>(d), creature[kDrives + d]);
+        }
+    }
+    std::fclose(file);
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -131,6 +190,9 @@ int main(int argc, char** argv) {
     }
     if (!serialize_world(image, doc, root + argv[4], true)) {
         return 1;
+    }
+    if (const char* dump = std::getenv("C1_WORLD_FIELD_DUMP")) {
+        write_field_dump(image, dump);
     }
     using UpdateWorld = void(__attribute__((thiscall))*)(void*);
     for (long tick = 0; tick < ticks; ++tick) {

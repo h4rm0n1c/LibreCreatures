@@ -5,7 +5,15 @@
 # same world with the same ticks is compared with it, byte for byte.
 #
 #   tests/equivalence/run_world.sh <Creatures.exe> <install-dir> <build-dir> <world.sfc>
-#                                  [<lc-save.sfc>] [--ticks <n>]
+#                                  [<lc-save.sfc>] [--ticks <n>] [--dump] [--lc-dump <file>]
+#
+# --dump: the load equivalence test.  Right after its load, the original
+# writes chosen fields of every creature (world_roundtrip_native.exe,
+# C1_WORLD_FIELD_DUMP) to <build-dir>/world-dump-native.txt.  With
+# --lc-dump, the dump LibreCreatures wrote after its load of the same world
+# (C1_WORLD_FIELD_DUMP in run_once's env, beside C1_WORLD_ROUNDTRIP) is
+# compared with it line by line.  A round trip cannot see a field that the
+# load puts in the wrong place and the save puts back; this can.
 #
 # The install's Images, Body Data, Palettes, Genetics and Sounds folders, the
 # Genetics and Images folders beside the world (its creatures' genomes and
@@ -31,14 +39,16 @@
 set -e
 exe=$1; install=$2; out=$3; world=$4
 [ -n "$world" ] || {
-    echo "usage: $0 <Creatures.exe> <install-dir> <build-dir> <world.sfc> [<lc-save.sfc>] [--ticks <n>]"
+    echo "usage: $0 <Creatures.exe> <install-dir> <build-dir> <world.sfc> [<lc-save.sfc>] [--ticks <n>] [--dump] [--lc-dump <file>]"
     exit 2
 }
 shift 4
-lc_save=; ticks=0
+lc_save=; ticks=0; dump=; lc_dump=
 while [ $# -gt 0 ]; do
     case $1 in
         --ticks) shift; ticks=$1 ;;
+        --dump) dump=1 ;;
+        --lc-dump) shift; lc_dump=$1; dump=1 ;;
         *) lc_save=$1 ;;
     esac
     shift
@@ -55,6 +65,11 @@ for d in Genetics Images; do
 done
 cp "$world" "$root/in.sfc"
 for run in 1 2; do
+    if [ -n "$dump" ] && [ $run = 1 ]; then
+        export C1_WORLD_FIELD_DUMP="$(winepath -w "$out/world-dump-native.txt")"
+    else
+        unset C1_WORLD_FIELD_DUMP
+    fi
     wine "$out/world_roundtrip_native.exe" "$(winepath -w "$exe")" "$(winepath -w "$install")" \
         "$(winepath -w "$root")" in.sfc "native$run.sfc" "$ticks" > "$out/world-native$run.txt"
 done
@@ -63,6 +78,18 @@ if ! cmp -s "$root/native1.sfc" "$root/native2.sfc"; then
     echo "the original's round trip is not repeatable"; exit 1
 fi
 echo "original, $ticks ticks: $(wc -c < "$root/native1.sfc") bytes, the same in two runs"
+if [ -n "$dump" ]; then
+    echo "original's field dump after the load: $out/world-dump-native.txt ($(wc -l < "$out/world-dump-native.txt") lines)"
+fi
+if [ -n "$lc_dump" ]; then
+    if diff "$out/world-dump-native.txt" "$lc_dump" > "$out/world-dump.diff"; then
+        echo "LC load: every dumped field is the same"
+    else
+        echo "LC load: $(grep -c '^<' "$out/world-dump.diff") dumped fields differ (first lines below; all in $out/world-dump.diff)"
+        head -20 "$out/world-dump.diff"
+        exit 1
+    fi
+fi
 [ -n "$lc_save" ] || exit 0
 if cmp "$root/native1.sfc" "$lc_save"; then
     echo "LC native: the same save, byte for byte"

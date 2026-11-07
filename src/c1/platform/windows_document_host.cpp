@@ -6451,6 +6451,70 @@ void C1WindowsDocument::ArchiveHost::serialize_object_payload( void* object, std
     }
 }
 
+namespace {
+
+// Not native: the field dump of the load equivalence test
+// (tests/equivalence/run_world.sh --dump).  The same lines, in the same
+// order, as world_roundtrip_native.exe writes from the original's memory
+// after its load, so a field that a load puts in the wrong place shows up
+// even when the save puts it back (a round trip cannot see that).  Text is
+// written byte by byte, with bytes outside 0x21..0x7e and '\' as \xHH.
+std::string dump_text(const char* text, std::size_t capacity) {
+    std::string out;
+    for (std::size_t i = 0; i < capacity && text[i] != '\0'; ++i) {
+        const auto byte = static_cast<unsigned char>(text[i]);
+        if (byte < 0x21 || byte > 0x7e || byte == '\\') {
+            char escaped[5];
+            std::snprintf(escaped, sizeof escaped, "\\x%02x", byte);
+            out += escaped;
+        } else {
+            out += static_cast<char>(byte);
+        }
+    }
+    return out;
+}
+
+void write_field_dump(const char* path,
+                      const creatures1::world::WorldRuntime* runtime) {
+    std::FILE* file = std::fopen(path, "w");
+    if (file == nullptr) {
+        return;
+    }
+    const std::size_t count = runtime == nullptr ? 0 : runtime->creature_count();
+    std::fprintf(file, "creatures %u\n", static_cast<unsigned>(count));
+    for (std::size_t c = 0; c < count; ++c) {
+        auto* creature = dynamic_cast<creatures1::creatures::Creature*>(
+            runtime->creature_at(c));
+        if (creature == nullptr) {
+            std::fprintf(file, "creature %u missing\n", static_cast<unsigned>(c));
+            continue;
+        }
+        std::fprintf(file, "creature %u classifier %08x\n", static_cast<unsigned>(c),
+                     static_cast<unsigned>(creature->skeleton().classifier_base()));
+        for (std::size_t k = 0; k < creatures1::creatures::Creature::kLearnedWordRecordCount; ++k) {
+            const auto& record = creature->learned_word_record(k);
+            std::fprintf(file, "creature %u word %u recognized %s\n", static_cast<unsigned>(c),
+                         static_cast<unsigned>(k),
+                         dump_text(record.recognized_word,
+                                   creatures1::creatures::kLearnedWordTextCapacity).c_str());
+            std::fprintf(file, "creature %u word %u response %s\n", static_cast<unsigned>(c),
+                         static_cast<unsigned>(k),
+                         dump_text(record.response_word,
+                                   creatures1::creatures::kLearnedWordTextCapacity).c_str());
+            std::fprintf(file, "creature %u word %u reinforcement %u\n", static_cast<unsigned>(c),
+                         static_cast<unsigned>(k), static_cast<unsigned>(record.reinforcement));
+        }
+        auto& drives = creature->control_state().goal_direction_drive_levels;
+        for (std::size_t d = 0; d < 16; ++d) {
+            std::fprintf(file, "creature %u drive %u %u\n", static_cast<unsigned>(c),
+                         static_cast<unsigned>(d), static_cast<unsigned>(drives[d]));
+        }
+    }
+    std::fclose(file);
+}
+
+} // namespace
+
 bool C1WindowsDocument::round_trip_world_for_test(const CString& in_path,
                                                   const CString& out_path,
                                                   long ticks,
@@ -6476,6 +6540,9 @@ bool C1WindowsDocument::round_trip_world_for_test(const CString& in_path,
         load.Close();
         in.Close();
         framework_opening_ = false;
+        if (const char* dump = std::getenv("C1_WORLD_FIELD_DUMP")) {
+            write_field_dump(dump, world_runtime_.get());
+        }
         // The test's native side has no sound manager, so its ticks play no
         // ambient sound and take no random number for one; muted, ours do
         // the same.
