@@ -1093,6 +1093,11 @@ public:
         CreatureScriptDispatchHost& scripts);
 
     void initialize_runtime_state(const InitializationHost& host);
+    // Creature::CreateObject @00406f40, the archive factory a world load
+    // uses: after Skeleton's constructor, the attention and learned-word
+    // record defaults and InitializeRuntimeState @00408520 (called at
+    // 00407026), before Serialize reads the saved fields over them.
+    void prepare_for_load(const InitializationHost& host);
     void initialize_from_genome(GenomeInitializationHost& host);
 
     // The narrow half of the above, for a creature whose generated sprite
@@ -1316,6 +1321,12 @@ private:
     // The load equivalence test's dump (load_dump_fields.inc) reads private
     // state through this; windows_document_host.cpp defines it.
     friend class CreatureFieldDump;
+
+    // The record defaults both constructors set (CreateObject 00406fb0..
+    // 00407007): every attention record no target, neuron 0xff, activation
+    // 0, at (-1, -1), visible, not seen; every learned word empty with no
+    // reinforcement.
+    void reset_attention_and_word_records();
 
     std::array<LearnedWordRecord, kLearnedWordRecordCount>
         learned_word_records_{};
