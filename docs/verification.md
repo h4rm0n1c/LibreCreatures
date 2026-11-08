@@ -315,7 +315,9 @@ save undoes gives the same file. `run_world.sh --lc-dump` compares chosen
 fields in memory after the load with the original's (the equivalence
 README, "The load: where each field goes"). Its first run found L35: a
 creature's learned words were loaded crossed and saved crossed back, so the
-world file was right and the norn was not.
+world file was right and the norn was not. Its second run, with the whole
+Creature table, found L36: a loaded creature did not start from the
+constructor's state.
 
 ### World ticks
 
