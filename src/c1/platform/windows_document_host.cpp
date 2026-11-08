@@ -23,6 +23,8 @@
 #include "../creatures/skeleton.hpp"
 #include "../objects/compound_object.hpp"
 #include "../objects/object_handle.hpp"
+#include "../creatures/load_dump.hpp"
+#include "../creatures/creature_field_dump.hpp"
 
 #include <limits>
 #include <optional>
@@ -7433,24 +7435,44 @@ void C1WindowsDocument::ArchiveHost::serialize_object_payload( void* object, std
 namespace {
 
 // Not native: the field dump of the load equivalence test
-// (tests/equivalence/run_world.sh --dump).  The same lines, in the same
-// order, as world_roundtrip_native.exe writes from the original's memory
-// after its load, so a field that a load puts in the wrong place shows up
-// even when the save puts it back (a round trip cannot see that).  Text is
-// written byte by byte, with bytes outside 0x21..0x7e and '\' as \xHH.
-std::string dump_text(const char* text, std::size_t capacity) {
-    std::string out;
-    for (std::size_t i = 0; i < capacity && text[i] != '\0'; ++i) {
-        const auto byte = static_cast<unsigned char>(text[i]);
-        if (byte < 0x21 || byte > 0x7e || byte == '\\') {
-            char escaped[5];
-            std::snprintf(escaped, sizeof escaped, "\\x%02x", byte);
-            out += escaped;
-        } else {
-            out += static_cast<char>(byte);
-        }
-    }
-    return out;
+// (tests/equivalence/run_world.sh --lc-dump).  After the load, every field
+// in creatures/load_dump_fields.inc, read from LibreCreatures' own state,
+// through the formatters the original's side uses (load_dump.hpp), so a
+// field that the load puts in the wrong place shows up even when the save
+// puts it back (a round trip cannot see that).
+namespace dump = creatures1::load_dump;
+
+template <typename T>
+std::string lc_text(dump::U8, T value) {
+    return dump::unsigned_text(static_cast<std::uint32_t>(value) & 0xffu);
+}
+template <typename T>
+std::string lc_text(dump::Bool, T value) {
+    return dump::bool_text(static_cast<bool>(value));
+}
+template <typename T>
+std::string lc_text(dump::U32, T value) {
+    return dump::unsigned_text(static_cast<std::uint32_t>(value));
+}
+template <typename T>
+std::string lc_text(dump::I32, T value) {
+    return dump::signed_text(static_cast<std::int32_t>(value));
+}
+template <typename T>
+std::string lc_text(dump::Ptr, const T* value) {
+    return dump::pointer_text(value != nullptr);
+}
+std::string lc_text(dump::Rect, const creatures1::world::WorldRect& rect) {
+    return dump::rect_text(rect.min_x, rect.min_y, rect.max_x, rect.max_y);
+}
+std::string lc_text(dump::Text kind, const char* text) {
+    return dump::text_text(text, kind.length);
+}
+std::string lc_text(dump::Bytes kind, const void* data) {
+    return dump::bytes_text(data, kind.length);
+}
+std::string lc_text(dump::CursorFrom, std::size_t cursor) {
+    return dump::unsigned_text(static_cast<std::uint32_t>(cursor));
 }
 
 void write_field_dump(const char* path,
@@ -7459,35 +7481,26 @@ void write_field_dump(const char* path,
     if (file == nullptr) {
         return;
     }
+    using dump::U8; using dump::Bool; using dump::U32; using dump::I32; using dump::Ptr;
+    using dump::Rect; using dump::Text; using dump::Bytes; using dump::CursorFrom;
+    using P = creatures1::creatures::CreatureFieldDump;
     const std::size_t count = runtime == nullptr ? 0 : runtime->creature_count();
     std::fprintf(file, "creatures %u\n", static_cast<unsigned>(count));
-    for (std::size_t c = 0; c < count; ++c) {
+    for (std::size_t index = 0; index < count; ++index) {
         auto* creature = dynamic_cast<creatures1::creatures::Creature*>(
-            runtime->creature_at(c));
+            runtime->creature_at(index));
         if (creature == nullptr) {
-            std::fprintf(file, "creature %u missing\n", static_cast<unsigned>(c));
+            std::fprintf(file, "creature %u missing\n", static_cast<unsigned>(index));
             continue;
         }
-        std::fprintf(file, "creature %u classifier %08x\n", static_cast<unsigned>(c),
-                     static_cast<unsigned>(creature->skeleton().classifier_base()));
-        for (std::size_t k = 0; k < creatures1::creatures::Creature::kLearnedWordRecordCount; ++k) {
-            const auto& record = creature->learned_word_record(k);
-            std::fprintf(file, "creature %u word %u recognized %s\n", static_cast<unsigned>(c),
-                         static_cast<unsigned>(k),
-                         dump_text(record.recognized_word,
-                                   creatures1::creatures::kLearnedWordTextCapacity).c_str());
-            std::fprintf(file, "creature %u word %u response %s\n", static_cast<unsigned>(c),
-                         static_cast<unsigned>(k),
-                         dump_text(record.response_word,
-                                   creatures1::creatures::kLearnedWordTextCapacity).c_str());
-            std::fprintf(file, "creature %u word %u reinforcement %u\n", static_cast<unsigned>(c),
-                         static_cast<unsigned>(k), static_cast<unsigned>(record.reinforcement));
+        auto& c = *creature;
+        auto& s = c.skeleton();
+#define LOAD_DUMP_FIELD(name, offset, kind, count_, stride, proven_by, lc)          \
+        for (std::size_t i = 0; i < (count_); ++i) {                                \
+            dump::write_line(file, index, #name, (count_), i, lc_text(kind, lc));   \
         }
-        auto& drives = creature->control_state().goal_direction_drive_levels;
-        for (std::size_t d = 0; d < 16; ++d) {
-            std::fprintf(file, "creature %u drive %u %u\n", static_cast<unsigned>(c),
-                         static_cast<unsigned>(d), static_cast<unsigned>(drives[d]));
-        }
+#include "../creatures/load_dump_fields.inc"
+#undef LOAD_DUMP_FIELD
     }
     std::fclose(file);
 }

@@ -1316,6 +1316,9 @@ private:
     // tests/equivalence sets action-selection state through this; nothing
     // in the game defines it.
     friend class CreatureTestAccess;
+    // The load equivalence test's dump (load_dump_fields.inc) reads private
+    // state through this; windows_document_host.cpp defines it.
+    friend class CreatureFieldDump;
 
     std::array<LearnedWordRecord, kLearnedWordRecordCount>
         learned_word_records_{};

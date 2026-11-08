@@ -8,12 +8,17 @@
 #                                  [<lc-save.sfc>] [--ticks <n>] [--dump] [--lc-dump <file>]
 #
 # --dump: the load equivalence test.  Right after its load, the original
-# writes chosen fields of every creature (world_roundtrip_native.exe,
-# C1_WORLD_FIELD_DUMP) to <build-dir>/world-dump-native.txt.  With
-# --lc-dump, the dump LibreCreatures wrote after its load of the same world
-# (C1_WORLD_FIELD_DUMP in run_once's env, beside C1_WORLD_ROUNDTRIP) is
-# compared with it line by line.  A round trip cannot see a field that the
-# load puts in the wrong place and the save puts back; this can.
+# writes every field in src/c1/creatures/load_dump_fields.inc for every
+# creature (world_roundtrip_native.exe, C1_WORLD_FIELD_DUMP).  Its two runs
+# fill each new Creature with 0x00 and with 0xff first (C1_WORLD_FILL): a
+# line that differs between them is a field the original never sets, and it
+# is listed and left out.  The raw creature bytes of the two runs
+# (C1_WORLD_RAW_DUMP) go to load_coverage.py, which lists what the table does
+# not cover yet.  With --lc-dump, the dump LibreCreatures wrote after its
+# load of the same world (C1_WORLD_FIELD_DUMP in run_once's env, beside
+# C1_WORLD_ROUNDTRIP) is compared with the original's, line by line.  A round
+# trip cannot see a field that the load puts in the wrong place and the save
+# puts back; this can.
 #
 # The install's Images, Body Data, Palettes, Genetics and Sounds folders, the
 # Genetics and Images folders beside the world (its creatures' genomes and
@@ -65,10 +70,11 @@ for d in Genetics Images; do
 done
 cp "$world" "$root/in.sfc"
 for run in 1 2; do
-    if [ -n "$dump" ] && [ $run = 1 ]; then
-        export C1_WORLD_FIELD_DUMP="$(winepath -w "$out/world-dump-native.txt")"
-    else
-        unset C1_WORLD_FIELD_DUMP
+    if [ -n "$dump" ]; then
+        fill=0x00; [ $run = 2 ] && fill=0xff
+        export C1_WORLD_FILL=$fill
+        export C1_WORLD_FIELD_DUMP="$(winepath -w "$out/world-dump-native$run.txt")"
+        export C1_WORLD_RAW_DUMP="$(winepath -w "$out/world-raw-native$run.bin")"
     fi
     wine "$out/world_roundtrip_native.exe" "$(winepath -w "$exe")" "$(winepath -w "$install")" \
         "$(winepath -w "$root")" in.sfc "native$run.sfc" "$ticks" > "$out/world-native$run.txt"
@@ -79,16 +85,16 @@ if ! cmp -s "$root/native1.sfc" "$root/native2.sfc"; then
 fi
 echo "original, $ticks ticks: $(wc -c < "$root/native1.sfc") bytes, the same in two runs"
 if [ -n "$dump" ]; then
-    echo "original's field dump after the load: $out/world-dump-native.txt ($(wc -l < "$out/world-dump-native.txt") lines)"
-fi
-if [ -n "$lc_dump" ]; then
-    if diff "$out/world-dump-native.txt" "$lc_dump" > "$out/world-dump.diff"; then
-        echo "LC load: every dumped field is the same"
-    else
-        echo "LC load: $(grep -c '^<' "$out/world-dump.diff") dumped fields differ (first lines below; all in $out/world-dump.diff)"
-        head -20 "$out/world-dump.diff"
-        exit 1
-    fi
+    status=0
+    python3 -I "$here/load_compare.py" "$out/world-dump-native1.txt" "$out/world-dump-native2.txt" \
+        ${lc_dump:+"$lc_dump"} > "$out/world-dump.txt" || status=$?
+    head -30 "$out/world-dump.txt"
+    echo "(all in $out/world-dump.txt)"
+    python3 -I "$here/load_coverage.py" "$here/../../src/c1/creatures/load_dump_fields.inc" \
+        "$out/world-raw-native1.bin" "$out/world-raw-native2.bin" > "$out/world-coverage.txt"
+    head -4 "$out/world-coverage.txt"
+    echo "(uncovered ranges in $out/world-coverage.txt)"
+    [ $status = 0 ] || exit 1
 fi
 [ -n "$lc_save" ] || exit 0
 if cmp "$root/native1.sfc" "$lc_save"; then
