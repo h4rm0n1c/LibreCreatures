@@ -1065,36 +1065,50 @@ A round trip cannot see a field that the load puts in the wrong place when
 the save puts it back the same way: the two saves are still the same, byte
 for byte. The load test looks at memory instead.
 
-- After the original's load, `world_roundtrip_native.exe` writes chosen
-  fields of every creature, by offset, when `C1_WORLD_FIELD_DUMP` is set.
-  Only offsets that other tests here prove by running the original's own
-  code are used:
-  - the creature list (0x4704bc, 0x4704c0);
-  - the classifier (+0x4);
-  - the 80 learned-word records (+0xb64, 0x38 each: recognized word +0,
-    response word +0x19, reinforcement +0x34);
-  - the 16 drives (+0x2c56).
-- `C1_WORLD_FIELD_DUMP` in the env of the `C1_WORLD_ROUNDTRIP` run makes the
-  game write the same lines from LC's own fields after its load.
-- `run_world.sh ... --lc-dump <file>` compares the two line by line, before
-  it compares the saves.
+- `src/c1/creatures/load_dump_fields.inc` lists Creature fields with their
+  offset in the original, their kind and their LibreCreatures expression.
+  Every offset there is one a function-level test in this folder proves (the
+  row names the test): that test puts LC's value at the offset, runs the
+  original's code and gets LC's result. Never take an offset from a struct
+  name or from the order of Serialize's reads: pairing the n-th read on each
+  side makes the test circular, and it can no longer see a swap.
+- After its load, `world_roundtrip_native.exe` writes every field of every
+  creature (the list at 0x4704bc, count 0x4704c0) when `C1_WORLD_FIELD_DUMP`
+  is set. The game writes the same lines from its own fields when
+  `C1_WORLD_FIELD_DUMP` is in the env of the `C1_WORLD_ROUNDTRIP` run. Both
+  use the formatters in `src/c1/creatures/load_dump.hpp`.
+- The original's two runs fill each new Creature (0x2cdc bytes, from the
+  import slot 0x450aec in `Creature::CreateObject` @00406f40) with 0x00 and
+  with 0xff first (`C1_WORLD_FILL`). A field whose line differs between the
+  two is one the original never sets; `load_compare.py` lists it and leaves
+  it out. The two runs' raw creature bytes (`C1_WORLD_RAW_DUMP`) go to
+  `load_coverage.py`: a byte the same in both was set, and the bytes no
+  table field covers are listed as ranges. That list is what to add next.
+- `run_world.sh ... --lc-dump <file>` compares the dumps before the saves.
 
     WINEPREFIX=<throwaway prefix> tests/equivalence/run_world.sh \
         <CE 10.3 Creatures.exe> <install-dir> <build-dir> <world.sfc> \
         [<lc-save.sfc>] --lc-dump <lc-dump.txt>
 
-First run (2026-11-07), the world with four stock norns above (193 objects,
-4 creatures), at 0 ticks:
+First run (2026-11-07), the world with four stock norns above, 0 ticks,
+with the 80 learned-word records only: the saves were the same, but one
+record had its two words the other way round in LC (L35 in
+[`our-bugs.md`](../../docs/our-bugs.md)).
 
-- The saves were the same, byte for byte, as before.
-- The dumps were not. One record (creature 2, word 18: recognized "bab",
-  response "dada" in the original) had its two words the other way round in
-  LC. `Creature::serialize` loaded the first saved string into
-  `response_word` and saved `response_word` first: L35 in
-  [`our-bugs.md`](../../docs/our-bugs.md).
-- After the fix, every dumped field (1,029 lines) and the save are the same.
+Second run (2026-11-09), the whole table (64 fields of the Creature and the
+Skeleton and Object it starts with; 5,929 lines for 4 creatures):
 
-Only one of the 320 records in this world has two different words. A world
-in which norns are still learning many words checks this field better.
-Fields not yet in the dump are not checked; to add one, add it on both
-sides, at an offset a function-level test proves.
+- The original never sets 24 of the lines: `motion_x`, `motion_y`,
+  `goal_verb`, `goal_commitment`, `goal_countdown` and two control-state
+  bytes keep what the heap held. They are not compared.
+- 328 lines differed, from one cause (L36): LC built a loaded creature
+  without what `CreateObject` does before the load. Every attention record
+  had neuron 0 and was not visible (the original: 255, visible), and the
+  always-on and ambient-light signals were 0 (the original: 255 and 128).
+- After the fix: every compared line (5,905) is the same, and the saves at
+  0 and 10 ticks are the same, byte for byte.
+- Coverage: the table covers 6,550 of the 7,601 bytes the original's
+  constructor and load set in a Creature (86.2%). The largest uncovered
+  blocks are 0x29c0-0x2c13 (596 bytes, the member CreateObject constructs at
+  +0x29c0), the two pointers at the start of each of the 36 stimulus
+  contexts, 0x804-0x83f and the Object fields at 0x20-0x4c.
