@@ -6842,6 +6842,7 @@ void* C1WindowsDocument::ArchiveHost::create_object(std::string_view name, std::
         // body sprites are rebuilt.  Without the host ~Skeleton skipped the
         // limbs, the body gallery and the continuous sound.
         auto creature = std::make_unique<creatures1::creatures::Creature>();
+        creature->prepare_for_load(document_);
         creature->skeleton().set_lifetime_host(&document_);
         return &document_.world_runtime_->adopt_creature(std::move(creature))
                     .skeleton();

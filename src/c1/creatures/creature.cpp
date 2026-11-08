@@ -373,18 +373,7 @@ Creature::Creature(GenomeFilenameId genome_source_filename,
     // before the common runtime reset and genome load.
     skeleton_.genome_source_filename = genome_source_filename;
 
-    for (AttentionRecord& record : attention_records_) {
-        record = {};
-        record.target_neuron_index = 0xff;
-        record.world_x = -1;
-        record.world_y = -1;
-        record.visible = true;
-    }
-    for (LearnedWordRecord& record : learned_word_records_) {
-        record.recognized_word[0] = '\0';
-        record.response_word[0] = '\0';
-        record.reinforcement = 0;
-    }
+    reset_attention_and_word_records();
 
     // The native RANDOM path counts living males and females in the global
     // selection array, then chooses proportionally.  The decompiler aliases
@@ -2636,6 +2625,26 @@ int Creature::dispatch_script_event(
         force_restart);
 }
 
+void Creature::reset_attention_and_word_records() {
+    for (AttentionRecord& record : attention_records_) {
+        record = {};
+        record.target_neuron_index = 0xff;
+        record.world_x = -1;
+        record.world_y = -1;
+        record.visible = true;
+    }
+    for (LearnedWordRecord& record : learned_word_records_) {
+        record.recognized_word[0] = '\0';
+        record.response_word[0] = '\0';
+        record.reinforcement = 0;
+    }
+}
+
+void Creature::prepare_for_load(const InitializationHost& host) {
+    reset_attention_and_word_records();
+    initialize_runtime_state(host);
+}
+
 void Creature::initialize_runtime_state(const InitializationHost& host) {
     // The first writes mirror the native reset order, but use the recovered
     // owners instead of the MFC Object/Register subobjects.
@@ -4366,8 +4375,10 @@ void Creature::serialize(
             record.reinforcement = archive.read_uint32();
         }
 
+        // Only the position is saved; the rest of each record keeps what
+        // prepare_for_load set, as the original's load keeps its
+        // constructor's values (00407b47..: two reads per record).
         for (AttentionRecord& record : attention_records_) {
-            record = {};
             record.world_x = archive.read_int32();
             record.world_y = archive.read_int32();
             // LibreCreatures deviation (issue #11): worlds saved by C1, or by
