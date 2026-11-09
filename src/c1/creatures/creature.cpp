@@ -2655,6 +2655,9 @@ void Creature::initialize_runtime_state(const InitializationHost& host) {
     skeleton_.merge_bounds_flags(
         objects::Object::kAllowPointerToolUnboundedPlacement);
     skeleton_.disable_ticking();
+    // 0x00408572: family 4 (creature), genus, species and event 0.  The
+    // load and the genome set the full classifier afterwards.
+    skeleton_.set_classifier_base(0x04000000u);
     sleep_indicator_object_ = nullptr;
     skeleton_.set_bounds_reference_object(nullptr);
     caos_object_pointer_ = nullptr;
