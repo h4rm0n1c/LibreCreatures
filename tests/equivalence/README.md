@@ -736,6 +736,64 @@ the pending input flags must match.
 - Controls: the hotspot at 0x58 or 0x64 on the original's side makes 1,772
   and 1,777 of 3,000 cases differ.
 
+## Genome loci: `Creature::ResolveGenomeLocus` @00408d30 (CE 10.3)
+
+    WINEPREFIX=<throwaway prefix> tests/equivalence/run_locus.sh \
+        <CE 10.3 Creatures.exe> 1 <build-dir>
+
+Genes reach a creature's state only through this function (vtable slot 0
+of the sub-object at Creature +0x804). The test resolves every (kind,
+tissue, locus) a gene can name on both sides: receptor and emitter,
+tissues 0 to 7, loci 0 to 255. The original gives an address in its
+Creature block, LC a field of its Creature. The pairs must be one to one,
+"no locus" must agree, and every field of LC's `ControlState` must be at
++0x2c24 plus its place in the struct.
+
+First run (2026-11-09): 84 loci resolve to 60 fields (the control state,
+the floating and gait loci, the drives, the pose transitions and the death
+state); 4,012 resolve to nothing on both sides. 0 failures, LC native and
+as shipped. Control: with the control state at 0x2c25, 82 failures.
+
+## The voice: `Creature::SpeakTextWithVoice` @0040b560 (CE 10.3)
+
+| Function | Address | LC |
+| --- | --- | --- |
+| `Voice::PrepareSpeechText` | 004452b0 | `Voice::prepare_speech_text` |
+| `Voice::GetNextSoundPair` | 004453c0 | `Voice::get_next_sound_pair` |
+
+    WINEPREFIX=<throwaway prefix> tests/equivalence/run_voice.sh \
+        <CE 10.3 Creatures.exe> <cases> <build-dir> <install-dir>
+
+The original's Voice (Creature +0x29c0) is built by its own constructor
+(00445040). Its CString work runs in the install's real MFC (mfc140.dll,
+only read). LC's side is the loop of
+`WindowsCreatureSpeechPhraseHost::speak_text_with_voice` (platform code,
+which the test cannot link), copied into the test, over LC's real `Voice`
+reached through `Creature::voice()`. The sound queue (0042ce20) and the
+bubble (00426580) are recorders. Each case has random voice tables and 4
+random phrases. The sounds queued, the delay and the bubble's lifetime must
+match.
+
+First run (2026-11-09): 2,000 cases, 8,000 phrases, 51,693 sounds, 0
+differing (native and as shipped). Controls: the masks, sound ids,
+durations or delay moved by 4 bytes make 301 to 500 of 500 cases differ.
+
+## The bacterium: `Creature::UpdateBacteriumAndEnvironment` @00409190 (CE 10.3)
+
+    WINEPREFIX=<throwaway prefix> tests/equivalence/run_bacterium.sh \
+        <CE 10.3 Creatures.exe> <cases> <build-dir>
+
+Both creatures are dead, so the function stops after the bacterium. The
+original's AddChemicalMoles (00401890) runs as native code on a native
+biochemistry block. LC's bacterium is set through its own archive load.
+Each case has a random bacterium and random concentrations; after one
+update, the bacterium's state and all 256 concentrations must match.
+
+First run (2026-11-09): 100,000 cases (66,577 with a live bacterium, 33,250
+killed, 11,128 activated), 0 differing (native and as shipped). Controls:
+the thresholds swapped, or the state, input or outputs moved, make 1,091 to
+3,303 of 5,000 cases differ.
+
 ## Object variables: the CAOS r-values `obv0` to `obv2` (CE 10.3)
 
 | Function | Address | LC |
@@ -1320,6 +1378,29 @@ Fifth run (2026-11-09): Blackboard and PointerTool.
 - With the shift-click test, the hotspot rows were added: 42,958 lines, all
   42,630 compared the same; PointerTool 96.7% (only the vftable pointer is
   not covered).
+
+Sixth run (2026-11-09): the Creature's gaps.
+
+- New rows: the body (0x5c), the six limb chains (0x60) and the normal
+  render plane (0x84), from the skeleton and skeleton-gene tests; the
+  floating and gait loci (0x2c46, 0x2c4e), from the locus test; the voice's
+  masks, sound ids, durations and delay, from the voice test; the
+  bacterium's eight bytes (0x2cd4), from the bacterium test.
+- `load_coverage.py` now counts the object table's Object rows for the
+  creatures too (the object dump compares them for every creature).
+- Result: 43,670 lines, 328 never set by the original; every one of the
+  other 43,342 is the same in LibreCreatures.
+- Coverage: 7,233 of the 7,601 bytes a Creature sets (95.2%). Not covered:
+  - the vftable pointer (0x0-0x3);
+  - 0x804-0x83f: the locus resolver's vftable, the history record (a
+    sub-object with its own vftable at 0x808, the creature pointer, five
+    CStrings for the names and the birthplace, and the age counter at
+    0x838);
+  - the target and source pointers at the start of each of the 36
+    stimulus contexts. The original writes them just before it copies the
+    context into the stimulus queue and never reads them back; LC builds
+    the queued record directly and keeps none. They are null after a load
+    on both sides.
 - Object coverage per class: SimpleObject 57%, CallButton 60%, Vehicle 51%,
   Lift 62%, CompoundObject 44%, PointerTool 40%, Blackboard 25%. The gaps
   are the same in every class: Object 0x20-0x23, 0x28-0x33, 0x38-0x43

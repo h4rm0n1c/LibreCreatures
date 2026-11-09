@@ -48,7 +48,8 @@ if [ $build = 1 ]; then
     sh "$here/build.sh" "$out" > "$out/build.log" 2>&1 || { echo "build failed: see $out/build.log"; exit 1; }
 fi
 
-# name, full cases, quick cases, kind (g: takes genomes, -: does not).
+# name, full cases, quick cases, kind (g: takes genomes, s: the install
+# and genomes, i: the install, -: neither).
 tests="biochemistry 200000 10000 -
 brain 20000 1000 g
 stimulus 200000 10000 g
@@ -66,6 +67,9 @@ object 100000 5000 -
 rvalue 100000 5000 -
 blackboard 20000 1000 -
 pointer_tool 20000 1000 -
+locus 1 1 -
+bacterium 100000 5000 -
+voice 2000 100 i
 words 50000 2500 -
 heard 50000 2500 g
 life 20000 1000 -
@@ -86,6 +90,7 @@ run_one() {
     case $kind in
         g) sh "$here/run_$name.sh" "$exe" "$cases" "$out" $genomes > "$log" 2>&1 ;;
         s) sh "$here/run_$name.sh" "$exe" "$cases" "$out" "$install" $genomes > "$log" 2>&1 ;;
+        i) sh "$here/run_$name.sh" "$exe" "$cases" "$out" "$install" > "$log" 2>&1 ;;
         *) sh "$here/run_$name.sh" "$exe" "$cases" "$out" > "$log" 2>&1 ;;
     esac
     status=$?

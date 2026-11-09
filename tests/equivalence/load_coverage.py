@@ -9,7 +9,9 @@ byte that differs was never set.
 
 This lists, over all creatures, the set bytes that no field of
 load_dump_fields.inc covers (what the load test cannot see yet), as ranges.
-Which table fields the original never sets is decided from the two field
+With the object dumps, the rows of load_dump_objects.inc for the classes a
+Creature derives from (Object) count too: the object dump compares them for
+every creature in the registry.  Which table fields the original never sets is decided from the two field
 dumps instead (run_world.sh): a text field's bytes after its terminator are
 never set, but its text is.
 
@@ -119,6 +121,15 @@ def main():
         for i in range(n):
             start = offset + i * stride
             covered |= set(range(start, start + size))
+    # The object table's rows for the classes a Creature derives from
+    # (Object) cover the creature too: the object dump compares them for
+    # every creature in the registry.
+    if len(sys.argv) > 4:
+        chain = next((names for names, _ in read_objects(sys.argv[5]) if names[0] == "Creature"), [])
+        for cls, _, offset, size, n, stride in object_fields(sys.argv[4]):
+            if cls in chain:
+                for i in range(n):
+                    covered |= set(range(offset + i * stride, offset + i * stride + size))
     uncovered = set_bytes - covered
     print(f"creatures: {count}; object 0x{OBJECT_SIZE:x} bytes")
     print(f"set by the original's constructor or load: {len(set_bytes)} bytes")
