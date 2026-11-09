@@ -20,7 +20,8 @@ enum class TextInputCharacter : std::uint32_t {
     question_mark = 0x04,
     exclamation_mark = 0x08,
     // SFCDoc::UpdateWorld @ 0x00432850: 0x10 admits "?!.,:/\\£$%&*" and 0x20
-    // admits "0123456789" -- the normal pointer policy (0x1f) has no digits.
+    // admits "0123456789".  The normal policy is 0x2f (every write of the
+    // byte at 0x466458, and its initial value): digits, but not punctuation.
     punctuation = 0x10,
     digits = 0x20,
 };
@@ -30,7 +31,7 @@ constexpr std::uint32_t kNormalTextInputFlags =
     static_cast<std::uint32_t>(TextInputCharacter::space) |
     static_cast<std::uint32_t>(TextInputCharacter::question_mark) |
     static_cast<std::uint32_t>(TextInputCharacter::exclamation_mark) |
-    static_cast<std::uint32_t>(TextInputCharacter::punctuation);
+    static_cast<std::uint32_t>(TextInputCharacter::digits);
 
 // The application owns the shared editor state and the pointer-tool object.
 // These operations are the semantic equivalent of the native global input

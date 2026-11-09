@@ -82,7 +82,8 @@ class PointerTool final : public objects::SimpleObject {
 public:
     static constexpr std::size_t kTextCapacity = 25;
     static constexpr std::uint32_t kTextInputMaximumLength = 0x18;
-    static constexpr std::uint32_t kTextInputAllowedCharacters = 0x1fu;
+    // Letters, space, '?', '!' and digits (brain::kNormalTextInputFlags).
+    static constexpr std::uint32_t kTextInputAllowedCharacters = 0x2fu;
 
     // The no-argument form is the framework/archive factory path, matching
     // Creature and Bubble: MFC dynamic creation from World.sfc needs a
