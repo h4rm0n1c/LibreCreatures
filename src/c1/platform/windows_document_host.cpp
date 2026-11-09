@@ -19,6 +19,8 @@
 #include "../objects/object_handle.hpp"
 #include "../creatures/load_dump.hpp"
 #include "../creatures/creature_field_dump.hpp"
+#include "../objects/object_field_dump.hpp"
+#include "../brain/lobe_field_dump.hpp"
 
 #include <limits>
 #include <optional>
@@ -6523,6 +6525,60 @@ void write_field_dump(const char* path,
         }
 #include "../creatures/load_dump_fields.inc"
 #undef LOAD_DUMP_FIELD
+        // The brain (load_dump_brain.inc), lobes and neurons in order.
+        creatures1::brain::Brain* brain = c.brain();
+        if (brain == nullptr) {
+            std::fprintf(file, "creature %u brain null\n", static_cast<unsigned>(index));
+            continue;
+        }
+        using B = creatures1::brain::LobeFieldDump;
+        std::fprintf(file, "creature %u lobes %u\n", static_cast<unsigned>(index),
+                     static_cast<unsigned>(brain->lobe_count()));
+        for (std::uint32_t lobe_index = 0; lobe_index < brain->lobe_count(); ++lobe_index) {
+            auto& l = brain->lobe(lobe_index);
+#define LOAD_DUMP_LOBE_FIELD(name, offset, kind, count_, stride, proven_by, lc)            \
+            for (std::size_t i = 0; i < (count_); ++i) {                                 \
+                dump::write_brain_line(file, index, lobe_index, -1, #name, (count_), i,   \
+                                       lc_text(kind, lc));                                \
+            }
+#define LOAD_DUMP_NEURON_FIELD(name, offset, kind, count_, stride, proven_by, lc)
+#include "../creatures/load_dump_brain.inc"
+#undef LOAD_DUMP_LOBE_FIELD
+#undef LOAD_DUMP_NEURON_FIELD
+            for (std::uint32_t n = 0; n < l.neuron_count_value(); ++n) {
+                const auto& nr = l.neuron(n);
+#define LOAD_DUMP_LOBE_FIELD(name, offset, kind, count_, stride, proven_by, lc)
+#define LOAD_DUMP_NEURON_FIELD(name, offset, kind, count_, stride, proven_by, lc)          \
+                for (std::size_t i = 0; i < (count_); ++i) {                             \
+                    dump::write_brain_line(file, index, lobe_index, static_cast<long>(n), \
+                                           #name, (count_), i, lc_text(kind, lc));        \
+                }
+#include "../creatures/load_dump_brain.inc"
+#undef LOAD_DUMP_LOBE_FIELD
+#undef LOAD_DUMP_NEURON_FIELD
+            }
+        }
+    }
+    // The objects of the object registry, in its order, as the original's
+    // dump walks its registry (load_dump_objects.inc).
+    using O = creatures1::objects::ObjectFieldDump;
+    const std::size_t object_count = runtime == nullptr ? 0 : runtime->object_count();
+    std::fprintf(file, "objects %u\n", static_cast<unsigned>(object_count));
+    for (std::size_t n = 0; n < object_count; ++n) {
+        creatures1::objects::Object* object = runtime->object_at(n);
+        if (object == nullptr) {
+            std::fprintf(file, "object %u missing\n", static_cast<unsigned>(n));
+            continue;
+        }
+#define LOAD_DUMP_OBJECT_FIELD(cls, name, offset, kind, count_, stride, proven_by, lc)       \
+        if (auto* typed = dynamic_cast<creatures1::objects::cls*>(object)) {                  \
+            auto& x = *typed;                                                                 \
+            for (std::size_t i = 0; i < (count_); ++i) {                                      \
+                dump::write_object_line(file, n, #name, (count_), i, lc_text(kind, lc));      \
+            }                                                                                 \
+        }
+#include "../creatures/load_dump_objects.inc"
+#undef LOAD_DUMP_OBJECT_FIELD
     }
     std::fclose(file);
 }

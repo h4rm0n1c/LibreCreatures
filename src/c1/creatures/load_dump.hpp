@@ -78,4 +78,29 @@ inline void write_line(std::FILE* file, std::size_t creature, const char* field,
     }
 }
 
+// "creature <c> lobe <l> [neuron <n>] <field>[<i>]", then the value
+// (load_dump_brain.inc); neuron < 0 for a lobe's own field.
+inline void write_brain_line(std::FILE* file, std::size_t creature, std::size_t lobe, long neuron,
+                             const char* field, std::size_t count, std::size_t index,
+                             const std::string& value) {
+    std::string key = "creature " + std::to_string(creature) + " lobe " + std::to_string(lobe);
+    if (neuron >= 0) key += " neuron " + std::to_string(neuron);
+    key += std::string(" ") + field;
+    if (count > 1) key += "[" + std::to_string(index) + "]";
+    std::fprintf(file, "%s %s\n", key.c_str(), value.c_str());
+}
+
+// "object <n> <field>" or "object <n> <field>[<i>]", then the value: the
+// n-th object of the object registry (load_dump_objects.inc).
+inline void write_object_line(std::FILE* file, std::size_t object, const char* field,
+                              std::size_t count, std::size_t index, const std::string& value) {
+    if (count > 1) {
+        std::fprintf(file, "object %u %s[%u] %s\n", static_cast<unsigned>(object), field,
+                     static_cast<unsigned>(index), value.c_str());
+    } else {
+        std::fprintf(file, "object %u %s %s\n", static_cast<unsigned>(object), field,
+                     value.c_str());
+    }
+}
+
 } // namespace creatures1::load_dump

@@ -7,18 +7,21 @@
 #   tests/equivalence/run_world.sh <Creatures.exe> <install-dir> <build-dir> <world.sfc>
 #                                  [<lc-save.sfc>] [--ticks <n>] [--dump] [--lc-dump <file>]
 #
-# --dump: the load equivalence test.  Right after its load, the original
-# writes every field in src/c1/creatures/load_dump_fields.inc for every
-# creature (world_roundtrip_native.exe, C1_WORLD_FIELD_DUMP).  Its two runs
-# fill each new Creature with 0x00 and with 0xff first (C1_WORLD_FILL): a
-# line that differs between them is a field the original never sets, and it
-# is listed and left out.  The raw creature bytes of the two runs
-# (C1_WORLD_RAW_DUMP) go to load_coverage.py, which lists what the table does
-# not cover yet.  With --lc-dump, the dump LibreCreatures wrote after its
-# load of the same world (C1_WORLD_FIELD_DUMP in run_once's env, beside
-# C1_WORLD_ROUNDTRIP) is compared with the original's, line by line.  A round
-# trip cannot see a field that the load puts in the wrong place and the save
-# puts back; this can.
+# --dump: the load equivalence test.  After its load, the original writes
+# the fields in src/c1/creatures/load_dump_fields.inc (every creature),
+# load_dump_brain.inc (every creature's lobes and neurons) and
+# load_dump_objects.inc (every object of the registry), C1_WORLD_FIELD_DUMP.
+# This takes two more runs of the original, apart from the two whose saves
+# are compared: every new block is filled with 0x00 in one and 0xff in the
+# other first (C1_WORLD_FILL).  A line that differs between them is a field
+# the original never sets: it is listed and left out.  Their raw creature
+# and object bytes (C1_WORLD_RAW_DUMP, C1_WORLD_OBJECT_RAW_DUMP) go to
+# load_coverage.py, which lists what the tables do not cover yet.  With
+# --lc-dump, the dump LibreCreatures wrote after its load of the same world
+# (C1_WORLD_FIELD_DUMP in run_once's env, beside C1_WORLD_ROUNDTRIP) is
+# compared with the original's, line by line.  A round trip cannot see a
+# field that the load puts in the wrong place and the save puts back; this
+# can.
 #
 # The install's Images, Body Data, Palettes, Genetics and Sounds folders, the
 # Genetics and Images folders beside the world (its creatures' genomes and
@@ -70,15 +73,22 @@ for d in Genetics Images; do
 done
 cp "$world" "$root/in.sfc"
 for run in 1 2; do
-    if [ -n "$dump" ]; then
-        fill=0x00; [ $run = 2 ] && fill=0xff
-        export C1_WORLD_FILL=$fill
-        export C1_WORLD_FIELD_DUMP="$(winepath -w "$out/world-dump-native$run.txt")"
-        export C1_WORLD_RAW_DUMP="$(winepath -w "$out/world-raw-native$run.bin")"
-    fi
     wine "$out/world_roundtrip_native.exe" "$(winepath -w "$exe")" "$(winepath -w "$install")" \
         "$(winepath -w "$root")" in.sfc "native$run.sfc" "$ticks" > "$out/world-native$run.txt"
 done
+if [ -n "$dump" ]; then
+    # The load test's runs: new blocks filled with 0x00, then 0xff.  Their
+    # saves are not compared (the original saves some bytes it never sets).
+    for run in 1 2; do
+        fill=0x00; [ $run = 2 ] && fill=0xff
+        C1_WORLD_FILL=$fill \
+        C1_WORLD_FIELD_DUMP="$(winepath -w "$out/world-dump-native$run.txt")" \
+        C1_WORLD_RAW_DUMP="$(winepath -w "$out/world-raw-native$run.bin")" \
+        C1_WORLD_OBJECT_RAW_DUMP="$(winepath -w "$out/world-objects-native$run.bin")" \
+        wine "$out/world_roundtrip_native.exe" "$(winepath -w "$exe")" "$(winepath -w "$install")" \
+            "$(winepath -w "$root")" in.sfc "fill$run.sfc" 0 > /dev/null
+    done
+fi
 cat "$out/world-native1.txt"
 if ! cmp -s "$root/native1.sfc" "$root/native2.sfc"; then
     echo "the original's round trip is not repeatable"; exit 1
@@ -91,8 +101,10 @@ if [ -n "$dump" ]; then
     head -30 "$out/world-dump.txt"
     echo "(all in $out/world-dump.txt)"
     python3 -I "$here/load_coverage.py" "$here/../../src/c1/creatures/load_dump_fields.inc" \
-        "$out/world-raw-native1.bin" "$out/world-raw-native2.bin" > "$out/world-coverage.txt"
-    head -4 "$out/world-coverage.txt"
+        "$out/world-raw-native1.bin" "$out/world-raw-native2.bin" \
+        "$here/../../src/c1/creatures/load_dump_objects.inc" \
+        "$out/world-objects-native1.bin" "$out/world-objects-native2.bin" > "$out/world-coverage.txt"
+    grep -E '^(creatures|set by|covered by|set but|objects|  [A-Za-z]+:)' "$out/world-coverage.txt"
     echo "(uncovered ranges in $out/world-coverage.txt)"
     [ $status = 0 ] || exit 1
 fi

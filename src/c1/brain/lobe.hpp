@@ -181,6 +181,9 @@ public:
 
 private:
     friend class Brain;
+    // The load equivalence test's dump (load_dump_brain.inc) reads private
+    // state through this; lobe_field_dump.hpp defines it.
+    friend class LobeFieldDump;
 
     std::uint32_t grid_x_offset = 0;
     std::uint32_t grid_y_offset = 0;
