@@ -434,6 +434,20 @@ for mode in fixed native rows; do
     $cxx $flags $define -o "$exe" "$here/status_equivalence.cpp" "$here/native_image.cpp" \
         "$out/status_traps_$mode.cpp" $creature
 done
+# A creature's runtime reset, field by field through the load test's table:
+# the creature closure; the original's CStrings in the install's MFC.
+for mode in fixed native; do
+    case $mode in
+        fixed) define= ;;
+        native) define=-DLC_NATIVE_MODE ;;
+    esac
+    exe="$out/initialize_equivalence_$mode.exe"
+    $cxx $flags $define -Wl,--no-demangle -o "$exe" "$here/initialize_equivalence.cpp" \
+        "$here/native_image.cpp" $creature > "$out/initialize_$mode.link" 2>&1 || true
+    python3 "$here/trap_stubs.py" "$out/initialize_$mode.link" "$out/initialize_traps_$mode.cpp"
+    $cxx $flags $define -o "$exe" "$here/initialize_equivalence.cpp" "$here/native_image.cpp" \
+        "$out/initialize_traps_$mode.cpp" $creature
+done
 # The object variables: the CAOS interpreter's r-value reader.  Its
 # closure is large and mostly never called, so it is trap stubs.
 rvalue="$src/scripting/macro.cpp $src/scripting/macro_holder.cpp $src/scripting/tables.cpp \

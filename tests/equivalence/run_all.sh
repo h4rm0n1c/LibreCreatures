@@ -71,6 +71,7 @@ locus 1 1 -
 bacterium 100000 5000 -
 voice 2000 100 i
 status 20000 1000 i
+initialize 500 50 i
 words 50000 2500 -
 heard 50000 2500 g
 life 20000 1000 -

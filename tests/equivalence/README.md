@@ -817,6 +817,32 @@ First run (2026-11-09):
 - Controls: the display name and genome moniker swapped make every case
   differ; the age at 0x83c makes 1,560 of 2,000 differ.
 
+## The runtime reset: `Creature::InitializeRuntimeState` @00408520 (CE 10.3)
+
+    WINEPREFIX=<throwaway prefix> tests/equivalence/run_initialize.sh \
+        <CE 10.3 Creatures.exe> <cases> <build-dir> <install-dir>
+
+The test compares field by field through the load test's own table
+(`load_dump_fields.inc`), with the formatters both dumps use
+(`load_dump_native.hpp`, `src/c1/creatures/load_dump_lc.hpp`). The original
+runs twice on a creature block, filled with 0x00 and then with 0xff; its
+ten history CStrings are built by the install's real MFC (only read), and
+its string resource comes from a `LoadString` stub. A table field that
+comes out the same both times is one the reset writes, and it must match
+LC's after LC's reset. LC's host gives what the game's does: the default
+stimulus contexts, the resource text and the "%lx" monikers. Random
+genome, mother and father monikers go in; the reset writes them into the
+history as text.
+
+First run (2026-11-09): of the table's 1,666 lines, the reset writes 835.
+- Found L41: the reset sets the classifier to 0x04000000 (family 4); LC's
+  left it.
+- After the fix: 500 cases, 0 differing, LC native and as shipped.
+- Controls: the father and mother rows swapped, or the birthplace at 0x820,
+  make every case differ.
+- New rows it proves: the father's (0x818) and mother's (0x81c) monikers
+  and the birthplace (0x824).
+
 ## Object variables: the CAOS r-values `obv0` to `obv2` (CE 10.3)
 
 | Function | Address | LC |
@@ -1434,6 +1460,16 @@ Seventh run (2026-11-09): the history record.
 - Result: all 43,354 compared lines the same; coverage 95.3%. The rest of
   the history record (the father's and mother's monikers, the birthplace)
   is not yet proven by a test.
+
+Eighth run (2026-11-09): the rest of the history.
+
+- New rows, from the runtime-reset test: the father's (0x818) and
+  mother's (0x81c) monikers and the birthplace (0x824).
+- Result: 43,694 lines, 328 never set; all 43,366 compared the same.
+  Coverage 95.5%. Still not covered: the vftable pointer, the locus
+  resolver's vftable (0x804), the history's vftable and creature pointer
+  (0x808, 0x80c), its CStrings at 0x820 and 0x828-0x834 and the word at
+  0x83c, and the 36 stimulus contexts' target and source pointers.
 - Object coverage per class: SimpleObject 57%, CallButton 60%, Vehicle 51%,
   Lift 62%, CompoundObject 44%, PointerTool 40%, Blackboard 25%. The gaps
   are the same in every class: Object 0x20-0x23, 0x28-0x33, 0x38-0x43

@@ -21,6 +21,7 @@
 #include "../creatures/creature_field_dump.hpp"
 #include "../objects/object_field_dump.hpp"
 #include "../creatures/load_dump_classes.hpp"
+#include "../creatures/load_dump_lc.hpp"
 #include "../brain/lobe_field_dump.hpp"
 
 #include <limits>
@@ -6469,42 +6470,6 @@ namespace {
 // field that the load puts in the wrong place shows up even when the save
 // puts it back (a round trip cannot see that).
 namespace dump = creatures1::load_dump;
-
-template <typename T>
-std::string lc_text(dump::U8, T value) {
-    return dump::unsigned_text(static_cast<std::uint32_t>(value) & 0xffu);
-}
-template <typename T>
-std::string lc_text(dump::Bool, T value) {
-    return dump::bool_text(static_cast<bool>(value));
-}
-template <typename T>
-std::string lc_text(dump::U32, T value) {
-    return dump::unsigned_text(static_cast<std::uint32_t>(value));
-}
-template <typename T>
-std::string lc_text(dump::I32, T value) {
-    return dump::signed_text(static_cast<std::int32_t>(value));
-}
-template <typename T>
-std::string lc_text(dump::Ptr, const T* value) {
-    return dump::pointer_text(value != nullptr);
-}
-std::string lc_text(dump::Rect, const creatures1::world::WorldRect& rect) {
-    return dump::rect_text(rect.min_x, rect.min_y, rect.max_x, rect.max_y);
-}
-std::string lc_text(dump::Text kind, const char* text) {
-    return dump::text_text(text, kind.length);
-}
-std::string lc_text(dump::CStr, const std::string& text) {
-    return dump::text_text(text.c_str(), 0x1000);
-}
-std::string lc_text(dump::Bytes kind, const void* data) {
-    return dump::bytes_text(data, kind.length);
-}
-std::string lc_text(dump::CursorFrom, std::size_t cursor) {
-    return dump::unsigned_text(static_cast<std::uint32_t>(cursor));
-}
 
 void write_field_dump(const char* path,
                       const creatures1::world::WorldRuntime* runtime) {

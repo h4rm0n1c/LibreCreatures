@@ -51,8 +51,11 @@ LOAD_DUMP_FIELD(motion_x, 0x7f4, I32{}, 1, 0, "attention", s.motion_target_x)
 LOAD_DUMP_FIELD(motion_y, 0x7f8, I32{}, 1, 0, "attention", s.motion_target_y)
 LOAD_DUMP_FIELD(motion_part, 0x7fc, I32{}, 1, 0, "attention", s.motion_target_part_index)
 LOAD_DUMP_FIELD(pose_transitions, 0x800, U8{}, 1, 0, "skeleton, locus", s.pose_transition_component_count)
-LOAD_DUMP_FIELD(genome_moniker, 0x810, CStr{}, 1, 0, "status", c.register_state().history().genome_moniker)
-LOAD_DUMP_FIELD(display_name, 0x814, CStr{}, 1, 0, "status", c.register_state().history().display_name)
+LOAD_DUMP_FIELD(genome_moniker, 0x810, CStr{}, 1, 0, "status, initialize", c.register_state().history().genome_moniker)
+LOAD_DUMP_FIELD(display_name, 0x814, CStr{}, 1, 0, "status, initialize", c.register_state().history().display_name)
+LOAD_DUMP_FIELD(father_moniker, 0x818, CStr{}, 1, 0, "initialize", c.register_state().history().father_moniker)
+LOAD_DUMP_FIELD(mother_moniker, 0x81c, CStr{}, 1, 0, "initialize", c.register_state().history().mother_moniker)
+LOAD_DUMP_FIELD(birthplace, 0x824, CStr{}, 1, 0, "initialize", c.register_state().history().birthplace)
 LOAD_DUMP_FIELD(age, 0x838, U32{}, 1, 0, "status", c.register_state().age_ticks())
 
 // Creature
