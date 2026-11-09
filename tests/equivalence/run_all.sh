@@ -62,6 +62,8 @@ fanout 100000 5000 -
 skeleton 200000 10000 -
 vehicle 50000 2500 -
 simple_object 50000 2500 -
+object 100000 5000 -
+rvalue 100000 5000 -
 words 50000 2500 -
 heard 50000 2500 g
 life 20000 1000 -

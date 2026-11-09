@@ -334,6 +334,38 @@ for mode in fixed native rows; do
         "$here/native_image.cpp" $src/creatures/genome.cpp $src/common/compat.cpp \
         $src/common/static_data.cpp $src/common/logging.cpp
 done
+# The Object base (constructor, continuous sound, destructor) and
+# SimpleObject's click selectors.
+object="$src/sound/sound.cpp $vehicle"
+for mode in fixed native; do
+    case $mode in
+        fixed) define= ;;
+        native) define=-DLC_NATIVE_MODE ;;
+    esac
+    exe="$out/object_equivalence_$mode.exe"
+    $cxx $flags $define -Wl,--no-demangle -o "$exe" "$here/object_equivalence.cpp" \
+        "$here/native_image.cpp" $object > "$out/object_$mode.link" 2>&1 || true
+    python3 "$here/trap_stubs.py" "$out/object_$mode.link" "$out/object_traps_$mode.cpp"
+    $cxx $flags $define -o "$exe" "$here/object_equivalence.cpp" "$here/native_image.cpp" \
+        "$out/object_traps_$mode.cpp" $object
+done
+# The object variables: the CAOS interpreter's r-value reader.  Its
+# closure is large and mostly never called, so it is trap stubs.
+rvalue="$src/scripting/macro.cpp $src/scripting/macro_holder.cpp $src/scripting/tables.cpp \
+        $src/scripting/classifier_scripts.cpp $src/objects/object.cpp $src/common/compat.cpp \
+        $src/common/lab_trace.cpp $src/common/static_data.cpp $src/common/logging.cpp"
+for mode in fixed native; do
+    case $mode in
+        fixed) define= ;;
+        native) define=-DLC_NATIVE_MODE ;;
+    esac
+    exe="$out/rvalue_equivalence_$mode.exe"
+    $cxx $flags $define -Wl,--no-demangle -o "$exe" "$here/rvalue_equivalence.cpp" \
+        "$here/native_image.cpp" $rvalue > "$out/rvalue_$mode.link" 2>&1 || true
+    python3 "$here/trap_stubs.py" "$out/rvalue_$mode.link" "$out/rvalue_traps_$mode.cpp"
+    $cxx $flags $define -o "$exe" "$here/rvalue_equivalence.cpp" "$here/native_image.cpp" \
+        "$out/rvalue_traps_$mode.cpp" $rvalue
+done
 # The world test's native side: the original's own load and save, through
 # the real MFC; no LC code (LC's side is the game, see run_world.sh).
 $cxx $flags -o "$out/world_roundtrip_native.exe" "$here/world_roundtrip_native.cpp" \
