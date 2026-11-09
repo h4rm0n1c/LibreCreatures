@@ -94,6 +94,10 @@ std::string native_text(dump::Rect, const std::uint8_t* creature, std::size_t at
 std::string native_text(dump::Text kind, const std::uint8_t* creature, std::size_t at) {
     return dump::text_text(reinterpret_cast<const char*>(creature + at), kind.length);
 }
+std::string native_text(dump::CStr, const std::uint8_t* creature, std::size_t at) {
+    const char* text = value_at<const char*>(creature + at);
+    return text == nullptr ? std::string() : dump::text_text(text, 0x1000);
+}
 std::string native_text(dump::Bytes kind, const std::uint8_t* creature, std::size_t at) {
     return dump::bytes_text(creature + at, kind.length);
 }
@@ -170,7 +174,7 @@ bool is_kind(const std::vector<std::string>& chain, const char* name) {
 
 void write_object_dump(equivalence::NativeImage& image, std::FILE* file) {
     using dump::U8; using dump::Bool; using dump::U32; using dump::I32; using dump::Ptr;
-    using dump::Rect; using dump::Text; using dump::Bytes; using dump::CursorFrom;
+    using dump::Rect; using dump::Text; using dump::Bytes; using dump::CursorFrom; using dump::CStr;
     const int count = *image.at<int*>(0x004704ac);
     auto* const* list = *image.at<std::uint8_t***>(0x004704a8);
     std::fprintf(file, "objects %u\n", static_cast<unsigned>(count));
@@ -225,7 +229,7 @@ void write_field_dump(equivalence::NativeImage& image, const char* path) {
         return;
     }
     using dump::U8; using dump::Bool; using dump::U32; using dump::I32; using dump::Ptr;
-    using dump::Rect; using dump::Text; using dump::Bytes; using dump::CursorFrom;
+    using dump::Rect; using dump::Text; using dump::Bytes; using dump::CursorFrom; using dump::CStr;
     const int count = *image.at<int*>(0x004704c0);
     auto* const* list = *image.at<std::uint8_t***>(0x004704bc);
     std::fprintf(file, "creatures %u\n", static_cast<unsigned>(count));

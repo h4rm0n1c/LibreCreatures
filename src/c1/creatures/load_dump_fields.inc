@@ -50,7 +50,10 @@ LOAD_DUMP_FIELD(motion_link, 0x7f0, Ptr{}, 1, 0, "goal, attention", s.motion_lin
 LOAD_DUMP_FIELD(motion_x, 0x7f4, I32{}, 1, 0, "attention", s.motion_target_x)
 LOAD_DUMP_FIELD(motion_y, 0x7f8, I32{}, 1, 0, "attention", s.motion_target_y)
 LOAD_DUMP_FIELD(motion_part, 0x7fc, I32{}, 1, 0, "attention", s.motion_target_part_index)
-LOAD_DUMP_FIELD(pose_transitions, 0x800, U8{}, 1, 0, "skeleton", s.pose_transition_component_count)
+LOAD_DUMP_FIELD(pose_transitions, 0x800, U8{}, 1, 0, "skeleton, locus", s.pose_transition_component_count)
+LOAD_DUMP_FIELD(genome_moniker, 0x810, CStr{}, 1, 0, "status", c.register_state().history().genome_moniker)
+LOAD_DUMP_FIELD(display_name, 0x814, CStr{}, 1, 0, "status", c.register_state().history().display_name)
+LOAD_DUMP_FIELD(age, 0x838, U32{}, 1, 0, "status", c.register_state().age_ticks())
 
 // Creature
 LOAD_DUMP_FIELD(selected_action, 0x840, U8{}, 1, 0, "action", c.selected_action_id() & 0xffu)
