@@ -226,14 +226,16 @@ void PointerTool::set_text_with_toolbar_update(
 
 void PointerTool::set_persistent_bubble_text(
     std::string_view text, PointerToolRuntimeHost& runtime) {
+    // SetPersistentBubbleText @ 0x00429960: with no bubble up, a bubble is
+    // made even for an empty text (Backspace with nothing typed shows an
+    // empty bubble); only a bubble already up is put away by an empty text.
     if (persistent_bubble == nullptr) {
         persistent_bubble =
             runtime.create_persistent_pointer_bubble(*this, text);
-    } else {
-        runtime.set_pointer_bubble_text(*persistent_bubble, text);
+        return;
     }
-
-    if (text.empty() && persistent_bubble != nullptr) {
+    runtime.set_pointer_bubble_text(*persistent_bubble, text);
+    if (text.empty()) {
         runtime.dismiss_pointer_bubble(*persistent_bubble);
         persistent_bubble = nullptr;
     }

@@ -2666,9 +2666,12 @@ void C1WindowsDocument::commit_text_input() {
         // Not native: Enter with nothing typed (or only spaces) says nothing.
         // The native said it anyway -- an empty speech bubble over the hand,
         // and an empty word for every creature in earshot.  Only the typing
-        // bubble, if one is up, is put away.
+        // bubble, if one is up, is put away (an empty text with no bubble
+        // up would make one).
         if (LC_FIX(32) && text.find_first_not_of(' ') == std::string::npos) {
-            pointer_tool_->set_persistent_bubble_text({}, runtime);
+            if (pointer_tool_->persistent_bubble != nullptr) {
+                pointer_tool_->set_persistent_bubble_text({}, runtime);
+            }
         } else {
             pointer_tool_->set_text_with_toolbar_update(text, runtime);
         }
