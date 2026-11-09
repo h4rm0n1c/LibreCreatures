@@ -508,6 +508,9 @@ interaction scores and the motion pose table, see above).
 | `Lift::SelectNearestCallButtonAndStartMove` | 0042c590 | `select_nearest_call_button_and_start_move` |
 | `CallButton::UpdateLiftStateAndQueueRedraw` | 00429a70 | `update_lift_state_and_queue_redraw` |
 | `CallButton::RequestLiftCall` | 00429c10 | `request_lift_call` |
+| `CompoundObject::GetPartCenter` | 0042b800 | `get_part_center` |
+| `CompoundObject` click event (part bounds and knobs) | 0042b750 | `click_event_id_at_world_position` |
+| `Object::ClearReferencesTo` | 00423820 | `Object::clear_references_to` |
 
     WINEPREFIX=<throwaway prefix> tests/equivalence/run_vehicle.sh \
         <CE 10.3 Creatures.exe> <cases> <build-dir>
@@ -551,6 +554,20 @@ passengers.
 - LC as shipped: 36,625 differing cases, the same cases as the build with
   only rows 23, 41, 45 and 52 fixed. They are the only switches in the code
   under test.
+
+Two more operations (2026-11-09) prove the offsets of compound-object and
+Object fields for the load test:
+- part bounds: six random part rectangles (+0xcc, 16 bytes each) and six
+  knob hotspots (+0x12c), then `GetPartCenter` for event 0 to 2 and the
+  click event at a point near part 0;
+- clear references: the bounds reference (+0x1c) and the CAOS object
+  pointer (+0x20) set to nothing, the creature or another object, then
+  `ClearReferencesTo` with one of them.
+
+Rerun with these (20,000 cases): LC native 0 differing cases; LC as
+shipped, every differing case is explained by rows 23, 41, 45 and 52.
+Controls: part bounds at 0xd0, knobs at 0x130 or the CAOS pointer at 0x28
+on the original's side make 1,997, 2,000 and 1,816 of 2,000 cases differ.
 
 ## Simple objects: pick-up, carrying and putting down (CE 10.3)
 
@@ -603,6 +620,65 @@ ticks.
 - LC as shipped: 5,265 differing cases, the same cases as the build with
   only rows 22 and 27 fixed. Row 28 is also in the code, on the branch
   for the hand's own search, which this test does not generate.
+
+## The Object base and SimpleObject's click selectors (CE 10.3)
+
+| Function | Address | LC |
+| --- | --- | --- |
+| `Object::Object` | 00425750 | `Object::Object` |
+| `Object::UpdateSound` | 00426190 | `Object::update_sound` |
+| `Object::~Object` | 00425a70 | `Object::~Object` |
+| `SimpleObject` click event (vftable slot 28) | 00427fc0 | `SimpleObject::click_event_id_at_world_position` |
+
+    WINEPREFIX=<throwaway prefix> tests/equivalence/run_object.sh \
+        <CE 10.3 Creatures.exe> <cases> <build-dir>
+
+Each case runs one of four operations:
+- The constructor, on a block filled with 0xaa, against a new LC `Object`.
+  Every field LC's Object keeps must have the value the constructor writes.
+- The continuous sound's update. The sound id, the persist flag and the
+  channel handle are random. Both paths are run: with no channel the sound
+  starts again, and with an idle channel (0 to 31) the channel is stopped.
+  The calls to the mixer (start: id and persist flag; stop: handle) and the
+  three fields after the update must match.
+- The destructor, with a channel handle and a gallery: the channel stopped
+  and the gallery released must match.
+- SimpleObject's click event for interaction states 0 to 2. The original
+  reads the selector at +0x58 + state with no bounds check. A state of 3 or
+  more is not generated.
+
+The original's audibility test, attenuation and pan, mixer start and stop,
+registry calls and destructor helper are recording stubs. LC's side has a
+sound system with no device (`FakeSoundSystem`) and its real `SoundManager`.
+LC's sound fields are set through `ObjectFieldDump`.
+
+First run (2026-11-09): 20,000 cases.
+- LC native and LC as shipped: 0 differing cases. The code under test has
+  no switch of `docs/original-bugs.md`.
+- Controls: moving one offset on the original's side makes the test fail.
+  Tick enabled 0x4c to 0x4d: every constructor case differs. Handle 0x28
+  to 0x24: constructor, sound and destructor cases differ. Sound id and
+  persist flag swapped: 822 of 961 sound cases differ. Gallery 0x40 to
+  0x3c: 674 of 984 destructor cases differ. Selectors 0x58 to 0x59: 955 of
+  1,040 click cases differ.
+
+## Object variables: the CAOS r-values `obv0` to `obv2` (CE 10.3)
+
+| Function | Address | LC |
+| --- | --- | --- |
+| `Macro::ParseRValue` (`obvN`, 0041aae2) | 0041a9d0 | `Macro::parse_rvalue` |
+
+    WINEPREFIX=<throwaway prefix> tests/equivalence/run_rvalue.sh \
+        <CE 10.3 Creatures.exe> <cases> <build-dir>
+
+The original's macro is a block with the script text "obvN " at +0xc (the
+cursor at +0x10, the length at +0x14) and TARG at +0xa8. Its `obvN` path
+returns the dword at TARG + 0x34 + 4 * N, with no other call. LC runs its
+own interpreter on the same text with an `Object` whose three variables
+hold the same random values.
+
+First run (2026-11-09): 20,000 cases, 0 differing (native and as shipped).
+Control: with the original's variables at 0x38, every case differs.
 
 ## Learned words and phrases (CE 10.3)
 
@@ -1138,6 +1214,24 @@ Third run (2026-11-09): the object registry and the brains as well.
   as those after a speech bubble's text, original-bugs row 87).
 - Result: 40,667 lines, 328 never set by the original; every one of the
   other 40,339 is the same in LibreCreatures. No new bug.
+
+Fourth run (2026-11-09): the Object fields the third run could not see.
+
+- New tests prove their offsets: the object test (constructor, continuous
+  sound, destructor, SimpleObject's click selectors), the r-value test
+  (`obv1`, `obv2`) and two new vehicle operations (part bounds and knobs,
+  clear references). See their sections above.
+- New rows: Object's CAOS pointer (0x20), sound handle, id and persist flag
+  (0x28, 0x2c, 0x30), object variables 1 and 2 (0x38, 0x3c), gallery (0x40)
+  and tick enabled (0x4c); SimpleObject's three click selectors (0x58);
+  CompoundObject's six part bounds (0xcc) and all six knob hotspots (0x12c).
+- Result: 42,916 lines, 328 never set by the original; every one of the
+  other 42,588 is the same in LibreCreatures. No new bug.
+- Coverage per class: CallButton 95.5%, CompoundObject 98.4%, Lift 98.9%,
+  SimpleObject 95.2%, Vehicle 98.6%. For each, the only bytes not covered
+  are the vftable pointer (0x0-0x3), and the class is already compared
+  through the class chain. Blackboard (51.4%) and PointerTool (66.1%) have
+  no rows of their own yet.
 - Object coverage per class: SimpleObject 57%, CallButton 60%, Vehicle 51%,
   Lift 62%, CompoundObject 44%, PointerTool 40%, Blackboard 25%. The gaps
   are the same in every class: Object 0x20-0x23, 0x28-0x33, 0x38-0x43

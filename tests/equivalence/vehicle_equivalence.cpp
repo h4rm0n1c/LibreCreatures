@@ -72,10 +72,10 @@ constexpr std::size_t kEventSize = 0x18, kStimulusSize = 0x14;
 // Native Object, SimpleObject, CompoundObject, Vehicle and Lift layouts.
 constexpr std::size_t kClassifier = 0x4, kBoundsMode = 0x8, kBoundsFlags = 0x9, kMovementBounds = 0xc,
                       kBoundsReference = 0x1c, kInteraction = 0x24, kObjectVariable0 = 0x34,
-                      kTimerPeriod = 0x44, kTimerCountdown = 0x48;
+                      kTimerPeriod = 0x44, kTimerCountdown = 0x48, kCaosObjectPointer = 0x20;
 constexpr std::size_t kSimpleEntity = 0x50, kSimpleFlags = 0x5b, kButtonLift = 0x5c, kButtonFloor = 0x60;
 constexpr std::size_t kPartCount = 0x50, kParts = 0x54, kPartStride = 0xc;
-constexpr std::size_t kEventConfig = 0x12c;
+constexpr std::size_t kEventConfig = 0x12c, kPartBounds = 0xcc;  // six words; six WorldRects
 constexpr std::size_t kVelocityX = 0x144, kVelocityY = 0x148, kPositionX = 0x14c, kPositionY = 0x150,
                       kLocalBounds = 0x154, kCollision = 0x164;
 constexpr std::size_t kFloorY = 0x168, kFloorCount = 0x188, kCurrentFloor = 0x18c, kButtons = 0x190,
@@ -313,7 +313,16 @@ int main(int argc, char** argv) {
     std::vector<std::uint8_t> map_data(0x1000, 0);
     global<void*>(image, kMapData) = map_data.data();
     const char* names[] = {"tick", "tick", "tick", "select call", "request up", "request down",
-                           "button call", "set velocity", "event 0", "event 1", "event 2"};
+                           "button call", "set velocity", "event 0", "event 1", "event 2",
+                           "part bounds", "clear references"};
+    // CompoundObject's part bounds (+0xcc, six WorldRects) and its six knob
+    // words (+0x12c): GetCreatureEventPoint @0042b800 (out x, out y, index;
+    // RET 0xc) and the click hotspot test @0042b750 (x, y; RET 8).
+    using NativePartCenter = void(__attribute__((thiscall)) *)(void*, int*, int*, int);
+    using NativeClickAt = int(__attribute__((thiscall)) *)(void*, int, int);
+    // Object::ClearReferencesTo @00423820 (candidate; RET 4): the bounds
+    // reference (+0x1c) and the CAOS object pointer (+0x20).
+    using NativeClearReferences = void(__attribute__((thiscall)) *)(void*, void*);
 
     for (long index = 0; index < cases; ++index) {
         const bool is_lift = !random.chance(3);
@@ -566,10 +575,11 @@ int main(int argc, char** argv) {
         };
         for (int op = -1; op < (is_lift ? 200 : 80) && first.empty(); ++op, ++operations) {
             int which = -1;
+            std::string pending;  // a difference an operation found itself
             const std::uint32_t state_before = lc.current_interaction_event_id();
             if (op >= 0) {
                 reset_queues();
-                which = static_cast<int>(random.below(11));
+                which = static_cast<int>(random.below(13));
                 if (is_lift && random.chance(2)) which = 0;  // lifts need many ticks to arrive
                 if (!is_lift && which >= 3 && which <= 6) which = 7;
                 const bool from_creature = random.chance(2);
@@ -619,6 +629,67 @@ int main(int argc, char** argv) {
                     if (is_lift) { lc_lift->request_move_down(lc_event, hosts); call1(native, 6, native_event); }
                     else { lc.handle_queued_event_1(lc_event, hosts); call1(native, 6, native_event); }
                     break;
+                case 11: {
+                    for (std::size_t k = 0; k < 6; ++k) {
+                        world::WorldRect r{};
+                        r.min_x = random.range(-60, 200);
+                        r.min_y = random.range(-60, 200);
+                        r.max_x = random.chance(8) ? world::kWorldWidth + random.range(0, 200)
+                                                   : r.min_x + random.range(0, 300);
+                        r.max_y = r.min_y + random.range(0, 300);
+                        lc.set_part_bounds(k, r);
+                        field<world::WorldRect>(native, kPartBounds + 16 * k) = r;
+                        const int hotspot = random.chance(3) ? -1 : random.range(0, 5);
+                        lc.set_knob_function(k, hotspot);
+                        field<std::int32_t>(native, kEventConfig + 4 * k) = hotspot;
+                    }
+                    const int event_index = random.range(0, 2);
+                    int lc_x = 0, lc_y = 0, native_x = 0, native_y = 0;
+                    lc.get_part_center(&lc_x, &lc_y, event_index);
+                    reinterpret_cast<NativePartCenter>(image.at<void*>(0x0042b800))(native, &native_x, &native_y,
+                                                                                    event_index);
+                    const objects::Entity& primary = *lc.part(0).entity;
+                    const int px = primary.world_x() + random.range(-100, 400);
+                    const int py = primary.world_y() + random.range(-100, 400);
+                    const int lc_click = static_cast<int>(lc.click_event_id_at_world_position(px, py));
+                    const int native_click =
+                        reinterpret_cast<NativeClickAt>(image.at<void*>(0x0042b750))(native, px, py);
+                    if (lc_x != native_x || lc_y != native_y || lc_click != native_click) {
+                        std::snprintf(text, sizeof text,
+                                      "part bounds: event %d point native (%d,%d) lc (%d,%d); click (%d,%d) native %d lc %d",
+                                      event_index, native_x, native_y, lc_x, lc_y, px, py, native_click, lc_click);
+                        pending = text;
+                    }
+                    break;
+                }
+                case 12: {
+                    // Each of the two references: none, the creature or the
+                    // other object; then clear the references to one of them.
+                    Object* lc_choices[3] = {nullptr, &creature->skeleton(), &lc_other};
+                    std::uint8_t* native_choices[3] = {nullptr, native_creature, native_other};
+                    const std::size_t bounds_choice = random.below(3), pointer_choice = random.below(3);
+                    lc.set_bounds_reference_object(lc_choices[bounds_choice]);
+                    field<void*>(native, kBoundsReference) = native_choices[bounds_choice];
+                    lc.set_caos_object_pointer(lc_choices[pointer_choice]);
+                    field<void*>(native, kCaosObjectPointer) = native_choices[pointer_choice];
+                    const std::size_t candidate = 1 + random.below(2);
+                    lc.Object::clear_references_to(lc_choices[candidate]);
+                    reinterpret_cast<NativeClearReferences>(image.at<void*>(0x00423820))(native,
+                                                                                       native_choices[candidate]);
+                    if (field<const void*>(native, kBoundsReference) != native_of(lc.bounds_reference_object()) ||
+                        field<const void*>(native, kCaosObjectPointer) != native_of(lc.caos_object_pointer())) {
+                        std::snprintf(text, sizeof text, "clear references: bounds %s, pointer %s",
+                                      field<const void*>(native, kBoundsReference) ==
+                                              native_of(lc.bounds_reference_object()) ? "same" : "differ",
+                                      field<const void*>(native, kCaosObjectPointer) ==
+                                              native_of(lc.caos_object_pointer()) ? "same" : "differ");
+                        pending = text;
+                    }
+                    // Put the bounds reference back as the case set it up.
+                    lc.set_bounds_reference_object(nullptr);
+                    field<void*>(native, kBoundsReference) = nullptr;
+                    break;
+                }
                 default:
                     if (is_lift) { lc_lift->select_nearest_call_button_and_start_move(hosts); call0(native, 42); }
                     else { lc.handle_queued_event_2(lc_event, hosts, hosts); call1(native, 7, native_event); }
@@ -641,6 +712,7 @@ int main(int argc, char** argv) {
                     first = text + what;
                 }
             };
+            if (!pending.empty()) note(pending);
             // ---- the vehicle ----
             for (int p = 0; p < parts; ++p) {
                 const objects::Entity& e = *lc.part(static_cast<std::size_t>(p)).entity;

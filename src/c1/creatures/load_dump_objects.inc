@@ -21,14 +21,23 @@ LOAD_DUMP_OBJECT_FIELD(Object, bounds_mode, 0x8, U8{}, 1, 0, "simple_object, veh
 LOAD_DUMP_OBJECT_FIELD(Object, bounds_flags, 0x9, U8{}, 1, 0, "vehicle, simple_object", x.script_bounds_flags())
 LOAD_DUMP_OBJECT_FIELD(Object, movement_bounds, 0xc, Rect{}, 1, 0, "vehicle, simple_object", x.movement_bounds())
 LOAD_DUMP_OBJECT_FIELD(Object, bounds_reference, 0x1c, Ptr{}, 1, 0, "simple_object, vehicle", x.bounds_reference_object())
+LOAD_DUMP_OBJECT_FIELD(Object, caos_pointer, 0x20, Ptr{}, 1, 0, "vehicle, object", x.caos_object_pointer())
 LOAD_DUMP_OBJECT_FIELD(Object, interaction_event, 0x24, U8{}, 1, 0, "vehicle, goal", x.current_interaction_event_id())
-LOAD_DUMP_OBJECT_FIELD(Object, object_variable0, 0x34, U32{}, 1, 0, "vehicle", x.object_variable(0))
+LOAD_DUMP_OBJECT_FIELD(Object, sound_handle, 0x28, I32{}, 1, 0, "object", x.continuous_sound_handle())
+LOAD_DUMP_OBJECT_FIELD(Object, sound_id, 0x2c, U32{}, 1, 0, "object", x.continuous_sound_descriptor())
+LOAD_DUMP_OBJECT_FIELD(Object, sound_persist, 0x30, U32{}, 1, 0, "object", x.continuous_sound_persists() ? 1u : 0u)
+LOAD_DUMP_OBJECT_FIELD(Object, object_variable0, 0x34, U32{}, 1, 0, "vehicle, rvalue", x.object_variable(0))
+LOAD_DUMP_OBJECT_FIELD(Object, object_variable1, 0x38, U32{}, 1, 0, "rvalue", x.object_variable(1))
+LOAD_DUMP_OBJECT_FIELD(Object, object_variable2, 0x3c, U32{}, 1, 0, "rvalue", x.object_variable(2))
+LOAD_DUMP_OBJECT_FIELD(Object, gallery, 0x40, Ptr{}, 1, 0, "object", x.gallery())
 LOAD_DUMP_OBJECT_FIELD(Object, timer_period, 0x44, I32{}, 1, 0, "vehicle", O::timer_period(x))
 LOAD_DUMP_OBJECT_FIELD(Object, timer_countdown, 0x48, I32{}, 1, 0, "vehicle", x.timer_countdown_for_script())
+LOAD_DUMP_OBJECT_FIELD(Object, tick_enabled, 0x4c, U8{}, 1, 0, "object", x.tick_enabled() ? 1u : 0u)
 
 // SimpleObject
 LOAD_DUMP_OBJECT_FIELD(SimpleObject, entity, 0x50, Ptr{}, 1, 0, "simple_object, vehicle", x.entity())
 LOAD_DUMP_OBJECT_FIELD(SimpleObject, saved_plane, 0x54, I32{}, 1, 0, "simple_object", x.saved_entity_render_plane)
+LOAD_DUMP_OBJECT_FIELD(SimpleObject, click_selector, 0x58, U8{}, 3, 1, "object", static_cast<std::uint8_t>(x.click_event_for_interaction_state[i]))
 LOAD_DUMP_OBJECT_FIELD(SimpleObject, interaction_flags, 0x5b, U8{}, 1, 0, "vehicle", x.interaction_event_flags)
 
 // CallButton
@@ -40,7 +49,8 @@ LOAD_DUMP_OBJECT_FIELD(CompoundObject, part_count, 0x50, I32{}, 1, 0, "vehicle, 
 LOAD_DUMP_OBJECT_FIELD(CompoundObject, part_entity, 0x54, Ptr{}, 10, 0xc, "vehicle, simple_object", x.part(i).entity.get())
 LOAD_DUMP_OBJECT_FIELD(CompoundObject, part_x, 0x58, I32{}, 10, 0xc, "vehicle, simple_object", x.part(i).local_x_offset)
 LOAD_DUMP_OBJECT_FIELD(CompoundObject, part_y, 0x5c, I32{}, 10, 0xc, "vehicle", x.part(i).local_y_offset)
-LOAD_DUMP_OBJECT_FIELD(CompoundObject, event_config, 0x12c, I32{}, 3, 4, "vehicle", x.creature_event_config.event_config_value[i])
+LOAD_DUMP_OBJECT_FIELD(CompoundObject, part_bounds, 0xcc, Rect{}, 6, 16, "vehicle", x.part_bounds(i))
+LOAD_DUMP_OBJECT_FIELD(CompoundObject, event_config, 0x12c, I32{}, 6, 4, "vehicle", x.creature_event_config.event_config_value[i])
 
 // Vehicle
 LOAD_DUMP_OBJECT_FIELD(Vehicle, velocity_x, 0x144, I32{}, 1, 0, "vehicle", x.velocity_x_8_8)
