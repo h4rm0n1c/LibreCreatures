@@ -349,6 +349,35 @@ for mode in fixed native; do
     $cxx $flags $define -o "$exe" "$here/object_equivalence.cpp" "$here/native_image.cpp" \
         "$out/object_traps_$mode.cpp" $object
 done
+# The blackboard: its words, values and display, drawn through each side's
+# own image code.
+board="$src/brain/blackboard.cpp $vehicle"
+for mode in fixed native; do
+    case $mode in
+        fixed) define= ;;
+        native) define=-DLC_NATIVE_MODE ;;
+    esac
+    exe="$out/blackboard_equivalence_$mode.exe"
+    $cxx $flags $define -Wl,--no-demangle -o "$exe" "$here/blackboard_equivalence.cpp" \
+        "$here/native_image.cpp" $board > "$out/blackboard_$mode.link" 2>&1 || true
+    python3 "$here/trap_stubs.py" "$out/blackboard_$mode.link" "$out/blackboard_traps_$mode.cpp"
+    $cxx $flags $define -o "$exe" "$here/blackboard_equivalence.cpp" "$here/native_image.cpp" \
+        "$out/blackboard_traps_$mode.cpp" $board
+done
+# The pointer tool's bubbles and text.
+tool="$src/ui/tools.cpp $vehicle"
+for mode in fixed native; do
+    case $mode in
+        fixed) define= ;;
+        native) define=-DLC_NATIVE_MODE ;;
+    esac
+    exe="$out/pointer_tool_equivalence_$mode.exe"
+    $cxx $flags $define -Wl,--no-demangle -o "$exe" "$here/pointer_tool_equivalence.cpp" \
+        "$here/native_image.cpp" $tool > "$out/pointer_tool_$mode.link" 2>&1 || true
+    python3 "$here/trap_stubs.py" "$out/pointer_tool_$mode.link" "$out/pointer_tool_traps_$mode.cpp"
+    $cxx $flags $define -o "$exe" "$here/pointer_tool_equivalence.cpp" "$here/native_image.cpp" \
+        "$out/pointer_tool_traps_$mode.cpp" $tool
+done
 # The object variables: the CAOS interpreter's r-value reader.  Its
 # closure is large and mostly never called, so it is trap stubs.
 rvalue="$src/scripting/macro.cpp $src/scripting/macro_holder.cpp $src/scripting/tables.cpp \
