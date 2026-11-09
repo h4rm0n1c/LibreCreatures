@@ -662,6 +662,69 @@ First run (2026-11-09): 20,000 cases.
   0x3c: 674 of 984 destructor cases differ. Selectors 0x58 to 0x59: 955 of
   1,040 click cases differ.
 
+## The blackboard (CE 10.3)
+
+| Function | Address | LC |
+| --- | --- | --- |
+| `Blackboard::InitializeState` | 0042c910 | `initialize_state` |
+| `Blackboard::RedrawDisplay` | 0042c9a0 | `redraw_display` |
+| `Blackboard::SetEditMode` | 0042ca90 | `set_edit_mode` |
+| `Blackboard::SetCurrentWordText` | 0042cb70 | `set_current_word_text` |
+
+    WINEPREFIX=<throwaway prefix> tests/equivalence/run_blackboard.sh \
+        <CE 10.3 Creatures.exe> <cases> <build-dir>
+
+Both sides draw into a 400 x 300 image of their own, the original through
+its own fill (004235f0) and text (00423660) code, LC through `Entity`'s.
+The image's pixels come from a stub (00442ac0). Both use the same random
+glyphs: the original's charset tables (the pointer 0x468db4, the advance
+widths at 0x468dc0) and LC's raster host hold the same data.
+
+Each case starts from a random board: 16 words of 0 to 10 letters, 16
+values, the five display bytes, the selected word and edit mode. Then 12
+random operations follow. After each, these must match: the words, the
+values, the display bytes, the edit flag, the image, and the text input's
+target, maximum length and allowed characters.
+
+First run (2026-11-09): 20,000 cases.
+- Found L37: when the board left edit mode, LC allowed the characters
+  0x1f instead of 0x2f (see the fix below).
+- After the fix: 0 differing cases, LC native and as shipped.
+- Controls: moving the words, values, display bytes or edit flag by one on
+  the original's side makes 1,485 to 2,000 of 2,000 cases differ. The
+  values are proven only by InitializeState, which clears them: nothing
+  else in LC's core reads them.
+
+## The pointer tool's bubbles (CE 10.3)
+
+| Function | Address | LC |
+| --- | --- | --- |
+| `PointerTool` transient bubble text | 004299b0 | `set_transient_bubble_text` |
+| `PointerTool::SetPersistentBubbleText` | 00429960 | `set_persistent_bubble_text` |
+
+    WINEPREFIX=<throwaway prefix> tests/equivalence/run_pointer_tool.sh \
+        <CE 10.3 Creatures.exe> <cases> <build-dir>
+
+The original's bubble creation (00426580), bubble text (0042a1a0), bubble
+dismiss (bubble vtable +0x40) and speech-range event (00422f90) are
+recorders. Each case starts with or without a persistent bubble and a
+random text, then runs 8 random transient or persistent texts of 0 to 24
+letters. After each, the calls, the bubble held and the text (up to its
+NUL) must match. The bytes after the NUL are not compared: LC clears them,
+the original's strcpy_s leaves them.
+
+First run (2026-11-09): 10,000 cases.
+- Found L38: 846 cases differed, all the same. With no bubble up, an
+  empty persistent text makes an empty bubble in the original; LC made one
+  and put it away at once.
+- After the fix: 0 differing cases in 20,000, LC native and as shipped.
+- Controls: the bubble at 0x60 or the text at 0x69 on the original's side
+  makes 2,996 and 2,983 of 3,000 cases differ.
+- The pointer's hotspot (+0x5c, +0x60) is not proven. In LC's core only the
+  shift-click edit path uses it, and that path selects differently from the
+  original's (0x004288a3: the first object in the registry under the
+  hotspot, not the topmost).
+
 ## Object variables: the CAOS r-values `obv0` to `obv2` (CE 10.3)
 
 | Function | Address | LC |
@@ -1232,6 +1295,17 @@ Fourth run (2026-11-09): the Object fields the third run could not see.
   are the vftable pointer (0x0-0x3), and the class is already compared
   through the class chain. Blackboard (51.4%) and PointerTool (66.1%) have
   no rows of their own yet.
+
+Fifth run (2026-11-09): Blackboard and PointerTool.
+
+- New rows, from the blackboard and pointer-tool tests: the board's words,
+  values, display bytes and edit flag; the pointer tool's bubble and text.
+  `load_dump_classes.hpp` names `brain::Blackboard` and `ui::PointerTool`
+  as `objects::` classes for the dump.
+- Result: 42,956 lines, 328 never set by the original; every one of the
+  other 42,628 is the same in LibreCreatures.
+- Coverage: Blackboard 99.2%, PointerTool 90.1% (the hotspot is not
+  covered, see the pointer tool's section).
 - Object coverage per class: SimpleObject 57%, CallButton 60%, Vehicle 51%,
   Lift 62%, CompoundObject 44%, PointerTool 40%, Blackboard 25%. The gaps
   are the same in every class: Object 0x20-0x23, 0x28-0x33, 0x38-0x43

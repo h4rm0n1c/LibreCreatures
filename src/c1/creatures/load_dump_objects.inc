@@ -44,6 +44,10 @@ LOAD_DUMP_OBJECT_FIELD(SimpleObject, interaction_flags, 0x5b, U8{}, 1, 0, "vehic
 LOAD_DUMP_OBJECT_FIELD(CallButton, lift, 0x5c, Ptr{}, 1, 0, "vehicle", x.lift())
 LOAD_DUMP_OBJECT_FIELD(CallButton, floor, 0x60, U8{}, 1, 0, "vehicle", x.floor_index)
 
+// PointerTool
+LOAD_DUMP_OBJECT_FIELD(PointerTool, bubble, 0x64, Ptr{}, 1, 0, "pointer_tool", x.persistent_bubble)
+LOAD_DUMP_OBJECT_FIELD(PointerTool, text, 0x68, Text{25}, 1, 0, "pointer_tool", x.text_buffer.data())
+
 // CompoundObject
 LOAD_DUMP_OBJECT_FIELD(CompoundObject, part_count, 0x50, I32{}, 1, 0, "vehicle, simple_object", x.part_count())
 LOAD_DUMP_OBJECT_FIELD(CompoundObject, part_entity, 0x54, Ptr{}, 10, 0xc, "vehicle, simple_object", x.part(i).entity.get())
@@ -51,6 +55,16 @@ LOAD_DUMP_OBJECT_FIELD(CompoundObject, part_x, 0x58, I32{}, 10, 0xc, "vehicle, s
 LOAD_DUMP_OBJECT_FIELD(CompoundObject, part_y, 0x5c, I32{}, 10, 0xc, "vehicle", x.part(i).local_y_offset)
 LOAD_DUMP_OBJECT_FIELD(CompoundObject, part_bounds, 0xcc, Rect{}, 6, 16, "vehicle", x.part_bounds(i))
 LOAD_DUMP_OBJECT_FIELD(CompoundObject, event_config, 0x12c, I32{}, 6, 4, "vehicle", x.creature_event_config.event_config_value[i])
+
+// Blackboard
+LOAD_DUMP_OBJECT_FIELD(Blackboard, word, 0x144, Text{11}, 16, 11, "blackboard", x.word(i).text.data())
+LOAD_DUMP_OBJECT_FIELD(Blackboard, word_value, 0x1f4, U32{}, 16, 4, "blackboard", x.word_value(i))
+LOAD_DUMP_OBJECT_FIELD(Blackboard, fill_palette, 0x234, U8{}, 1, 0, "blackboard", x.display_config().fill_palette_index)
+LOAD_DUMP_OBJECT_FIELD(Blackboard, text_config1, 0x235, U8{}, 1, 0, "blackboard", x.display_config().text_render_config_1)
+LOAD_DUMP_OBJECT_FIELD(Blackboard, text_config2, 0x236, U8{}, 1, 0, "blackboard", x.display_config().text_render_config_2)
+LOAD_DUMP_OBJECT_FIELD(Blackboard, tile_x, 0x237, U8{}, 1, 0, "blackboard", x.display_config().tile_x)
+LOAD_DUMP_OBJECT_FIELD(Blackboard, tile_y, 0x238, U8{}, 1, 0, "blackboard", x.display_config().tile_y)
+LOAD_DUMP_OBJECT_FIELD(Blackboard, edit_mode, 0x239, U8{}, 1, 0, "blackboard", x.edit_mode_enabled() ? 1u : 0u)
 
 // Vehicle
 LOAD_DUMP_OBJECT_FIELD(Vehicle, velocity_x, 0x144, I32{}, 1, 0, "vehicle", x.velocity_x_8_8)

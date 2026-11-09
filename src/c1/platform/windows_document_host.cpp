@@ -20,6 +20,7 @@
 #include "../creatures/load_dump.hpp"
 #include "../creatures/creature_field_dump.hpp"
 #include "../objects/object_field_dump.hpp"
+#include "../creatures/load_dump_classes.hpp"
 #include "../brain/lobe_field_dump.hpp"
 
 #include <limits>
