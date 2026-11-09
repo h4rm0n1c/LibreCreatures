@@ -378,6 +378,46 @@ for mode in fixed native; do
     $cxx $flags $define -o "$exe" "$here/pointer_tool_equivalence.cpp" "$here/native_image.cpp" \
         "$out/pointer_tool_traps_$mode.cpp" $tool
 done
+# A creature's genome loci: the creature closure.
+for mode in fixed native; do
+    case $mode in
+        fixed) define= ;;
+        native) define=-DLC_NATIVE_MODE ;;
+    esac
+    exe="$out/locus_equivalence_$mode.exe"
+    $cxx $flags $define -Wl,--no-demangle -o "$exe" "$here/locus_equivalence.cpp" \
+        "$here/native_image.cpp" $creature > "$out/locus_$mode.link" 2>&1 || true
+    python3 "$here/trap_stubs.py" "$out/locus_$mode.link" "$out/locus_traps_$mode.cpp"
+    $cxx $flags $define -o "$exe" "$here/locus_equivalence.cpp" "$here/native_image.cpp" \
+        "$out/locus_traps_$mode.cpp" $creature
+done
+# A creature's voice: the creature closure; the original's CString work
+# runs in the install's MFC at run time.
+for mode in fixed native; do
+    case $mode in
+        fixed) define= ;;
+        native) define=-DLC_NATIVE_MODE ;;
+    esac
+    exe="$out/voice_equivalence_$mode.exe"
+    $cxx $flags $define -Wl,--no-demangle -o "$exe" "$here/voice_equivalence.cpp" \
+        "$here/native_image.cpp" $creature > "$out/voice_$mode.link" 2>&1 || true
+    python3 "$here/trap_stubs.py" "$out/voice_$mode.link" "$out/voice_traps_$mode.cpp"
+    $cxx $flags $define -o "$exe" "$here/voice_equivalence.cpp" "$here/native_image.cpp" \
+        "$out/voice_traps_$mode.cpp" $creature
+done
+# A creature's bacterium: the creature closure.
+for mode in fixed native; do
+    case $mode in
+        fixed) define= ;;
+        native) define=-DLC_NATIVE_MODE ;;
+    esac
+    exe="$out/bacterium_equivalence_$mode.exe"
+    $cxx $flags $define -Wl,--no-demangle -o "$exe" "$here/bacterium_equivalence.cpp" \
+        "$here/native_image.cpp" $creature > "$out/bacterium_$mode.link" 2>&1 || true
+    python3 "$here/trap_stubs.py" "$out/bacterium_$mode.link" "$out/bacterium_traps_$mode.cpp"
+    $cxx $flags $define -o "$exe" "$here/bacterium_equivalence.cpp" "$here/native_image.cpp" \
+        "$out/bacterium_traps_$mode.cpp" $creature
+done
 # The object variables: the CAOS interpreter's r-value reader.  Its
 # closure is large and mostly never called, so it is trap stubs.
 rvalue="$src/scripting/macro.cpp $src/scripting/macro_holder.cpp $src/scripting/tables.cpp \
