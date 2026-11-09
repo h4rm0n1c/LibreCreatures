@@ -108,7 +108,7 @@ files; **test** = seen in a function test that runs the native code
 | 12 | Gait selection tests the animation of the next gait up, not the gait it chooses, and never tests gait 7, so a creature can choose an empty gait. | `SelectWalkGait` @004082c0 | 671c403 | code |
 | 13 | A `drop` with empty hands gives the creature Disappointment. Food, drink, herb and weed scripts start with `drop`, so eating disappoints the norn. | `NotifyDependentsOnRemoval` @00408420 | ffe8e5c, e6126ca | code, A/B |
 | 14 | The lonely and crowded phrases have no space: "comeNorn", "runNorn". | `SpeakDominantDrivePhrase` @0040b160 | ba1dab0 | code |
-| 15 | With a zero gestation chemical, the status report repeats the previous field as the pregnancy stage. | creature status report | 71431ba | code |
+| 15 | With a zero gestation chemical, the status report gives the minutes of the creature's age (the last number it formatted, without its zero padding) as the pregnancy stage. | creature status report | 71431ba | code |
 | 16 | If a creature's generated body sprite file is missing, the creature stays invisible for ever. | `Skeleton` sprite check on world open | b1f6c2d | code, lab |
 | 17 | `stm# tact` sends the stimulus to every creature in the world when one creature touches the source. | `QueueTactStimulusForOverlappingCreatures` @00423470 | c5a6a2d | code, lab |
 | 49 | An imported creature whose genome is renamed to avoid a clash keeps its gamete under the old name, so it breeds with whichever creature's genome now has that name. | `Creature::Deserialize` @0040dda0 | 81f4fc2 | code |
