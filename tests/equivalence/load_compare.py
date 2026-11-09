@@ -18,9 +18,16 @@ def lines(path):
 
 
 def key(line):
-    # "creature <c> <field>[<i>] <value>" -> "creature <c> <field>[<i>]"
-    parts = line.split(" ", 3)
-    return " ".join(parts[:3]) if len(parts) >= 3 else line
+    # Everything but the value, the last word (values have no spaces: text
+    # is escaped).  "creature 2 lobe 6 neuron 14 firing 0" ->
+    # "creature 2 lobe 6 neuron 14 firing".
+    return line.rsplit(" ", 1)[0] if " " in line else line
+
+
+def field_name(k):
+    # "creature 2 lobe 6 neuron 14 dendrite_count[1]" -> "lobe neuron dendrite_count"
+    words = [w for w in k.split(" ")[2:] if not w.isdigit()]
+    return " ".join(words).split("[")[0]
 
 
 def main():
@@ -30,7 +37,7 @@ def main():
     stable = [a == b for a, b in zip(zero, ones)]
     unset = [key(a) for a, s in zip(zero, stable) if not s]
     print(f"original: {len(zero)} lines, {len(unset)} of them fields it never sets (not compared)")
-    names = sorted({k.split(" ")[2].split("[")[0] for k in unset})
+    names = sorted({field_name(k) for k in unset})
     if names:
         print("  never set: " + ", ".join(names))
     if len(sys.argv) < 4:
@@ -38,6 +45,12 @@ def main():
     lc = lines(sys.argv[3])
     if [key(l) for l in lc] != [key(l) for l in zero]:
         print("LC load: the dump does not have the same fields as the original's")
+        for a, b in zip(zero, lc):
+            if key(a) != key(b):
+                print(f"  first difference: original [{a}], LC [{b}]")
+                break
+        else:
+            print(f"  lines: original {len(zero)}, LC {len(lc)}")
         return 1
     differ = [(a, b) for a, b, s in zip(zero, lc, stable) if s and a != b]
     if not differ:

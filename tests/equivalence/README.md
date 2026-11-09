@@ -1112,3 +1112,38 @@ Skeleton and Object it starts with; 5,929 lines for 4 creatures):
   blocks are 0x29c0-0x2c13 (596 bytes, the member CreateObject constructs at
   +0x29c0), the two pointers at the start of each of the 36 stimulus
   contexts, 0x804-0x83f and the Object fields at 0x20-0x4c.
+
+Third run (2026-11-09): the object registry and the brains as well.
+
+- `load_dump_objects.inc` has rows per class (Object, SimpleObject,
+  CallButton, CompoundObject, Vehicle, Lift), each with an offset the
+  vehicle, simple-object or goal test proves. A row applies to every object
+  of that class or one derived from it: the original's side reads the
+  class from MFC's own CRuntimeClass chain (vftable slot 0, the base class
+  at +0x10), LibreCreatures' side uses dynamic_cast. Both walk the object
+  registry in its order (the original's array 0x4704a8, count 0x4704ac).
+  `Object`'s protected timer period is read through `ObjectFieldDump`.
+- `load_dump_brain.inc` has rows per lobe and per neuron for every
+  creature's brain. Their offsets come from the brain test, which builds
+  the original's brain at them from LibreCreatures' saved brain and finds no
+  difference in 200,000 cases: that proves LC's save, and the round trip
+  proves the load reads each value back into the field the save writes it
+  from. The rows that matter most are those a load builds instead of
+  reading: the active count, the migration candidates and the loose-dendrite
+  counts. Dendrites are left out (saved, and so already covered that way).
+- The original's object raw bytes (`C1_WORLD_OBJECT_RAW_DUMP`: per object
+  its class chain, size and bytes) give coverage per class.
+- The fill runs are now separate from the save runs: filling every new
+  block changes the save (the original saves some bytes it never sets, such
+  as those after a speech bubble's text, original-bugs row 87).
+- Result: 40,667 lines, 328 never set by the original; every one of the
+  other 40,339 is the same in LibreCreatures. No new bug.
+- Object coverage per class: SimpleObject 57%, CallButton 60%, Vehicle 51%,
+  Lift 62%, CompoundObject 44%, PointerTool 40%, Blackboard 25%. The gaps
+  are the same in every class: Object 0x20-0x23, 0x28-0x33, 0x38-0x43
+  (object variables 1 and 2 are there, but only variable 0 is proven) and
+  0x4c; SimpleObject 0x58-0x5a; CompoundObject 0xcc-0x12b. A field there
+  needs a test that proves its offset first.
+- Biochemistry has no rows here: the biochemistry test already loads LC's
+  side through its own world archive and compares it with the original, so
+  its load is proven there.

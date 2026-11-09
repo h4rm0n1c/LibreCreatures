@@ -642,6 +642,10 @@ protected:
         current_interaction_event_id_ = value;
     }
     std::int32_t timer_period() const { return timer_period_; }
+
+    // The load equivalence test's dump (load_dump_objects.inc) reads
+    // protected state through this; object_field_dump.hpp defines it.
+    friend class ObjectFieldDump;
     std::int32_t timer_countdown() const { return timer_countdown_; }
     void set_timer_countdown(std::int32_t value) {
         timer_countdown_ = value;

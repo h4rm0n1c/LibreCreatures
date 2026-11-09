@@ -103,11 +103,11 @@ std::string native_text(dump::CursorFrom kind, const std::uint8_t* creature, std
     return dump::unsigned_text(pointer - base);
 }
 
-// The coverage half of the load test (run_world.sh --coverage): the
-// original's Creature is 0x2cdc bytes and comes from operator new through
-// the import slot 0x450aec (Creature::CreateObject 00406f64: push 0x2cdc,
-// call [0x450aec]).  With C1_WORLD_FILL=<byte>, that slot fills each
-// Creature-sized block with the byte before the constructor runs; with
+// The coverage half of the load test (run_world.sh --dump): the original's
+// objects come from operator new through the import slot 0x450aec (the
+// Creature, 0x2cdc bytes, from Creature::CreateObject 00406f64: push 0x2cdc,
+// call [0x450aec]).  With C1_WORLD_FILL=<byte>, that slot fills every new
+// block with the byte before its constructor runs; with
 // C1_WORLD_RAW_DUMP=<file>, the creatures' bytes are written after the load.
 // Two runs with different fills show which bytes the constructor and the
 // load set (tests/equivalence/load_coverage.py).
@@ -119,7 +119,7 @@ int g_fill = -1;
 
 void* __cdecl filling_new(std::size_t size) {
     void* block = g_real_new(size);
-    if (block != nullptr && size == kCreatureObjectSize && g_fill >= 0) {
+    if (block != nullptr && g_fill >= 0) {
         std::memset(block, g_fill, size);
     }
     return block;
@@ -135,6 +135,85 @@ void write_raw_dump(equivalence::NativeImage& image, const char* path) {
     auto* const* list = *image.at<std::uint8_t***>(0x004704bc);
     for (int c = 0; c < count; ++c) {
         std::fwrite(list[c], 1, kCreatureObjectSize, file);
+    }
+    std::fclose(file);
+}
+
+// The original's object registry (array 0x4704a8, count 0x4704ac; the
+// heard and vehicle tests) and each object's MFC class: vftable slot 0 is
+// GetRuntimeClass; with _AFXDLL a CRuntimeClass is {name +0, object size
+// +4, schema +8, CreateObject +0xc, GetBaseClass +0x10}.
+using GetRuntimeClass = const std::uint8_t*(__attribute__((thiscall))*)(const void*);
+using GetBaseClass = const std::uint8_t*(__stdcall*)();
+
+const std::uint8_t* runtime_class(const std::uint8_t* object) {
+    const auto* vftable = *reinterpret_cast<GetRuntimeClass* const*>(object);
+    return vftable[0](object);
+}
+
+std::vector<std::string> class_chain(const std::uint8_t* object) {
+    std::vector<std::string> names;
+    for (const std::uint8_t* rc = runtime_class(object); rc != nullptr;) {
+        names.emplace_back(*reinterpret_cast<const char* const*>(rc));
+        const auto base = *reinterpret_cast<const GetBaseClass*>(rc + 0x10);
+        rc = base == nullptr ? nullptr : base();
+    }
+    return names;
+}
+
+bool is_kind(const std::vector<std::string>& chain, const char* name) {
+    for (const std::string& n : chain) {
+        if (n == name) return true;
+    }
+    return false;
+}
+
+void write_object_dump(equivalence::NativeImage& image, std::FILE* file) {
+    using dump::U8; using dump::Bool; using dump::U32; using dump::I32; using dump::Ptr;
+    using dump::Rect; using dump::Text; using dump::Bytes; using dump::CursorFrom;
+    const int count = *image.at<int*>(0x004704ac);
+    auto* const* list = *image.at<std::uint8_t***>(0x004704a8);
+    std::fprintf(file, "objects %u\n", static_cast<unsigned>(count));
+    for (int n = 0; n < count; ++n) {
+        const std::uint8_t* object = list[n];
+        const std::vector<std::string> chain = class_chain(object);
+#define LOAD_DUMP_OBJECT_FIELD(cls, name, offset, kind, count_, stride, proven_by, lc)            \
+        if (is_kind(chain, #cls)) {                                                               \
+            for (std::size_t i = 0; i < (count_); ++i) {                                          \
+                dump::write_object_line(file, static_cast<std::size_t>(n), #name, (count_), i,    \
+                                        native_text(kind, object, (offset) + i * (stride)));      \
+            }                                                                                     \
+        }
+#include "creatures/load_dump_objects.inc"
+#undef LOAD_DUMP_OBJECT_FIELD
+    }
+}
+
+// The objects' raw bytes for load_coverage.py: per object, its MFC class
+// chain, most derived first, joined with '/' (128 bytes, NUL-padded), its
+// size (4 bytes, CRuntimeClass +4) and its bytes.
+void write_object_raw_dump(equivalence::NativeImage& image, const char* path) {
+    std::FILE* file = std::fopen(path, "wb");
+    if (file == nullptr) {
+        std::fprintf(stderr, "cannot write %s\n", path);
+        return;
+    }
+    const int count = *image.at<int*>(0x004704ac);
+    auto* const* list = *image.at<std::uint8_t***>(0x004704a8);
+    for (int n = 0; n < count; ++n) {
+        const std::uint8_t* object = list[n];
+        const std::uint8_t* rc = runtime_class(object);
+        std::string joined;
+        for (const std::string& n : class_chain(object)) {
+            joined += (joined.empty() ? "" : "/") + n;
+        }
+        char name[128] = {};
+        std::strncpy(name, joined.c_str(), sizeof name - 1);
+        std::uint32_t size = 0;
+        std::memcpy(&size, rc + 4, 4);
+        std::fwrite(name, 1, sizeof name, file);
+        std::fwrite(&size, 1, 4, file);
+        std::fwrite(object, 1, size, file);
     }
     std::fclose(file);
 }
@@ -159,7 +238,48 @@ void write_field_dump(equivalence::NativeImage& image, const char* path) {
         }
 #include "creatures/load_dump_fields.inc"
 #undef LOAD_DUMP_FIELD
+        // The brain (Creature +0x2c18; brain_native.hpp): lobe n at
+        // brain + 8 + 200 * n, the count at +6408; the neurons at the
+        // pointer at lobe +156, 16 bytes each, their count at lobe +164.
+        std::uint32_t brain_address;
+        std::memcpy(&brain_address, creature + 0x2c18, 4);
+        if (brain_address == 0) {
+            std::fprintf(file, "creature %u brain null\n", static_cast<unsigned>(c));
+            continue;
+        }
+        const auto* brain = reinterpret_cast<const std::uint8_t*>(static_cast<std::uintptr_t>(brain_address));
+        const std::uint32_t lobes = value_at<std::uint32_t>(brain + 6408);
+        std::fprintf(file, "creature %u lobes %u\n", static_cast<unsigned>(c), lobes);
+        for (std::uint32_t l = 0; l < lobes; ++l) {
+            const std::uint8_t* lobe = brain + 8 + 200 * l;
+#define LOAD_DUMP_LOBE_FIELD(name, offset, kind, count_, stride, proven_by, lc)                    \
+            for (std::size_t i = 0; i < (count_); ++i) {                                         \
+                dump::write_brain_line(file, static_cast<std::size_t>(c), l, -1, #name, (count_), i, \
+                                       native_text(kind, lobe, (offset) + i * (stride)));         \
+            }
+#define LOAD_DUMP_NEURON_FIELD(name, offset, kind, count_, stride, proven_by, lc)
+#include "creatures/load_dump_brain.inc"
+#undef LOAD_DUMP_LOBE_FIELD
+#undef LOAD_DUMP_NEURON_FIELD
+            const std::uint32_t neurons = value_at<std::uint32_t>(lobe + 164);
+            const auto* neuron_base = reinterpret_cast<const std::uint8_t*>(
+                static_cast<std::uintptr_t>(value_at<std::uint32_t>(lobe + 156)));
+            for (std::uint32_t n = 0; n < neurons; ++n) {
+                const std::uint8_t* neuron = neuron_base + 16 * n;
+#define LOAD_DUMP_LOBE_FIELD(name, offset, kind, count_, stride, proven_by, lc)
+#define LOAD_DUMP_NEURON_FIELD(name, offset, kind, count_, stride, proven_by, lc)                  \
+                for (std::size_t i = 0; i < (count_); ++i) {                                     \
+                    dump::write_brain_line(file, static_cast<std::size_t>(c), l, static_cast<long>(n), \
+                                           #name, (count_), i,                                    \
+                                           native_text(kind, neuron, (offset) + i * (stride)));   \
+                }
+#include "creatures/load_dump_brain.inc"
+#undef LOAD_DUMP_LOBE_FIELD
+#undef LOAD_DUMP_NEURON_FIELD
+            }
+        }
     }
+    write_object_dump(image, file);
     std::fclose(file);
 }
 
@@ -248,6 +368,9 @@ int main(int argc, char** argv) {
     }
     if (const char* raw = std::getenv("C1_WORLD_RAW_DUMP")) {
         write_raw_dump(image, raw);
+    }
+    if (const char* raw = std::getenv("C1_WORLD_OBJECT_RAW_DUMP")) {
+        write_object_raw_dump(image, raw);
     }
     using UpdateWorld = void(__attribute__((thiscall))*)(void*);
     for (long tick = 0; tick < ticks; ++tick) {
