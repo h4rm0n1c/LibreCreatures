@@ -794,6 +794,29 @@ killed, 11,128 activated), 0 differing (native and as shipped). Controls:
 the thresholds swapped, or the state, input or outputs moved, make 1,091 to
 3,303 of 5,000 cases differ.
 
+## The status for kits: `Creature::FormatStatusForExternalQuery` @0040e520 (CE 10.3)
+
+    WINEPREFIX=<throwaway prefix> tests/equivalence/run_status.sh \
+        <CE 10.3 Creatures.exe> <cases> <build-dir> <install-dir>
+
+The original's history names are CStrings, built and assigned by the
+install's real MFC (only read). Its string resources come from a stub of
+`CString::LoadString` that gives "<id>"; LC's `StatusStrings` hold the same
+texts for the ids its comments name. The map's rooms are the same random
+rooms on both sides. Each case has a random display name and genome
+moniker, age, sex, child, death state, down foot, the gestation, life-force
+and sickness chemicals, and 0 to 6 rooms. The two ten-field texts must be
+the same.
+
+First run (2026-11-09):
+- Found L40: at gestation stage 0 (row 15), LC native printed the whole age
+  ("54:49"); the original prints the minutes alone ("49"), the last number
+  it formatted. 297 of 3,000 cases.
+- After the fix (20,000 cases): LC native 0 differing. LC as shipped 1,535,
+  the same cases as the build with only rows 15 and 43 fixed.
+- Controls: the display name and genome moniker swapped make every case
+  differ; the age at 0x83c makes 1,560 of 2,000 differ.
+
 ## Object variables: the CAOS r-values `obv0` to `obv2` (CE 10.3)
 
 | Function | Address | LC |
@@ -1401,6 +1424,16 @@ Sixth run (2026-11-09): the Creature's gaps.
     context into the stimulus queue and never reads them back; LC builds
     the queued record directly and keeps none. They are null after a load
     on both sides.
+
+Seventh run (2026-11-09): the history record.
+
+- New kind `CStr`: an MFC CString, a pointer to its text; the native dump
+  follows the pointer.
+- New rows, from the status test: the genome moniker (0x810), the display
+  name (0x814) and the age (0x838).
+- Result: all 43,354 compared lines the same; coverage 95.3%. The rest of
+  the history record (the father's and mother's monikers, the birthplace)
+  is not yet proven by a test.
 - Object coverage per class: SimpleObject 57%, CallButton 60%, Vehicle 51%,
   Lift 62%, CompoundObject 44%, PointerTool 40%, Blackboard 25%. The gaps
   are the same in every class: Object 0x20-0x23, 0x28-0x33, 0x38-0x43

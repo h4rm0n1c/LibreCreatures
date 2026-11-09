@@ -418,6 +418,22 @@ for mode in fixed native; do
     $cxx $flags $define -o "$exe" "$here/bacterium_equivalence.cpp" "$here/native_image.cpp" \
         "$out/bacterium_traps_$mode.cpp" $creature
 done
+# A creature's status for kits: the creature closure; the original's
+# CString work runs in the install's MFC at run time.  Rows 15 and 43 are
+# the switches in the code under test.
+for mode in fixed native rows; do
+    case $mode in
+        fixed) define= ;;
+        native) define=-DLC_NATIVE_MODE ;;
+        rows) define="-DLC_NATIVE_MODE -DEQUIVALENCE_EXPECT=1 -DLC_FIX_15=1 -DLC_FIX_43=1" ;;
+    esac
+    exe="$out/status_equivalence_$mode.exe"
+    $cxx $flags $define -Wl,--no-demangle -o "$exe" "$here/status_equivalence.cpp" \
+        "$here/native_image.cpp" $creature > "$out/status_$mode.link" 2>&1 || true
+    python3 "$here/trap_stubs.py" "$out/status_$mode.link" "$out/status_traps_$mode.cpp"
+    $cxx $flags $define -o "$exe" "$here/status_equivalence.cpp" "$here/native_image.cpp" \
+        "$out/status_traps_$mode.cpp" $creature
+done
 # The object variables: the CAOS interpreter's r-value reader.  Its
 # closure is large and mostly never called, so it is trap stubs.
 rvalue="$src/scripting/macro.cpp $src/scripting/macro_holder.cpp $src/scripting/tables.cpp \

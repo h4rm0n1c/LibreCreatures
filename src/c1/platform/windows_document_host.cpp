@@ -7475,6 +7475,9 @@ std::string lc_text(dump::Rect, const creatures1::world::WorldRect& rect) {
 std::string lc_text(dump::Text kind, const char* text) {
     return dump::text_text(text, kind.length);
 }
+std::string lc_text(dump::CStr, const std::string& text) {
+    return dump::text_text(text.c_str(), 0x1000);
+}
 std::string lc_text(dump::Bytes kind, const void* data) {
     return dump::bytes_text(data, kind.length);
 }
@@ -7489,7 +7492,7 @@ void write_field_dump(const char* path,
         return;
     }
     using dump::U8; using dump::Bool; using dump::U32; using dump::I32; using dump::Ptr;
-    using dump::Rect; using dump::Text; using dump::Bytes; using dump::CursorFrom;
+    using dump::Rect; using dump::Text; using dump::Bytes; using dump::CursorFrom; using dump::CStr;
     using P = creatures1::creatures::CreatureFieldDump;
     const std::size_t count = runtime == nullptr ? 0 : runtime->creature_count();
     std::fprintf(file, "creatures %u\n", static_cast<unsigned>(count));

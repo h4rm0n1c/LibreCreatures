@@ -27,6 +27,7 @@ struct Text { std::size_t length; };   // at most `length` bytes, NUL ends it
 struct Bytes { std::size_t length; };  // exactly `length` bytes, in hex
 struct CursorFrom { std::size_t base; };  // a pointer into the same object:
                                           // its distance from offset `base`
+struct CStr {};                     // an MFC CString: a pointer to its text
 
 inline std::string unsigned_text(std::uint32_t value) { return std::to_string(value); }
 inline std::string signed_text(std::int32_t value) { return std::to_string(value); }

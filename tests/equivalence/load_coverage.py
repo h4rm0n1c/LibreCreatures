@@ -27,7 +27,7 @@ import sys
 
 OBJECT_SIZE = 0x2CDC
 
-SIZES = {"U8": 1, "Bool": 1, "U32": 4, "I32": 4, "Ptr": 4, "Rect": 16, "CursorFrom": 4}
+SIZES = {"U8": 1, "Bool": 1, "U32": 4, "I32": 4, "Ptr": 4, "Rect": 16, "CursorFrom": 4, "CStr": 4}
 
 
 def fields(path):
