@@ -3657,8 +3657,11 @@ std::string Creature::format_status_for_external_query(
                 stage = index + 1;
             }
         }
-        // Native repeats the age field at stage 0 (original-bugs.md row 15).
-        field(stage == 0 && !LC_FIX(15) ? age_text : std::to_string(stage));
+        // Native at stage 0 (original-bugs.md row 15) writes no stage and
+        // prints its scratch buffer, which still holds the age's minutes as
+        // _itoa_s left them: no zero padding.
+        field(stage == 0 && !LC_FIX(15) ? std::to_string(minutes)
+                                         : std::to_string(stage));
     }
 
     // Health is the life-force chemical as a percentage; zero or dead reports
