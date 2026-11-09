@@ -45,6 +45,8 @@ LOAD_DUMP_OBJECT_FIELD(CallButton, lift, 0x5c, Ptr{}, 1, 0, "vehicle", x.lift())
 LOAD_DUMP_OBJECT_FIELD(CallButton, floor, 0x60, U8{}, 1, 0, "vehicle", x.floor_index)
 
 // PointerTool
+LOAD_DUMP_OBJECT_FIELD(PointerTool, hotspot_x, 0x5c, I32{}, 1, 0, "pointer_tool", x.cursor_hotspot_offset_x)
+LOAD_DUMP_OBJECT_FIELD(PointerTool, hotspot_y, 0x60, I32{}, 1, 0, "pointer_tool", x.cursor_hotspot_offset_y)
 LOAD_DUMP_OBJECT_FIELD(PointerTool, bubble, 0x64, Ptr{}, 1, 0, "pointer_tool", x.persistent_bubble)
 LOAD_DUMP_OBJECT_FIELD(PointerTool, text, 0x68, Text{25}, 1, 0, "pointer_tool", x.text_buffer.data())
 

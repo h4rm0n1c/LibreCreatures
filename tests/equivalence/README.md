@@ -695,12 +695,13 @@ First run (2026-11-09): 20,000 cases.
   values are proven only by InitializeState, which clears them: nothing
   else in LC's core reads them.
 
-## The pointer tool's bubbles (CE 10.3)
+## The pointer tool's bubbles and shift-click (CE 10.3)
 
 | Function | Address | LC |
 | --- | --- | --- |
 | `PointerTool` transient bubble text | 004299b0 | `set_transient_bubble_text` |
 | `PointerTool::SetPersistentBubbleText` | 00429960 | `set_persistent_bubble_text` |
+| `ProcessPendingInput`, shift-click (edit) path | 00428860 | `process_pending_input` |
 
     WINEPREFIX=<throwaway prefix> tests/equivalence/run_pointer_tool.sh \
         <CE 10.3 Creatures.exe> <cases> <build-dir>
@@ -720,10 +721,20 @@ First run (2026-11-09): 10,000 cases.
 - After the fix: 0 differing cases in 20,000, LC native and as shipped.
 - Controls: the bubble at 0x60 or the text at 0x69 on the original's side
   makes 2,996 and 2,983 of 3,000 cases differ.
-- The pointer's hotspot (+0x5c, +0x60) is not proven. In LC's core only the
-  shift-click edit path uses it, and that path selects differently from the
-  original's (0x004288a3: the first object in the registry under the
-  hotspot, not the topmost).
+
+Shift-click (added 2026-11-09): each case also runs 4 shift-clicks. The
+pointer's position and hotspot are random. The registry holds 0 to 6
+objects and the pointer, and the scenery list 0 to 4 objects, each with
+random bounds near the hotspot and a random render plane. The original's
+UpdateMovementBounds runs as native code. The object chosen for editing and
+the pending input flags must match.
+- Found L39: LC chose the object with the highest render plane. With the
+  old code, 310 of 3,000 cases differ.
+- After the fix (20,000 cases, 80,000 shift-clicks: 22,381 chose a registry
+  object, 11,430 a scenery object): 0 differing cases, LC native and as
+  shipped.
+- Controls: the hotspot at 0x58 or 0x64 on the original's side makes 1,772
+  and 1,777 of 3,000 cases differ.
 
 ## Object variables: the CAOS r-values `obv0` to `obv2` (CE 10.3)
 
@@ -1304,8 +1315,11 @@ Fifth run (2026-11-09): Blackboard and PointerTool.
   as `objects::` classes for the dump.
 - Result: 42,956 lines, 328 never set by the original; every one of the
   other 42,628 is the same in LibreCreatures.
-- Coverage: Blackboard 99.2%, PointerTool 90.1% (the hotspot is not
-  covered, see the pointer tool's section).
+- Coverage: Blackboard 99.2%, PointerTool 90.1%: the hotspot was not yet
+  proven.
+- With the shift-click test, the hotspot rows were added: 42,958 lines, all
+  42,630 compared the same; PointerTool 96.7% (only the vftable pointer is
+  not covered).
 - Object coverage per class: SimpleObject 57%, CallButton 60%, Vehicle 51%,
   Lift 62%, CompoundObject 44%, PointerTool 40%, Blackboard 25%. The gaps
   are the same in every class: Object 0x20-0x23, 0x28-0x33, 0x38-0x43
