@@ -359,34 +359,48 @@ void PointerTool::process_pending_input(
             runtime.finish_pending_input();
             return;
         }
-        // Use the same one-pixel pointer hit test as ordinary input.  A
-        // registry-order scan selects a containing machine before an object
-        // placed inside it (for example cheese in an incubator), even when
-        // the contained object is the frontmost visible target.
-        objects::Object* edit = input_receiver.find_topmost_overlapping_object(
-            0, 0, runtime);
-        if (edit == nullptr) {
-            const int world_x = entity() != nullptr
-                                    ? pointer->entity()->world_x() +
-                                          pointer->cursor_hotspot_offset_x
-                                    : runtime.pointer_world_x();
-            const int world_y = entity() != nullptr
-                                    ? pointer->entity()->world_y() +
-                                          pointer->cursor_hotspot_offset_y
-                                    : runtime.pointer_world_y();
-            for (std::size_t index = 0;
-                 index < runtime.scenery_object_count(); ++index) {
-                objects::Object* candidate = runtime.scenery_object_at(index);
-                if (candidate == nullptr) {
-                    runtime.report_invalid_scenery_index();
-                    continue;
-                }
-                world::WorldRect bounds{};
-                if (candidate->get_bounds(&bounds) &&
-                    runtime.point_in_world_rect(bounds, world_x, world_y)) {
-                    edit = candidate;
-                    break;
-                }
+        // ProcessPendingInput @ 0x00428898: the point under the hotspot,
+        // then the first object of the registry (the pointer itself
+        // excluded) whose bounds hold it, else the first scenery object.
+        // Registry order, not render plane: a machine is chosen before an
+        // object inside it.  One rectangle, cleared once before both loops,
+        // takes every get_bounds; its result is not tested.
+        const int world_x = entity() != nullptr
+                                ? pointer->entity()->world_x() +
+                                      pointer->cursor_hotspot_offset_x
+                                : runtime.pointer_world_x();
+        const int world_y = entity() != nullptr
+                                ? pointer->entity()->world_y() +
+                                      pointer->cursor_hotspot_offset_y
+                                : runtime.pointer_world_y();
+        world::WorldRect bounds{};
+        objects::Object* edit = nullptr;
+        for (std::size_t index = 0; index < runtime.object_count(); ++index) {
+            objects::Object* candidate = runtime.object_at(index);
+            if (candidate == nullptr) {
+                runtime.report_invalid_index();
+                continue;
+            }
+            if (candidate == &input_receiver) {
+                continue;
+            }
+            (void)candidate->get_bounds(&bounds);
+            if (runtime.point_in_world_rect(bounds, world_x, world_y)) {
+                edit = candidate;
+                break;
+            }
+        }
+        for (std::size_t index = 0;
+             edit == nullptr && index < runtime.scenery_object_count();
+             ++index) {
+            objects::Object* candidate = runtime.scenery_object_at(index);
+            if (candidate == nullptr) {
+                runtime.report_invalid_scenery_index();
+                continue;
+            }
+            (void)candidate->get_bounds(&bounds);
+            if (runtime.point_in_world_rect(bounds, world_x, world_y)) {
+                edit = candidate;
             }
         }
         runtime.set_edit_object(edit);
