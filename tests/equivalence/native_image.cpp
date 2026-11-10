@@ -7,6 +7,7 @@
 #include <cstring>
 #include <fstream>
 #include <iterator>
+#include <unordered_map>
 
 namespace equivalence {
 
@@ -33,6 +34,62 @@ T read(const std::vector<std::uint8_t>& bytes, std::size_t offset) {
 // The empty section image_hole.ld puts first: 0x401000 up to 0x4a0000.
 constexpr std::size_t kHoleSize = 0x9f000;
 __attribute__((section(".orig"), used)) unsigned char g_image_hole[kHoleSize];
+
+// Function coverage (tests/equivalence/function_coverage.py), only when
+// EQUIVALENCE_COVERAGE names a file of function addresses: each function's
+// first byte becomes an int3; its first hit appends "<address> <program>"
+// to EQUIVALENCE_COVERAGE_OUT, puts the byte back and goes on.  No test's
+// result changes: the function then runs as it would have.
+std::unordered_map<std::uint32_t, std::uint8_t> g_coverage_bytes;
+std::string g_coverage_out, g_coverage_program;
+
+LONG CALLBACK coverage_handler(EXCEPTION_POINTERS* info) {
+    if (info->ExceptionRecord->ExceptionCode != EXCEPTION_BREAKPOINT) {
+        return EXCEPTION_CONTINUE_SEARCH;
+    }
+    const auto address = static_cast<std::uint32_t>(
+        reinterpret_cast<std::uintptr_t>(info->ExceptionRecord->ExceptionAddress));
+    const auto found = g_coverage_bytes.find(address);
+    if (found == g_coverage_bytes.end()) {
+        return EXCEPTION_CONTINUE_SEARCH;
+    }
+    auto* code = reinterpret_cast<std::uint8_t*>(static_cast<std::uintptr_t>(address));
+    *code = found->second;
+    g_coverage_bytes.erase(found);
+    FlushInstructionCache(GetCurrentProcess(), code, 1);
+    if (std::FILE* out = std::fopen(g_coverage_out.c_str(), "a")) {
+        std::fprintf(out, "%08x %s\n", static_cast<unsigned>(address), g_coverage_program.c_str());
+        std::fclose(out);
+    }
+    info->ContextRecord->Eip = address;
+    return EXCEPTION_CONTINUE_EXECUTION;
+}
+
+void arm_coverage(std::uint32_t image_start, std::uint32_t image_end) {
+    const char* starts = std::getenv("EQUIVALENCE_COVERAGE");
+    const char* out = std::getenv("EQUIVALENCE_COVERAGE_OUT");
+    if (starts == nullptr || out == nullptr) {
+        return;
+    }
+    g_coverage_out = out;
+    char program[MAX_PATH] = {};
+    GetModuleFileNameA(nullptr, program, MAX_PATH);
+    g_coverage_program = program;
+    const std::size_t slash = g_coverage_program.find_last_of("\\/");
+    if (slash != std::string::npos) g_coverage_program.erase(0, slash + 1);
+    std::ifstream list(starts);
+    std::string line;
+    while (std::getline(list, line)) {
+        const auto address = static_cast<std::uint32_t>(std::strtoul(line.c_str(), nullptr, 16));
+        if (address < image_start || address >= image_end || g_coverage_bytes.count(address) != 0) {
+            continue;
+        }
+        auto* code = reinterpret_cast<std::uint8_t*>(static_cast<std::uintptr_t>(address));
+        g_coverage_bytes[address] = *code;
+        *code = 0xcc;
+    }
+    AddVectoredExceptionHandler(1, coverage_handler);
+}
 
 } // namespace
 
@@ -128,6 +185,7 @@ bool NativeImage::load(const std::string& path, std::string& error) {
             }
         }
     }
+    arm_coverage(base_ + 0x1000, base_ + optional.SizeOfImage);
     FlushInstructionCache(GetCurrentProcess(), mapped, kHoleSize);
     return true;
 }

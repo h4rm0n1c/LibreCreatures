@@ -35,6 +35,33 @@ its Images, Body Data and Palettes folders. Nothing in it is written.
   (`brain`, `skelgenes`, ...) and `tables`.
 - The SHA-256 of the exe is taken before the runs and checked after them.
 - Each test's output is in `<build-dir>/run_all.<name>.log`.
+- `--coverage` records which of the original's functions the tests run
+  and writes `<build-dir>/function-coverage.md` (see "Function coverage"
+  below).
+
+## Function coverage
+
+    WINEPREFIX=<throwaway prefix> tests/equivalence/run_all.sh \
+        <CE 10.3 Creatures.exe> <install-dir> [build-dir] --coverage
+
+`function_inventory.tsv` lists the original's 2,332 functions (from the
+byte_match recovery): 924 the game's own, 955 MSVC/STL runtime and 453
+MFC, Win32 and other import-library code, each with its category and the
+LibreCreatures file that owns it. With `EQUIVALENCE_COVERAGE` set to a file
+of function addresses, `native_image.cpp` puts an int3 at each function's
+start; the first time a test's native code enters one, the handler appends
+the address and the test program to `EQUIVALENCE_COVERAGE_OUT`, puts the
+byte back and lets the function run. The tests' results do not change.
+`function_coverage.py` then reports the share of the game's functions that
+ran, by category, by LibreCreatures source file and by test, and lists the
+ones no test runs. A function that ran is one whose effects a test compared:
+it ran inside a call to the original that the test checks against
+LibreCreatures. A function a test replaces with a recorder or a stub does
+not run and does not count.
+
+To add the world test's load and save, run `run_world.sh` afterwards with
+`EQUIVALENCE_COVERAGE` and `EQUIVALENCE_COVERAGE_OUT` still set, then
+`function_coverage.py` again.
 
 ## Biochemistry: `CBiochemistry::Update` @0042ee10 (CE 10.3)
 

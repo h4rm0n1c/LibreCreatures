@@ -4,7 +4,7 @@
 # exits 1 if any test failed.
 #
 #   tests/equivalence/run_all.sh <Creatures.exe> <install-dir> [build-dir] [--full]
-#                                [--no-build] [--only name,name,...]
+#                                [--no-build] [--only name,name,...] [--coverage]
 #
 # <install-dir> is the game folder: its Genetics folder gives the genomes
 # (all *.gen and *.GEN), and its Images, Body Data and Palettes folders go,
@@ -14,6 +14,10 @@
 # runs); --full uses the published counts.  --no-build uses the programs
 # already in the build directory.  --only runs the named tests (the names in
 # the list below).
+#
+# --coverage also records which of the original's functions each test runs
+# (native_image.cpp, EQUIVALENCE_COVERAGE) and writes the function coverage
+# report to <build-dir>/function-coverage.md (function_coverage.py).
 #
 # WINEPREFIX is used as set; a throwaway prefix is best.  The SHA-256 of the
 # exe is taken before the runs and checked after them.
@@ -26,12 +30,13 @@ exe=$1; install=$2
 }
 shift 2
 out=$here/build
-full=0; build=1; only=
+full=0; build=1; only=; coverage=0
 while [ $# -gt 0 ]; do
     case $1 in
         --full) full=1 ;;
         --no-build) build=0 ;;
         --only) shift; only=",$1," ;;
+        --coverage) coverage=1 ;;
         *) out=$1 ;;
     esac
     shift
@@ -46,6 +51,14 @@ genomes=$(find "$install/Genetics" -maxdepth 1 -type f \( -name '*.gen' -o -name
 if [ $build = 1 ]; then
     echo "building in $out"
     sh "$here/build.sh" "$out" > "$out/build.log" 2>&1 || { echo "build failed: see $out/build.log"; exit 1; }
+fi
+
+if [ $coverage = 1 ]; then
+    grep -v '^#' "$here/function_inventory.tsv" | tail -n +2 | cut -f1 > "$out/function-starts.txt"
+    : > "$out/function-hits.txt"
+    EQUIVALENCE_COVERAGE=$(winepath -w "$out/function-starts.txt")
+    EQUIVALENCE_COVERAGE_OUT=$(winepath -w "$out/function-hits.txt")
+    export EQUIVALENCE_COVERAGE EQUIVALENCE_COVERAGE_OUT
 fi
 
 # name, full cases, quick cases, kind (g: takes genomes, s: the install
@@ -116,6 +129,12 @@ case $only in ""|*",tables,"*)
     printf '%-14s %s  %s\n' tables "$result" "$(tail -1 "$out/run_all.tables.log")" | tee -a "$summary"
 ;;
 esac
+
+if [ $coverage = 1 ]; then
+    python3 "$here/function_coverage.py" "$here/function_inventory.tsv" "$out/function-hits.txt" \
+        "$out/function-coverage.md"
+    echo "function coverage: $out/function-coverage.md"
+fi
 
 after=$(sha256sum "$exe" | cut -d' ' -f1)
 if [ "$before" != "$after" ]; then
