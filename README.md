@@ -98,9 +98,26 @@ does not publish anything. The first release, v1.0.0-gm, was made before
 Under Wine, a 64-bit game cannot start kits yet: that needs a 64-bit
 `OLEKitProxy.dll` ([docs/64-bit.md](docs/64-bit.md)). Use an x86 zip there.
 
-To install: copy the zip's files into a Creatures 1 installation (keep copies
-of the files you replace), then run each kit once on its own so that it
-registers itself in the game's Tools menu.
+To install:
+
+1. Install a legally obtained copy of Creatures 1, then install LisDude's
+   [Creatures 1 Community Edition](https://lisdude.com/Creatures/Community/C1/).
+   LibreCreatures uses its `Launcher.exe` world switcher, which is not included
+   in the LibreCreatures zip. On macOS or Linux, follow the Community Edition
+   platform instructions and use its Wine Helper as directed.
+2. Back up your worlds and the files you will replace, then copy the contents
+   of the chosen LibreCreatures zip into the Creatures 1 installation folder,
+   replacing files when prompted. Do this after installing Community Edition
+   so that LibreCreatures' `Creatures.exe` is the one in the folder.
+3. Start `Launcher.exe`, select or create a world, and start the game. The
+   launcher manages world paths and kit registration.
+
+**Wine users:** The Community Edition launcher requires Wine's Windows
+Documents folder to exist. If it reports "Failed to get Documents path.",
+create the Documents folder used by your Wine prefix or wrapper, then try
+again. This is a limitation of the Community Edition launcher; a
+LibreCreatures launcher is planned. Thanks to [@anon569](https://github.com/anon569)
+for reporting and confirming this issue.
 
 ## Building
 

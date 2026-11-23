@@ -66,11 +66,26 @@ script rather than maintaining a second build recipe.
 
 ## Supplying game data
 
-The package contains the engine, not the original game's content. The most
-reliable first run is to place the executable beside a legally obtained
-Creatures 1 installation and launch it with that installation's normal
-resource paths. The original game records those paths in the Windows registry;
-LibreCreatures reads the same settings when they are present.
+The package contains the engine, not the original game's content or the
+launcher. For the supported installation procedure, first install a legally
+obtained copy of Creatures 1 and LisDude's
+[Creatures 1 Community Edition](https://lisdude.com/Creatures/Community/C1/).
+On macOS or Linux, follow its platform instructions and use its Wine Helper
+as directed. Back up your worlds and files before copying the LibreCreatures
+package into the game installation, replacing files when prompted. Install
+LibreCreatures after Community Edition so that its `Creatures.exe` is used.
+Start the game through Community Edition's `Launcher.exe`, which manages
+world selection, resource paths and kit registration.
+
+Under Wine, the Community Edition launcher requires the Windows Documents
+folder in the Wine prefix or wrapper to exist. If it reports "Failed to get
+Documents path.", create that Documents folder and try again. This is a
+limitation of the Community Edition launcher; a LibreCreatures launcher is
+planned. The folder's location depends on the Wine setup and may be mapped
+to a folder outside the prefix. Thanks to [@anon569](https://github.com/anon569)
+for reporting and confirming this issue.
+
+The game reads resource paths from the Windows registry when present.
 
 When no registry settings exist, startup falls back to the process working
 directory. A saved world opened directly can still provide its generated
