@@ -25,7 +25,7 @@ void initialise_community_edition_version_dialog(
     version_text.append(kVersionMinor);
     version_text.append(" (Release)\r\nCommunity Release ");
     version_text.append(kCommunityEditionVersion);
-    version_text.append("\r\nLibreCreatures Refactor Build");
+    version_text.append("\r\nLibreCreatures 1.2b");
     platform.set_version_text(version_text);
     platform.update_dialog_data();
 }
